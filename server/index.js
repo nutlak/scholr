@@ -1,9 +1,20 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
 import express from "express";
 import cors from "cors";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+
+const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error(`\n❌ Missing required env vars: ${missing.join(", ")}`);
+  console.error("   Add them to server/.env and restart.\n");
+  process.exit(1);
+}
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -248,6 +259,31 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
     res.status(500).json({ error: err.message });
   }
+});
+
+// POST /api/auth/forgot-password — trigger Supabase reset email
+app.post("/api/auth/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "email is required" });
+
+  // redirectTo must be in the Supabase "allowed redirect URLs" list in your project settings
+  await supabaseAuth.auth.resetPasswordForEmail(email, {
+    redirectTo: process.env.CLIENT_ORIGIN,
+  });
+
+  // Always 200 — never reveal whether the email exists
+  res.json({ ok: true });
+});
+
+// DELETE /api/auth/delete-account — permanently delete the calling user's account
+app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+
+  // Delete the Supabase auth user (cascades to notebooks/notes via DB foreign keys)
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.status(204).end();
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

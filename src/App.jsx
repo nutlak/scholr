@@ -345,6 +345,211 @@ function NotebookView({ nb, onBack, onDeleted }) {
   );
 }
 
+function PasswordResetModal({ onDone }) {
+  const [password, setPassword]   = useState("");
+  const [confirm, setConfirm]     = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (password !== confirm) { setError("Passwords don't match."); return; }
+    if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
+    setError("");
+    setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password });
+      if (err) throw err;
+      onDone();
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  }
+
+  const inputBase = {
+    width: "100%", background: "#0D0D14", border: "1px solid #2A2A38",
+    borderRadius: 10, padding: "12px 14px", color: "#E8E8F0", fontSize: 13,
+    fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", transition: "border-color 0.15s",
+  };
+  const label = {
+    fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif",
+    letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6,
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.88)",
+      backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #2A2A38",
+        borderRadius: 20, width: "100%", maxWidth: 420,
+        padding: "36px 32px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        animation: "fadeIn 0.25s ease",
+      }}>
+        <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 28, fontWeight: 900, color: "#E8E8F0", marginBottom: 6, letterSpacing: "-0.02em", textAlign: "center" }}>
+          Schol<span style={{ color: "#A78BFA" }}>r</span>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 6, marginTop: 20 }}>
+          Set a new password
+        </div>
+        <div style={{ fontSize: 12, color: "#505070", marginBottom: 24, fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.6 }}>
+          Choose a strong password for your account.
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={label}>New password</label>
+            <input
+              type="password" required autoFocus
+              value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Min 6 characters" style={inputBase}
+              onFocus={e => e.target.style.borderColor = "#A78BFA"}
+              onBlur={e => e.target.style.borderColor = "#2A2A38"}
+            />
+          </div>
+          <div>
+            <label style={label}>Confirm password</label>
+            <input
+              type="password" required
+              value={confirm} onChange={e => setConfirm(e.target.value)}
+              placeholder="Same password again" style={inputBase}
+              onFocus={e => e.target.style.borderColor = "#A78BFA"}
+              onBlur={e => e.target.style.borderColor = "#2A2A38"}
+            />
+          </div>
+          {error && (
+            <div style={{
+              background: "#2A1A1A", border: "1px solid #5A2020", borderRadius: 8,
+              padding: "10px 12px", fontSize: 12, color: "#F87171",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+            }}>{error}</div>
+          )}
+          <button type="submit" disabled={loading} style={{
+            width: "100%", background: "#A78BFA", border: "none", borderRadius: 10,
+            padding: "12px", color: "#0A0A0F", fontWeight: 700, fontSize: 14,
+            cursor: loading ? "not-allowed" : "pointer",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            opacity: loading ? 0.6 : 1, marginTop: 4, transition: "opacity 0.15s",
+          }}>
+            {loading ? "Saving…" : "Update password"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccountModal({ onClose, onConfirm }) {
+  const [typed, setTyped]     = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+  const confirmed = typed === "DELETE";
+
+  async function handleConfirm(e) {
+    e.preventDefault();
+    if (!confirmed) return;
+    setLoading(true);
+    setError("");
+    try {
+      await onConfirm();
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.82)",
+      backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #3A1A1A",
+        borderRadius: 20, width: "100%", maxWidth: 400,
+        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ fontSize: 28, textAlign: "center", marginBottom: 12 }}>⚠️</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", textAlign: "center", marginBottom: 8 }}>
+          Delete your account?
+        </div>
+        <div style={{ fontSize: 13, color: "#604040", fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
+          All your notebooks, notes, and data will be <strong style={{ color: "#F87171" }}>permanently deleted</strong>. This cannot be undone.
+        </div>
+
+        <form onSubmit={handleConfirm} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={{
+              fontSize: 11, color: "#604040", fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 8,
+            }}>
+              Type <strong style={{ color: "#F87171", letterSpacing: "0.1em" }}>DELETE</strong> to confirm
+            </label>
+            <input
+              type="text"
+              value={typed}
+              onChange={e => setTyped(e.target.value)}
+              placeholder="DELETE"
+              autoFocus
+              spellCheck={false}
+              style={{
+                width: "100%", background: "#0D0D14",
+                border: `1px solid ${confirmed ? "#991B1B" : "#2A2A38"}`,
+                borderRadius: 10, padding: "11px 13px",
+                color: confirmed ? "#FCA5A5" : "#E8E8F0",
+                fontSize: 13, fontFamily: "'DM Mono', monospace",
+                outline: "none", transition: "border-color 0.15s, color 0.15s",
+                letterSpacing: "0.08em",
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              background: "#2A1A1A", border: "1px solid #5A2020",
+              borderRadius: 8, padding: "10px 12px",
+              fontSize: 12, color: "#F87171",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+            }}>{error}</div>
+          )}
+
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                flex: 1, background: "transparent", border: "1px solid #2A2A38",
+                borderRadius: 10, padding: "11px", color: "#505070",
+                fontSize: 13, cursor: "pointer",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                opacity: loading ? 0.5 : 1,
+              }}
+            >Cancel</button>
+            <button
+              type="submit"
+              disabled={!confirmed || loading}
+              style={{
+                flex: 1, background: confirmed ? "#7F1D1D" : "#1A1A1A",
+                border: `1px solid ${confirmed ? "#991B1B" : "#2A2A38"}`,
+                borderRadius: 10, padding: "11px",
+                color: confirmed ? "#FCA5A5" : "#404040",
+                fontWeight: 700, fontSize: 13,
+                cursor: confirmed && !loading ? "pointer" : "not-allowed",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                transition: "all 0.2s",
+              }}
+            >{loading ? "Deleting…" : "Delete account"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]
@@ -378,6 +583,8 @@ export default function Scholr() {
   const [notebooks, setNotebooks] = useState([]);
   const [showNewModal, setShowNewModal] = useState(false);
   const [toast, setToast] = useState("");
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   // Restore session on mount and listen for auth changes
   useEffect(() => {
@@ -386,7 +593,11 @@ export default function Scholr() {
       setAuthReady(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setShowPasswordReset(true);
+        return;
+      }
       setUser(session?.user ?? null);
     });
 
@@ -397,6 +608,16 @@ export default function Scholr() {
     if (!user) return;
     api.listNotebooks(getDisplayName(user)).then(setNotebooks).catch(err => console.log(err));
   }, [user]);
+
+  async function handleDeleteAccount() {
+    await api.deleteAccount();
+    localStorage.clear();
+    await supabase.auth.signOut();
+    setUser(null);
+    setNotebooks([]);
+    setActiveNb(null);
+    setActiveView("dashboard");
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -445,7 +666,22 @@ export default function Scholr() {
         }
       `}</style>
 
-      {authReady && !user && <AuthModal onAuth={setUser} />}
+      {authReady && !user && !showPasswordReset && <AuthModal onAuth={setUser} />}
+
+      {showPasswordReset && (
+        <PasswordResetModal onDone={() => {
+          setShowPasswordReset(false);
+          setToast("Password updated");
+          setTimeout(() => setToast(""), 3000);
+        }} />
+      )}
+
+      {showDeleteAccount && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteAccount(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
 
       {toast && (
         <div style={{
@@ -574,9 +810,31 @@ export default function Scholr() {
               <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
                 Account
               </div>
-              <div style={{ background: "#111118", border: "1px solid #1E1E2A", borderRadius: 14, padding: "16px 18px" }}>
+              <div style={{ background: "#111118", border: "1px solid #1E1E2A", borderRadius: 14, padding: "16px 18px", marginBottom: 32 }}>
                 <div style={{ fontSize: 12, color: "#505070", marginBottom: 4 }}>Signed in as</div>
                 <div style={{ fontSize: 14, color: "#D0D0E8", fontWeight: 600 }}>{user?.email}</div>
+              </div>
+
+              <div style={{ fontSize: 11, color: "#7F1D1D", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+                Danger zone
+              </div>
+              <div style={{ background: "#180C0C", border: "1px solid #3A1A1A", borderRadius: 14, padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#D0D0E8", marginBottom: 3 }}>Delete my account</div>
+                  <div style={{ fontSize: 12, color: "#604040" }}>This action cannot be undone.</div>
+                </div>
+                <button
+                  onClick={() => setShowDeleteAccount(true)}
+                  style={{
+                    background: "transparent", border: "1px solid #5A2020",
+                    borderRadius: 10, padding: "8px 14px", color: "#F87171",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#2A1010"; e.currentTarget.style.borderColor = "#991B1B"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#5A2020"; }}
+                >Delete account</button>
               </div>
             </div>
 

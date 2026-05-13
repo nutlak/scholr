@@ -49,6 +49,18 @@ export const api = {
     return shapeNotebook(nb, displayName);
   },
 
+  async deleteAccount() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/auth/delete-account`, {
+      method: "DELETE",
+      headers,
+    });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete account");
+    }
+  },
+
   async deleteNotebook(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}`, {

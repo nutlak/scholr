@@ -1,0 +1,699 @@
+import { useState, useEffect, useRef } from "react";
+import { api } from "./api.js";
+import { supabase } from "./supabase.js";
+import AuthModal from "./AuthModal.jsx";
+import NewNotebookModal from "./NewNotebookModal.jsx";
+import UploadNotesModal from "./UploadNotesModal.jsx";
+import "./App.css";
+
+const recentActivity = [];
+
+const avatarColors = ["#A78BFA", "#A78BFA", "#34D399", "#F472B6", "#FBBF24"];
+
+function Avatar({ name, size = 28 }) {
+  const idx = name.charCodeAt(0) % avatarColors.length;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      background: avatarColors[idx],
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.4, fontWeight: 700, color: "#0A0A0F",
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
+      flexShrink: 0,
+      border: "2px solid #13131A"
+    }}>
+      {name[0].toUpperCase()}
+    </div>
+  );
+}
+
+function AvatarStack({ names }) {
+  return (
+    <div style={{ display: "flex", marginLeft: 4 }}>
+      {names.slice(0, 3).map((n, i) => (
+        <div key={n} style={{ marginLeft: i === 0 ? 0 : -8, zIndex: names.length - i }}>
+          <Avatar name={n} size={24} />
+        </div>
+      ))}
+      {names.length > 3 && (
+        <div style={{
+          marginLeft: -8, width: 24, height: 24, borderRadius: "50%",
+          background: "#2A2A38", border: "2px solid #13131A",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 9, color: "#9090A8", fontFamily: "'Plus Jakarta Sans', sans-serif"
+        }}>+{names.length - 3}</div>
+      )}
+    </div>
+  );
+}
+
+function NotebookCard({ nb, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? "#16161F" : "#111118",
+        border: `1px solid ${hovered ? nb.color + "55" : "#1E1E2A"}`,
+        borderRadius: 16,
+        padding: "20px 22px",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: nb.color, borderRadius: "16px 16px 0 0",
+        opacity: hovered ? 1 : 0.5, transition: "opacity 0.2s"
+      }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
+          color: nb.color, textTransform: "uppercase",
+          fontFamily: "'DM Mono', monospace"
+        }}>{nb.notes} notes</div>
+        <div style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.updated}</div>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4, lineHeight: 1.3 }}>
+        {nb.title}
+      </div>
+      <div style={{ fontSize: 12, color: "#6060A0", fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 16 }}>
+        {nb.topic}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <AvatarStack names={nb.contributors} />
+          <span style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {nb.contributors.length} collaborators
+          </span>
+        </div>
+        <div style={{
+          fontSize: 11, color: nb.color, fontFamily: "'DM Mono', monospace",
+          opacity: hovered ? 1 : 0, transition: "opacity 0.2s"
+        }}>Open →</div>
+      </div>
+    </div>
+  );
+}
+
+function NotebookView({ nb, onBack, onDeleted }) {
+  const [query, setQuery] = useState("");
+  const [messages, setMessages] = useState([
+    { role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }
+  ]);
+  const [loading, setLoading]       = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting]     = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const bottomRef = useRef(null);
+
+  function handleNoteUploaded(note) {
+    setMessages(m => [...m, {
+      role: "assistant",
+      text: `📎 "${note.title}" was added to this notebook. I'll include it in future answers.`,
+    }]);
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await api.deleteNotebook(nb.id);
+      onDeleted(nb.id);
+    } catch (err) {
+      setDeleteError(err.message);
+      setDeleting(false);
+    }
+  }
+
+  // Scroll to latest message whenever messages or loading state changes
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  async function ask() {
+    const text = query.trim();
+    if (!text || loading) return;
+
+    setMessages(m => [...m, { role: "user", text }]);
+    setQuery("");
+    setLoading(true);
+
+    try {
+      const data = await api.query(nb.id, text);
+      if (data.error) throw new Error(data.error);
+      setMessages(m => [...m, { role: "assistant", text: data.answer }]);
+    } catch (err) {
+      setMessages(m => [...m, {
+        role: "assistant",
+        text: `Sorry, something went wrong: ${err.message}`,
+        isError: true,
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0 }}>
+      {showUpload && (
+        <UploadNotesModal
+          notebookId={nb.id}
+          accentColor={nb.color}
+          onClose={() => setShowUpload(false)}
+          onUploaded={handleNoteUploaded}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {confirmDelete && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(10,10,15,0.78)",
+          backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 1000, padding: 16,
+        }}>
+          <div style={{
+            background: "#111118", border: "1px solid #2A2A38",
+            borderRadius: 20, width: "100%", maxWidth: 380,
+            padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+            animation: "fadeIn 0.2s ease",
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 12, textAlign: "center" }}>🗑️</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", textAlign: "center", marginBottom: 8 }}>
+              Delete this notebook?
+            </div>
+            <div style={{ fontSize: 13, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
+              <strong style={{ color: "#D0D0E8" }}>{nb.title}</strong> and all its notes will be permanently deleted. This can't be undone.
+            </div>
+            {deleteError && (
+              <div style={{
+                background: "#2A1A1A", border: "1px solid #5A2020", borderRadius: 8,
+                padding: "10px 12px", marginBottom: 16,
+                fontSize: 12, color: "#F87171", fontFamily: "'Plus Jakarta Sans', sans-serif",
+              }}>{deleteError}</div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setConfirmDelete(false); setDeleteError(""); }}
+                disabled={deleting}
+                style={{
+                  flex: 1, background: "transparent", border: "1px solid #2A2A38",
+                  borderRadius: 10, padding: "11px", color: "#505070",
+                  fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  opacity: deleting ? 0.5 : 1,
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  flex: 1, background: "#7F1D1D", border: "1px solid #991B1B",
+                  borderRadius: 10, padding: "11px", color: "#FCA5A5",
+                  fontWeight: 700, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  opacity: deleting ? 0.7 : 1, transition: "opacity 0.15s",
+                }}
+              >{deleting ? "Deleting…" : "Yes, delete"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <button onClick={onBack} style={{
+          background: "#1A1A24", border: "1px solid #2A2A38", color: "#9090A8",
+          borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+          fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12
+        }}>← Back</button>
+        <button
+          onClick={() => setConfirmDelete(true)}
+          title="Delete notebook"
+          style={{
+            background: "transparent", border: "1px solid #3A1A1A", color: "#7F3030",
+            borderRadius: 8, padding: "6px 10px", cursor: "pointer",
+            fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13,
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#2A1010"; e.currentTarget.style.borderColor = "#991B1B"; e.currentTarget.style.color = "#FCA5A5"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#3A1A1A"; e.currentTarget.style.color = "#7F3030"; }}
+        >🗑</button>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif" }}>{nb.title}</div>
+          <div style={{ fontSize: 12, color: "#6060A0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.topic}</div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => setShowUpload(true)}
+            style={{
+              background: "transparent", border: `1px solid ${nb.color}44`,
+              borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+              fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12,
+              color: nb.color, fontWeight: 600, transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
+          >+ Upload notes</button>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "#1A1A24", border: "1px solid #2A2A38",
+            borderRadius: 8, padding: "6px 12px"
+          }}>
+            <AvatarStack names={nb.contributors} />
+          </div>
+        </div>
+      </div>
+
+      {/* Message list */}
+      <div style={{
+        flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
+        gap: 12, marginBottom: 16, paddingRight: 4
+      }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            <div style={{
+              maxWidth: "75%",
+              background: m.isError ? "#2A1A1A" : m.role === "user" ? nb.color : "#1A1A28",
+              color: m.isError ? "#F87171" : m.role === "user" ? "#0A0A0F" : "#D0D0E8",
+              borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              padding: "10px 14px",
+              fontSize: 13, lineHeight: 1.6,
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              border: m.role === "assistant" ? `1px solid ${m.isError ? "#5A2020" : "#2A2A38"}` : "none",
+              whiteSpace: "pre-wrap",
+            }}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div style={{ display: "flex" }}>
+            <div style={{
+              background: "#1A1A28", border: "1px solid #2A2A38",
+              borderRadius: "16px 16px 16px 4px", padding: "10px 16px",
+              display: "flex", gap: 4, alignItems: "center"
+            }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                  width: 6, height: 6, borderRadius: "50%", background: "#4A4A70",
+                  animation: `pulse 1s ease-in-out ${i * 0.2}s infinite`
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input row */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && ask()}
+          placeholder={`Ask anything about ${nb.title}…`}
+          disabled={loading}
+          style={{
+            flex: 1, background: "#111118", border: "1px solid #2A2A38",
+            borderRadius: 12, padding: "12px 16px",
+            color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif",
+            outline: "none", transition: "opacity 0.15s",
+          }}
+        />
+        <button
+          onClick={ask}
+          disabled={loading || !query.trim()}
+          style={{
+            background: nb.color, border: "none", borderRadius: 12,
+            padding: "12px 18px", fontSize: 16, fontWeight: 700,
+            color: "#0A0A0F", transition: "opacity 0.15s",
+            cursor: loading || !query.trim() ? "not-allowed" : "pointer",
+            opacity: loading || !query.trim() ? 0.45 : 1,
+          }}
+        >
+          {loading ? "…" : "↑"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function getDisplayName(user) {
+  return user?.user_metadata?.full_name
+    || user?.email?.split("@")[0]
+    || "Student";
+}
+
+function getGreeting(name) {
+  const h = new Date().getHours();
+  const first = name.split(" ")[0];
+  if (h < 5)  return `Still up, ${first}?`;
+  if (h < 12) return `Good morning, ${first} 👋`;
+  if (h < 17) return `Good afternoon, ${first} 👋`;
+  if (h < 21) return `Good evening, ${first} 👋`;
+  return `Back at it, ${first} 🌙`;
+}
+
+const NAV = [
+  { id: "dashboard", label: "Dashboard",  icon: "⊞" },
+  { id: "my-notes",  label: "My Notes",   icon: "📓" },
+  { id: "shared",    label: "Shared",     icon: "👥" },
+  { id: "starred",   label: "Starred",    icon: "★"  },
+  { id: "settings",  label: "Settings",   icon: "⚙"  },
+];
+
+export default function Scholr() {
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [activeView, setActiveView] = useState("dashboard");
+  const [activeNb, setActiveNb] = useState(null);
+  const [search, setSearch] = useState("");
+  const [notebooks, setNotebooks] = useState([]);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [toast, setToast] = useState("");
+
+  // Restore session on mount and listen for auth changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    api.listNotebooks(getDisplayName(user)).then(setNotebooks).catch(err => console.log(err));
+  }, [user]);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    // Eagerly clear state — don't wait for onAuthStateChange
+    setUser(null);
+    setActiveNb(null);
+    setNotebooks([]);
+    setActiveView("dashboard");
+  }
+
+  async function handleCreateNotebook(title, topic) {
+    const nb = await api.createNotebook(title, topic, getDisplayName(user));
+    setNotebooks(prev => [nb, ...prev]);
+  }
+
+  const displayName = getDisplayName(user);
+
+  const viewBase = activeView === "my-notes" ? notebooks.filter(n => n.role === "owner")
+    : activeView === "shared"   ? notebooks.filter(n => n.role === "member")
+    : activeView === "starred"  ? []
+    : notebooks;
+
+  const filtered = viewBase.filter(n => {
+    const q = search.toLowerCase();
+    return n.title.toLowerCase().includes(q) || (n.topic || "").toLowerCase().includes(q);
+  });
+
+  const viewLabel = NAV.find(n => n.id === activeView)?.label ?? "Dashboard";
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0A0A0F; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 4px; }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: translateY(0); }
+          50% { opacity: 1; transform: translateY(-3px); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      {authReady && !user && <AuthModal onAuth={setUser} />}
+
+      {toast && (
+        <div style={{
+          position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
+          background: "#1A2E1A", border: "1px solid #2A5A2A",
+          borderRadius: 12, padding: "12px 20px",
+          fontSize: 13, color: "#4ADE80", fontWeight: 600,
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          zIndex: 2000, animation: "fadeIn 0.2s ease",
+          display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+        }}>
+          ✓ {toast}
+        </div>
+      )}
+
+      {showNewModal && (
+        <NewNotebookModal
+          onClose={() => setShowNewModal(false)}
+          onCreate={handleCreateNotebook}
+        />
+      )}
+
+      {/* Dashboard — always rendered so layout doesn't flash */}
+      <div style={{
+        minHeight: "100vh", background: "#0A0A0F",
+        display: "flex", fontFamily: "'Plus Jakarta Sans', sans-serif",
+        filter: authReady && !user ? "blur(4px)" : "none",
+        pointerEvents: authReady && !user ? "none" : "auto",
+        transition: "filter 0.2s",
+      }}>
+        {/* Sidebar */}
+        <div style={{
+          width: 220, background: "#0D0D14", borderRight: "1px solid #1A1A24",
+          padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4,
+          flexShrink: 0
+        }}>
+          <div style={{
+            fontFamily: "'Nunito', sans-serif", fontSize: 22, fontWeight: 900,
+            color: "#E8E8F0", marginBottom: 28, paddingLeft: 8, letterSpacing: "-0.02em"
+          }}>
+            Schol<span style={{ color: "#A78BFA" }}>r</span>
+          </div>
+
+          {NAV.map(({ id, label, icon }) => {
+            const active = activeView === id;
+            return (
+              <div
+                key={id}
+                onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
+                style={{
+                  padding: "9px 12px", borderRadius: 10, display: "flex", alignItems: "center", gap: 8,
+                  background: active ? "#1A1A28" : "transparent",
+                  color: active ? "#E8E8F0" : "#606080",
+                  fontSize: 13, fontWeight: active ? 600 : 400,
+                  cursor: "pointer", transition: "background 0.15s, color 0.15s",
+                  userSelect: "none",
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#14141E"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 14, opacity: active ? 1 : 0.6 }}>{icon}</span>
+                {label}
+              </div>
+            );
+          })}
+
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px", borderRadius: 10, background: "#111118"
+            }}>
+              <Avatar name={displayName} size={30} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 12, fontWeight: 600, color: "#D0D0E8",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                }}>{displayName}</div>
+                <div style={{
+                  fontSize: 10, color: "#404060",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                }}>{user?.email}</div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              style={{
+                width: "100%", background: "transparent",
+                border: "1px solid #2A2A38", borderRadius: 10,
+                padding: "9px 12px", color: "#505070", fontSize: 12,
+                cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+                transition: "all 0.15s", textAlign: "left",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#5A2A2A"; e.currentTarget.style.color = "#F87171"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A2A38"; e.currentTarget.style.color = "#505070"; }}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+
+        {/* Main */}
+        <div style={{ flex: 1, padding: "32px 36px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          {activeNb ? (
+            <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
+              <NotebookView
+                nb={activeNb}
+                onBack={() => setActiveNb(null)}
+                onDeleted={id => {
+                  setNotebooks(prev => prev.filter(n => n.id !== id));
+                  setActiveNb(null);
+                  setToast("Notebook deleted");
+                  setTimeout(() => setToast(""), 3000);
+                }}
+              />
+            </div>
+
+          ) : activeView === "settings" ? (
+            <div style={{ animation: "fadeIn 0.3s ease", maxWidth: 480 }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>
+                Settings
+              </div>
+              <div style={{ fontSize: 13, color: "#505070", marginBottom: 32 }}>Manage your account</div>
+
+              <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+                Account
+              </div>
+              <div style={{ background: "#111118", border: "1px solid #1E1E2A", borderRadius: 14, padding: "16px 18px" }}>
+                <div style={{ fontSize: 12, color: "#505070", marginBottom: 4 }}>Signed in as</div>
+                <div style={{ fontSize: 14, color: "#D0D0E8", fontWeight: 600 }}>{user?.email}</div>
+              </div>
+            </div>
+
+          ) : (
+            <div style={{ animation: "fadeIn 0.3s ease" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+                <div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.02em" }}>
+                    {activeView === "dashboard" ? getGreeting(displayName) : viewLabel}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#505070", marginTop: 2 }}>
+                    {activeView === "dashboard"
+                      ? `${notebooks.length} notebooks · ${notebooks.reduce((a, n) => a + (n.notes || 0), 0)} total notes`
+                      : `${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
+                  </div>
+                </div>
+                {activeView !== "starred" && (
+                  <button
+                    onClick={() => setShowNewModal(true)}
+                    style={{
+                      background: "#A78BFA", border: "none", borderRadius: 12,
+                      padding: "10px 20px", color: "#0A0A0F", fontWeight: 700,
+                      fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      transition: "opacity 0.15s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  >+ New Notebook</button>
+                )}
+              </div>
+
+              {/* Search */}
+              {activeView !== "starred" && (
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder={`Search ${viewLabel.toLowerCase()}…`}
+                  style={{
+                    width: "100%", background: "#111118", border: "1px solid #1E1E2A",
+                    borderRadius: 12, padding: "12px 16px", color: "#E8E8F0",
+                    fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24
+                  }}
+                />
+              )}
+
+              {/* Notebooks grid or empty state */}
+              {activeView === "starred" ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  padding: "64px 0", gap: 12, color: "#404060",
+                }}>
+                  <div style={{ fontSize: 32 }}>★</div>
+                  <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No starred notebooks yet</div>
+                  <div style={{ fontSize: 12, color: "#2A2A40" }}>Open a notebook and star it to find it here</div>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  padding: "64px 0", gap: 12, color: "#404060",
+                }}>
+                  <div style={{ fontSize: 32 }}>📓</div>
+                  <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    {search ? "No notebooks match your search" : "No notebooks here yet"}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" }}>
+                    {viewLabel}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14, marginBottom: 32 }}>
+                    {filtered.map(nb => (
+                      <NotebookCard key={nb.id} nb={nb} onClick={() => setActiveNb(nb)} />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Recent Activity — dashboard only */}
+              {activeView === "dashboard" && (
+                <>
+                  <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" }}>
+                    Recent Activity
+                  </div>
+                  {recentActivity.length === 0 ? (
+                    <div style={{
+                      background: "#111118", border: "1px solid #1A1A24",
+                      borderRadius: 12, padding: "20px 16px",
+                      fontSize: 13, color: "#404060",
+                      fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: "center",
+                    }}>
+                      No new notifications yet
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {recentActivity.map((a, i) => (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          background: "#111118", border: "1px solid #1A1A24",
+                          borderRadius: 12, padding: "12px 16px"
+                        }}>
+                          <Avatar name={a.user} size={30} />
+                          <div style={{ flex: 1, fontSize: 13, color: "#8080A0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                            <span style={{ color: "#C0C0D8", fontWeight: 600 }}>{a.user}</span> {a.action} <span style={{ color: "#C0C0D8" }}>{a.target}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace" }}>{a.time}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

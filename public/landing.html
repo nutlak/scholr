@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scholr — Study smarter. Study together.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0A0A0F;
+      --bg2:      #0D0D14;
+      --bg3:      #111118;
+      --border:   #1E1E2A;
+      --border2:  #2A2A38;
+      --purple:   #A78BFA;
+      --purple2:  #7C3AED;
+      --text:     #E8E8F0;
+      --muted:    #606080;
+      --muted2:   #404060;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(10,10,15,0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(30,30,42,0.6);
+    }
+
+    .logo {
+      font-family: 'Nunito', sans-serif;
+      font-size: 22px; font-weight: 900;
+      color: var(--text); letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .logo span { color: var(--purple); }
+
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a {
+      font-size: 13px; color: var(--muted); text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; border: none; cursor: pointer;
+      text-decoration: none; transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: var(--purple); color: #0A0A0F;
+      border-radius: 12px; padding: 11px 22px; font-size: 14px;
+    }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border2); border-radius: 12px;
+      padding: 10px 20px; font-size: 13px;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--purple); opacity: 1; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute; top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 100px; padding: 6px 14px;
+      font-size: 12px; color: var(--purple); font-weight: 600;
+      margin-bottom: 28px; letter-spacing: 0.04em;
+    }
+
+    h1 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(42px, 7vw, 80px);
+      font-weight: 900; line-height: 1.05;
+      letter-spacing: -0.03em;
+      max-width: 820px;
+    }
+
+    h1 .grad {
+      background: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 50%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      margin-top: 22px;
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--muted); line-height: 1.7;
+      max-width: 520px;
+    }
+
+    .hero-cta {
+      margin-top: 40px;
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    }
+
+    .btn-large {
+      padding: 15px 32px; font-size: 15px; border-radius: 14px;
+    }
+
+    .hero-note {
+      margin-top: 16px;
+      font-size: 12px; color: var(--muted2);
+    }
+
+    /* ── App mockup ── */
+    .mockup-wrap {
+      margin-top: 72px;
+      width: 100%; max-width: 940px;
+      position: relative;
+    }
+
+    .mockup-glow {
+      position: absolute; inset: -40px;
+      background: radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.2) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .mockup {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,139,250,0.08);
+      position: relative;
+    }
+
+    /* Title bar */
+    .mockup-bar {
+      background: #09090F;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* App layout inside mockup */
+    .mockup-app {
+      display: flex; height: 480px;
+    }
+
+    .mock-sidebar {
+      width: 180px; background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 20px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .mock-logo {
+      font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 900;
+      color: var(--text); margin-bottom: 20px; padding-left: 6px;
+    }
+    .mock-logo span { color: var(--purple); }
+
+    .mock-nav-item {
+      padding: 7px 8px; border-radius: 8px;
+      font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .mock-nav-item.active {
+      background: #1A1A28; color: var(--text); font-weight: 600;
+    }
+
+    .mock-main { flex: 1; padding: 24px; overflow: hidden; }
+
+    .mock-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 18px;
+    }
+    .mock-title {
+      font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900;
+      color: var(--text); letter-spacing: -0.02em;
+    }
+    .mock-sub { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+
+    .mock-btn {
+      background: var(--purple); border-radius: 8px;
+      padding: 7px 14px; font-size: 11px; font-weight: 700;
+      color: #0A0A0F;
+    }
+
+    .mock-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+    }
+
+    .mock-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 14px;
+      position: relative; overflow: hidden;
+    }
+    .mock-card-top { position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 12px 12px 0 0; }
+    .mock-card-tag { font-size: 9px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+    .mock-card-title { font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .mock-card-sub { font-size: 10px; color: var(--muted2); }
+
+    /* ── Features ── */
+    .section { padding: 100px 24px; }
+    .section-inner { max-width: 1040px; margin: 0 auto; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--purple);
+      margin-bottom: 16px; text-align: center;
+    }
+
+    h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(28px, 4vw, 44px); font-weight: 900;
+      letter-spacing: -0.025em; text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      text-align: center; color: var(--muted);
+      font-size: 16px; line-height: 1.7; max-width: 500px;
+      margin: 0 auto 56px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(167,139,250,0.35); transform: translateY(-2px); }
+
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 18px;
+    }
+
+    .feature-title {
+      font-family: 'Nunito', sans-serif; font-size: 17px; font-weight: 800;
+      color: var(--text); margin-bottom: 8px; letter-spacing: -0.01em;
+    }
+
+    .feature-desc {
+      font-size: 13px; color: var(--muted); line-height: 1.7;
+    }
+
+    /* ── How it works ── */
+    .steps { display: flex; flex-direction: column; gap: 0; max-width: 600px; margin: 0 auto; }
+
+    .step {
+      display: flex; gap: 20px; padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600;
+      color: var(--purple);
+    }
+
+    .step-title {
+      font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800;
+      color: var(--text); margin-bottom: 4px;
+    }
+
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── CTA banner ── */
+    .cta-section {
+      padding: 80px 24px 100px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 { margin-bottom: 12px; }
+
+    .cta-section p { color: var(--muted); font-size: 15px; margin-bottom: 36px; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    footer .logo { font-size: 16px; }
+    .footer-note { font-size: 12px; color: var(--muted2); }
+
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      h1 { font-size: 38px; }
+      .mockup-app { height: 300px; }
+      .mock-sidebar { display: none; }
+      .mock-grid { grid-template-columns: 1fr 1fr; }
+      footer { flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a class="logo" href="#">Schol<span>r</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a class="btn btn-ghost" href="/">Log in</a>
+      <a class="btn btn-primary" href="/">Sign up free</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+
+    <div class="hero-badge">✦ AI-powered study tool</div>
+
+    <h1>Study smarter.<br><span class="grad">Study together.</span></h1>
+
+    <p class="hero-sub">
+      Scholr is the collaborative notebook built for students.
+      Upload notes, ask Claude AI anything, and learn as a team —
+      all in one dark, beautiful workspace.
+    </p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary btn-large" href="/">Get started free →</a>
+      <a class="btn btn-ghost btn-large" href="#features">See how it works</a>
+    </div>
+    <p class="hero-note">No credit card required · Works with any class</p>
+
+    <!-- App mockup -->
+    <div class="mockup-wrap">
+      <div class="mockup-glow"></div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="dot" style="background:#FF5F56"></div>
+          <div class="dot" style="background:#FFBD2E"></div>
+          <div class="dot" style="background:#27C93F"></div>
+          <div style="margin-left:8px;font-size:11px;color:#404060;font-family:'DM Mono',monospace;">scholr.app</div>
+        </div>
+        <div class="mockup-app">
+          <div class="mock-sidebar">
+            <div class="mock-logo">Schol<span>r</span></div>
+            <div class="mock-nav-item active"><span>⊞</span> Dashboard</div>
+            <div class="mock-nav-item"><span>📓</span> My Notes</div>
+            <div class="mock-nav-item"><span>👥</span> Shared</div>
+            <div class="mock-nav-item"><span>★</span> Starred</div>
+            <div class="mock-nav-item"><span>⚙</span> Settings</div>
+          </div>
+          <div class="mock-main">
+            <div class="mock-header">
+              <div>
+                <div class="mock-title">Good afternoon, Alex 👋</div>
+                <div class="mock-sub">4 notebooks · 61 total notes</div>
+              </div>
+              <div class="mock-btn">+ New Notebook</div>
+            </div>
+            <div style="font-size:9px;color:#404060;font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Your Notebooks</div>
+            <div class="mock-grid">
+              <div class="mock-card">
+                <div class="mock-card-top" style="background:#A78BFA"></div>
+                <div class="mock-card-tag" style="color:#A78BFA">24 notes</div>
+                <div class="mock-card-title">AP Chemistry</div>
+                <div class="mock-card-sub">Organic reactions</div>
+              </div>
+              <div class="mock-card">
+                <div class="mock-card-top" style="background:#60A5FA"></div>
+                <div class="mock-card-tag" style="color:#60A5FA">18 notes</div>
+                <div class="mock-card-title">AP World History</div>
+                <div class="mock-card-sub">Industrial revolution</div>
+              </div>
+              <div class="mock-card">
+                <div class="mock-card-top" style="background:#34D399"></div>
+                <div class="mock-card-tag" style="color:#34D399">9 notes</div>
+                <div class="mock-card-title">AP CSP</div>
+                <div class="mock-card-sub">Algorithms & data</div>
+              </div>
+            </div>
+
+            <!-- Mini chat preview -->
+            <div style="margin-top:16px;background:#0D0D14;border:1px solid #1E1E2A;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:9px;color:#404060;font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Ask AI about AP Chemistry</div>
+              <div style="display:flex;justify-content:flex-end;">
+                <div style="background:#A78BFA;color:#0A0A0F;border-radius:12px 12px 4px 12px;padding:7px 11px;font-size:11px;max-width:60%;">What's an SN2 reaction?</div>
+              </div>
+              <div style="display:flex;">
+                <div style="background:#1A1A28;border:1px solid #2A2A38;border-radius:12px 12px 12px 4px;padding:7px 11px;font-size:11px;color:#D0D0E8;max-width:75%;line-height:1.5;">SN2 is a bimolecular substitution where the nucleophile attacks as the leaving group departs — one concerted step, inverts stereochemistry.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="section-inner">
+      <div class="section-label">Features</div>
+      <h2>Everything your study group needs</h2>
+      <p class="section-sub">Built for students who actually want to understand the material — not just memorize it.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <div class="feature-title">AI that knows your notes</div>
+          <div class="feature-desc">Ask Claude anything about your notebook. It reads all your uploaded notes and answers in context — like a tutor who did all the reading.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <div class="feature-title">Collaborative by default</div>
+          <div class="feature-desc">Invite classmates to a notebook with a link. Everyone can upload notes, and the whole group can query the AI together.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📄</div>
+          <div class="feature-title">Upload anything</div>
+          <div class="feature-desc">Drop in PDFs, typed notes, screenshots — whatever you use to study. Scholr indexes it all for AI search.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Instant answers</div>
+          <div class="feature-desc">No more waiting for your study group to text back. Claude answers in seconds with citations from your own notes.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <div class="feature-title">Private and secure</div>
+          <div class="feature-desc">Your notes stay in your notebook. Share only with people you invite — never public by default.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <div class="feature-title">Actually beautiful</div>
+          <div class="feature-desc">A workspace dark enough for late-night study sessions. Purple accents, clean typography, zero clutter.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section" id="how" style="padding-top:0;">
+    <div class="section-inner">
+      <div class="section-label">How it works</div>
+      <h2>Up and running in minutes</h2>
+      <p class="section-sub">No complicated setup. Just sign up and start studying smarter.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div>
+            <div class="step-title">Create a notebook</div>
+            <div class="step-desc">Make one notebook per class or topic. Give it a name and subject — Scholr uses that to give the AI context.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div>
+            <div class="step-title">Add your notes</div>
+            <div class="step-desc">Upload PDFs, paste in text, or type directly. Your whole study group can contribute — the more notes, the smarter the AI.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div>
+            <div class="step-title">Ask Claude anything</div>
+            <div class="step-desc">Open the notebook and start chatting. "Explain the French Revolution", "What's on the Unit 3 test?", "Quiz me on Chapter 5."</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div>
+            <div class="step-title">Ace the test</div>
+            <div class="step-desc">Walk into the exam actually knowing the material. Scholr's not a shortcut — it's the fastest path to actually understanding.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-glow"></div>
+    <div class="section-label">Get started</div>
+    <h2>Ready to study smarter?</h2>
+    <p>Join students already using Scholr to get ahead.</p>
+    <a class="btn btn-primary btn-large" href="/">Create your free account →</a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <a class="logo" href="#">Schol<span>r</span></a>
+    <span class="footer-note">Built for students, by students · © 2025 Scholr</span>
+  </footer>
+
+</body>
+</html>

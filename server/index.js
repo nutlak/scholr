@@ -67,6 +67,9 @@ async function requireMember(req, res, next) {
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
+// GET /healthz — Railway healthcheck
+app.get("/healthz", (_, res) => res.json({ ok: true }));
+
 // GET /api/notebooks — list notebooks the user belongs to
 app.get("/api/notebooks", requireAuth, async (req, res) => {
   const { data, error } = await supabase

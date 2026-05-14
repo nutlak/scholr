@@ -100,6 +100,76 @@ function NotebookCard({ nb, onClick }) {
   );
 }
 
+const MEMBER_COLORS = ["#A78BFA", "#7C3AED", "#6D28D9", "#8B5CF6", "#C4B5FD"];
+
+function memberColor(email) {
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+
+function MemberAvatarStack({ members }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const visible = members.slice(0, 3);
+  const overflow = members.length - 3;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+      {visible.map((m, i) => (
+        <div
+          key={m.user_id}
+          onMouseEnter={() => setHoveredIdx(i)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          style={{
+            position: "relative",
+            marginLeft: i === 0 ? 0 : -10,
+            zIndex: visible.length - i,
+            cursor: "default",
+          }}
+        >
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: memberColor(m.email),
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 13, fontWeight: 700, color: "#0A0A0F",
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            border: "2px solid #13131A",
+            userSelect: "none",
+          }}>
+            {m.email[0].toUpperCase()}
+          </div>
+          {hoveredIdx === i && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 6px)", left: "50%",
+              transform: "translateX(-50%)",
+              background: "#1A1A28", border: "1px solid #2A2A38",
+              borderRadius: 8, padding: "6px 10px",
+              fontSize: 11, color: "#D0D0E8",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              whiteSpace: "nowrap", zIndex: 100,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+            }}>
+              <div style={{ fontWeight: 600 }}>{m.email}</div>
+              <div style={{ color: m.role === "owner" ? "#A78BFA" : "#6060A0", fontSize: 10, marginTop: 2, textTransform: "capitalize" }}>
+                {m.role === "owner" ? "Owner" : "Member"}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+      {overflow > 0 && (
+        <div style={{
+          marginLeft: -10, width: 32, height: 32, borderRadius: "50%",
+          background: "#2A2A38", border: "2px solid #13131A",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 10, color: "#9090A8", fontFamily: "'Plus Jakarta Sans', sans-serif",
+          zIndex: 0,
+        }}>+{overflow}</div>
+      )}
+    </div>
+  );
+}
+
 function NotebookView({ nb, onBack, onDeleted }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([
@@ -111,7 +181,12 @@ function NotebookView({ nb, onBack, onDeleted }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [members, setMembers]       = useState([]);
   const bottomRef = useRef(null);
+
+  useEffect(() => {
+    api.listMembers(nb.id).then(setMembers).catch(() => {});
+  }, [nb.id]);
 
   function handleNoteUploaded(note) {
     setMessages(m => [...m, {
@@ -294,13 +369,15 @@ function NotebookView({ nb, onBack, onDeleted }) {
             onMouseEnter={e => { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
           >🔗 Invite</button>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: "#1A1A24", border: "1px solid #2A2A38",
-            borderRadius: 8, padding: "6px 12px"
-          }}>
-            <AvatarStack names={nb.contributors} />
-          </div>
+          {members.length > 0 && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "#1A1A24", border: "1px solid #2A2A38",
+              borderRadius: 8, padding: "6px 10px"
+            }}>
+              <MemberAvatarStack members={members} />
+            </div>
+          )}
         </div>
       </div>
 

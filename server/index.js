@@ -175,6 +175,26 @@ app.post("/api/notebooks", requireAuth, async (req, res) => {
   res.status(201).json(nb);
 });
 
+// GET /api/notebooks/:id/members — list all members with email and role
+app.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req, res) => {
+  const { data: members, error } = await supabase
+    .from("notebook_members")
+    .select("user_id, role")
+    .eq("notebook_id", req.params.id);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Fetch emails from auth.users via admin API
+  const results = await Promise.all(
+    (members ?? []).map(async ({ user_id, role }) => {
+      const { data } = await supabase.auth.admin.getUserById(user_id);
+      return { user_id, role, email: data?.user?.email ?? null };
+    })
+  );
+
+  res.json(results.filter(m => m.email));
+});
+
 // DELETE /api/notebooks/:id — owner-only hard delete
 app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) => {
   if (req.membership.role !== "owner")
@@ -456,8 +476,8 @@ app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, r
 
   if (error) return res.status(500).json({ error: error.message });
 
-  const origin = process.env.CLIENT_ORIGIN || "https://scholr.dev";
-  const inviteUrl = `${origin}/invite/${invite.token}`;
+  const baseUrl = (process.env.CLIENT_ORIGIN || "https://scholr.dev").replace(/localhost:[0-9]+/, "https://scholr.dev");
+  const inviteUrl = `${baseUrl}/invite/${invite.token}`;
 
   try {
     await sendInviteEmail(

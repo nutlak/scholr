@@ -151,6 +151,13 @@ export const api = {
     return res.json(); // { notebook_id, title }
   },
 
+  async listMembers(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/members`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ user_id, role, email }]
+  },
+
   async listNotes(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });

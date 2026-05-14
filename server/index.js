@@ -476,7 +476,9 @@ app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, r
 
   if (error) return res.status(500).json({ error: error.message });
 
-  const baseUrl = (process.env.CLIENT_ORIGIN || "https://scholr.dev").replace(/localhost:[0-9]+/, "https://scholr.dev");
+  const baseUrl = process.env.CLIENT_ORIGIN?.startsWith("http://localhost")
+    ? "https://scholr.dev"
+    : (process.env.CLIENT_ORIGIN || "https://scholr.dev");
   const inviteUrl = `${baseUrl}/invite/${invite.token}`;
 
   try {

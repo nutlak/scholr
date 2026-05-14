@@ -111,11 +111,38 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
       )
     `)
     .eq("user_id", req.user.id)
-    .order("joined_at", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
 
-  const notebooks = data.map(({ role, notebooks: nb }) => ({
+  const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
+    ...nb,
+    notes_count: nb.notes[0]?.count ?? 0,
+    role,
+    notes: undefined,
+  }));
+
+  res.json(notebooks);
+});
+
+// GET /api/notebooks/shared — notebooks the user was invited to (member, not owner)
+app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("notebook_members")
+    .select(`
+      role,
+      notebooks (
+        id, title, topic, created_by, created_at,
+        notes (count)
+      )
+    `)
+    .eq("user_id", req.user.id)
+    .eq("role", "member")
+    .order("created_at", { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
     ...nb,
     notes_count: nb.notes[0]?.count ?? 0,
     role,

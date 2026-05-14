@@ -34,6 +34,14 @@ export const api = {
     return data.map(nb => shapeNotebook(nb, displayName));
   },
 
+  async listSharedNotebooks(displayName) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/shared`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data.map(nb => shapeNotebook(nb, displayName));
+  },
+
   async createNotebook(title, topic, displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks`, {

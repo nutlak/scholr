@@ -950,7 +950,8 @@ export default function Scholr() {
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
-  const [notebooks, setNotebooks] = useState([]);          // flat list for My Notes / Shared
+  const [notebooks, setNotebooks] = useState([]);          // flat list for My Notes
+  const [sharedNotebooks, setSharedNotebooks] = useState([]); // notebooks user was invited to
   const [classes, setClasses] = useState([]);              // class folders for dashboard
   const [expandedClassId, setExpandedClassId] = useState(null);
   const [classUnitsCache, setClassUnitsCache] = useState({}); // { classId: unit[] }
@@ -995,9 +996,13 @@ export default function Scholr() {
     setPendingInviteToken(null);
     api.acceptInvite(token)
       .then(({ notebook_id }) =>
-        api.listNotebooks(getDisplayName(user)).then(nbs => {
+        Promise.all([
+          api.listNotebooks(getDisplayName(user)),
+          api.listSharedNotebooks(getDisplayName(user)),
+        ]).then(([nbs, shared]) => {
           setNotebooks(nbs);
-          const nb = nbs.find(n => n.id === notebook_id);
+          setSharedNotebooks(shared);
+          const nb = shared.find(n => n.id === notebook_id) ?? nbs.find(n => n.id === notebook_id);
           if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
         })
       )
@@ -1009,6 +1014,7 @@ export default function Scholr() {
     if (!user || !authReady) return;
     const name = getDisplayName(user);
     api.listNotebooks(name).then(setNotebooks).catch(console.error);
+    api.listSharedNotebooks(name).then(setSharedNotebooks).catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
   }, [user, authReady]);
 
@@ -1040,13 +1046,13 @@ export default function Scholr() {
     await api.deleteAccount();
     localStorage.clear();
     await supabase.auth.signOut();
-    setUser(null); setNotebooks([]); setClasses([]); setClassUnitsCache({});
+    setUser(null); setNotebooks([]); setSharedNotebooks([]); setClasses([]); setClassUnitsCache({});
     setActiveNb(null); setActiveView("dashboard");
   }
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    setUser(null); setActiveNb(null); setNotebooks([]);
+    setUser(null); setActiveNb(null); setNotebooks([]); setSharedNotebooks([]);
     setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
   }
 
@@ -1059,7 +1065,7 @@ export default function Scholr() {
 
   // My Notes / Shared: filter flat notebook list
   const viewBase = activeView === "my-notes" ? notebooks.filter(n => n.role === "owner")
-    : activeView === "shared"   ? notebooks.filter(n => n.role === "member")
+    : activeView === "shared"   ? sharedNotebooks
     : activeView === "starred"  ? []
     : notebooks;
 

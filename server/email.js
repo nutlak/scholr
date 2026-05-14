@@ -54,12 +54,15 @@ export async function sendOtpEmail(to, code, type) {
 }
 
 export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitle, inviteUrl) {
+  console.log("Resend key present:", !!process.env.RESEND_API_KEY);
   const location = classTitle ? ` in ${classTitle}` : "";
-  const { error } = await getResend().emails.send({
-    from: getFrom(),
-    to,
-    subject: `You've been invited to join ${notebookTitle} on scholr`,
-    html: `<!DOCTYPE html>
+  try {
+    console.log("Resend call starting");
+    const result = await getResend().emails.send({
+      from: getFrom(),
+      to,
+      subject: `You've been invited to join ${notebookTitle} on scholr`,
+      html: `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:40px 20px;background:#0A0A0F;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
@@ -82,7 +85,11 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
   </div>
 </body>
 </html>`,
-  });
-
-  if (error) throw new Error(`Resend error: ${error.message}`);
+    });
+    console.log("Resend response:", JSON.stringify(result));
+    if (result.error) throw new Error(`Resend error: ${result.error.message}`);
+  } catch (err) {
+    console.error("Resend error:", err);
+    throw err;
+  }
 }

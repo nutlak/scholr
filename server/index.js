@@ -238,10 +238,10 @@ app.post(
 // POST /api/notebooks/:id/query — AI query against notebook notes (BYOK)
 app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res) => {
   const { question } = req.body;
-  const claudeKey = req.headers["x-claude-key"];
+  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
   if (!question) return res.status(400).json({ error: "question is required" });
-  if (!claudeKey) return res.status(400).json({ error: "x-claude-key header is required" });
+  if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
 
   // Pull all text notes for this notebook
   const { data: notes, error } = await supabase

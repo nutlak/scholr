@@ -94,10 +94,7 @@ export const api = {
   },
 
   async query(notebookId, question) {
-    const claudeKey = import.meta.env.VITE_CLAUDE_API_KEY;
-    if (!claudeKey) throw new Error("No Claude API key configured. Add VITE_CLAUDE_API_KEY to .env.local and restart the dev server.");
-
-    const headers = await authHeaders({ "X-Claude-Key": claudeKey });
+    const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/query`, {
       method: "POST",
       headers,

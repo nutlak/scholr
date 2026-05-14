@@ -278,7 +278,7 @@ function NotebookView({ nb, onBack, onDeleted }) {
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
             <div style={{
               maxWidth: "75%",
-              background: m.isError ? "#2A1A1A" : m.role === "user" ? nb.color : "#1A1A28",
+              background: m.isError ? "#2A1A1A" : m.role === "user" ? "#8a4bcc" : "#1A1A28",
               color: m.isError ? "#F87171" : m.role === "user" ? "#0A0A0F" : "#D0D0E8",
               borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
               padding: "10px 14px",

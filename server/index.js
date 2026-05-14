@@ -458,30 +458,34 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
 
 // POST /api/notebooks/:id/invites — send an email invite to a collaborator
 app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, res) => {
-  const { email } = req.body;
-  if (!email || !email.includes("@")) return res.status(400).json({ error: "A valid email is required" });
-
-  // Look up notebook + class name for the email
-  const { data: nb } = await supabase
-    .from("notebooks")
-    .select("title, classes(title)")
-    .eq("id", req.params.id)
-    .single();
-
-  const { data: invite, error } = await supabase
-    .from("invites")
-    .insert({ notebook_id: req.params.id, created_by: req.user.id, email })
-    .select("token")
-    .single();
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  const baseUrl = process.env.CLIENT_ORIGIN?.startsWith("http://localhost")
-    ? "https://scholr.dev"
-    : (process.env.CLIENT_ORIGIN || "https://scholr.dev");
-  const inviteUrl = `${baseUrl}/invite/${invite.token}`;
-
   try {
+    const { email } = req.body;
+    if (!email || !email.includes("@")) return res.status(400).json({ error: "A valid email is required" });
+
+    // Look up notebook + class name for the email
+    const { data: nb, error: nbError } = await supabase
+      .from("notebooks")
+      .select("title, classes(title)")
+      .eq("id", req.params.id)
+      .single();
+
+    if (nbError) console.error("Invite: notebook lookup error:", nbError.message);
+
+    const { data: invite, error: inviteError } = await supabase
+      .from("invites")
+      .insert({ notebook_id: req.params.id, created_by: req.user.id, email })
+      .select("token")
+      .single();
+
+    if (inviteError) return res.status(500).json({ error: inviteError.message });
+
+    const baseUrl = process.env.CLIENT_ORIGIN?.startsWith("http://localhost")
+      ? "https://scholr.dev"
+      : (process.env.CLIENT_ORIGIN || "https://scholr.dev");
+    const inviteUrl = `${baseUrl}/invite/${invite.token}`;
+
+    console.log(`[invite] sending to ${email} — url: ${inviteUrl}`);
+
     await sendInviteEmail(
       email,
       req.user.email,
@@ -489,12 +493,12 @@ app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, r
       nb?.classes?.title ?? null,
       inviteUrl,
     );
-  } catch (err) {
-    console.error("Invite email error:", err.message);
-    return res.status(500).json({ error: "Failed to send invite email. Check RESEND_API_KEY." });
-  }
 
-  res.status(201).json({ success: true });
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error("Invite endpoint error:", err);
+    res.status(500).json({ error: err.message ?? "Failed to send invite email." });
+  }
 });
 
 // GET /api/invite/:token — public: return notebook + class name for join page

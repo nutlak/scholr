@@ -881,7 +881,7 @@ function InviteModal({ notebookId, onClose }) {
   );
 }
 
-function InviteLanding({ inviteInfo }) {
+function InviteLanding({ inviteInfo, onSignIn }) {
   return (
     <div style={{
       minHeight: "100vh", background: "#0A0A0F",
@@ -905,6 +905,17 @@ function InviteLanding({ inviteInfo }) {
         <div style={{ fontSize: 13, color: "#505070" }}>Loading invite info…</div>
       )}
       <div style={{ fontSize: 13, color: "#606080", textAlign: "center" }}>Sign in or create an account to join</div>
+      <button
+        onClick={onSignIn}
+        style={{
+          background: "#A78BFA", border: "none", borderRadius: 12,
+          padding: "13px 32px", color: "#0A0A0F", fontWeight: 700,
+          fontSize: 14, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+          marginTop: 4, transition: "background 0.15s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#9B7AE8"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#A78BFA"; }}
+      >Sign in or create account</button>
     </div>
   );
 }
@@ -950,6 +961,7 @@ export default function Scholr() {
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
+  const [showInviteAuth, setShowInviteAuth] = useState(false);
 
   // Restore session on mount; gate data fetches behind authReady to avoid race
   useEffect(() => {
@@ -1077,9 +1089,13 @@ export default function Scholr() {
         }
       `}</style>
 
-      {pendingInviteToken && authReady && !user && <InviteLanding inviteInfo={inviteInfo} />}
+      {pendingInviteToken && authReady && !user && (
+        <InviteLanding inviteInfo={inviteInfo} onSignIn={() => setShowInviteAuth(true)} />
+      )}
 
-      {authReady && !user && !showPasswordReset && !pendingInviteToken && <AuthModal onAuth={setUser} />}
+      {authReady && !user && !showPasswordReset && (!pendingInviteToken || showInviteAuth) && (
+        <AuthModal onAuth={(u) => { setShowInviteAuth(false); setUser(u); }} />
+      )}
 
       {showPasswordReset && (
         <PasswordResetModal onDone={() => {

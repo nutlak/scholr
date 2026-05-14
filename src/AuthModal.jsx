@@ -261,7 +261,7 @@ export default function AuthModal({ onAuth }) {
           fontFamily: "'Nunito', sans-serif", fontSize: 28, fontWeight: 900,
           color: "#E8E8F0", marginBottom: 6, letterSpacing: "-0.02em", textAlign: "center",
         }}>
-          Schol<span style={{ color: "#A78BFA" }}>r</span>
+          schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
         <div style={{
           fontSize: 12, color: "#505070", textAlign: "center",

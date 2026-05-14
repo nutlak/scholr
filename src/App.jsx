@@ -390,7 +390,7 @@ function PasswordResetModal({ onDone }) {
         animation: "fadeIn 0.25s ease",
       }}>
         <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 28, fontWeight: 900, color: "#E8E8F0", marginBottom: 6, letterSpacing: "-0.02em", textAlign: "center" }}>
-          Schol<span style={{ color: "#A78BFA" }}>r</span>
+          schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
         <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 6, marginTop: 20 }}>
           Set a new password
@@ -723,7 +723,7 @@ export default function Scholr() {
             fontFamily: "'Nunito', sans-serif", fontSize: 22, fontWeight: 900,
             color: "#E8E8F0", marginBottom: 28, paddingLeft: 8, letterSpacing: "-0.02em"
           }}>
-            Schol<span style={{ color: "#A78BFA" }}>r</span>
+            schol<span style={{ color: "#A78BFA" }}>r</span>
           </div>
 
           {NAV.map(({ id, label, icon }) => {

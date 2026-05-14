@@ -209,12 +209,12 @@ app.post(
     if (req.file) {
       const path = `${req.params.id}/${Date.now()}_${req.file.originalname}`;
       const { error: uploadError } = await supabase.storage
-        .from("scholr-files")
+        .from("scholr")
         .upload(path, req.file.buffer, { contentType: req.file.mimetype });
 
       if (uploadError) return res.status(500).json({ error: uploadError.message });
 
-      const { data: urlData } = supabase.storage.from("scholr-files").getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from("scholr").getPublicUrl(path);
       fileUrl = urlData.publicUrl;
     }
 

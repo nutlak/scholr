@@ -407,6 +407,59 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
   }
 });
 
+// ── Invite endpoints ──────────────────────────────────────────────────────────
+
+// POST /api/notebooks/:id/invites — any member can create an invite link
+app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, res) => {
+  const { data, error } = await supabase
+    .from("invites")
+    .insert({ notebook_id: req.params.id, created_by: req.user.id })
+    .select("token")
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const origin = process.env.CLIENT_ORIGIN || "https://scholr.dev";
+  res.status(201).json({ invite_url: `${origin}/invite/${data.token}` });
+});
+
+// GET /api/invite/:token — public: return notebook + class name for join page
+app.get("/api/invite/:token", async (req, res) => {
+  const { data, error } = await supabase
+    .from("invites")
+    .select("notebook_id, notebooks(id, title, classes(title))")
+    .eq("token", req.params.token)
+    .maybeSingle();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data) return res.status(404).json({ error: "Invite not found" });
+
+  res.json({
+    notebook_id:    data.notebook_id,
+    notebook_title: data.notebooks.title,
+    class_title:    data.notebooks.classes?.title ?? null,
+  });
+});
+
+// POST /api/invite/:token/accept — authenticated: join the notebook as member
+app.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
+  const { data: invite, error } = await supabase
+    .from("invites")
+    .select("notebook_id, notebooks(title)")
+    .eq("token", req.params.token)
+    .maybeSingle();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!invite) return res.status(404).json({ error: "Invalid or expired invite link" });
+
+  await supabase.from("notebook_members").upsert(
+    { notebook_id: invite.notebook_id, user_id: req.user.id, role: "member" },
+    { onConflict: "notebook_id,user_id" }
+  );
+
+  res.json({ notebook_id: invite.notebook_id, title: invite.notebooks?.title });
+});
+
 // ── OTP helpers ──────────────────────────────────────────────────────────────
 
 function generateOtp() {

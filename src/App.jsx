@@ -107,10 +107,26 @@ function NotebookView({ nb, onBack, onDeleted }) {
   ]);
   const [loading, setLoading]       = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showShare, setShowShare]   = useState(false);
+  const [shareUrl, setShareUrl]     = useState("");
+  const [shareLoading, setShareLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const bottomRef = useRef(null);
+
+  async function handleShare() {
+    if (shareUrl) { setShowShare(true); return; }
+    setShareLoading(true);
+    try {
+      const { invite_url } = await api.createInvite(nb.id);
+      setShareUrl(invite_url);
+      setShowShare(true);
+    } catch (err) {
+      console.error(err);
+    }
+    setShareLoading(false);
+  }
 
   function handleNoteUploaded(note) {
     setMessages(m => [...m, {
@@ -186,6 +202,10 @@ function NotebookView({ nb, onBack, onDeleted }) {
           onClose={() => setShowUpload(false)}
           onUploaded={handleNoteUploaded}
         />
+      )}
+
+      {showShare && shareUrl && (
+        <ShareModal inviteUrl={shareUrl} onClose={() => setShowShare(false)} />
       )}
 
       {/* Delete confirmation */}
@@ -277,6 +297,20 @@ function NotebookView({ nb, onBack, onDeleted }) {
             onMouseEnter={e => { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
           >+ Upload notes</button>
+          <button
+            onClick={handleShare}
+            disabled={shareLoading}
+            title="Invite others to this unit"
+            style={{
+              background: "transparent", border: `1px solid ${nb.color}44`,
+              borderRadius: 8, padding: "6px 12px", cursor: shareLoading ? "not-allowed" : "pointer",
+              fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12,
+              color: nb.color, fontWeight: 600, transition: "all 0.15s",
+              opacity: shareLoading ? 0.5 : 1,
+            }}
+            onMouseEnter={e => { if (!shareLoading) { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
+          >{shareLoading ? "…" : "🔗 Invite"}</button>
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
             background: "#1A1A24", border: "1px solid #2A2A38",
@@ -774,6 +808,87 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
   );
 }
 
+function ShareModal({ inviteUrl, onClose }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.75)",
+      backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #2A2A38",
+        borderRadius: 20, width: "100%", maxWidth: 440,
+        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>Share Unit</div>
+          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Anyone with this link can join and collaborate</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <input
+            readOnly value={inviteUrl}
+            onFocus={e => e.target.select()}
+            style={{
+              flex: 1, background: "#0D0D14", border: "1px solid #2A2A38",
+              borderRadius: 10, padding: "11px 13px", color: "#9090A8",
+              fontSize: 11, fontFamily: "'DM Mono', monospace", outline: "none",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}
+          />
+          <button onClick={handleCopy} style={{
+            background: copied ? "#1A2E1A" : "#A78BFA",
+            border: copied ? "1px solid #2A5A2A" : "none",
+            borderRadius: 10, padding: "11px 16px",
+            color: copied ? "#4ADE80" : "#0A0A0F", fontWeight: 700, fontSize: 12,
+            cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+            transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0,
+          }}>{copied ? "✓ Copied!" : "Copy Link"}</button>
+        </div>
+        <button onClick={onClose} style={{
+          width: "100%", background: "transparent", border: "1px solid #2A2A38",
+          borderRadius: 10, padding: "10px", color: "#505070", fontSize: 13,
+          cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+function InviteLanding({ inviteInfo }) {
+  return (
+    <div style={{
+      minHeight: "100vh", background: "#0A0A0F",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      gap: 16, padding: 32, fontFamily: "'Plus Jakarta Sans', sans-serif",
+    }}>
+      <div style={{ fontSize: 42 }}>📚</div>
+      <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 28, fontWeight: 900, color: "#E8E8F0", letterSpacing: "-0.02em" }}>
+        schol<span style={{ color: "#A78BFA" }}>r</span>
+      </div>
+      <div style={{ fontSize: 14, color: "#A78BFA", fontWeight: 600, textAlign: "center" }}>
+        You've been invited to join a unit!
+      </div>
+      {inviteInfo ? (
+        <div style={{ background: "#111118", border: "1px solid #2A2A38", borderRadius: 16, padding: "20px 28px", textAlign: "center", maxWidth: 360 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>{inviteInfo.notebook_title}</div>
+          {inviteInfo.class_title && <div style={{ fontSize: 12, color: "#505070" }}>in {inviteInfo.class_title}</div>}
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: "#505070" }}>Loading invite info…</div>
+      )}
+      <div style={{ fontSize: 13, color: "#606080", textAlign: "center" }}>Sign in or create an account to join</div>
+    </div>
+  );
+}
+
 function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]
@@ -813,6 +928,8 @@ export default function Scholr() {
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [pendingInviteToken, setPendingInviteToken] = useState(null);
+  const [inviteInfo, setInviteInfo] = useState(null);
 
   // Restore session on mount; gate data fetches behind authReady to avoid race
   useEffect(() => {
@@ -828,6 +945,32 @@ export default function Scholr() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Detect /invite/:token URL on mount
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/invite\/([^/]+)/);
+    if (!match) return;
+    const token = match[1];
+    setPendingInviteToken(token);
+    window.history.replaceState({}, "", "/");
+    api.getInvite(token).then(setInviteInfo).catch(() => {});
+  }, []);
+
+  // Accept invite after user logs in
+  useEffect(() => {
+    if (!pendingInviteToken || !user || !authReady) return;
+    const token = pendingInviteToken;
+    setPendingInviteToken(null);
+    api.acceptInvite(token)
+      .then(({ notebook_id }) =>
+        api.listNotebooks(getDisplayName(user)).then(nbs => {
+          setNotebooks(nbs);
+          const nb = nbs.find(n => n.id === notebook_id);
+          if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
+        })
+      )
+      .catch(console.error);
+  }, [pendingInviteToken, user, authReady]);
 
   // Only fetch data once auth is fully confirmed (authReady prevents JWT-empty race)
   useEffect(() => {
@@ -914,7 +1057,9 @@ export default function Scholr() {
         }
       `}</style>
 
-      {authReady && !user && !showPasswordReset && <AuthModal onAuth={setUser} />}
+      {pendingInviteToken && authReady && !user && <InviteLanding inviteInfo={inviteInfo} />}
+
+      {authReady && !user && !showPasswordReset && !pendingInviteToken && <AuthModal onAuth={setUser} />}
 
       {showPasswordReset && (
         <PasswordResetModal onDone={() => {
@@ -966,7 +1111,8 @@ export default function Scholr() {
         minHeight: "100vh", background: "#0A0A0F",
         display: "flex", fontFamily: "'Plus Jakarta Sans', sans-serif",
         filter: authReady && !user ? "blur(4px)" : "none",
-        pointerEvents: authReady && !user ? "none" : "auto",
+        pointerEvents: (authReady && !user) || (pendingInviteToken && !user) ? "none" : "auto",
+        visibility: pendingInviteToken && !user ? "hidden" : "visible",
         transition: "filter 0.2s",
       }}>
         {/* Sidebar */}

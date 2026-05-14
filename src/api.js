@@ -113,6 +113,36 @@ export const api = {
     return shapeNotebook({ ...nb, role: "owner" }, displayName);
   },
 
+  async createInvite(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/invites`, {
+      method: "POST", headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to create invite");
+    }
+    return res.json(); // { invite_url }
+  },
+
+  async getInvite(token) {
+    const res = await fetch(`${API_URL}/api/invite/${token}`);
+    if (!res.ok) throw new Error("Invalid invite link");
+    return res.json(); // { notebook_id, notebook_title, class_title }
+  },
+
+  async acceptInvite(token) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/invite/${token}/accept`, {
+      method: "POST", headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to accept invite");
+    }
+    return res.json(); // { notebook_id, title }
+  },
+
   async listNotes(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });

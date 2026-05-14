@@ -35,7 +35,23 @@ const supabaseAuth = createClient(
 );
 
 // ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+  process.env.CLIENT_ORIGIN,           // https://scholr.dev
+  "https://scholr.dev",
+  "https://www.scholr.dev",
+].filter(Boolean);
+
+app.use(cors({
+  origin(origin, cb) {
+    // Allow non-browser requests (curl, Railway healthcheck, server-to-server)
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // Attach authenticated user to req.user from Supabase JWT in Authorization header.

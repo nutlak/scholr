@@ -568,6 +568,212 @@ function DeleteAccountModal({ onClose, onConfirm }) {
   );
 }
 
+function UnitRow({ unit, color, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 12px", borderRadius: 10,
+        background: hovered ? "#1A1A28" : "#0D0D14",
+        border: `1px solid ${hovered ? color + "44" : "#1A1A24"}`,
+        cursor: "pointer", transition: "all 0.15s",
+      }}
+    >
+      <div style={{ fontSize: 14 }}>📓</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0", fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {unit.title}
+        </div>
+        {unit.topic && (
+          <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{unit.topic}</div>
+        )}
+      </div>
+      <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
+        {unit.notes} notes
+      </div>
+      {hovered && <div style={{ fontSize: 11, color, flexShrink: 0 }}>Open →</div>}
+    </div>
+  );
+}
+
+function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div style={{
+      background: "#111118",
+      border: `1px solid ${expanded ? cls.color + "55" : "#1E1E2A"}`,
+      borderRadius: 16, overflow: "hidden", transition: "border-color 0.2s",
+    }}>
+      <div
+        onClick={onToggle}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          padding: "16px 20px", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 12,
+          background: hovered ? "#16161F" : "transparent",
+          transition: "background 0.15s",
+        }}
+      >
+        <div style={{
+          width: 38, height: 38, borderRadius: 10,
+          background: cls.color + "20", border: `1px solid ${cls.color}44`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 18, flexShrink: 0,
+        }}>📁</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif" }}>{cls.title}</div>
+          <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            {units === null ? "…" : `${units.length} unit${units.length !== 1 ? "s" : ""}`}
+          </div>
+        </div>
+        <div style={{
+          fontSize: 11, color: cls.color,
+          transition: "transform 0.2s", transform: expanded ? "rotate(90deg)" : "none",
+        }}>▶</div>
+      </div>
+
+      {expanded && (
+        <div style={{ borderTop: "1px solid #1A1A24", padding: "10px 14px 14px" }}>
+          {units === null ? (
+            <div style={{ padding: "12px 8px", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Loading…</div>
+          ) : units.length === 0 ? (
+            <div style={{ padding: "12px 8px", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No units yet — add one below</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+              {units.map(unit => (
+                <UnitRow key={unit.id} unit={unit} color={cls.color} onClick={() => onOpenUnit(unit)} />
+              ))}
+            </div>
+          )}
+          <button
+            onClick={onNewUnit}
+            style={{
+              width: "100%", background: "transparent",
+              border: `1px dashed ${cls.color}55`, borderRadius: 10,
+              padding: "9px", color: cls.color, fontSize: 12, fontWeight: 600,
+              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = cls.color + "14"; e.currentTarget.style.borderColor = cls.color + "99"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = cls.color + "55"; }}
+          >+ New Unit</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewClassModal({ onClose, onCreate }) {
+  const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim()) { setError("Class name is required."); return; }
+    setError(""); setLoading(true);
+    try { await onCreate(title.trim()); onClose(); }
+    catch (err) { setError(err.message); }
+    setLoading(false);
+  }
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.75)",
+      backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #2A2A38",
+        borderRadius: 20, width: "100%", maxWidth: 420,
+        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>New Class</div>
+          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>A class holds your units and notes for one course</div>
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <input
+            ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="e.g. AP World History" maxLength={80}
+            style={{ width: "100%", background: "#0D0D14", border: "1px solid #2A2A38", borderRadius: 10, padding: "12px 14px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", transition: "border-color 0.15s" }}
+            onFocus={e => e.target.style.borderColor = "#A78BFA"}
+            onBlur={e => e.target.style.borderColor = "#2A2A38"}
+          />
+          {error && <div style={{ background: "#2A1A1A", border: "1px solid #5A2020", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#F87171", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{error}</div>}
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, background: "transparent", border: "1px solid #2A2A38", borderRadius: 10, padding: "11px", color: "#505070", fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
+            <button type="submit" disabled={loading || !title.trim()} style={{ flex: 2, background: "#A78BFA", border: "none", borderRadius: 10, padding: "11px", color: "#0A0A0F", fontWeight: 700, fontSize: 13, cursor: loading || !title.trim() ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: loading || !title.trim() ? 0.55 : 1, transition: "opacity 0.15s" }}>{loading ? "Creating…" : "Create Class"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NewUnitModal({ classTitle, onClose, onCreate }) {
+  const [title, setTitle] = useState("");
+  const [topic, setTopic] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim()) { setError("Unit name is required."); return; }
+    setError(""); setLoading(true);
+    try { await onCreate(title.trim(), topic.trim()); onClose(); }
+    catch (err) { setError(err.message); }
+    setLoading(false);
+  }
+
+  const inp = { width: "100%", background: "#0D0D14", border: "1px solid #2A2A38", borderRadius: 10, padding: "12px 14px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", transition: "border-color 0.15s" };
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.75)",
+      backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #2A2A38",
+        borderRadius: 20, width: "100%", maxWidth: 420,
+        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>New Unit</div>
+          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Adding to <strong style={{ color: "#A78BFA" }}>{classTitle}</strong></div>
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Unit name *</label>
+            <input ref={inputRef} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 5 — Revolutions" maxLength={80} style={inp} onFocus={e => e.target.style.borderColor = "#A78BFA"} onBlur={e => e.target.style.borderColor = "#2A2A38"} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Topic / description</label>
+            <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Industrial Revolution, causes and effects" maxLength={120} style={inp} onFocus={e => e.target.style.borderColor = "#A78BFA"} onBlur={e => e.target.style.borderColor = "#2A2A38"} />
+          </div>
+          {error && <div style={{ background: "#2A1A1A", border: "1px solid #5A2020", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#F87171", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{error}</div>}
+          <div style={{ display: "flex", gap: 10 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, background: "transparent", border: "1px solid #2A2A38", borderRadius: 10, padding: "11px", color: "#505070", fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Cancel</button>
+            <button type="submit" disabled={loading || !title.trim()} style={{ flex: 2, background: "#A78BFA", border: "none", borderRadius: 10, padding: "11px", color: "#0A0A0F", fontWeight: 700, fontSize: 13, cursor: loading || !title.trim() ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", opacity: loading || !title.trim() ? 0.55 : 1, transition: "opacity 0.15s" }}>{loading ? "Creating…" : "Create Unit"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]
@@ -598,13 +804,17 @@ export default function Scholr() {
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
-  const [notebooks, setNotebooks] = useState([]);
-  const [showNewModal, setShowNewModal] = useState(false);
+  const [notebooks, setNotebooks] = useState([]);          // flat list for My Notes / Shared
+  const [classes, setClasses] = useState([]);              // class folders for dashboard
+  const [expandedClassId, setExpandedClassId] = useState(null);
+  const [classUnitsCache, setClassUnitsCache] = useState({}); // { classId: unit[] }
+  const [showNewClassModal, setShowNewClassModal] = useState(false);
+  const [newUnitFor, setNewUnitFor] = useState(null);      // { classId, classTitle }
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
 
-  // Restore session on mount and listen for auth changes
+  // Restore session on mount; gate data fetches behind authReady to avoid race
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -612,47 +822,67 @@ export default function Scholr() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setShowPasswordReset(true);
-        return;
-      }
+      if (event === "PASSWORD_RECOVERY") { setShowPasswordReset(true); return; }
       setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Only fetch data once auth is fully confirmed (authReady prevents JWT-empty race)
   useEffect(() => {
-    if (!user) return;
-    api.listNotebooks(getDisplayName(user)).then(setNotebooks).catch(err => console.log(err));
-  }, [user]);
+    if (!user || !authReady) return;
+    const name = getDisplayName(user);
+    api.listNotebooks(name).then(setNotebooks).catch(console.error);
+    api.listClasses().then(setClasses).catch(console.error);
+  }, [user, authReady]);
+
+  async function handleToggleClass(classId) {
+    if (expandedClassId === classId) { setExpandedClassId(null); return; }
+    setExpandedClassId(classId);
+    if (classUnitsCache[classId]) return; // already fetched
+    setClassUnitsCache(prev => ({ ...prev, [classId]: null })); // null = loading
+    try {
+      const units = await api.listClassNotebooks(classId, getDisplayName(user));
+      setClassUnitsCache(prev => ({ ...prev, [classId]: units }));
+    } catch {
+      setClassUnitsCache(prev => ({ ...prev, [classId]: [] }));
+    }
+  }
+
+  async function handleCreateClass(title) {
+    const cls = await api.createClass(title);
+    setClasses(prev => [...prev, cls]);
+  }
+
+  async function handleCreateUnit(classId, title, topic) {
+    const unit = await api.createClassNotebook(classId, title, topic, getDisplayName(user));
+    setClassUnitsCache(prev => ({ ...prev, [classId]: [...(prev[classId] ?? []), unit] }));
+    setNotebooks(prev => [unit, ...prev]);
+  }
 
   async function handleDeleteAccount() {
     await api.deleteAccount();
     localStorage.clear();
     await supabase.auth.signOut();
-    setUser(null);
-    setNotebooks([]);
-    setActiveNb(null);
-    setActiveView("dashboard");
+    setUser(null); setNotebooks([]); setClasses([]); setClassUnitsCache({});
+    setActiveNb(null); setActiveView("dashboard");
   }
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    // Eagerly clear state — don't wait for onAuthStateChange
-    setUser(null);
-    setActiveNb(null);
-    setNotebooks([]);
-    setActiveView("dashboard");
-  }
-
-  async function handleCreateNotebook(title, topic) {
-    const nb = await api.createNotebook(title, topic, getDisplayName(user));
-    setNotebooks(prev => [nb, ...prev]);
+    setUser(null); setActiveNb(null); setNotebooks([]);
+    setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
   }
 
   const displayName = getDisplayName(user);
 
+  // Dashboard: filter classes by search
+  const filteredClasses = classes.filter(c =>
+    c.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // My Notes / Shared: filter flat notebook list
   const viewBase = activeView === "my-notes" ? notebooks.filter(n => n.role === "owner")
     : activeView === "shared"   ? notebooks.filter(n => n.role === "member")
     : activeView === "starred"  ? []
@@ -716,10 +946,18 @@ export default function Scholr() {
         </div>
       )}
 
-      {showNewModal && (
-        <NewNotebookModal
-          onClose={() => setShowNewModal(false)}
-          onCreate={handleCreateNotebook}
+      {showNewClassModal && (
+        <NewClassModal
+          onClose={() => setShowNewClassModal(false)}
+          onCreate={handleCreateClass}
+        />
+      )}
+
+      {newUnitFor && (
+        <NewUnitModal
+          classTitle={newUnitFor.classTitle}
+          onClose={() => setNewUnitFor(null)}
+          onCreate={(title, topic) => handleCreateUnit(newUnitFor.classId, title, topic)}
         />
       )}
 
@@ -811,8 +1049,15 @@ export default function Scholr() {
                 onBack={() => setActiveNb(null)}
                 onDeleted={id => {
                   setNotebooks(prev => prev.filter(n => n.id !== id));
+                  setClassUnitsCache(prev => {
+                    const next = { ...prev };
+                    for (const cid of Object.keys(next)) {
+                      if (Array.isArray(next[cid])) next[cid] = next[cid].filter(u => u.id !== id);
+                    }
+                    return next;
+                  });
                   setActiveNb(null);
-                  setToast("Notebook deleted");
+                  setToast("Unit deleted");
                   setTimeout(() => setToast(""), 3000);
                 }}
               />
@@ -866,22 +1111,17 @@ export default function Scholr() {
                   </div>
                   <div style={{ fontSize: 13, color: "#505070", marginTop: 2 }}>
                     {activeView === "dashboard"
-                      ? `${notebooks.length} notebooks · ${notebooks.reduce((a, n) => a + (n.notes || 0), 0)} total notes`
+                      ? `${classes.length} class${classes.length !== 1 ? "es" : ""}`
                       : `${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
                   </div>
                 </div>
-                {activeView !== "starred" && (
+                {activeView === "dashboard" && (
                   <button
-                    onClick={() => setShowNewModal(true)}
-                    style={{
-                      background: "#A78BFA", border: "none", borderRadius: 12,
-                      padding: "10px 20px", color: "#0A0A0F", fontWeight: 700,
-                      fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      transition: "opacity 0.15s",
-                    }}
+                    onClick={() => setShowNewClassModal(true)}
+                    style={{ background: "#A78BFA", border: "none", borderRadius: 12, padding: "10px 20px", color: "#0A0A0F", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "opacity 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                     onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-                  >+ New Notebook</button>
+                  >+ New Class</button>
                 )}
               </div>
 
@@ -890,30 +1130,45 @@ export default function Scholr() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder={`Search ${viewLabel.toLowerCase()}…`}
-                  style={{
-                    width: "100%", background: "#111118", border: "1px solid #1E1E2A",
-                    borderRadius: 12, padding: "12px 16px", color: "#E8E8F0",
-                    fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24
-                  }}
+                  placeholder={activeView === "dashboard" ? "Search classes…" : `Search ${viewLabel.toLowerCase()}…`}
+                  style={{ width: "100%", background: "#111118", border: "1px solid #1E1E2A", borderRadius: 12, padding: "12px 16px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24 }}
                 />
               )}
 
-              {/* Notebooks grid or empty state */}
-              {activeView === "starred" ? (
-                <div style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  padding: "64px 0", gap: 12, color: "#404060",
-                }}>
+              {/* Dashboard: class cards */}
+              {activeView === "dashboard" ? (
+                filteredClasses.length === 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
+                    <div style={{ fontSize: 32 }}>📁</div>
+                    <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      {search ? "No classes match your search" : "No classes yet — create one to get started"}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 }}>
+                    {filteredClasses.map(cls => (
+                      <ClassCard
+                        key={cls.id}
+                        cls={cls}
+                        expanded={expandedClassId === cls.id}
+                        units={classUnitsCache[cls.id] ?? null}
+                        onToggle={() => handleToggleClass(cls.id)}
+                        onOpenUnit={unit => setActiveNb(unit)}
+                        onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
+                      />
+                    ))}
+                  </div>
+                )
+
+              /* My Notes / Shared: flat notebook list */
+              ) : activeView === "starred" ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
                   <div style={{ fontSize: 32 }}>★</div>
                   <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No starred notebooks yet</div>
                   <div style={{ fontSize: 12, color: "#2A2A40" }}>Open a notebook and star it to find it here</div>
                 </div>
               ) : filtered.length === 0 ? (
-                <div style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  padding: "64px 0", gap: 12, color: "#404060",
-                }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
                   <div style={{ fontSize: 32 }}>📓</div>
                   <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     {search ? "No notebooks match your search" : "No notebooks here yet"}

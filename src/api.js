@@ -73,6 +73,46 @@ export const api = {
     }
   },
 
+  async listClasses() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async createClass(title) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes`, {
+      method: "POST", headers, body: JSON.stringify({ title }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to create class");
+    }
+    return res.json();
+  },
+
+  async listClassNotebooks(classId, displayName) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/${classId}/notebooks`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data.map(nb => shapeNotebook({ ...nb, role: "owner" }, displayName));
+  },
+
+  async createClassNotebook(classId, title, topic, displayName) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/${classId}/notebooks`, {
+      method: "POST", headers, body: JSON.stringify({ title, topic }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to create unit");
+    }
+    const nb = await res.json();
+    return shapeNotebook({ ...nb, role: "owner" }, displayName);
+  },
+
   async listNotes(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });

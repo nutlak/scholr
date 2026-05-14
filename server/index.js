@@ -162,6 +162,83 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
   res.status(204).end();
 });
 
+// ── Classes endpoints ─────────────────────────────────────────────────────────
+
+// GET /api/classes — list the calling user's classes
+app.get("/api/classes", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("classes")
+    .select("id, title, color, created_at")
+    .eq("user_id", req.user.id)
+    .order("created_at", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// POST /api/classes — create a class
+app.post("/api/classes", requireAuth, async (req, res) => {
+  const { title, color } = req.body;
+  if (!title) return res.status(400).json({ error: "title is required" });
+  const { data, error } = await supabase
+    .from("classes")
+    .insert({ user_id: req.user.id, title, color: color || "#A78BFA" })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// GET /api/classes/:id/notebooks — list units inside a class
+app.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!cls) return res.status(403).json({ error: "Class not found" });
+
+  const { data, error } = await supabase
+    .from("notebooks")
+    .select("id, title, topic, created_at, notes(count)")
+    .eq("class_id", req.params.id)
+    .order("created_at", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json((data ?? []).map(nb => ({
+    ...nb,
+    notes_count: nb.notes[0]?.count ?? 0,
+    notes: undefined,
+  })));
+});
+
+// POST /api/classes/:id/notebooks — create a unit inside a class
+app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
+  const { title, topic } = req.body;
+  if (!title) return res.status(400).json({ error: "title is required" });
+
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!cls) return res.status(403).json({ error: "Class not found" });
+
+  const { data: nb, error } = await supabase
+    .from("notebooks")
+    .insert({ title, topic, created_by: req.user.id, class_id: req.params.id })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  await supabase.from("notebook_members").insert({
+    notebook_id: nb.id, user_id: req.user.id, role: "owner",
+  });
+
+  res.status(201).json(nb);
+});
+
 // POST /api/notebooks/:id/invite — return (or regenerate) an invite link
 app.post("/api/notebooks/:id/invite", requireAuth, requireMember, async (req, res) => {
   if (req.membership.role !== "owner")

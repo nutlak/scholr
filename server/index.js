@@ -228,8 +228,9 @@ app.post(
   requireMember,
   upload.single("file"),
   async (req, res) => {
-    const { title, content } = req.body;
+    const { title } = req.body;
     let fileUrl = null;
+    let content = req.body.content ?? null;
 
     if (req.file) {
       const path = `${req.params.id}/${Date.now()}_${req.file.originalname}`;
@@ -241,6 +242,26 @@ app.post(
 
       const { data: urlData } = supabase.storage.from("scholr").getPublicUrl(path);
       fileUrl = urlData.publicUrl;
+
+      // Extract text from the file buffer so the AI can read it
+      const mime = req.file.mimetype;
+      const name = req.file.originalname.toLowerCase();
+
+      if (mime === "text/plain" || name.endsWith(".txt") || name.endsWith(".md")) {
+        content = req.file.buffer.toString("utf-8");
+      } else if (mime === "application/pdf" || name.endsWith(".pdf")) {
+        try {
+          const { default: pdfParse } = await import("pdf-parse");
+          const parsed = await pdfParse(req.file.buffer);
+          content = parsed.text.trim() || "[PDF had no extractable text]";
+        } catch {
+          content = "[PDF — text extraction failed]";
+        }
+      } else if (mime.startsWith("image/")) {
+        content = "[image attachment]";
+      } else {
+        content = "[file attachment]";
+      }
     }
 
     const { data, error } = await supabase

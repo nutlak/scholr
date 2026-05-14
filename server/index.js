@@ -5,8 +5,10 @@ config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import { randomBytes } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { sendOtpEmail } from "./email.js";
 
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -261,18 +263,149 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
   }
 });
 
-// POST /api/auth/forgot-password — trigger Supabase reset email
-app.post("/api/auth/forgot-password", async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "email is required" });
+// ── OTP helpers ──────────────────────────────────────────────────────────────
 
-  // redirectTo must be in the Supabase "allowed redirect URLs" list in your project settings
-  await supabaseAuth.auth.resetPasswordForEmail(email, {
-    redirectTo: process.env.CLIENT_ORIGIN,
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function generateToken() {
+  return randomBytes(32).toString("hex");
+}
+
+async function invalidateOldCodes(email, type) {
+  await supabase
+    .from("verification_codes")
+    .update({ used: true })
+    .eq("email", email)
+    .eq("type", type)
+    .eq("used", false);
+}
+
+// POST /api/auth/send-otp — generate & email a 6-digit code
+// type: "signup" | "password_reset"
+app.post("/api/auth/send-otp", async (req, res) => {
+  const { email, type } = req.body;
+  if (!email || !type) return res.status(400).json({ error: "email and type are required" });
+  if (!["signup", "password_reset"].includes(type))
+    return res.status(400).json({ error: "Invalid type" });
+
+  let userId = null;
+
+  if (type === "signup") {
+    const { data: existing } = await supabase.rpc("get_user_id_by_email", { target_email: email });
+    if (existing) return res.status(400).json({ error: "An account with this email already exists. Please log in instead." });
+  } else {
+    const { data: uid } = await supabase.rpc("get_user_id_by_email", { target_email: email });
+    if (!uid) return res.json({ ok: true }); // don't reveal whether email is registered
+    userId = uid;
+  }
+
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+  await invalidateOldCodes(email, type);
+
+  const { error: insertErr } = await supabase.from("verification_codes").insert({
+    email, code, type, user_id: userId, expires_at: expiresAt,
   });
+  if (insertErr) return res.status(500).json({ error: "Failed to generate code" });
 
-  // Always 200 — never reveal whether the email exists
+  try {
+    await sendOtpEmail(email, code, type);
+  } catch (err) {
+    console.error("Email send error:", err.message);
+    return res.status(500).json({ error: "Failed to send verification email. Check RESEND_API_KEY." });
+  }
+
   res.json({ ok: true });
+});
+
+// POST /api/auth/verify-otp — validate code; create user (signup) or return reset token (password_reset)
+app.post("/api/auth/verify-otp", async (req, res) => {
+  const { email, code, type, password, fullName } = req.body;
+  if (!email || !code || !type) return res.status(400).json({ error: "email, code, and type are required" });
+
+  const { data: row } = await supabase
+    .from("verification_codes")
+    .select("id, user_id")
+    .eq("email", email)
+    .eq("code", code)
+    .eq("type", type)
+    .eq("used", false)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!row) return res.status(400).json({ error: "Invalid or expired verification code." });
+
+  if (type === "signup") {
+    if (!password) return res.status(400).json({ error: "password is required" });
+
+    const { error: createErr } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName?.trim() ?? "" },
+    });
+
+    if (createErr) {
+      if (createErr.message.toLowerCase().includes("already")) {
+        return res.status(400).json({ error: "An account with this email already exists. Please log in." });
+      }
+      return res.status(500).json({ error: createErr.message });
+    }
+
+    await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
+    return res.json({ ok: true });
+  }
+
+  // password_reset: issue a single-use reset token
+  const resetToken = generateToken();
+  await supabase
+    .from("verification_codes")
+    .update({ used: true, reset_token: resetToken })
+    .eq("id", row.id);
+
+  res.json({ ok: true, resetToken });
+});
+
+// POST /api/auth/reset-password — set a new password using a verified reset token
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { resetToken, newPassword } = req.body;
+  if (!resetToken || !newPassword) return res.status(400).json({ error: "resetToken and newPassword are required" });
+  if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+  const { data: row } = await supabase
+    .from("verification_codes")
+    .select("user_id")
+    .eq("reset_token", resetToken)
+    .maybeSingle();
+
+  if (!row?.user_id) return res.status(400).json({ error: "Invalid or expired reset token" });
+
+  const { error: updateErr } = await supabase.auth.admin.updateUserById(row.user_id, { password: newPassword });
+  if (updateErr) return res.status(500).json({ error: updateErr.message });
+
+  // Consume the token so it can't be reused
+  await supabase.from("verification_codes").update({ reset_token: null }).eq("reset_token", resetToken);
+
+  res.json({ ok: true });
+});
+
+// GET /api/test-email?to=you@example.com — smoke-test Resend delivery
+// Remove or gate this route before going to production.
+app.get("/api/test-email", async (req, res) => {
+  const to = req.query.to;
+  if (!to) return res.status(400).json({ error: "Pass ?to=your@email.com" });
+
+  try {
+    await sendOtpEmail(to, "123456", "signup");
+    res.json({ ok: true, message: `Test OTP sent to ${to}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // DELETE /api/auth/delete-account — permanently delete the calling user's account

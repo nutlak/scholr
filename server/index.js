@@ -86,6 +86,19 @@ async function requireMember(req, res, next) {
 // GET /healthz — Railway healthcheck
 app.get("/healthz", (_, res) => res.json({ ok: true }));
 
+// GET /api/health — env var presence check (values never exposed)
+app.get("/api/health", (_, res) => res.json({
+  ok: true,
+  env: {
+    SUPABASE_URL:              !!process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY:         !!process.env.SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    CLAUDE_API_KEY:            !!process.env.CLAUDE_API_KEY,
+    RESEND_API_KEY:            !!process.env.RESEND_API_KEY,
+    CLIENT_ORIGIN:             !!process.env.CLIENT_ORIGIN,
+  },
+}));
+
 // GET /api/notebooks — list notebooks the user belongs to
 app.get("/api/notebooks", requireAuth, async (req, res) => {
   const { data, error } = await supabase

@@ -140,7 +140,13 @@ function NotebookView({ nb, onBack, onDeleted }) {
         role: "assistant",
         text: `📚 ${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
       }]);
-    }).catch(() => {});
+    }).catch(err => {
+      setMessages(m => [...m, {
+        role: "assistant",
+        text: `⚠️ Could not load existing notes: ${err.message}`,
+        isError: true,
+      }]);
+    });
   }, [nb.id]);
 
   // Scroll to latest message whenever messages or loading state changes

@@ -196,6 +196,18 @@ app.post("/api/invite/accept", requireAuth, async (req, res) => {
   res.json({ notebook_id: nb.id, title: nb.title });
 });
 
+// GET /api/notebooks/:id/notes — list notes in a notebook
+app.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, res) => {
+  const { data, error } = await supabase
+    .from("notes")
+    .select("id, title, content, file_url, created_at")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // POST /api/notebooks/:id/notes — upload a note (text and/or file)
 app.post(
   "/api/notebooks/:id/notes",

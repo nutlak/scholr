@@ -131,6 +131,18 @@ function NotebookView({ nb, onBack, onDeleted }) {
     }
   }
 
+  // Fetch existing notes on open and surface them in the chat
+  useEffect(() => {
+    api.listNotes(nb.id).then(notes => {
+      if (notes.length === 0) return;
+      const list = notes.map(n => `• ${n.title}`).join("\n");
+      setMessages(m => [...m, {
+        role: "assistant",
+        text: `📚 ${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
+      }]);
+    }).catch(() => {});
+  }, [nb.id]);
+
   // Scroll to latest message whenever messages or loading state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -278,7 +290,7 @@ function NotebookView({ nb, onBack, onDeleted }) {
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
             <div style={{
               maxWidth: "75%",
-              background: m.isError ? "#2A1A1A" : m.role === "user" ? "#8a4bcc" : "#1A1A28",
+              background: m.isError ? "#2A1A1A" : m.role === "user" ? "#A78BFA" : "#1A1A28",
               color: m.isError ? "#F87171" : m.role === "user" ? "#0A0A0F" : "#D0D0E8",
               borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
               padding: "10px 14px",

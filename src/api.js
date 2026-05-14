@@ -73,6 +73,13 @@ export const api = {
     }
   },
 
+  async listNotes(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   async uploadNote(notebookId, { title, content, file }) {
     const { data: { session } } = await supabase.auth.getSession();
     const form = new FormData();

@@ -285,9 +285,11 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
     .single();
 
   const notesContext = notes
-    .filter((n) => n.content)
-    .map((n) => `### ${n.title || "Untitled"}\n${n.content}`)
-    .join("\n\n");
+    .map((n) => {
+      const body = n.content ? n.content : "[file attachment — no text content]";
+      return `Note: ${n.title || "Untitled"}\n${body}`;
+    })
+    .join("\n\n---\n\n");
 
   const anthropic = new Anthropic({ apiKey: claudeKey });
 
@@ -295,7 +297,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
-      system: `You are a study assistant for a collaborative notebook called "${nb?.title}" covering "${nb?.topic}". Answer questions based on the notes provided. Be clear, concise, and helpful.\n\nNOTEBOOK NOTES:\n${notesContext || "(no text notes yet)"}`,
+      system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: question }],
     });
 

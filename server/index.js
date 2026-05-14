@@ -8,7 +8,7 @@ import multer from "multer";
 import { randomBytes } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { sendOtpEmail } from "./email.js";
+import { sendOtpEmail, sendInviteEmail } from "./email.js";
 
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -409,18 +409,43 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
 
 // ── Invite endpoints ──────────────────────────────────────────────────────────
 
-// POST /api/notebooks/:id/invites — any member can create an invite link
+// POST /api/notebooks/:id/invites — send an email invite to a collaborator
 app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, res) => {
-  const { data, error } = await supabase
+  const { email } = req.body;
+  if (!email || !email.includes("@")) return res.status(400).json({ error: "A valid email is required" });
+
+  // Look up notebook + class name for the email
+  const { data: nb } = await supabase
+    .from("notebooks")
+    .select("title, classes(title)")
+    .eq("id", req.params.id)
+    .single();
+
+  const { data: invite, error } = await supabase
     .from("invites")
-    .insert({ notebook_id: req.params.id, created_by: req.user.id })
+    .insert({ notebook_id: req.params.id, created_by: req.user.id, email })
     .select("token")
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
 
   const origin = process.env.CLIENT_ORIGIN || "https://scholr.dev";
-  res.status(201).json({ invite_url: `${origin}/invite/${data.token}` });
+  const inviteUrl = `${origin}/invite/${invite.token}`;
+
+  try {
+    await sendInviteEmail(
+      email,
+      req.user.email,
+      nb?.title ?? "a unit",
+      nb?.classes?.title ?? null,
+      inviteUrl,
+    );
+  } catch (err) {
+    console.error("Invite email error:", err.message);
+    return res.status(500).json({ error: "Failed to send invite email. Check RESEND_API_KEY." });
+  }
+
+  res.status(201).json({ success: true });
 });
 
 // GET /api/invite/:token — public: return notebook + class name for join page

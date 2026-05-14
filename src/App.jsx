@@ -107,26 +107,11 @@ function NotebookView({ nb, onBack, onDeleted }) {
   ]);
   const [loading, setLoading]       = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [showShare, setShowShare]   = useState(false);
-  const [shareUrl, setShareUrl]     = useState("");
-  const [shareLoading, setShareLoading] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const bottomRef = useRef(null);
-
-  async function handleShare() {
-    if (shareUrl) { setShowShare(true); return; }
-    setShareLoading(true);
-    try {
-      const { invite_url } = await api.createInvite(nb.id);
-      setShareUrl(invite_url);
-      setShowShare(true);
-    } catch (err) {
-      console.error(err);
-    }
-    setShareLoading(false);
-  }
 
   function handleNoteUploaded(note) {
     setMessages(m => [...m, {
@@ -204,8 +189,8 @@ function NotebookView({ nb, onBack, onDeleted }) {
         />
       )}
 
-      {showShare && shareUrl && (
-        <ShareModal inviteUrl={shareUrl} onClose={() => setShowShare(false)} />
+      {showInvite && (
+        <InviteModal notebookId={nb.id} onClose={() => setShowInvite(false)} />
       )}
 
       {/* Delete confirmation */}
@@ -298,19 +283,17 @@ function NotebookView({ nb, onBack, onDeleted }) {
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
           >+ Upload notes</button>
           <button
-            onClick={handleShare}
-            disabled={shareLoading}
+            onClick={() => setShowInvite(true)}
             title="Invite others to this unit"
             style={{
               background: "transparent", border: `1px solid ${nb.color}44`,
-              borderRadius: 8, padding: "6px 12px", cursor: shareLoading ? "not-allowed" : "pointer",
+              borderRadius: 8, padding: "6px 12px", cursor: "pointer",
               fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12,
               color: nb.color, fontWeight: 600, transition: "all 0.15s",
-              opacity: shareLoading ? 0.5 : 1,
             }}
-            onMouseEnter={e => { if (!shareLoading) { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}}
+            onMouseEnter={e => { e.currentTarget.style.background = nb.color + "18"; e.currentTarget.style.borderColor = nb.color + "88"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = nb.color + "44"; }}
-          >{shareLoading ? "…" : "🔗 Invite"}</button>
+          >🔗 Invite</button>
           <div style={{
             display: "flex", alignItems: "center", gap: 6,
             background: "#1A1A24", border: "1px solid #2A2A38",
@@ -808,13 +791,29 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
   );
 }
 
-function ShareModal({ inviteUrl, onClose }) {
-  const [copied, setCopied] = useState(false);
-  function handleCopy() {
-    navigator.clipboard.writeText(inviteUrl).then(() => {
-      setCopied(true); setTimeout(() => setCopied(false), 2000);
-    });
+function InviteModal({ notebookId, onClose }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [error, setError] = useState("");
+  const [sentTo, setSentTo] = useState("");
+
+  async function handleSend() {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes("@")) {
+      setError("Please enter a valid email address."); return;
+    }
+    setStatus("sending"); setError("");
+    try {
+      await api.createInvite(notebookId, trimmed);
+      setSentTo(trimmed);
+      setStatus("success");
+      setTimeout(onClose, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to send invite.");
+      setStatus("error");
+    }
   }
+
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
       position: "fixed", inset: 0, background: "rgba(10,10,15,0.75)",
@@ -823,39 +822,60 @@ function ShareModal({ inviteUrl, onClose }) {
     }}>
       <div style={{
         background: "#111118", border: "1px solid #2A2A38",
-        borderRadius: 20, width: "100%", maxWidth: 440,
+        borderRadius: 20, width: "100%", maxWidth: 420,
         padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
       }}>
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>Share Unit</div>
-          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Anyone with this link can join and collaborate</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4 }}>Invite a collaborator</div>
+          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>They'll get an email with a link to join this unit</div>
         </div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <input
-            readOnly value={inviteUrl}
-            onFocus={e => e.target.select()}
-            style={{
-              flex: 1, background: "#0D0D14", border: "1px solid #2A2A38",
-              borderRadius: 10, padding: "11px 13px", color: "#9090A8",
-              fontSize: 11, fontFamily: "'DM Mono', monospace", outline: "none",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}
-          />
-          <button onClick={handleCopy} style={{
-            background: copied ? "#1A2E1A" : "#A78BFA",
-            border: copied ? "1px solid #2A5A2A" : "none",
-            borderRadius: 10, padding: "11px 16px",
-            color: copied ? "#4ADE80" : "#0A0A0F", fontWeight: 700, fontSize: 12,
-            cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-            transition: "all 0.2s", whiteSpace: "nowrap", flexShrink: 0,
-          }}>{copied ? "✓ Copied!" : "Copy Link"}</button>
-        </div>
-        <button onClick={onClose} style={{
-          width: "100%", background: "transparent", border: "1px solid #2A2A38",
-          borderRadius: 10, padding: "10px", color: "#505070", fontSize: 13,
-          cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-        }}>Done</button>
+
+        {status === "success" ? (
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>✓</div>
+            <div style={{ fontSize: 14, color: "#4ADE80", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600 }}>
+              Invite sent to {sentTo}!
+            </div>
+          </div>
+        ) : (
+          <>
+            <input
+              type="email"
+              placeholder="Enter your friend's email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(""); setStatus("idle"); }}
+              onKeyDown={e => e.key === "Enter" && handleSend()}
+              autoFocus
+              style={{
+                width: "100%", background: "#0D0D14", border: `1px solid ${error ? "#F87171" : "#2A2A38"}`,
+                borderRadius: 10, padding: "12px 14px", color: "#E8E8F0",
+                fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif",
+                outline: "none", boxSizing: "border-box", marginBottom: 10,
+              }}
+            />
+            {error && (
+              <div style={{ fontSize: 12, color: "#F87171", fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 10 }}>{error}</div>
+            )}
+            <button
+              onClick={handleSend}
+              disabled={status === "sending"}
+              style={{
+                width: "100%", background: status === "sending" ? "#6B4FAF" : "#A78BFA",
+                border: "none", borderRadius: 10, padding: "12px",
+                color: "#0A0A0F", fontWeight: 700, fontSize: 13,
+                cursor: status === "sending" ? "not-allowed" : "pointer",
+                fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 10,
+                transition: "background 0.2s",
+              }}
+            >{status === "sending" ? "Sending…" : "Send Invite"}</button>
+            <button onClick={onClose} style={{
+              width: "100%", background: "transparent", border: "1px solid #2A2A38",
+              borderRadius: 10, padding: "10px", color: "#505070", fontSize: 13,
+              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
+            }}>Cancel</button>
+          </>
+        )}
       </div>
     </div>
   );

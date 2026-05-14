@@ -113,16 +113,16 @@ export const api = {
     return shapeNotebook({ ...nb, role: "owner" }, displayName);
   },
 
-  async createInvite(notebookId) {
+  async createInvite(notebookId, email) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/invites`, {
-      method: "POST", headers,
+      method: "POST", headers, body: JSON.stringify({ email }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create invite");
+      throw new Error(err.error ?? "Failed to send invite");
     }
-    return res.json(); // { invite_url }
+    return res.json(); // { success: true }
   },
 
   async getInvite(token) {

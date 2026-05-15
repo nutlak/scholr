@@ -58,10 +58,16 @@ app.use(express.json());
 // Routes that need auth call this middleware explicitly.
 async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace("Bearer ", "");
-  if (!token) return res.status(401).json({ error: "Missing auth token" });
+  if (!token) {
+    console.warn(`requireAuth: no token on ${req.method} ${req.path}`);
+    return res.status(401).json({ error: "Missing auth token" });
+  }
 
   const { data, error } = await supabaseAuth.auth.getUser(token);
-  if (error || !data.user) return res.status(401).json({ error: "Invalid or expired token" });
+  if (error || !data.user) {
+    console.warn(`requireAuth: invalid/expired token on ${req.method} ${req.path} — ${error?.message ?? "no user"}`);
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
 
   req.user = data.user;
   next();
@@ -713,4 +719,8 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Scholr API running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Scholr API running on http://localhost:${PORT}`);
+  console.log(`CORS allowed origins: ${ALLOWED_ORIGINS.join(", ")}`);
+  console.log(`CLIENT_ORIGIN env: ${process.env.CLIENT_ORIGIN ?? "(not set — using fallback)"}`);
+});

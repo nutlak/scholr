@@ -366,24 +366,24 @@ function TheForge({ nb, onClose, onToast }) {
           background: rgba(50,50,80,0.4);
           border: 1px solid rgba(167,139,250,0.15);
           border-radius: 12px;
-          padding: 16px 12px;
+          padding: 16px 20px;
+          min-width: 100px;
           cursor: pointer;
           display: flex; flex-direction: column;
           align-items: center; justify-content: center;
-          color: #8080A8;
-          transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+          gap: 8px;
+          color: #ffffff;
+          transition: all 0.2s ease;
         }
         .forge-action-btn:hover:not(:disabled) {
           background: rgba(167,139,250,0.15);
           border-color: rgba(167,139,250,0.4);
           transform: scale(1.02);
-          color: #C4B5FD;
         }
         .forge-action-btn.forge-active {
           background: rgba(167,139,250,0.2);
           border-color: #A78BFA;
           box-shadow: 0 0 16px rgba(167,139,250,0.2);
-          color: #C4B5FD;
         }
         .forge-action-btn:disabled {
           opacity: 0.45; cursor: not-allowed;
@@ -452,8 +452,8 @@ function TheForge({ nb, onClose, onToast }) {
         </div>
       )}
 
-      {/* Action buttons — 2×2 card grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+      {/* Action buttons — flex wrap card row */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginBottom: 12 }}>
         {FORGE_ACTIONS.map(a => (
           <button
             key={a.id}
@@ -461,8 +461,8 @@ function TheForge({ nb, onClose, onToast }) {
             disabled={generating}
             className={`forge-action-btn${action === a.id ? " forge-active" : ""}`}
           >
-            <div style={{ fontSize: 28, marginBottom: 8, lineHeight: 1 }}>{a.icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.02em" }}>{a.label}</div>
+            <div style={{ fontSize: 28, lineHeight: 1 }}>{a.icon}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{a.label}</div>
           </button>
         ))}
       </div>

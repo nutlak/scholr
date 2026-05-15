@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
+import LandingPage from "./LandingPage.jsx";
 import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
 import "./App.css";
@@ -1139,6 +1140,7 @@ export default function Scholr() {
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
@@ -1319,8 +1321,12 @@ export default function Scholr() {
         <InviteLanding inviteInfo={inviteInfo} onSignIn={() => setShowInviteAuth(true)} />
       )}
 
-      {authReady && !user && !showPasswordReset && (!pendingInviteToken || showInviteAuth) && (
-        <AuthModal onAuth={(u) => { setShowInviteAuth(false); setUser(u); }} />
+      {authReady && !user && !showPasswordReset && !pendingInviteToken && !showAuth && (
+        <LandingPage onSignIn={() => setShowAuth(true)} />
+      )}
+
+      {authReady && !user && !showPasswordReset && (showAuth || showInviteAuth) && (
+        <AuthModal onAuth={(u) => { setShowAuth(false); setShowInviteAuth(false); setUser(u); }} />
       )}
 
       {showPasswordReset && (
@@ -1368,14 +1374,10 @@ export default function Scholr() {
         />
       )}
 
-      {/* Dashboard — always rendered so layout doesn't flash */}
+      {/* Dashboard — only rendered when authenticated */}
       <div style={{
         height: "100vh", overflow: "hidden", background: "#0A0A0F",
-        display: "flex", fontFamily: "'Plus Jakarta Sans', sans-serif",
-        filter: authReady && !user ? "blur(4px)" : "none",
-        pointerEvents: (authReady && !user) || (pendingInviteToken && !user) ? "none" : "auto",
-        visibility: pendingInviteToken && !user ? "hidden" : "visible",
-        transition: "filter 0.2s",
+        display: user ? "flex" : "none", fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
         {/* Sidebar — sticky, independent scroll */}
         <div style={{

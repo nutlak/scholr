@@ -121,7 +121,7 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
     .select(`
       role,
       notebooks (
-        id, title, topic, created_by, created_at, invite_token,
+        id, title, topic, created_by, created_at,
         notes (count)
       )
     `)

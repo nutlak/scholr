@@ -85,12 +85,12 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
             padding: "4px 6px",
             fontSize: 16,
             color: starred ? "#A78BFA" : "#6060A0",
-            opacity: starred ? 1 : hovered ? 1 : 0.4,
+            opacity: starred ? 1 : hovered ? 1 : 0.6,
             transition: "color 0.15s, opacity 0.15s",
             lineHeight: 1,
           }}
           onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.opacity = "1"; }}
-          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "#6060A0"; e.currentTarget.style.opacity = starred ? "1" : "0.4"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "#6060A0"; e.currentTarget.style.opacity = starred ? "1" : "0.6"; }}
         >
           {starred ? "★" : "☆"}
         </button>

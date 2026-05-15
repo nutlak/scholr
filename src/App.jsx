@@ -205,6 +205,268 @@ function MemberAvatarStack({ members }) {
   );
 }
 
+const FORGE_ACTIONS = [
+  { id: "study_guide", label: "Study Guide", icon: "📖" },
+  { id: "questions",   label: "Questions",   icon: "❓" },
+  { id: "flashcards",  label: "Flashcards",  icon: "🃏" },
+  { id: "summary",     label: "Summary",     icon: "📝" },
+];
+
+function TheForge({ nb, onClose }) {
+  const [action, setAction] = useState(null);
+  const [topic, setTopic] = useState("");
+  const [content, setContent] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [flashcards, setFlashcards] = useState(null);
+  const [flipped, setFlipped] = useState({});
+  const [learned, setLearned] = useState(new Set());
+  const [copied, setCopied] = useState(false);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight;
+  }, [content]);
+
+  async function generate(selectedAction) {
+    setAction(selectedAction);
+    setContent("");
+    setFlashcards(null);
+    setFlipped({});
+    setLearned(new Set());
+    setGenerating(true);
+
+    let full = "";
+    try {
+      await api.forge(
+        nb.id, selectedAction, topic,
+        (chunk) => { full += chunk; setContent(full); },
+        () => {
+          if (selectedAction === "flashcards") {
+            try {
+              const m = full.match(/\[[\s\S]*\]/);
+              if (m) setFlashcards(JSON.parse(m[0]));
+            } catch { /* fall back to text */ }
+          }
+          setGenerating(false);
+        },
+        (err) => { setContent(`Error: ${err}`); setGenerating(false); }
+      );
+    } catch (err) {
+      setContent(`Error: ${err.message}`);
+      setGenerating(false);
+    }
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function handleDownload() {
+    const label = FORGE_ACTIONS.find(a => a.id === action)?.label ?? action;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${nb.title} - ${label}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const showCards = action === "flashcards" && flashcards && !generating;
+
+  return (
+    <div style={{
+      width: "48%", display: "flex", flexDirection: "column",
+      borderLeft: "1px solid rgba(255,255,255,0.06)",
+      paddingLeft: 20, marginLeft: 16,
+      height: "100%", minHeight: 0, flexShrink: 0,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ fontSize: 17 }}>🔨</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#C4B5FD", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.01em" }}>The Forge</span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#404060", fontSize: 17, lineHeight: 1, padding: "2px 4px", borderRadius: 4 }}
+          onMouseEnter={e => e.currentTarget.style.color = "#D0D0E8"}
+          onMouseLeave={e => e.currentTarget.style.color = "#404060"}
+        >✕</button>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+        {FORGE_ACTIONS.map(a => (
+          <button
+            key={a.id}
+            onClick={() => generate(a.id)}
+            disabled={generating}
+            style={{
+              flex: 1, padding: "7px 2px", borderRadius: 8,
+              cursor: generating ? "not-allowed" : "pointer",
+              background: action === a.id ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.03)",
+              border: `1px solid ${action === a.id ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)"}`,
+              color: action === a.id ? "#C4B5FD" : "#505068",
+              fontSize: 10, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600,
+              transition: "all 0.15s", opacity: generating ? 0.55 : 1,
+              lineHeight: 1.4,
+            }}
+            onMouseEnter={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; e.currentTarget.style.color = "#A78BFA"; }}}
+            onMouseLeave={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#505068"; }}}
+          >
+            <div style={{ fontSize: 14, marginBottom: 1 }}>{a.icon}</div>
+            <div>{a.label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Topic input */}
+      <input
+        value={topic}
+        onChange={e => setTopic(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)}
+        placeholder="Focus on a specific topic (optional)…"
+        disabled={generating}
+        style={{
+          width: "100%", background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8,
+          padding: "8px 12px", color: "#D0D0E8", fontSize: 12,
+          fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none",
+          marginBottom: 10, boxSizing: "border-box", transition: "border-color 0.15s",
+        }}
+        onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.3)"}
+        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
+      />
+
+      {/* Content area */}
+      <div
+        ref={contentRef}
+        style={{
+          flex: 1, overflowY: "auto", minHeight: 0,
+          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: 10, padding: "12px 14px",
+          fontSize: 12.5, color: "#B8B8D0", lineHeight: 1.75,
+          fontFamily: showCards ? "'Plus Jakarta Sans', sans-serif" : "'DM Mono', monospace",
+          whiteSpace: showCards ? "normal" : "pre-wrap",
+        }}
+      >
+        {/* Empty state */}
+        {!action && !content && (
+          <div style={{ textAlign: "center", paddingTop: 48 }}>
+            <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.4 }}>🔨</div>
+            <div style={{ fontWeight: 600, color: "#404060", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>The Forge</div>
+            <div style={{ fontSize: 12, color: "#303048", lineHeight: 1.6 }}>Pick a material type above to generate study content from your notebook notes.</div>
+          </div>
+        )}
+
+        {/* Loading dots (before first chunk) */}
+        {generating && !content && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 6 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#4A4A70", animation: `pulse 1s ease-in-out ${i * 0.2}s infinite` }} />
+            ))}
+            <span style={{ fontSize: 11, color: "#404060", marginLeft: 6, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Generating…</span>
+          </div>
+        )}
+
+        {/* Interactive flashcards */}
+        {showCards && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontSize: 10, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 4 }}>
+              {learned.size}/{flashcards.length} LEARNED · CLICK CARD TO FLIP
+            </div>
+            {flashcards.map((card, i) => (
+              <div
+                key={i}
+                onClick={() => setFlipped(p => ({ ...p, [i]: !p[i] }))}
+                style={{
+                  background: flipped[i] ? "rgba(167,139,250,0.1)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${flipped[i] ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.07)"}`,
+                  borderRadius: 9, padding: "10px 12px", cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    {flipped[i] ? (
+                      <div style={{ color: "#C4B5FD", fontSize: 12.5, lineHeight: 1.5, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        {card.answer}
+                      </div>
+                    ) : (
+                      <div style={{ color: "#D0D0E8", fontSize: 12.5, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        <span style={{ color: "#505070", marginRight: 4 }}>Q{i+1}.</span>{card.question}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10, color: "#303050", marginTop: 4, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      {flipped[i] ? "↩ flip back" : "↩ reveal answer"}
+                    </div>
+                  </div>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setLearned(p => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n; });
+                    }}
+                    title={learned.has(i) ? "Mark as not learned" : "Mark as learned"}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: 14, flexShrink: 0, padding: "2px 4px",
+                      color: learned.has(i) ? "#34D399" : "#303050",
+                      transition: "color 0.15s",
+                    }}
+                  >✓</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Text content (non-flashcard streaming or final) */}
+        {!showCards && content && (
+          <span>
+            {content}
+            {generating && <span style={{ opacity: 0.35, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>▋</span>}
+          </span>
+        )}
+
+        {/* Streaming flashcard text before parse */}
+        {action === "flashcards" && !flashcards && content && !generating && (
+          <span>{content}</span>
+        )}
+      </div>
+
+      {/* Action bar */}
+      {content && !generating && (
+        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          <button
+            onClick={handleCopy}
+            style={{
+              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 7, padding: "7px", color: copied ? "#34D399" : "#505068", fontSize: 11,
+              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}}
+            onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}}
+          >{copied ? "✓ Copied" : "📋 Copy"}</button>
+          <button
+            onClick={handleDownload}
+            style={{
+              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 7, padding: "7px", color: "#505068", fontSize: 11,
+              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
+          >⬇ Download</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
@@ -216,6 +478,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [members, setMembers]       = useState([]);
+  const [showForge, setShowForge]   = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -323,7 +586,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden" }}>
       {showUpload && (
         <UploadNotesModal
           notebookId={nb.id}
@@ -415,6 +678,23 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           <div style={{ fontSize: 12, color: "#6060A0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.topic}</div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Forge toggle */}
+          <button
+            onClick={() => setShowForge(f => !f)}
+            title="Toggle The Forge"
+            style={{
+              background: showForge ? "rgba(167,139,250,0.18)" : "transparent",
+              border: `1px solid ${showForge ? "rgba(167,139,250,0.5)" : "rgba(167,139,250,0.25)"}`,
+              borderRadius: 8, padding: "6px 12px", cursor: "pointer",
+              fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12,
+              color: showForge ? "#C4B5FD" : "#7060A0", fontWeight: 600, transition: "all 0.15s",
+              display: "flex", alignItems: "center", gap: 5,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(167,139,250,0.18)"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.5)"; e.currentTarget.style.color = "#C4B5FD"; }}
+            onMouseLeave={e => {
+              if (!showForge) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.25)"; e.currentTarget.style.color = "#7060A0"; }
+            }}
+          >🔨 Forge</button>
           <button
             onClick={() => setShowUpload(true)}
             style={{
@@ -449,6 +729,11 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           )}
         </div>
       </div>
+
+      {/* Chat + Forge split */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
+      {/* Chat column */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
       {/* Message list */}
       <div style={{
@@ -552,6 +837,15 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           {loading ? "…" : "↑"}
         </button>
       </div>
+
+      </div>{/* end chat column */}
+
+      {/* Forge panel */}
+      {showForge && (
+        <TheForge nb={nb} onClose={() => setShowForge(false)} />
+      )}
+
+      </div>{/* end chat+forge split */}
     </div>
   );
 }

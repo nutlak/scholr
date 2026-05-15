@@ -261,6 +261,46 @@ export const api = {
     return res.json(); // { id, role, content, created_at, created_by }
   },
 
+  async forge(notebookId, action, topic, onChunk, onDone, onError) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token ?? ""}`,
+      },
+      body: JSON.stringify({ action, topic }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to generate");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.error) { onError?.(data.error); return; }
+            if (data.done) { onDone?.(); return; }
+            if (data.text) onChunk?.(data.text);
+          } catch { /* skip malformed */ }
+        }
+      }
+    }
+    onDone?.();
+  },
+
   async query(notebookId, question) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/query`, {

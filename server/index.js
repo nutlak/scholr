@@ -681,6 +681,79 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
   }
 });
 
+// POST /api/notebooks/:id/forge — generate study materials with streaming SSE
+app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res) => {
+  const { action, topic } = req.body;
+  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+
+  const VALID_ACTIONS = ["study_guide", "questions", "flashcards", "summary"];
+  if (!action || !VALID_ACTIONS.includes(action))
+    return res.status(400).json({ error: "action must be one of: " + VALID_ACTIONS.join(", ") });
+  if (!claudeKey)
+    return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  const { data: notes, error } = await supabase
+    .from("notes")
+    .select("title, content, created_at")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { data: nb } = await supabase
+    .from("notebooks")
+    .select("title, topic")
+    .eq("id", req.params.id)
+    .single();
+
+  const notesContext = notes
+    .map((n) => `Note: ${n.title || "Untitled"}\n${n.content || "[file attachment — no text content]"}`)
+    .join("\n\n---\n\n");
+
+  const focusStr = topic ? ` Focus specifically on: ${topic}.` : "";
+
+  const prompts = {
+    study_guide: `Create a comprehensive study guide from these notes.${focusStr} Format as markdown with clear ## headers, ### subheaders, and bullet points. Cover all key concepts, definitions, formulas, and important details. Be thorough and well-structured.`,
+    questions: `Generate 10 practice questions based on these notes.${focusStr} Format as a numbered list (1. 2. 3. etc.). After all 10 questions, add a "## Answers" section with numbered answers. Write questions that test genuine understanding, not just memorization.`,
+    flashcards: `Create 10 flashcards based on these notes.${focusStr} Return ONLY a valid JSON array — no markdown, no explanation, no other text. Exact format: [{"question": "...", "answer": "..."}, ...]. Cover the most important concepts.`,
+    summary: `Write a clear, concise 2-3 paragraph summary of the main concepts from these notes.${focusStr} Focus on the big picture, key takeaways, and how concepts relate. Write in plain, readable prose — no bullet points or headers.`,
+  };
+
+  // Set up SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const anthropic = new Anthropic({ apiKey: claudeKey });
+
+  let stream;
+  req.on("close", () => { try { stream?.controller?.abort(); } catch {} });
+
+  try {
+    stream = anthropic.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      system: `You are a study material generator for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Generate high-quality, accurate study materials based solely on the notebook notes provided below.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      messages: [{ role: "user", content: prompts[action] }],
+    });
+
+    stream.on("text", (text) => {
+      res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    });
+
+    await stream.finalMessage();
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  } catch (err) {
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.end();
+    }
+  }
+});
+
 // ── Invite endpoints ──────────────────────────────────────────────────────────
 
 // POST /api/notebooks/:id/invites — send an email invite to a collaborator

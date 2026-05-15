@@ -240,10 +240,10 @@ export default function LandingPage({ onSignIn }) {
             fontFamily: "'Nunito', sans-serif",
             letterSpacing: "-0.03em",
             marginBottom: 24,
+            whiteSpace: "nowrap",
           }}>
-            <span style={{ color: "#ffffff", display: "block" }}>Study smarter.</span>
+            <span style={{ color: "#ffffff" }}>Study smarter. </span>
             <span style={{
-              display: "block",
               background: "linear-gradient(135deg, #A78BFA, #7C3AED)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -449,23 +449,6 @@ export default function LandingPage({ onSignIn }) {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer style={{
-        borderTop: "1px solid #1A1A24",
-        padding: "28px 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: 12,
-      }}>
-        <div style={{
-          fontFamily: "'Nunito', sans-serif", fontSize: 18, fontWeight: 900,
-          color: "#E8E8F0", letterSpacing: "-0.02em",
-        }}>
-          schol<span style={{ color: "#A78BFA" }}>r</span>
-        </div>
-        <div style={{ fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          © {new Date().getFullYear()} scholr. Built for students.
-        </div>
-      </footer>
 
       {/* Pulse keyframe referenced in mock chat */}
       <style>{`

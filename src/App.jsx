@@ -1521,11 +1521,11 @@ export default function Scholr() {
                   <div style={{ fontSize: 26, fontWeight: 900, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.02em" }}>
                     {activeView === "dashboard" ? getGreeting(displayName) : viewLabel}
                   </div>
-                  <div style={{ fontSize: 13, color: "#505070", marginTop: 2 }}>
-                    {activeView === "dashboard"
-                      ? `${classes.length} class${classes.length !== 1 ? "es" : ""}`
-                      : `${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
-                  </div>
+                  {activeView !== "dashboard" && (
+                    <div style={{ fontSize: 13, color: "#505070", marginTop: 2 }}>
+                      {`${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
+                    </div>
+                  )}
                 </div>
                 {activeView === "dashboard" && (
                   <button

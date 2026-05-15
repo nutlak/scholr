@@ -340,20 +340,81 @@ function TheForge({ nb, onClose, onToast }) {
   return (
     <div style={{
       width: "48%", display: "flex", flexDirection: "column",
-      borderLeft: "1px solid rgba(255,255,255,0.06)",
+      borderLeft: "1px solid rgba(167,139,250,0.2)",
+      background: "rgba(20,20,35,0.8)",
+      backdropFilter: "blur(10px)",
       paddingLeft: 20, marginLeft: 16,
       height: "100%", minHeight: 0, flexShrink: 0,
     }}>
-      {/* Flip animation CSS */}
+      {/* CSS: flip animation + action cards + spinner + saved item hover */}
       <style>{`
         .forge-card { transition: transform 0.5s cubic-bezier(0.4,0.2,0.2,1); transform-style: preserve-3d; }
         .forge-card.flipped { transform: rotateY(180deg); }
         .forge-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
         .forge-back { transform: rotateY(180deg); }
+
+        @keyframes forge-spin { to { transform: rotate(360deg); } }
+        .forge-spinner {
+          width: 22px; height: 22px;
+          border: 2px solid rgba(167,139,250,0.2);
+          border-top-color: #A78BFA;
+          border-radius: 50%;
+          animation: forge-spin 1.5s linear infinite;
+        }
+
+        .forge-action-btn {
+          background: rgba(50,50,80,0.4);
+          border: 1px solid rgba(167,139,250,0.15);
+          border-radius: 12px;
+          padding: 16px 12px;
+          cursor: pointer;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          color: #8080A8;
+          transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+        }
+        .forge-action-btn:hover:not(:disabled) {
+          background: rgba(167,139,250,0.15);
+          border-color: rgba(167,139,250,0.4);
+          transform: scale(1.02);
+          color: #C4B5FD;
+        }
+        .forge-action-btn.forge-active {
+          background: rgba(167,139,250,0.2);
+          border-color: #A78BFA;
+          box-shadow: 0 0 16px rgba(167,139,250,0.2);
+          color: #C4B5FD;
+        }
+        .forge-action-btn:disabled {
+          opacity: 0.45; cursor: not-allowed;
+        }
+
+        .forge-saved-item {
+          display: flex; align-items: center; gap: 10;
+          padding: 8px 10px; border-radius: 8px;
+          cursor: pointer; transition: background 0.15s;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .forge-saved-item:last-child { border-bottom: none; }
+        .forge-saved-item:hover { background: rgba(167,139,250,0.08); }
+        .forge-saved-item .forge-del {
+          opacity: 0; transition: opacity 0.15s; flex-shrink: 0;
+          background: none; border: none; cursor: pointer;
+          color: #505070; font-size: 13px; padding: 2px 5px; border-radius: 4px;
+        }
+        .forge-saved-item:hover .forge-del { opacity: 1; }
+        .forge-del:hover { color: #F87171 !important; }
+
+        .forge-topic-input::placeholder { color: rgba(255,255,255,0.35); }
+        .forge-topic-input:focus {
+          border-color: #A78BFA !important;
+          box-shadow: 0 0 12px rgba(167,139,250,0.2);
+          outline: none;
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{ fontSize: 17 }}>🔨</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#C4B5FD", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.01em" }}>The Forge</span>
@@ -361,49 +422,70 @@ function TheForge({ nb, onClose, onToast }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             onClick={() => setShowSaved(v => !v)}
-            style={{ background: showSaved ? "rgba(167,139,250,0.12)" : "none", border: `1px solid ${showSaved ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 6, padding: "3px 8px", cursor: "pointer", fontSize: 10, color: showSaved ? "#C4B5FD" : "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, letterSpacing: "0.04em", transition: "all 0.15s" }}
+            style={{ background: showSaved ? "rgba(167,139,250,0.12)" : "none", border: `1px solid ${showSaved ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 10, color: showSaved ? "#C4B5FD" : "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, letterSpacing: "0.05em", transition: "all 0.15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = "#C4B5FD"; }}
-            onMouseLeave={e => { if (!showSaved) e.currentTarget.style.color = "#404060"; }}
+            onMouseLeave={e => { if (!showSaved) e.currentTarget.style.color = "#505070"; }}
           >SAVED {savedOutputs.length > 0 && `(${savedOutputs.length})`}</button>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#404060", fontSize: 16, lineHeight: 1, padding: "2px 4px" }}
-            onMouseEnter={e => e.currentTarget.style.color = "#D0D0E8"} onMouseLeave={e => e.currentTarget.style.color = "#404060"}>✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#505070", fontSize: 16, lineHeight: 1, padding: "2px 4px", transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#D0D0E8"} onMouseLeave={e => e.currentTarget.style.color = "#505070"}>✕</button>
         </div>
       </div>
 
       {/* Saved outputs panel */}
       {showSaved && (
-        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 10px", marginBottom: 10, maxHeight: 160, overflowY: "auto" }}>
+        <div style={{ background: "rgba(15,15,25,0.7)", border: "1px solid rgba(167,139,250,0.12)", borderRadius: 10, padding: "6px 8px", marginBottom: 12, maxHeight: 200, overflowY: "auto" }}>
           {savedOutputs.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#303050", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: "4px 0" }}>No saved outputs yet</div>
-          ) : savedOutputs.map(o => (
-            <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-              <div onClick={() => loadSaved(o)} style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: "#A0A0C0", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.title}</div>
-                <div style={{ fontSize: 10, color: "#303050", fontFamily: "'DM Mono', monospace" }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+            <div style={{ fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: "10px 8px", textAlign: "center" }}>No saved outputs yet</div>
+          ) : savedOutputs.map(o => {
+            const typeIcon = { study_guide: "📖", questions: "❓", flashcards: "🃏", summary: "📝" }[o.type] ?? "📄";
+            return (
+              <div key={o.id} className="forge-saved-item">
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{typeIcon}</span>
+                <div onClick={() => loadSaved(o)} style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#B0B0D0", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.title}</div>
+                  <div style={{ fontSize: 10, color: "#505070", fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                </div>
+                <button className="forge-del" onClick={e => { e.stopPropagation(); handleDeleteSaved(o.id); }}>✕</button>
               </div>
-              <button onClick={() => handleDeleteSaved(o.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#303050", fontSize: 12, padding: "2px 4px", flexShrink: 0 }}
-                onMouseEnter={e => e.currentTarget.style.color = "#F87171"} onMouseLeave={e => e.currentTarget.style.color = "#303050"}>✕</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Action buttons */}
-      <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+      {/* Action buttons — 2×2 card grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
         {FORGE_ACTIONS.map(a => (
-          <button key={a.id} onClick={() => generate(a.id)} disabled={generating} style={{ flex: 1, padding: "7px 2px", borderRadius: 8, cursor: generating ? "not-allowed" : "pointer", background: action === a.id ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.03)", border: `1px solid ${action === a.id ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)"}`, color: action === a.id ? "#C4B5FD" : "#505068", fontSize: 10, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s", opacity: generating ? 0.55 : 1, lineHeight: 1.4 }}
-            onMouseEnter={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; e.currentTarget.style.color = "#A78BFA"; }}}
-            onMouseLeave={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#505068"; }}}>
-            <div style={{ fontSize: 14, marginBottom: 1 }}>{a.icon}</div>
-            <div>{a.label}</div>
+          <button
+            key={a.id}
+            onClick={() => generate(a.id)}
+            disabled={generating}
+            className={`forge-action-btn${action === a.id ? " forge-active" : ""}`}
+          >
+            <div style={{ fontSize: 28, marginBottom: 8, lineHeight: 1 }}>{a.icon}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.02em" }}>{a.label}</div>
           </button>
         ))}
       </div>
 
       {/* Topic input */}
-      <input value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)} placeholder="Focus on a specific topic (optional)…" disabled={generating}
-        style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 12px", color: "#D0D0E8", fontSize: 12, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 10, boxSizing: "border-box", transition: "border-color 0.15s" }}
-        onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.3)"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"} />
+      <input
+        value={topic}
+        onChange={e => setTopic(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)}
+        placeholder="Focus on a specific topic (optional)…"
+        disabled={generating}
+        className="forge-topic-input"
+        style={{
+          width: "100%", background: "rgba(30,30,50,0.6)",
+          border: "1px solid rgba(167,139,250,0.15)",
+          borderRadius: 8, padding: "12px 16px",
+          color: "#ffffff", fontSize: 13,
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          outline: "none", marginBottom: 12,
+          boxSizing: "border-box",
+          transition: "border-color 0.15s, box-shadow 0.15s",
+        }}
+      />
 
       {/* ── Quizlet-style flashcard view ── */}
       {showCards && currentCard ? (
@@ -447,22 +529,28 @@ function TheForge({ nb, onClose, onToast }) {
       ) : (
         /* ── Text content (study guide / questions / summary) ── */
         <>
-          <div ref={contentRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#C0C0DC", lineHeight: 1.8, fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: "pre-wrap" }}>
+          <div ref={contentRef} style={{
+            flex: 1, overflowY: "auto", minHeight: 300,
+            background: "rgba(15,15,25,0.6)",
+            border: "1px solid rgba(167,139,250,0.1)",
+            borderRadius: 12,
+            padding: "24px 20px",
+            fontSize: 13, color: "#C0C0DC", lineHeight: 1.8,
+            fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: "pre-wrap",
+          }}>
             {/* Empty state */}
             {!action && !content && (
               <div style={{ textAlign: "center", paddingTop: 48 }}>
                 <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.35 }}>🔨</div>
-                <div style={{ fontWeight: 700, color: "#404060", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>The Forge</div>
-                <div style={{ fontSize: 12, color: "#282840", lineHeight: 1.7 }}>Pick a material type above to generate study content from your notebook notes.</div>
+                <div style={{ fontWeight: 700, color: "#505070", marginBottom: 8, fontFamily: "'Nunito', sans-serif", fontSize: 15 }}>The Forge</div>
+                <div style={{ fontSize: 12, color: "#353555", lineHeight: 1.7 }}>Pick a material type above to generate study content from your notebook notes.</div>
               </div>
             )}
-            {/* Loading state — centered, no streamed text */}
+            {/* Loading state — spinner + label */}
             {generating && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 14 }}>
-                <div style={{ display: "flex", gap: 5 }}>
-                  {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#A78BFA", animation: `pulse 1s ease-in-out ${i*0.25}s infinite` }} />)}
-                </div>
-                <span style={{ fontSize: 12, color: "#606080", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.04em" }}>Generating…</span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 14, minHeight: 260 }}>
+                <div className="forge-spinner" />
+                <span style={{ fontSize: 14, color: "#7070A0", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.03em" }}>Generating…</span>
               </div>
             )}
             {/* Final text — only shown after generation completes */}
@@ -471,12 +559,12 @@ function TheForge({ nb, onClose, onToast }) {
 
           {/* Action bar */}
           {content && !generating && (
-            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              <button onClick={handleCopy} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "7px", color: copied ? "#34D399" : "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
+            <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+              <button onClick={handleCopy} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "8px", color: copied ? "#34D399" : "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
                 onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}}
                 onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}}
               >{copied ? "✓ Copied" : "📋 Copy"}</button>
-              <button onClick={handleDownload} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "7px", color: "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
+              <button onClick={handleDownload} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "8px", color: "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
                 onMouseLeave={e => { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}>⬇ Download</button>
             </div>

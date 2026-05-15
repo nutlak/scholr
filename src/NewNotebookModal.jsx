@@ -1,16 +1,29 @@
 import { useState, useRef, useEffect } from "react";
 
+const FONT = `system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif`;
+
 const inputStyle = {
   width: "100%",
-  background: "#0D0D14",
-  border: "1px solid #2A2A38",
-  borderRadius: 10,
-  padding: "12px 14px",
-  color: "#E8E8F0",
+  background: "#0A0A0A",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: 6,
+  padding: "0 12px",
+  height: 36,
+  color: "#FAFAFA",
   fontSize: 13,
-  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  fontFamily: FONT,
   outline: "none",
-  transition: "border-color 0.15s",
+  transition: "border-color 0.1s",
+};
+
+const labelStyle = {
+  fontSize: 11,
+  color: "rgba(255,255,255,0.4)",
+  fontFamily: FONT,
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+  display: "block",
+  marginBottom: 6,
 };
 
 export default function NewNotebookModal({ onClose, onCreate }) {
@@ -44,33 +57,30 @@ export default function NewNotebookModal({ onClose, onCreate }) {
     <div
       onClick={handleOverlayClick}
       style={{
-        position: "fixed", inset: 0, background: "rgba(10,10,15,0.75)",
-        backdropFilter: "blur(6px)", display: "flex", alignItems: "center",
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
         justifyContent: "center", zIndex: 1000, padding: 16,
       }}
     >
       <div style={{
-        background: "#111118", border: "1px solid #2A2A38",
-        borderRadius: 20, width: "100%", maxWidth: 420,
-        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-        animation: "fadeIn 0.2s ease",
+        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 6, width: "100%", maxWidth: 400,
+        padding: "24px", boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
+        animation: "fadeIn 0.15s ease",
       }}>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <div style={{
-            fontSize: 18, fontWeight: 700, color: "#E8E8F0",
-            fontFamily: "'Nunito', sans-serif", marginBottom: 4,
+            fontSize: 15, fontWeight: 600, color: "#FAFAFA",
+            fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em",
           }}>New Notebook</div>
-          <div style={{ fontSize: 12, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>
             Create a shared space for notes and AI Q&amp;A
           </div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{
-              fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif",
-              letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6,
-            }}>Title *</label>
+            <label style={labelStyle}>Title *</label>
             <input
               ref={titleRef}
               value={title}
@@ -79,15 +89,12 @@ export default function NewNotebookModal({ onClose, onCreate }) {
               maxLength={80}
               style={inputStyle}
               onFocus={e => e.target.style.borderColor = "#A78BFA"}
-              onBlur={e => e.target.style.borderColor = "#2A2A38"}
+              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
             />
           </div>
 
           <div>
-            <label style={{
-              fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif",
-              letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6,
-            }}>Topic / Subject</label>
+            <label style={labelStyle}>Topic / Subject</label>
             <input
               value={topic}
               onChange={e => setTopic(e.target.value)}
@@ -95,31 +102,32 @@ export default function NewNotebookModal({ onClose, onCreate }) {
               maxLength={120}
               style={inputStyle}
               onFocus={e => e.target.style.borderColor = "#A78BFA"}
-              onBlur={e => e.target.style.borderColor = "#2A2A38"}
+              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
             />
           </div>
 
           {error && (
             <div style={{
-              background: "#2A1A1A", border: "1px solid #5A2020",
-              borderRadius: 8, padding: "10px 12px",
-              fontSize: 12, color: "#F87171",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: 6, padding: "10px 12px",
+              fontSize: 12, color: "#EF4444", fontFamily: FONT,
             }}>
               {error}
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
             <button
               type="button"
               onClick={onClose}
               style={{
-                flex: 1, background: "transparent", border: "1px solid #2A2A38",
-                borderRadius: 10, padding: "11px", color: "#505070",
-                fontSize: 13, cursor: "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 6, padding: "0 16px", height: 36, color: "rgba(255,255,255,0.5)",
+                fontSize: 13, cursor: "pointer", fontFamily: FONT,
+                transition: "border-color 0.1s, color 0.1s",
               }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; e.currentTarget.style.color = "#FAFAFA"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
             >
               Cancel
             </button>
@@ -127,13 +135,16 @@ export default function NewNotebookModal({ onClose, onCreate }) {
               type="submit"
               disabled={loading || !title.trim()}
               style={{
-                flex: 2, background: "#A78BFA", border: "none",
-                borderRadius: 10, padding: "11px", color: "#0A0A0F",
-                fontWeight: 700, fontSize: 13, cursor: loading || !title.trim() ? "not-allowed" : "pointer",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                opacity: loading || !title.trim() ? 0.55 : 1,
-                transition: "opacity 0.15s",
+                background: "#A78BFA", border: "none",
+                borderRadius: 6, padding: "0 20px", height: 36,
+                color: "#0A0A0A", fontWeight: 600, fontSize: 13,
+                cursor: loading || !title.trim() ? "not-allowed" : "pointer",
+                fontFamily: FONT,
+                opacity: loading || !title.trim() ? 0.5 : 1,
+                transition: "opacity 0.1s, background 0.1s",
               }}
+              onMouseEnter={e => { if (!loading && title.trim()) e.currentTarget.style.background = "#7C3AED"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#A78BFA"; }}
             >
               {loading ? "Creating…" : "Create Notebook"}
             </button>

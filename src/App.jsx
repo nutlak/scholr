@@ -172,9 +172,8 @@ function MemberAvatarStack({ members }) {
 
 function NotebookView({ nb, onBack, onDeleted }) {
   const [query, setQuery] = useState("");
-  const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [loading, setLoading]       = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -186,6 +185,25 @@ function NotebookView({ nb, onBack, onDeleted }) {
 
   useEffect(() => {
     api.listMembers(nb.id).then(setMembers).catch(() => {});
+  }, [nb.id]);
+
+  // Load persistent chat history from backend on open
+  useEffect(() => {
+    api.getMessages(nb.id)
+      .then(rows => {
+        if (rows.length > 0) {
+          setMessages(rows.map(r => ({ id: r.id, role: r.role, text: r.content })));
+        } else {
+          // First-ever open: show the welcome message (don't persist it)
+          setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
+        }
+        setHistoryLoaded(true);
+      })
+      .catch(() => {
+        // Fallback to welcome message if fetch fails
+        setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
+        setHistoryLoaded(true);
+      });
   }, [nb.id]);
 
   function handleNoteUploaded(note) {
@@ -207,8 +225,13 @@ function NotebookView({ nb, onBack, onDeleted }) {
     }
   }
 
-  // Fetch existing notes on open and surface them in the chat
+  // Surface note list in chat only when there's no prior history (first open)
   useEffect(() => {
+    if (!historyLoaded) return;
+    // If there's already a real conversation (more than the welcome placeholder), skip
+    const hasHistory = messages.some(m => m.id);
+    if (hasHistory) return;
+
     api.listNotes(nb.id).then(notes => {
       if (notes.length === 0) return;
       const list = notes.map(n => `• ${n.title}`).join("\n");
@@ -216,14 +239,8 @@ function NotebookView({ nb, onBack, onDeleted }) {
         role: "assistant",
         text: `📚 ${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
       }]);
-    }).catch(err => {
-      setMessages(m => [...m, {
-        role: "assistant",
-        text: `⚠️ Could not load existing notes: ${err.message}`,
-        isError: true,
-      }]);
-    });
-  }, [nb.id]);
+    }).catch(() => {});
+  }, [historyLoaded]);
 
   // Scroll to latest message whenever messages or loading state changes
   useEffect(() => {
@@ -234,14 +251,21 @@ function NotebookView({ nb, onBack, onDeleted }) {
     const text = query.trim();
     if (!text || loading) return;
 
-    setMessages(m => [...m, { role: "user", text }]);
     setQuery("");
     setLoading(true);
+
+    // Optimistically show the user message immediately
+    setMessages(m => [...m, { role: "user", text }]);
+
+    // Persist the user message (fire-and-forget; don't block the AI call)
+    api.addMessage(nb.id, "user", text).catch(() => {});
 
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
       setMessages(m => [...m, { role: "assistant", text: data.answer }]);
+      // Persist the assistant reply
+      api.addMessage(nb.id, "assistant", data.answer).catch(() => {});
     } catch (err) {
       setMessages(m => [...m, {
         role: "assistant",

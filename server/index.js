@@ -211,6 +211,39 @@ app.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req, re
   res.json(results.filter(m => m.email));
 });
 
+// GET /api/notebooks/:id/messages — fetch shared chat history
+app.get("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, res) => {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("id, role, content, created_at, created_by")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: true });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// POST /api/notebooks/:id/messages — save a message to shared chat history
+app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, res) => {
+  const { role, content } = req.body;
+  if (!role || !content) return res.status(400).json({ error: "role and content are required" });
+  if (!["user", "assistant"].includes(role)) return res.status(400).json({ error: "role must be user or assistant" });
+
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      notebook_id: req.params.id,
+      role,
+      content,
+      created_by: role === "user" ? req.user.id : null,
+    })
+    .select("id, role, content, created_at, created_by")
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
 // DELETE /api/notebooks/:id — owner-only hard delete
 app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) => {
   if (req.membership.role !== "owner")

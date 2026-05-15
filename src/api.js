@@ -185,6 +185,27 @@ export const api = {
     return res.json();
   },
 
+  async getMessages(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/messages`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, role, content, created_at, created_by }]
+  },
+
+  async addMessage(notebookId, role, content) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/messages`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ role, content }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to save message");
+    }
+    return res.json(); // { id, role, content, created_at, created_by }
+  },
+
   async query(notebookId, question) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/query`, {

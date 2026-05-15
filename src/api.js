@@ -302,12 +302,14 @@ export const api = {
   },
 
   async saveForgeOutput(notebookId, type, content, topic) {
+    console.log("saveForgeOutput API called:", { notebookId, type, contentLength: content?.length });
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge-output`, {
       method: "POST", headers, body: JSON.stringify({ type, content, topic }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
+      console.error("saveForgeOutput API error:", err);
       throw new Error(err.error ?? "Failed to save");
     }
     return res.json();

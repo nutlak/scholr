@@ -757,6 +757,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
 // POST /api/notebooks/:id/forge-output — save a Forge-generated output
 app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (req, res) => {
   const { type, content, topic } = req.body;
+  console.log("saving forge output:", { type, notebookId: req.params.id, contentLength: content?.length });
   const VALID_TYPES = ["study_guide", "questions", "flashcards", "summary"];
   if (!type || !VALID_TYPES.includes(type)) return res.status(400).json({ error: "Invalid type" });
   if (!content) return res.status(400).json({ error: "content is required" });
@@ -770,7 +771,11 @@ app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (r
     .insert({ notebook_id: req.params.id, user_id: req.user.id, type, title, content })
     .select()
     .single();
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error("forge output save failed:", error);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log("forge output saved:", data?.id);
   res.status(201).json(data);
 });
 

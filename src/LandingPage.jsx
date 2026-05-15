@@ -236,17 +236,18 @@ export default function LandingPage({ onSignIn }) {
           {/* Headline */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 66px)",
-            fontWeight: 800, lineHeight: 1.08,
+            fontWeight: 800, lineHeight: 1.12,
             fontFamily: "'Nunito', sans-serif",
-            color: "#F0F0FA",
             letterSpacing: "-0.03em",
             marginBottom: 24,
           }}>
-            Study smarter,{" "}
+            <span style={{ color: "#ffffff", display: "block" }}>Study smarter.</span>
             <span style={{
+              display: "block",
               background: "linear-gradient(135deg, #A78BFA, #7C3AED)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-            }}>together.</span>
+              backgroundClip: "text",
+            }}>Study together.</span>
           </h1>
 
           {/* Subheadline */}

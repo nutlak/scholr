@@ -170,24 +170,18 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
 
 // GET /api/notebooks/owned — notebooks the calling user created
 app.get("/api/notebooks/owned", requireAuth, async (req, res) => {
+  // Query notebooks directly by created_by to avoid join embedding issues
   const { data, error } = await supabase
-    .from("notebook_members")
-    .select(`
-      role,
-      notebooks (
-        id, title, topic, created_by, created_at, invite_token,
-        notes (count)
-      )
-    `)
-    .eq("user_id", req.user.id)
-    .eq("role", "owner");
+    .from("notebooks")
+    .select("id, title, topic, created_by, created_at, notes(count)")
+    .eq("created_by", req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
 
-  const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
+  const notebooks = (data ?? []).map(nb => ({
     ...nb,
     notes_count: nb.notes[0]?.count ?? 0,
-    role,
+    role: "owner",
     notes: undefined,
   }));
   res.json(notebooks);

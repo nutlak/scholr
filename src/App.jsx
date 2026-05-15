@@ -62,38 +62,47 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
         cursor: "pointer",
         transition: "all 0.2s ease",
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
+      {/* Color accent bar — keep inside a clipped wrapper so it doesn't bleed */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, height: 3,
         background: nb.color, borderRadius: "16px 16px 0 0",
-        opacity: hovered ? 1 : 0.5, transition: "opacity 0.2s"
+        opacity: hovered ? 1 : 0.5, transition: "opacity 0.2s",
+        overflow: "hidden",
       }} />
+
+      {/* Star button — absolutely positioned so it's always clickable */}
+      {onToggleStar && (
+        <button
+          onClick={e => { e.stopPropagation(); onToggleStar(); }}
+          title={starred ? "Remove star" : "Star this notebook"}
+          style={{
+            position: "absolute", top: 10, right: 12,
+            zIndex: 10,
+            background: "none", border: "none", cursor: "pointer",
+            padding: "4px 6px",
+            fontSize: 16,
+            color: starred ? "#A78BFA" : "#6060A0",
+            opacity: starred ? 1 : hovered ? 1 : 0.4,
+            transition: "color 0.15s, opacity 0.15s",
+            lineHeight: 1,
+          }}
+          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.opacity = "1"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "#6060A0"; e.currentTarget.style.opacity = starred ? "1" : "0.4"; }}
+        >
+          {starred ? "★" : "☆"}
+        </button>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
         <div style={{
           fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
           color: nb.color, textTransform: "uppercase",
           fontFamily: "'DM Mono', monospace"
         }}>{nb.notes} notes</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.updated}</div>
-          {onToggleStar && (
-            <button
-              onClick={e => { e.stopPropagation(); onToggleStar(); }}
-              title={starred ? "Remove star" : "Star this notebook"}
-              style={{
-                background: "none", border: "none", cursor: "pointer", padding: "0 2px",
-                fontSize: 15, color: starred ? "#A78BFA" : "#383855",
-                transition: "color 0.15s", lineHeight: 1,
-              }}
-              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#A78BFA"; }}
-              onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "#383855"; }}
-            >
-              {starred ? "★" : "☆"}
-            </button>
-          )}
-        </div>
+        <div style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif", paddingRight: 24 }}>{nb.updated}</div>
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4, lineHeight: 1.3 }}>
         {nb.title}
@@ -187,7 +196,7 @@ function MemberAvatarStack({ members }) {
   );
 }
 
-function NotebookView({ nb, onBack, onDeleted }) {
+function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -209,7 +218,7 @@ function NotebookView({ nb, onBack, onDeleted }) {
     api.getMessages(nb.id)
       .then(rows => {
         if (rows.length > 0) {
-          setMessages(rows.map(r => ({ id: r.id, role: r.role, text: r.content })));
+          setMessages(rows.map(r => ({ id: r.id, role: r.role, text: r.content, createdBy: r.created_by })));
         } else {
           // First-ever open: show the welcome message (don't persist it)
           setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
@@ -272,7 +281,7 @@ function NotebookView({ nb, onBack, onDeleted }) {
     setLoading(true);
 
     // Optimistically show the user message immediately
-    setMessages(m => [...m, { role: "user", text }]);
+    setMessages(m => [...m, { role: "user", text, createdBy: currentUserId }]);
 
     // Persist the user message (fire-and-forget; don't block the AI call)
     console.log("calling addMessage:", { notebookId: nb.id, role: "user", content: text });
@@ -282,7 +291,7 @@ function NotebookView({ nb, onBack, onDeleted }) {
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
-      setMessages(m => [...m, { role: "assistant", text: data.answer }]);
+      setMessages(m => [...m, { role: "assistant", text: data.answer, createdBy: null }]);
       // Persist the assistant reply
       console.log("calling addMessage:", { notebookId: nb.id, role: "assistant", content: data.answer.slice(0, 80) });
       api.addMessage(nb.id, "assistant", data.answer)
@@ -431,23 +440,51 @@ function NotebookView({ nb, onBack, onDeleted }) {
         flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
         gap: 12, marginBottom: 16, paddingRight: 4
       }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-            <div style={{
-              maxWidth: "75%",
-              background: m.isError ? "#2A1A1A" : m.role === "user" ? "#A78BFA" : "#1A1A28",
-              color: m.isError ? "#F87171" : m.role === "user" ? "#0A0A0F" : "#D0D0E8",
-              borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-              padding: "10px 14px",
-              fontSize: 13, lineHeight: 1.6,
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              border: m.role === "assistant" ? `1px solid ${m.isError ? "#5A2020" : "#2A2A38"}` : "none",
-              whiteSpace: "pre-wrap",
-            }}>
-              {m.text}
+        {messages.map((m, i) => {
+          // Own message: sent by current user (role=user, createdBy matches)
+          const isOwn = m.role === "user" && (m.createdBy === currentUserId || (!m.createdBy && m.role === "user"));
+          // Another member's message: role=user but different user
+          const isOtherMember = m.role === "user" && m.createdBy && m.createdBy !== currentUserId;
+          const isAssistant = m.role === "assistant";
+
+          // Label shown above the bubble
+          const senderLabel = isAssistant
+            ? "🤖 Derek"
+            : isOtherMember
+              ? (members.find(mem => mem.user_id === m.createdBy)?.email ?? "Member")
+              : null;
+
+          const alignRight = isOwn;
+
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: alignRight ? "flex-end" : "flex-start" }}>
+              {senderLabel && (
+                <div style={{
+                  fontSize: 10, fontWeight: 600,
+                  color: isAssistant ? "#A78BFA" : "#7070A0",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  marginBottom: 3, paddingLeft: 4,
+                  letterSpacing: "0.03em",
+                }}>
+                  {senderLabel}
+                </div>
+              )}
+              <div style={{
+                maxWidth: "75%",
+                background: m.isError ? "#2A1A1A" : isOwn ? "#A78BFA" : "#1A1A28",
+                color: m.isError ? "#F87171" : isOwn ? "#0A0A0F" : "#D0D0E8",
+                borderRadius: isOwn ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                padding: "10px 14px",
+                fontSize: 13, lineHeight: 1.6,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                border: !isOwn ? `1px solid ${m.isError ? "#5A2020" : "#2A2A38"}` : "none",
+                whiteSpace: "pre-wrap",
+              }}>
+                {m.text}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {loading && (
           <div style={{ display: "flex" }}>
@@ -1395,6 +1432,7 @@ export default function Scholr() {
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView
                 nb={activeNb}
+                currentUserId={user?.id}
                 onBack={() => setActiveNb(null)}
                 onDeleted={id => {
                   setNotebooks(prev => prev.filter(n => n.id !== id));

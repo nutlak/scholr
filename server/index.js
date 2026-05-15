@@ -368,27 +368,6 @@ app.post("/api/notebooks/:id/invite", requireAuth, requireMember, async (req, re
   res.json({ invite_url: inviteUrl, token: data.invite_token });
 });
 
-// POST /api/invite/accept — join a notebook via invite token (called by client on /join/:token page)
-app.post("/api/invite/accept", requireAuth, async (req, res) => {
-  const { token } = req.body;
-  if (!token) return res.status(400).json({ error: "token is required" });
-
-  const { data: nb, error } = await supabase
-    .from("notebooks")
-    .select("id, title")
-    .eq("invite_token", token)
-    .maybeSingle();
-
-  if (error || !nb) return res.status(404).json({ error: "Invalid invite link" });
-
-  // Upsert so re-joining is idempotent
-  await supabase.from("notebook_members").upsert(
-    { notebook_id: nb.id, user_id: req.user.id, role: "member" },
-    { onConflict: "notebook_id,user_id" }
-  );
-
-  res.json({ notebook_id: nb.id, title: nb.title });
-});
 
 // GET /api/notebooks/:id/notes — list ALL notes in a notebook (all members see all notes)
 app.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, res) => {

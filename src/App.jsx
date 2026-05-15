@@ -1076,17 +1076,19 @@ export default function Scholr() {
     // where onAuth fires before the token is stored in the client).
     supabase.auth.getSession()
       .then(() => api.acceptInvite(token))
-      .then(({ notebook_id }) =>
-        Promise.all([
+      .then(({ notebook_id }) => {
+        console.log("[invite] accepted, fetching shared notebooks after invite accept");
+        return Promise.all([
           api.listNotebooks(getDisplayName(user)),
           api.listSharedNotebooks(getDisplayName(user)),
         ]).then(([nbs, shared]) => {
+          console.log("[invite] listSharedNotebooks returned", shared.length, "notebooks");
           setNotebooks(nbs);
           setSharedNotebooks(shared);
           const nb = shared.find(n => n.id === notebook_id) ?? nbs.find(n => n.id === notebook_id);
           if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
-        })
-      )
+        });
+      })
       .catch(console.error);
   }, [pendingInviteToken, user, authReady]);
 
@@ -1095,7 +1097,10 @@ export default function Scholr() {
     if (!user || !authReady) return;
     const name = getDisplayName(user);
     api.listNotebooks(name).then(setNotebooks).catch(console.error);
-    api.listSharedNotebooks(name).then(setSharedNotebooks).catch(console.error);
+    console.log("[shared] fetching shared notebooks on auth ready");
+    api.listSharedNotebooks(name)
+      .then(shared => { console.log("[shared] listSharedNotebooks returned", shared.length, "notebooks"); setSharedNotebooks(shared); })
+      .catch(err => { console.error("[shared] listSharedNotebooks error:", err); });
     api.listClasses().then(setClasses).catch(console.error);
   }, [user, authReady]);
 

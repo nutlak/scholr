@@ -125,8 +125,7 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
         notes (count)
       )
     `)
-    .eq("user_id", req.user.id)
-    .order("created_at", { ascending: false });
+    .eq("user_id", req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
 
@@ -142,6 +141,7 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
 
 // GET /api/notebooks/shared — notebooks the user was invited to (member, not owner)
 app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
+  console.log(`[shared] listSharedNotebooks: user=${req.user.id}`);
   const { data, error } = await supabase
     .from("notebook_members")
     .select(`
@@ -152,9 +152,9 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
       )
     `)
     .eq("user_id", req.user.id)
-    .eq("role", "member")
-    .order("created_at", { ascending: false });
+    .eq("role", "member");
 
+  console.log(`[shared] query result: rows=${data?.length ?? 0} error=${error?.message ?? "none"}`);
   if (error) return res.status(500).json({ error: error.message });
 
   const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
@@ -164,6 +164,7 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
     notes: undefined,
   }));
 
+  console.log(`[shared] returning ${notebooks.length} shared notebooks for user=${req.user.id}`);
   res.json(notebooks);
 });
 

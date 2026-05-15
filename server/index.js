@@ -333,16 +333,16 @@ app.post("/api/invite/accept", requireAuth, async (req, res) => {
   res.json({ notebook_id: nb.id, title: nb.title });
 });
 
-// GET /api/notebooks/:id/notes — list notes in a notebook
+// GET /api/notebooks/:id/notes — list ALL notes in a notebook (all members see all notes)
 app.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, res) => {
   const { data, error } = await supabase
     .from("notes")
     .select("id, title, content, file_url, created_at")
-    .eq("notebook_id", req.params.id)
+    .eq("notebook_id", req.params.id)  // no user_id filter — members see every note
     .order("created_at", { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.json(data ?? []);
 });
 
 // POST /api/notebooks/:id/notes — upload a note (text and/or file)
@@ -530,11 +530,17 @@ app.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   if (!invite) return res.status(404).json({ error: "Invalid or expired invite link" });
 
-  await supabase.from("notebook_members").upsert(
+  const { error: upsertError } = await supabase.from("notebook_members").upsert(
     { notebook_id: invite.notebook_id, user_id: req.user.id, role: "member" },
     { onConflict: "notebook_id,user_id" }
   );
 
+  if (upsertError) {
+    console.error("acceptInvite: failed to add member:", upsertError);
+    return res.status(500).json({ error: "Failed to join notebook: " + upsertError.message });
+  }
+
+  console.log(`[invite] accepted — user ${req.user.id} joined notebook ${invite.notebook_id}`);
   res.json({ notebook_id: invite.notebook_id, title: invite.notebooks?.title });
 });
 

@@ -793,51 +793,135 @@ function UnitRow({ unit, color, onClick }) {
   );
 }
 
-function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit }) {
+function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleConfirm() {
+    setLoading(true);
+    setError("");
+    try {
+      await onConfirm();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: "fixed", inset: 0, background: "rgba(10,10,15,0.8)",
+      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#111118", border: "1px solid #2A2A38",
+        borderRadius: 20, width: "100%", maxWidth: 400,
+        padding: "32px 28px", boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ fontSize: 22, marginBottom: 12 }}>🗑️</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 8 }}>
+          Delete "{cls.title}"?
+        </div>
+        <div style={{ fontSize: 13, color: "#606080", fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.5, marginBottom: 24 }}>
+          This will delete the class and all units and notes inside it. This cannot be undone.
+        </div>
+        {error && (
+          <div style={{ background: "#2A1A1A", border: "1px solid #5A2020", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#F87171", fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button" onClick={onClose}
+            style={{ flex: 1, background: "transparent", border: "1px solid #2A2A38", borderRadius: 10, padding: "11px", color: "#606080", fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#3A3A50"; e.currentTarget.style.color = "#A0A0C0"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A2A38"; e.currentTarget.style.color = "#606080"; }}
+          >Cancel</button>
+          <button
+            type="button" onClick={handleConfirm} disabled={loading}
+            style={{ flex: 1, background: loading ? "#5A1A1A" : "#7F1D1D", border: "1px solid #991B1B", borderRadius: 10, padding: "11px", color: "#FCA5A5", fontWeight: 700, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s", opacity: loading ? 0.7 : 1 }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#991B1B"; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = "#7F1D1D"; }}
+          >{loading ? "Deleting…" : "Delete class"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div style={{
-      background: "#111118",
-      border: `1px solid ${expanded ? cls.color + "55" : "#1E1E2A"}`,
-      borderRadius: 16, overflow: "hidden", transition: "border-color 0.2s",
+      background: hovered || expanded ? "rgba(255,255,255,0.03)" : "transparent",
+      border: `1px solid ${expanded ? cls.color + "40" : hovered ? "#2A2A3A" : "#18181E"}`,
+      borderRadius: 14, overflow: "hidden",
+      transition: "background 0.2s, border-color 0.2s",
     }}>
       <div
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          padding: "16px 20px", cursor: "pointer",
+          padding: "14px 18px", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 12,
-          background: hovered ? "#16161F" : "transparent",
+          position: "relative",
           transition: "background 0.15s",
         }}
       >
+        {/* Color strip on left edge */}
         <div style={{
-          width: 38, height: 38, borderRadius: 10,
-          background: cls.color + "20", border: `1px solid ${cls.color}44`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 18, flexShrink: 0,
-        }}>📁</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif" }}>{cls.title}</div>
-          <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+          background: cls.color, borderRadius: "14px 0 0 14px",
+          opacity: expanded ? 1 : hovered ? 0.6 : 0.3,
+          transition: "opacity 0.2s",
+        }} />
+
+        <div style={{ flex: 1, minWidth: 0, paddingLeft: 4 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#D8D8EC", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.01em" }}>
+            {cls.title}
+          </div>
+          <div style={{ fontSize: 11, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: 1 }}>
             {units === null ? "…" : `${units.length} unit${units.length !== 1 ? "s" : ""}`}
           </div>
         </div>
+
+        {/* Delete button — visible on hover */}
+        {onDeleteClass && (
+          <button
+            onClick={e => { e.stopPropagation(); onDeleteClass(); }}
+            title="Delete class"
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              padding: "4px 6px", borderRadius: 6, fontSize: 13,
+              color: "#404060", opacity: hovered ? 1 : 0,
+              transition: "opacity 0.15s, color 0.15s",
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#F87171"; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "#404060"; }}
+          >🗑️</button>
+        )}
+
         <div style={{
-          fontSize: 11, color: cls.color,
-          transition: "transform 0.2s", transform: expanded ? "rotate(90deg)" : "none",
+          fontSize: 10, color: expanded ? cls.color : "#404060",
+          transition: "transform 0.2s, color 0.2s",
+          transform: expanded ? "rotate(90deg)" : "none",
+          flexShrink: 0,
         }}>▶</div>
       </div>
 
       {expanded && (
-        <div style={{ borderTop: "1px solid #1A1A24", padding: "10px 14px 14px" }}>
+        <div style={{ padding: "8px 18px 16px 18px", paddingLeft: 25 }}>
           {units === null ? (
-            <div style={{ padding: "12px 8px", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Loading…</div>
+            <div style={{ padding: "10px 0", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Loading…</div>
           ) : units.length === 0 ? (
-            <div style={{ padding: "12px 8px", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No units yet — add one below</div>
+            <div style={{ padding: "10px 0", fontSize: 12, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No units yet — add one below</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
               {units.map(unit => (
                 <UnitRow key={unit.id} unit={unit} color={cls.color} onClick={() => onOpenUnit(unit)} />
               ))}
@@ -847,13 +931,13 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit }) {
             onClick={onNewUnit}
             style={{
               width: "100%", background: "transparent",
-              border: `1px dashed ${cls.color}55`, borderRadius: 10,
-              padding: "9px", color: cls.color, fontSize: 12, fontWeight: 600,
+              border: `1px dashed ${cls.color}44`, borderRadius: 8,
+              padding: "8px", color: cls.color, fontSize: 12, fontWeight: 600,
               cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-              transition: "all 0.15s",
+              transition: "all 0.15s", marginTop: 2,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = cls.color + "14"; e.currentTarget.style.borderColor = cls.color + "99"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = cls.color + "55"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = cls.color + "12"; e.currentTarget.style.borderColor = cls.color + "80"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = cls.color + "44"; }}
           >+ New Unit</button>
         </div>
       )}
@@ -1139,6 +1223,7 @@ export default function Scholr() {
   const [newUnitFor, setNewUnitFor] = useState(null);      // { classId, classTitle }
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteClassTarget, setDeleteClassTarget] = useState(null); // cls object to confirm-delete
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
@@ -1261,6 +1346,15 @@ export default function Scholr() {
     }
   }
 
+  async function handleDeleteClass(classId) {
+    await api.deleteClass(classId);
+    setClasses(prev => prev.filter(c => c.id !== classId));
+    setClassUnitsCache(prev => { const next = { ...prev }; delete next[classId]; return next; });
+    if (expandedClassId === classId) setExpandedClassId(null);
+    setToast("Class deleted");
+    setTimeout(() => setToast(""), 3000);
+  }
+
   async function handleDeleteAccount() {
     await api.deleteAccount();
     localStorage.clear();
@@ -1344,6 +1438,14 @@ export default function Scholr() {
         />
       )}
 
+      {deleteClassTarget && (
+        <ConfirmDeleteClassModal
+          cls={deleteClassTarget}
+          onClose={() => setDeleteClassTarget(null)}
+          onConfirm={() => handleDeleteClass(deleteClassTarget.id)}
+        />
+      )}
+
       {toast && (
         <div style={{
           position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
@@ -1376,13 +1478,13 @@ export default function Scholr() {
 
       {/* Dashboard — only rendered when authenticated */}
       <div style={{
-        height: "100vh", overflow: "hidden", background: "#0A0A0F",
+        height: "100vh", overflow: "hidden", background: "#08080D",
         display: user ? "flex" : "none", fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
-        {/* Sidebar — sticky, independent scroll */}
+        {/* Sidebar — no border, blends into background */}
         <div style={{
-          width: 220, background: "#0D0D14", borderRight: "1px solid #1A1A24",
-          padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4,
+          width: 210, background: "#0A0A0F",
+          padding: "28px 14px", display: "flex", flexDirection: "column", gap: 2,
           flexShrink: 0, height: "100vh", overflowY: "auto",
           position: "sticky", top: 0,
         }}>
@@ -1400,35 +1502,37 @@ export default function Scholr() {
                 key={id}
                 onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
                 style={{
-                  padding: "9px 12px", borderRadius: 10, display: "flex", alignItems: "center", gap: 8,
-                  background: active ? "#1A1A28" : "transparent",
-                  color: active ? "#E8E8F0" : "#606080",
+                  padding: "8px 12px", borderRadius: 8, display: "flex", alignItems: "center", gap: 9,
+                  background: active ? "rgba(167,139,250,0.1)" : "transparent",
+                  color: active ? "#C4B5FD" : "#505068",
                   fontSize: 13, fontWeight: active ? 600 : 400,
                   cursor: "pointer", transition: "background 0.15s, color 0.15s",
                   userSelect: "none",
+                  borderLeft: active ? "2px solid #A78BFA" : "2px solid transparent",
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#14141E"; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#8080A0"; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#505068"; } }}
               >
-                <span style={{ fontSize: 14, opacity: active ? 1 : 0.6 }}>{icon}</span>
+                <span style={{ fontSize: 13, opacity: active ? 1 : 0.5 }}>{icon}</span>
                 {label}
               </div>
             );
           })}
 
-          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 12px", borderRadius: 10, background: "#111118"
+              display: "flex", alignItems: "center", gap: 9,
+              padding: "9px 10px", borderRadius: 8,
+              background: "rgba(255,255,255,0.03)",
             }}>
-              <Avatar name={displayName} size={30} />
+              <Avatar name={displayName} size={28} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 12, fontWeight: 600, color: "#D0D0E8",
+                  fontSize: 12, fontWeight: 600, color: "#C0C0DC",
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                 }}>{displayName}</div>
                 <div style={{
-                  fontSize: 10, color: "#404060",
+                  fontSize: 10, color: "#383850",
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                 }}>{user?.email}</div>
               </div>
@@ -1438,21 +1542,21 @@ export default function Scholr() {
               onClick={handleLogout}
               style={{
                 width: "100%", background: "transparent",
-                border: "1px solid #2A2A38", borderRadius: 10,
-                padding: "9px 12px", color: "#505070", fontSize: 12,
+                border: "none", borderRadius: 8,
+                padding: "8px 12px", color: "#3A3A58", fontSize: 12,
                 cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif",
-                transition: "all 0.15s", textAlign: "left",
+                transition: "color 0.15s", textAlign: "left",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#5A2A2A"; e.currentTarget.style.color = "#F87171"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#2A2A38"; e.currentTarget.style.color = "#505070"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "#3A3A58"; }}
             >
               Sign out
             </button>
           </div>
         </div>
 
-        {/* Main */}
-        <div style={{ flex: 1, padding: "32px 36px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+        {/* Main — full bleed, no border */}
+        <div style={{ flex: 1, padding: "40px 48px 40px 36px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView
@@ -1516,13 +1620,13 @@ export default function Scholr() {
           ) : (
             <div style={{ animation: "fadeIn 0.3s ease" }}>
               {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
                 <div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.02em" }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: "#EEEEFA", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
                     {activeView === "dashboard" ? getGreeting(displayName) : viewLabel}
                   </div>
                   {activeView !== "dashboard" && (
-                    <div style={{ fontSize: 13, color: "#505070", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "#404060", marginTop: 4, fontFamily: "'DM Mono', monospace", letterSpacing: "0.05em" }}>
                       {`${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
                     </div>
                   )}
@@ -1530,9 +1634,9 @@ export default function Scholr() {
                 {activeView === "dashboard" && (
                   <button
                     onClick={() => setShowNewClassModal(true)}
-                    style={{ background: "#A78BFA", border: "none", borderRadius: 12, padding: "10px 20px", color: "#0A0A0F", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "opacity 0.15s" }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-                    onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                    style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 10, padding: "9px 18px", color: "#C4B5FD", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s", flexShrink: 0 }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(167,139,250,0.25)"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.6)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(167,139,250,0.15)"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
                   >+ New Class</button>
                 )}
               </div>
@@ -1542,20 +1646,22 @@ export default function Scholr() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={activeView === "dashboard" ? "Search classes…" : `Search ${viewLabel.toLowerCase()}…`}
-                style={{ width: "100%", background: "#111118", border: "1px solid #1E1E2A", borderRadius: 12, padding: "12px 16px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24 }}
+                style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "11px 16px", color: "#D0D0E8", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 28, transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.3)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
               />
 
               {/* Dashboard: class cards */}
               {activeView === "dashboard" ? (
                 filteredClasses.length === 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
-                    <div style={{ fontSize: 32 }}>📁</div>
-                    <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 12 }}>
+                    <div style={{ fontSize: 36, opacity: 0.4 }}>📁</div>
+                    <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#404060" }}>
                       {search ? "No classes match your search" : "No classes yet — create one to get started"}
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 40 }}>
                     {filteredClasses.map(cls => (
                       <ClassCard
                         key={cls.id}
@@ -1565,6 +1671,7 @@ export default function Scholr() {
                         onToggle={() => handleToggleClass(cls.id)}
                         onOpenUnit={unit => setActiveNb(unit)}
                         onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
+                        onDeleteClass={() => setDeleteClassTarget(cls)}
                       />
                     ))}
                   </div>
@@ -1572,9 +1679,9 @@ export default function Scholr() {
 
               /* My Notes / Shared / Starred: flat notebook list */
               ) : filtered.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
-                  <div style={{ fontSize: 32 }}>{activeView === "starred" ? "★" : "📓"}</div>
-                  <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 0", gap: 12 }}>
+                  <div style={{ fontSize: 36, opacity: 0.4 }}>{activeView === "starred" ? "★" : "📓"}</div>
+                  <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#404060" }}>
                     {search ? "No notebooks match your search"
                       : activeView === "starred" ? "No starred notebooks yet"
                       : "No notebooks here yet"}
@@ -1587,10 +1694,10 @@ export default function Scholr() {
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" }}>
+                  <div style={{ fontSize: 10, color: "#303050", fontFamily: "'DM Mono', monospace", letterSpacing: "0.12em", marginBottom: 16, textTransform: "uppercase" }}>
                     {viewLabel}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14, marginBottom: 32 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 12, marginBottom: 40 }}>
                     {filtered.map(nb => (
                       <NotebookCard
                         key={nb.id}
@@ -1607,9 +1714,9 @@ export default function Scholr() {
               {/* Notifications — dashboard only */}
               {activeView === "dashboard" && (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      Notifications {notifications.length > 0 && <span style={{ color: "#A78BFA" }}>({notifications.length})</span>}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, color: "#303050", fontFamily: "'DM Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                      Notifications {notifications.length > 0 && <span style={{ color: "#A78BFA" }}>· {notifications.length}</span>}
                     </div>
                     {notifications.length > 0 && (
                       <button
@@ -1619,45 +1726,40 @@ export default function Scholr() {
                         }}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif",
+                          fontSize: 11, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif",
                           padding: "2px 6px", borderRadius: 6, transition: "color 0.15s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"}
-                        onMouseLeave={e => e.currentTarget.style.color = "#505070"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#404060"}
                       >
                         Clear all
                       </button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <div style={{
-                      background: "#111118", border: "1px solid #1A1A24",
-                      borderRadius: 12, padding: "20px 16px",
-                      fontSize: 13, color: "#404060",
-                      fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: "center",
-                    }}>
+                    <div style={{ padding: "8px 0", fontSize: 13, color: "#303048", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                       No new notifications
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {notifications.map(n => (
                         <div key={n.id} style={{
                           display: "flex", alignItems: "center", gap: 12,
-                          background: "#111118", border: "1px solid #1A1A24",
-                          borderRadius: 12, padding: "12px 16px"
+                          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
+                          borderRadius: 10, padding: "12px 16px",
                         }}>
-                          <div style={{ fontSize: 20, flexShrink: 0 }}>📎</div>
+                          <div style={{ fontSize: 16, flexShrink: 0, opacity: 0.6 }}>📎</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: "#C0C0D8", fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.4 }}>
+                            <div style={{ fontSize: 13, color: "#A0A0C0", fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.4 }}>
                               {n.activities?.description ?? n.activities?.action}
                             </div>
                             {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: 2 }}>
+                              <div style={{ fontSize: 11, color: "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: 2 }}>
                                 in {n.activities.notebooks.title}
                               </div>
                             )}
                           </div>
-                          <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
+                          <div style={{ fontSize: 11, color: "#303050", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
                             {timeAgo(n.created_at)}
                           </div>
                         </div>

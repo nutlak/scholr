@@ -414,6 +414,25 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
   res.status(201).json(nb);
 });
 
+// DELETE /api/classes/:id — delete a class and all its notebooks/units
+app.delete("/api/classes/:id", requireAuth, async (req, res) => {
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!cls) return res.status(403).json({ error: "Class not found or not authorized" });
+
+  const { error } = await supabase
+    .from("classes")
+    .delete()
+    .eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.status(200).json({ success: true, message: "Class deleted" });
+});
+
 // POST /api/notebooks/:id/invite — return (or regenerate) an invite link
 app.post("/api/notebooks/:id/invite", requireAuth, requireMember, async (req, res) => {
   if (req.membership.role !== "owner")

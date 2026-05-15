@@ -108,6 +108,19 @@ export const api = {
     return res.json();
   },
 
+  async deleteClass(classId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/${classId}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete class");
+    }
+    return res.json(); // { success: true, message: "Class deleted" }
+  },
+
   async listClassNotebooks(classId, displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/classes/${classId}/notebooks`, { headers });

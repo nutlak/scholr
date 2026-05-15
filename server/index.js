@@ -229,18 +229,26 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
   if (!role || !content) return res.status(400).json({ error: "role and content are required" });
   if (!["user", "assistant"].includes(role)) return res.status(400).json({ error: "role must be user or assistant" });
 
+  const notebookId = req.params.id;
+  const userId = req.user.id;
+  console.log("saving message:", { notebookId, role, content: content.slice(0, 80), userId });
+
   const { data, error } = await supabase
     .from("messages")
     .insert({
-      notebook_id: req.params.id,
+      notebook_id: notebookId,
       role,
       content,
-      created_by: role === "user" ? req.user.id : null,
+      created_by: role === "user" ? userId : null,
     })
     .select("id, role, content, created_at, created_by")
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error("failed to save message:", error);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log("message saved with id:", data?.id);
   res.status(201).json(data);
 });
 

@@ -258,14 +258,18 @@ function NotebookView({ nb, onBack, onDeleted }) {
     setMessages(m => [...m, { role: "user", text }]);
 
     // Persist the user message (fire-and-forget; don't block the AI call)
-    api.addMessage(nb.id, "user", text).catch(() => {});
+    console.log("calling addMessage:", { notebookId: nb.id, role: "user", content: text });
+    api.addMessage(nb.id, "user", text)
+      .catch(err => console.error("addMessage failed (user):", err));
 
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
       setMessages(m => [...m, { role: "assistant", text: data.answer }]);
       // Persist the assistant reply
-      api.addMessage(nb.id, "assistant", data.answer).catch(() => {});
+      console.log("calling addMessage:", { notebookId: nb.id, role: "assistant", content: data.answer.slice(0, 80) });
+      api.addMessage(nb.id, "assistant", data.answer)
+        .catch(err => console.error("addMessage failed (assistant):", err));
     } catch (err) {
       setMessages(m => [...m, {
         role: "assistant",

@@ -269,6 +269,7 @@ export default function LandingPage({ onSignIn }) {
 
         <div style={{
           position: "relative", zIndex: 1, maxWidth: 860,
+          width: "100%", margin: "0 auto", textAlign: "center",
           animation: "fadeUp 0.8s ease both",
         }}>
           {/* Pill badge */}

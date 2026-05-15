@@ -6,7 +6,15 @@ import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
 import "./App.css";
 
-const recentActivity = [];
+function timeAgo(iso) {
+  const secs = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 const avatarColors = ["#A78BFA", "#A78BFA", "#34D399", "#F472B6", "#FBBF24"];
 
@@ -455,10 +463,11 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           const isAssistant = m.role === "assistant";
 
           // Label shown above the bubble
+          const senderInfo = isOtherMember ? members.find(mem => mem.user_id === m.createdBy) : null;
           const senderLabel = isAssistant
             ? "🤖 Derek"
             : isOtherMember
-              ? (members.find(mem => mem.user_id === m.createdBy)?.email ?? "Member")
+              ? (senderInfo?.first_name || senderInfo?.email || "Member")
               : null;
 
           const alignRight = isOwn;
@@ -1121,6 +1130,7 @@ export default function Scholr() {
   const [sharedNotebooks, setSharedNotebooks] = useState([]); // notebooks user was invited to
   const [starredNotebooks, setStarredNotebooks] = useState([]); // starred by user
   const [starredIds, setStarredIds] = useState(new Set());    // Set<notebookId> for O(1) lookup
+  const [notifications, setNotifications] = useState([]);     // unread notifications for dashboard
   const [classes, setClasses] = useState([]);              // class folders for dashboard
   const [expandedClassId, setExpandedClassId] = useState(null);
   const [classUnitsCache, setClassUnitsCache] = useState({}); // { classId: unit[] }
@@ -1201,6 +1211,7 @@ export default function Scholr() {
       })
       .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
+    api.getNotifications().then(setNotifications).catch(console.error);
   }, [user, authReady]);
 
   async function handleToggleClass(classId) {
@@ -1253,7 +1264,7 @@ export default function Scholr() {
     localStorage.clear();
     await supabase.auth.signOut();
     setUser(null); setNotebooks([]); setOwnedNotebooks([]); setSharedNotebooks([]);
-    setStarredNotebooks([]); setStarredIds(new Set());
+    setStarredNotebooks([]); setStarredIds(new Set()); setNotifications([]);
     setClasses([]); setClassUnitsCache({});
     setActiveNb(null); setActiveView("dashboard");
   }
@@ -1262,7 +1273,7 @@ export default function Scholr() {
     await supabase.auth.signOut();
     setUser(null); setActiveNb(null); setNotebooks([]); setOwnedNotebooks([]);
     setSharedNotebooks([]); setStarredNotebooks([]); setStarredIds(new Set());
-    setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
+    setNotifications([]); setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
   }
 
   const displayName = getDisplayName(user);
@@ -1590,34 +1601,62 @@ export default function Scholr() {
                 </>
               )}
 
-              {/* Recent Activity — dashboard only */}
+              {/* Notifications — dashboard only */}
               {activeView === "dashboard" && (
                 <>
-                  <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 12, textTransform: "uppercase" }}>
-                    Recent Activity
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      Notifications {notifications.length > 0 && <span style={{ color: "#A78BFA" }}>({notifications.length})</span>}
+                    </div>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          setNotifications([]);
+                          try { await api.clearAllNotifications(); } catch { /* silent */ }
+                        }}
+                        style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif",
+                          padding: "2px 6px", borderRadius: 6, transition: "color 0.15s",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#505070"}
+                      >
+                        Clear all
+                      </button>
+                    )}
                   </div>
-                  {recentActivity.length === 0 ? (
+                  {notifications.length === 0 ? (
                     <div style={{
                       background: "#111118", border: "1px solid #1A1A24",
                       borderRadius: 12, padding: "20px 16px",
                       fontSize: 13, color: "#404060",
                       fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: "center",
                     }}>
-                      No new notifications yet
+                      No new notifications
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {recentActivity.map((a, i) => (
-                        <div key={i} style={{
+                      {notifications.map(n => (
+                        <div key={n.id} style={{
                           display: "flex", alignItems: "center", gap: 12,
                           background: "#111118", border: "1px solid #1A1A24",
                           borderRadius: 12, padding: "12px 16px"
                         }}>
-                          <Avatar name={a.user} size={30} />
-                          <div style={{ flex: 1, fontSize: 13, color: "#8080A0", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            <span style={{ color: "#C0C0D8", fontWeight: 600 }}>{a.user}</span> {a.action} <span style={{ color: "#C0C0D8" }}>{a.target}</span>
+                          <div style={{ fontSize: 20, flexShrink: 0 }}>📎</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: "#C0C0D8", fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.4 }}>
+                              {n.activities?.description ?? n.activities?.action}
+                            </div>
+                            {n.activities?.notebooks?.title && (
+                              <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: 2 }}>
+                                in {n.activities.notebooks.title}
+                              </div>
+                            )}
                           </div>
-                          <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace" }}>{a.time}</div>
+                          <div style={{ fontSize: 11, color: "#404060", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
+                            {timeAgo(n.created_at)}
+                          </div>
                         </div>
                       ))}
                     </div>

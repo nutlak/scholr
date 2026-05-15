@@ -242,11 +242,16 @@ app.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req, re
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // Fetch emails from auth.users via admin API
+  // Fetch email + first_name from auth.users via admin API
   const results = await Promise.all(
     (members ?? []).map(async ({ user_id, role }) => {
       const { data } = await supabase.auth.admin.getUserById(user_id);
-      return { user_id, role, email: data?.user?.email ?? null };
+      return {
+        user_id,
+        role,
+        email:      data?.user?.email ?? null,
+        first_name: data?.user?.user_metadata?.first_name ?? null,
+      };
     })
   );
 
@@ -508,8 +513,74 @@ app.post(
 
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json(data);
+
+    // Fire-and-forget: log activity and notify other members
+    (async () => {
+      try {
+        const noteTitle = title || req.file?.originalname || "note";
+        const { data: activity } = await supabase
+          .from("activities")
+          .insert({
+            notebook_id: req.params.id,
+            user_id: req.user.id,
+            action: "note_uploaded",
+            description: `Uploaded: ${noteTitle}`,
+          })
+          .select("id")
+          .single();
+
+        if (!activity) return;
+
+        const { data: otherMembers } = await supabase
+          .from("notebook_members")
+          .select("user_id")
+          .eq("notebook_id", req.params.id)
+          .neq("user_id", req.user.id);
+
+        if (otherMembers?.length) {
+          await supabase.from("notifications").insert(
+            otherMembers.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
+          );
+        }
+      } catch (err) {
+        console.error("activity log failed:", err);
+      }
+    })();
   }
 );
+
+// GET /api/notifications — unread notifications for the current user
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select(`
+      id, is_read, created_at,
+      activities (
+        action, description, created_at,
+        notebooks ( title )
+      )
+    `)
+    .eq("user_id", req.user.id)
+    .eq("is_read", false)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// PATCH /api/notifications/clear-all — mark all unread notifications as read
+app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("user_id", req.user.id)
+    .eq("is_read", false)
+    .select("id");
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ cleared: data?.length ?? 0 });
+});
 
 // POST /api/notebooks/:id/query — AI query against notebook notes (BYOK)
 app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res) => {

@@ -193,6 +193,20 @@ export const api = {
     return res.json();
   },
 
+  async getNotifications() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notifications`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, is_read, created_at, activities: { action, description, created_at, notebooks: { title } } }]
+  },
+
+  async clearAllNotifications() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notifications/clear-all`, { method: "PATCH", headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { cleared: N }
+  },
+
   async getStarredNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/starred`, { headers });

@@ -250,7 +250,7 @@ app.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req, re
         user_id,
         role,
         email:      data?.user?.email ?? null,
-        first_name: data?.user?.user_metadata?.first_name ?? null,
+        first_name: data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
       };
     })
   );
@@ -521,7 +521,7 @@ app.post(
 
         // Look up uploader's first name for a human-readable description
         const { data: uploaderData } = await supabase.auth.admin.getUserById(req.user.id);
-        const uploaderName = uploaderData?.user?.user_metadata?.first_name?.trim()
+        const uploaderName = uploaderData?.user?.user_metadata?.full_name?.split(" ")[0]?.trim()
           || uploaderData?.user?.email?.split("@")[0]
           || "Someone";
 

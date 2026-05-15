@@ -467,7 +467,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           const senderLabel = isAssistant
             ? "🤖 Derek"
             : isOtherMember
-              ? (senderInfo?.first_name?.trim() || senderInfo?.email?.trim() || "Member")
+              ? (senderInfo?.first_name?.trim() || senderInfo?.email?.split("@")[0] || "Member")
               : null;
 
           const alignRight = isOwn;

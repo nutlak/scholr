@@ -69,14 +69,21 @@ async function requireAuth(req, res, next) {
 
 // Verify the caller is a member of the given notebook.
 async function requireMember(req, res, next) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("notebook_members")
     .select("role")
     .eq("notebook_id", req.params.id)
     .eq("user_id", req.user.id)
     .maybeSingle();
 
-  if (!data) return res.status(403).json({ error: "Not a member of this notebook" });
+  if (error) {
+    console.error(`requireMember: DB error for notebook=${req.params.id} user=${req.user.id}:`, error);
+    return res.status(500).json({ error: "Membership check failed" });
+  }
+  if (!data) {
+    console.warn(`requireMember: DENIED — user=${req.user.id} is not a member of notebook=${req.params.id}`);
+    return res.status(403).json({ error: "Not a member of this notebook" });
+  }
   req.membership = data; // { role: 'owner' | 'member' }
   next();
 }
@@ -341,7 +348,11 @@ app.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, res)
     .eq("notebook_id", req.params.id)  // no user_id filter — members see every note
     .order("created_at", { ascending: false });
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error(`listNotes: query error for notebook=${req.params.id}:`, error);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log(`listNotes: notebook=${req.params.id} role=${req.membership.role} found=${data?.length ?? 0} notes`);
   res.json(data ?? []);
 });
 

@@ -127,11 +127,20 @@ export default function LandingPage({ onSignIn }) {
         }
         @keyframes orb1 {
           0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(40px, -30px) scale(1.08); }
+          50%       { transform: translate(28px, -22px) scale(1.06); }
         }
         @keyframes orb2 {
           0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(-30px, 40px) scale(1.06); }
+          50%       { transform: translate(-24px, 30px) scale(1.05); }
+        }
+        @keyframes orb3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%       { transform: translate(20px, 18px) scale(1.04); }
+          66%       { transform: translate(-18px, -14px) scale(0.97); }
+        }
+        @keyframes glowPulse {
+          0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+          50%       { transform: translate(-50%, -50%) scale(1.005); opacity: 0.85; }
         }
         @keyframes shimmer {
           0%   { background-position: -200% center; }
@@ -144,9 +153,25 @@ export default function LandingPage({ onSignIn }) {
           color: #fff; border: none; border-radius: 12px;
           padding: 13px 28px; font-size: 14px; font-weight: 700;
           cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
-          transition: opacity 0.2s, transform 0.15s; white-space: nowrap;
+          transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s; white-space: nowrap;
         }
         .landing-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+        .hero-btn-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: linear-gradient(135deg, #A78BFA, #7C3AED);
+          color: #fff; border: none; border-radius: 14px;
+          padding: 16px 40px; font-size: 16px; font-weight: 600;
+          cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+          white-space: nowrap; min-height: 56px;
+          box-shadow: 0 12px 32px rgba(167, 139, 250, 0.25);
+          transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+        .hero-btn-primary:hover {
+          transform: scale(1.02) translateY(-1px);
+          box-shadow: 0 18px 48px rgba(167, 139, 250, 0.38);
+          opacity: 0.93;
+        }
 
         .landing-btn-ghost {
           display: inline-flex; align-items: center;
@@ -154,10 +179,25 @@ export default function LandingPage({ onSignIn }) {
           border: 1px solid #2A2A38; border-radius: 12px;
           padding: 12px 24px; font-size: 14px; font-weight: 600;
           cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
-          transition: border-color 0.2s, color 0.2s, transform 0.15s;
+          transition: border-color 0.2s, color 0.2s, transform 0.18s;
         }
         .landing-btn-ghost:hover {
-          border-color: #A78BFA66; color: #E8E8F0; transform: translateY(-1px);
+          border-color: #A78BFA66; color: #E8E8F0;
+          transform: scale(1.01) translateY(-1px);
+        }
+
+        .hero-btn-ghost {
+          display: inline-flex; align-items: center;
+          background: transparent; color: #9090B8;
+          border: 1px solid #2A2A38; border-radius: 14px;
+          padding: 16px 32px; font-size: 15px; font-weight: 600;
+          cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+          min-height: 56px; white-space: nowrap;
+          transition: border-color 0.2s, color 0.2s, transform 0.18s;
+        }
+        .hero-btn-ghost:hover {
+          border-color: #A78BFA66; color: #E8E8F0;
+          transform: scale(1.01) translateY(-1px);
         }
 
         .nav-sign-in {
@@ -204,18 +244,27 @@ export default function LandingPage({ onSignIn }) {
         textAlign: "center", padding: "80px 24px 64px",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Ambient orbs */}
+        {/* Ambient orbs — slow, blurred, depth layer */}
         <div style={{
-          position: "absolute", width: 600, height: 600, borderRadius: "50%",
-          background: "radial-gradient(circle, #A78BFA18 0%, transparent 70%)",
-          top: "10%", left: "50%", transform: "translateX(-50%)",
-          animation: "orb1 10s ease-in-out infinite", pointerEvents: "none",
+          position: "absolute", width: 700, height: 700, borderRadius: "50%",
+          background: "radial-gradient(circle, #A78BFA26 0%, transparent 68%)",
+          top: "5%", left: "50%", transform: "translateX(-50%)",
+          filter: "blur(60px)",
+          animation: "orb1 24s ease-in-out infinite", pointerEvents: "none",
         }} />
         <div style={{
-          position: "absolute", width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, #7C3AED14 0%, transparent 70%)",
-          bottom: "15%", right: "10%",
-          animation: "orb2 14s ease-in-out infinite", pointerEvents: "none",
+          position: "absolute", width: 480, height: 480, borderRadius: "50%",
+          background: "radial-gradient(circle, #7C3AED22 0%, transparent 68%)",
+          bottom: "10%", right: "8%",
+          filter: "blur(60px)",
+          animation: "orb2 30s ease-in-out infinite", pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", width: 360, height: 360, borderRadius: "50%",
+          background: "radial-gradient(circle, #A78BFA1A 0%, transparent 68%)",
+          top: "30%", left: "5%",
+          filter: "blur(60px)",
+          animation: "orb3 38s ease-in-out infinite", pointerEvents: "none",
         }} />
 
         <div style={{
@@ -233,14 +282,27 @@ export default function LandingPage({ onSignIn }) {
             ✨ AI-powered collaborative studying
           </div>
 
+          {/* Accent glow — sits behind the headline text */}
+          <div style={{
+            position: "absolute",
+            width: 400, height: 400, borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(167,139,250,0.30) 0%, transparent 70%)",
+            top: "38%", left: "62%",
+            transform: "translate(-50%, -50%)",
+            filter: "blur(80px)",
+            animation: "glowPulse 4s ease-in-out infinite",
+            pointerEvents: "none", zIndex: 0,
+          }} />
+
           {/* Headline */}
           <h1 style={{
-            fontSize: "clamp(40px, 7vw, 66px)",
-            fontWeight: 800, lineHeight: 1.12,
+            fontSize: 72,
+            fontWeight: 800, lineHeight: 1.05,
             fontFamily: "'Nunito', sans-serif",
-            letterSpacing: "-0.03em",
-            marginBottom: 24,
+            letterSpacing: "-0.02em",
+            marginBottom: 28,
             whiteSpace: "nowrap",
+            position: "relative", zIndex: 1,
           }}>
             <span style={{ color: "#ffffff" }}>Study smarter. </span>
             <span style={{
@@ -252,21 +314,22 @@ export default function LandingPage({ onSignIn }) {
 
           {/* Subheadline */}
           <p style={{
-            fontSize: "clamp(16px, 2.5vw, 20px)",
-            color: "#8080A0", lineHeight: 1.65,
-            maxWidth: 580, margin: "0 auto 40px",
+            fontSize: 18,
+            color: "#8080A0", opacity: 0.7, lineHeight: 1.6,
+            maxWidth: 620, margin: "0 auto 44px",
+            position: "relative", zIndex: 1,
           }}>
             Scholr turns your class notes into a shared AI tutor. Upload your notes,
             invite your study group, and ask Derek anything.
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="landing-btn-primary" onClick={onSignIn} style={{ fontSize: 15, padding: "14px 32px" }}>
+          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+            <button className="hero-btn-primary" onClick={onSignIn}>
               Get started free →
             </button>
-            <button className="landing-btn-ghost" onClick={onSignIn} style={{ fontSize: 15, padding: "14px 28px" }}>
-              Sign in
+            <button className="hero-btn-ghost" onClick={onSignIn}>
+              See how it works
             </button>
           </div>
 

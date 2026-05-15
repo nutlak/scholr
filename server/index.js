@@ -714,10 +714,10 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
   const focusStr = topic ? ` Focus specifically on: ${topic}.` : "";
 
   const prompts = {
-    study_guide: `Create a comprehensive study guide from these notes.${focusStr} Format as markdown with clear ## headers, ### subheaders, and bullet points. Cover all key concepts, definitions, formulas, and important details. Be thorough and well-structured.`,
-    questions: `Generate 10 practice questions based on these notes.${focusStr} Format as a numbered list (1. 2. 3. etc.). After all 10 questions, add a "## Answers" section with numbered answers. Write questions that test genuine understanding, not just memorization.`,
-    flashcards: `Create 10 flashcards based on these notes.${focusStr} Return ONLY a valid JSON array — no markdown, no explanation, no other text. Exact format: [{"question": "...", "answer": "..."}, ...]. Cover the most important concepts.`,
-    summary: `Write a clear, concise 2-3 paragraph summary of the main concepts from these notes.${focusStr} Focus on the big picture, key takeaways, and how concepts relate. Write in plain, readable prose — no bullet points or headers.`,
+    study_guide: `Create a comprehensive study guide from these notes.${focusStr} Write in plain text with no markdown, no # headers, no ** bold, no bullet dashes. Use natural section labels like "Key Concepts:" or "Important Definitions:" followed by a blank line. Use short paragraphs and simple numbered lists where helpful. Be thorough and educational.`,
+    questions: `Generate 10 practice questions based on these notes.${focusStr} Write as a plain numbered list: "1. Question here" then a blank line between each. After all 10 questions, write "Answers:" on its own line followed by numbered answers. No markdown, no bold, no special formatting — just clean plain text.`,
+    flashcards: `Create 10 flashcards based on these notes.${focusStr} Return ONLY a valid JSON array — no markdown, no explanation, no other text before or after the array. Exact format: [{"question": "...", "answer": "..."}, ...]. Cover the most important concepts.`,
+    summary: `Write a clear, concise 2-3 paragraph summary of the main concepts from these notes.${focusStr} Write in plain prose with no markdown, no bullet points, no headers, no bold or asterisks. Just natural, readable paragraphs that a student could read and understand immediately.`,
   };
 
   // Set up SSE
@@ -735,7 +735,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
     stream = anthropic.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 2048,
-      system: `You are a study material generator for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Generate high-quality, accurate study materials based solely on the notebook notes provided below.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      system: `You are a study material generator for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Generate high-quality, accurate study materials based solely on the notebook notes provided below. CRITICAL: Never use markdown formatting — no #, ##, **, *, -, or other markdown symbols. Write in plain, clean text only.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: prompts[action] }],
     });
 
@@ -752,6 +752,52 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
       res.end();
     }
   }
+});
+
+// POST /api/notebooks/:id/forge-output — save a Forge-generated output
+app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (req, res) => {
+  const { type, content, topic } = req.body;
+  const VALID_TYPES = ["study_guide", "questions", "flashcards", "summary"];
+  if (!type || !VALID_TYPES.includes(type)) return res.status(400).json({ error: "Invalid type" });
+  if (!content) return res.status(400).json({ error: "content is required" });
+
+  const labels = { study_guide: "Study Guide", questions: "Questions", flashcards: "Flashcards", summary: "Summary" };
+  const date = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const title = `${labels[type]}${topic ? ` — ${topic}` : ""} — ${date}`;
+
+  const { data, error } = await supabase
+    .from("forge_outputs")
+    .insert({ notebook_id: req.params.id, user_id: req.user.id, type, title, content })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// GET /api/notebooks/:id/forge-outputs — list saved Forge outputs
+app.get("/api/notebooks/:id/forge-outputs", requireAuth, requireMember, async (req, res) => {
+  const { data, error } = await supabase
+    .from("forge_outputs")
+    .select("id, type, title, content, created_at")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// DELETE /api/forge-outputs/:id — delete a saved Forge output (owner only)
+app.delete("/api/forge-outputs/:id", requireAuth, async (req, res) => {
+  const { data: fo } = await supabase
+    .from("forge_outputs")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!fo) return res.status(403).json({ error: "Not found or not authorized" });
+
+  const { error } = await supabase.from("forge_outputs").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).send();
 });
 
 // ── Invite endpoints ──────────────────────────────────────────────────────────

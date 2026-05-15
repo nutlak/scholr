@@ -213,27 +213,40 @@ const FORGE_ACTIONS = [
 ];
 
 function TheForge({ nb, onClose }) {
-  const [action, setAction] = useState(null);
-  const [topic, setTopic] = useState("");
-  const [content, setContent] = useState("");
+  const [action, setAction]         = useState(null);
+  const [topic, setTopic]           = useState("");
+  const [content, setContent]       = useState("");
   const [generating, setGenerating] = useState(false);
-  const [flashcards, setFlashcards] = useState(null);
-  const [flipped, setFlipped] = useState({});
-  const [learned, setLearned] = useState(new Set());
-  const [copied, setCopied] = useState(false);
+
+  // Flashcard state
+  const [flashcards, setFlashcards]       = useState(null);
+  const [cardIdx, setCardIdx]             = useState(0);
+  const [isFlipped, setIsFlipped]         = useState(false);
+  const [shuffledOrder, setShuffledOrder] = useState(null);
+  const [learned, setLearned]             = useState(new Set());
+
+  // UI
+  const [copied, setCopied]       = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const [savedOutputs, setSavedOutputs] = useState([]);
+  const [showSaved, setShowSaved] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
-    if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight;
-  }, [content]);
+    api.listForgeOutputs(nb.id).then(setSavedOutputs).catch(() => {});
+  }, [nb.id]);
+
+  useEffect(() => {
+    if (contentRef.current && !flashcards)
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+  }, [content, flashcards]);
 
   async function generate(selectedAction) {
     setAction(selectedAction);
-    setContent("");
-    setFlashcards(null);
-    setFlipped({});
-    setLearned(new Set());
-    setGenerating(true);
+    setContent(""); setFlashcards(null);
+    setCardIdx(0); setIsFlipped(false); setShuffledOrder(null); setLearned(new Set());
+    setGenerating(true); setSaved(false);
 
     let full = "";
     try {
@@ -244,7 +257,11 @@ function TheForge({ nb, onClose }) {
           if (selectedAction === "flashcards") {
             try {
               const m = full.match(/\[[\s\S]*\]/);
-              if (m) setFlashcards(JSON.parse(m[0]));
+              if (m) {
+                const cards = JSON.parse(m[0]);
+                setFlashcards(cards);
+                setShuffledOrder(cards.map((_, i) => i));
+              }
             } catch { /* fall back to text */ }
           }
           setGenerating(false);
@@ -259,8 +276,7 @@ function TheForge({ nb, onClose }) {
 
   function handleCopy() {
     navigator.clipboard.writeText(content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
   }
 
@@ -269,11 +285,51 @@ function TheForge({ nb, onClose }) {
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nb.title} - ${label}.txt`;
-    a.click();
+    a.href = url; a.download = `${nb.title} - ${label}.txt`; a.click();
     URL.revokeObjectURL(url);
   }
+
+  async function handleSave() {
+    if (!content || saving) return;
+    setSaving(true);
+    try {
+      const out = await api.saveForgeOutput(nb.id, action, content, topic);
+      setSavedOutputs(prev => [out, ...prev]);
+      setSaved(true); setTimeout(() => setSaved(false), 2500);
+    } catch { setSaved(false); }
+    setSaving(false);
+  }
+
+  async function handleDeleteSaved(id) {
+    try { await api.deleteForgeOutput(id); setSavedOutputs(p => p.filter(o => o.id !== id)); } catch {}
+  }
+
+  function loadSaved(o) {
+    setAction(o.type); setContent(o.content); setGenerating(false); setSaved(false); setShowSaved(false);
+    if (o.type === "flashcards") {
+      try {
+        const m = o.content.match(/\[[\s\S]*\]/);
+        if (m) { const cards = JSON.parse(m[0]); setFlashcards(cards); setShuffledOrder(cards.map((_, i) => i)); setCardIdx(0); setIsFlipped(false); setLearned(new Set()); return; }
+      } catch {}
+    }
+    setFlashcards(null);
+  }
+
+  // Flashcard navigation
+  const currentOrder = shuffledOrder ?? (flashcards?.map((_, i) => i) ?? []);
+  const currentCard  = flashcards?.[currentOrder[cardIdx]];
+  const totalCards   = flashcards?.length ?? 0;
+  const realIdx      = currentOrder[cardIdx];
+
+  function goNext() { if (cardIdx >= totalCards - 1) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i + 1), 120); }
+  function goPrev() { if (cardIdx <= 0) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i - 1), 120); }
+  function handleShuffle() {
+    setCardIdx(0); setIsFlipped(false);
+    const arr = [...currentOrder];
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    setShuffledOrder(arr);
+  }
+  function toggleLearned() { setLearned(p => { const n = new Set(p); n.has(realIdx) ? n.delete(realIdx) : n.add(realIdx); return n; }); }
 
   const showCards = action === "flashcards" && flashcards && !generating;
 
@@ -284,40 +340,56 @@ function TheForge({ nb, onClose }) {
       paddingLeft: 20, marginLeft: 16,
       height: "100%", minHeight: 0, flexShrink: 0,
     }}>
+      {/* Flip animation CSS */}
+      <style>{`
+        .forge-card { transition: transform 0.5s cubic-bezier(0.4,0.2,0.2,1); transform-style: preserve-3d; }
+        .forge-card.flipped { transform: rotateY(180deg); }
+        .forge-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .forge-back { transform: rotateY(180deg); }
+      `}</style>
+
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{ fontSize: 17 }}>🔨</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#C4B5FD", fontFamily: "'Nunito', sans-serif", letterSpacing: "-0.01em" }}>The Forge</span>
         </div>
-        <button
-          onClick={onClose}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "#404060", fontSize: 17, lineHeight: 1, padding: "2px 4px", borderRadius: 4 }}
-          onMouseEnter={e => e.currentTarget.style.color = "#D0D0E8"}
-          onMouseLeave={e => e.currentTarget.style.color = "#404060"}
-        >✕</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => setShowSaved(v => !v)}
+            style={{ background: showSaved ? "rgba(167,139,250,0.12)" : "none", border: `1px solid ${showSaved ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 6, padding: "3px 8px", cursor: "pointer", fontSize: 10, color: showSaved ? "#C4B5FD" : "#404060", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, letterSpacing: "0.04em", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#C4B5FD"; }}
+            onMouseLeave={e => { if (!showSaved) e.currentTarget.style.color = "#404060"; }}
+          >SAVED {savedOutputs.length > 0 && `(${savedOutputs.length})`}</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#404060", fontSize: 16, lineHeight: 1, padding: "2px 4px" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#D0D0E8"} onMouseLeave={e => e.currentTarget.style.color = "#404060"}>✕</button>
+        </div>
       </div>
+
+      {/* Saved outputs panel */}
+      {showSaved && (
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 10px", marginBottom: 10, maxHeight: 160, overflowY: "auto" }}>
+          {savedOutputs.length === 0 ? (
+            <div style={{ fontSize: 11, color: "#303050", fontFamily: "'Plus Jakarta Sans', sans-serif", padding: "4px 0" }}>No saved outputs yet</div>
+          ) : savedOutputs.map(o => (
+            <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <div onClick={() => loadSaved(o)} style={{ flex: 1, cursor: "pointer", minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: "#A0A0C0", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.title}</div>
+                <div style={{ fontSize: 10, color: "#303050", fontFamily: "'DM Mono', monospace" }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+              </div>
+              <button onClick={() => handleDeleteSaved(o.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#303050", fontSize: 12, padding: "2px 4px", flexShrink: 0 }}
+                onMouseEnter={e => e.currentTarget.style.color = "#F87171"} onMouseLeave={e => e.currentTarget.style.color = "#303050"}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Action buttons */}
       <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
         {FORGE_ACTIONS.map(a => (
-          <button
-            key={a.id}
-            onClick={() => generate(a.id)}
-            disabled={generating}
-            style={{
-              flex: 1, padding: "7px 2px", borderRadius: 8,
-              cursor: generating ? "not-allowed" : "pointer",
-              background: action === a.id ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.03)",
-              border: `1px solid ${action === a.id ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)"}`,
-              color: action === a.id ? "#C4B5FD" : "#505068",
-              fontSize: 10, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600,
-              transition: "all 0.15s", opacity: generating ? 0.55 : 1,
-              lineHeight: 1.4,
-            }}
+          <button key={a.id} onClick={() => generate(a.id)} disabled={generating} style={{ flex: 1, padding: "7px 2px", borderRadius: 8, cursor: generating ? "not-allowed" : "pointer", background: action === a.id ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.03)", border: `1px solid ${action === a.id ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)"}`, color: action === a.id ? "#C4B5FD" : "#505068", fontSize: 10, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s", opacity: generating ? 0.55 : 1, lineHeight: 1.4 }}
             onMouseEnter={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; e.currentTarget.style.color = "#A78BFA"; }}}
-            onMouseLeave={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#505068"; }}}
-          >
+            onMouseLeave={e => { if (!generating && action !== a.id) { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.color = "#505068"; }}}>
             <div style={{ fontSize: 14, marginBottom: 1 }}>{a.icon}</div>
             <div>{a.label}</div>
           </button>
@@ -325,143 +397,93 @@ function TheForge({ nb, onClose }) {
       </div>
 
       {/* Topic input */}
-      <input
-        value={topic}
-        onChange={e => setTopic(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)}
-        placeholder="Focus on a specific topic (optional)…"
-        disabled={generating}
-        style={{
-          width: "100%", background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8,
-          padding: "8px 12px", color: "#D0D0E8", fontSize: 12,
-          fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none",
-          marginBottom: 10, boxSizing: "border-box", transition: "border-color 0.15s",
-        }}
-        onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.3)"}
-        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
-      />
+      <input value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)} placeholder="Focus on a specific topic (optional)…" disabled={generating}
+        style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "8px 12px", color: "#D0D0E8", fontSize: 12, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 10, boxSizing: "border-box", transition: "border-color 0.15s" }}
+        onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.3)"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"} />
 
-      {/* Content area */}
-      <div
-        ref={contentRef}
-        style={{
-          flex: 1, overflowY: "auto", minHeight: 0,
-          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)",
-          borderRadius: 10, padding: "12px 14px",
-          fontSize: 12.5, color: "#B8B8D0", lineHeight: 1.75,
-          fontFamily: showCards ? "'Plus Jakarta Sans', sans-serif" : "'DM Mono', monospace",
-          whiteSpace: showCards ? "normal" : "pre-wrap",
-        }}
-      >
-        {/* Empty state */}
-        {!action && !content && (
-          <div style={{ textAlign: "center", paddingTop: 48 }}>
-            <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.4 }}>🔨</div>
-            <div style={{ fontWeight: 600, color: "#404060", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>The Forge</div>
-            <div style={{ fontSize: 12, color: "#303048", lineHeight: 1.6 }}>Pick a material type above to generate study content from your notebook notes.</div>
+      {/* ── Quizlet-style flashcard view ── */}
+      {showCards && currentCard ? (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          {/* Counter + meta */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#505070", fontFamily: "'DM Mono', monospace" }}>{cardIdx + 1} / {totalCards}</div>
+            <div style={{ fontSize: 11, color: "#505070", fontFamily: "'Plus Jakarta Sans', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "center", margin: "0 10px" }}>{nb.title}</div>
+            <div style={{ fontSize: 11, color: learned.size > 0 ? "#34D399" : "#303050", fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>{learned.size}/{totalCards}</div>
           </div>
-        )}
 
-        {/* Loading dots (before first chunk) */}
-        {generating && !content && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 6 }}>
-            {[0,1,2].map(i => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#4A4A70", animation: `pulse 1s ease-in-out ${i * 0.2}s infinite` }} />
-            ))}
-            <span style={{ fontSize: 11, color: "#404060", marginLeft: 6, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Generating…</span>
-          </div>
-        )}
-
-        {/* Interactive flashcards */}
-        {showCards && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 10, color: "#404060", fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 4 }}>
-              {learned.size}/{flashcards.length} LEARNED · CLICK CARD TO FLIP
-            </div>
-            {flashcards.map((card, i) => (
-              <div
-                key={i}
-                onClick={() => setFlipped(p => ({ ...p, [i]: !p[i] }))}
-                style={{
-                  background: flipped[i] ? "rgba(167,139,250,0.1)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${flipped[i] ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.07)"}`,
-                  borderRadius: 9, padding: "10px 12px", cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    {flipped[i] ? (
-                      <div style={{ color: "#C4B5FD", fontSize: 12.5, lineHeight: 1.5, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                        {card.answer}
-                      </div>
-                    ) : (
-                      <div style={{ color: "#D0D0E8", fontSize: 12.5, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                        <span style={{ color: "#505070", marginRight: 4 }}>Q{i+1}.</span>{card.question}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 10, color: "#303050", marginTop: 4, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                      {flipped[i] ? "↩ flip back" : "↩ reveal answer"}
-                    </div>
-                  </div>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      setLearned(p => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n; });
-                    }}
-                    title={learned.has(i) ? "Mark as not learned" : "Mark as learned"}
-                    style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      fontSize: 14, flexShrink: 0, padding: "2px 4px",
-                      color: learned.has(i) ? "#34D399" : "#303050",
-                      transition: "color 0.15s",
-                    }}
-                  >✓</button>
-                </div>
+          {/* Big flip card */}
+          <div style={{ perspective: "1400px", cursor: "pointer", flex: 1, minHeight: 0 }} onClick={() => setIsFlipped(f => !f)}>
+            <div className={`forge-card${isFlipped ? " flipped" : ""}`} style={{ width: "100%", height: "100%", position: "relative", minHeight: 180 }}>
+              {/* Front */}
+              <div className="forge-face" style={{ position: "absolute", inset: 0, background: "rgba(20,20,40,0.95)", border: "1px solid rgba(167,139,250,0.18)", borderRadius: 14, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 24px" }}>
+                <div style={{ fontSize: 15, color: "#E8E8F4", textAlign: "center", lineHeight: 1.65, fontFamily: "'Nunito', sans-serif", fontWeight: 700 }}>{currentCard.question}</div>
+                <div style={{ position: "absolute", bottom: 12, fontSize: 10, color: "#303050", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.05em" }}>CLICK TO FLIP</div>
               </div>
-            ))}
+              {/* Back */}
+              <div className="forge-face forge-back" style={{ position: "absolute", inset: 0, background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.35)", borderRadius: 14, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "28px 24px" }}>
+                <div style={{ fontSize: 14, color: "#C4B5FD", textAlign: "center", lineHeight: 1.65, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{currentCard.answer}</div>
+                <div style={{ position: "absolute", bottom: 12, fontSize: 10, color: "#504060", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.05em" }}>CLICK TO FLIP BACK</div>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Text content (non-flashcard streaming or final) */}
-        {!showCards && content && (
-          <span>
-            {content}
-            {generating && <span style={{ opacity: 0.35, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>▋</span>}
-          </span>
-        )}
+          {/* Navigation row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 12 }}>
+            <button onClick={goPrev} disabled={cardIdx === 0} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 18px", color: cardIdx === 0 ? "#202030" : "#7070A0", cursor: cardIdx === 0 ? "not-allowed" : "pointer", fontSize: 16, transition: "all 0.15s" }}>←</button>
+            <button onClick={handleShuffle} title="Shuffle cards" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 12px", color: "#505070", cursor: "pointer", fontSize: 13, transition: "all 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"} onMouseLeave={e => e.currentTarget.style.color = "#505070"}>🔀</button>
+            <button onClick={toggleLearned} style={{ background: learned.has(realIdx) ? "rgba(52,211,153,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.07)"}`, borderRadius: 8, padding: "8px 12px", color: learned.has(realIdx) ? "#34D399" : "#505070", cursor: "pointer", fontSize: 11, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s", whiteSpace: "nowrap" }}>
+              {learned.has(realIdx) ? "✓ Learned" : "Mark learned"}
+            </button>
+            <button onClick={goNext} disabled={cardIdx === totalCards - 1} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 18px", color: cardIdx === totalCards - 1 ? "#202030" : "#7070A0", cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 16, transition: "all 0.15s" }}>→</button>
+          </div>
 
-        {/* Streaming flashcard text before parse */}
-        {action === "flashcards" && !flashcards && content && !generating && (
-          <span>{content}</span>
-        )}
-      </div>
-
-      {/* Action bar */}
-      {content && !generating && (
-        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-          <button
-            onClick={handleCopy}
-            style={{
-              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 7, padding: "7px", color: copied ? "#34D399" : "#505068", fontSize: 11,
-              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}}
-            onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}}
-          >{copied ? "✓ Copied" : "📋 Copy"}</button>
-          <button
-            onClick={handleDownload}
-            style={{
-              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 7, padding: "7px", color: "#505068", fontSize: 11,
-              cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
-          >⬇ Download</button>
+          {/* Save flashcards */}
+          <button onClick={handleSave} disabled={saving} style={{ marginTop: 10, background: saved ? "rgba(52,211,153,0.1)" : "rgba(167,139,250,0.1)", border: `1px solid ${saved ? "rgba(52,211,153,0.3)" : "rgba(167,139,250,0.3)"}`, borderRadius: 7, padding: "8px", color: saved ? "#34D399" : saving ? "#808090" : "#C4B5FD", fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s" }}>
+            {saved ? "✓ Saved to notebook" : saving ? "Saving…" : "💾 Save flashcards"}
+          </button>
         </div>
+
+      ) : (
+        /* ── Text content (study guide / questions / summary) ── */
+        <>
+          <div ref={contentRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#C0C0DC", lineHeight: 1.8, fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: "pre-wrap" }}>
+            {/* Empty state */}
+            {!action && !content && (
+              <div style={{ textAlign: "center", paddingTop: 48 }}>
+                <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.35 }}>🔨</div>
+                <div style={{ fontWeight: 700, color: "#404060", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>The Forge</div>
+                <div style={{ fontSize: 12, color: "#282840", lineHeight: 1.7 }}>Pick a material type above to generate study content from your notebook notes.</div>
+              </div>
+            )}
+            {/* Loading dots */}
+            {generating && !content && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#4A4A70", animation: `pulse 1s ease-in-out ${i*0.2}s infinite` }} />)}
+                <span style={{ fontSize: 11, color: "#404060", marginLeft: 6 }}>Generating…</span>
+              </div>
+            )}
+            {/* Streaming or final text */}
+            {content && <span>{content}{generating && <span style={{ opacity: 0.3 }}>▋</span>}</span>}
+          </div>
+
+          {/* Action bar */}
+          {content && !generating && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <button onClick={handleCopy} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "7px", color: copied ? "#34D399" : "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
+                onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}}
+                onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}}
+              >{copied ? "✓ Copied" : "📋 Copy"}</button>
+              <button onClick={handleDownload} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "7px", color: "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}>⬇ Download</button>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, background: saved ? "rgba(52,211,153,0.1)" : "rgba(167,139,250,0.1)", border: `1px solid ${saved ? "rgba(52,211,153,0.3)" : "rgba(167,139,250,0.3)"}`, borderRadius: 7, padding: "7px", color: saved ? "#34D399" : saving ? "#808090" : "#C4B5FD", fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s" }}
+                onMouseEnter={e => { if (!saving && !saved) e.currentTarget.style.background = "rgba(167,139,250,0.18)"; }}
+                onMouseLeave={e => { if (!saving && !saved) e.currentTarget.style.background = "rgba(167,139,250,0.1)"; }}
+              >{saved ? "✓ Saved" : saving ? "Saving…" : "💾 Save"}</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

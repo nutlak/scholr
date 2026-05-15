@@ -301,6 +301,36 @@ export const api = {
     onDone?.();
   },
 
+  async saveForgeOutput(notebookId, type, content, topic) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge-output`, {
+      method: "POST", headers, body: JSON.stringify({ type, content, topic }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to save");
+    }
+    return res.json();
+  },
+
+  async listForgeOutputs(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge-outputs`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async deleteForgeOutput(outputId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/forge-outputs/${outputId}`, {
+      method: "DELETE", headers,
+    });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete");
+    }
+  },
+
   async query(notebookId, question) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/query`, {

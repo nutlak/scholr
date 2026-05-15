@@ -212,7 +212,7 @@ const FORGE_ACTIONS = [
   { id: "summary",     label: "Summary",     icon: "📝" },
 ];
 
-function TheForge({ nb, onClose }) {
+function TheForge({ nb, onClose, onToast }) {
   const [action, setAction]         = useState(null);
   const [topic, setTopic]           = useState("");
   const [content, setContent]       = useState("");
@@ -226,11 +226,9 @@ function TheForge({ nb, onClose }) {
   const [learned, setLearned]             = useState(new Set());
 
   // UI
-  const [copied, setCopied]       = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [saved, setSaved]         = useState(false);
+  const [copied, setCopied]             = useState(false);
   const [savedOutputs, setSavedOutputs] = useState([]);
-  const [showSaved, setShowSaved] = useState(false);
+  const [showSaved, setShowSaved]       = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -242,11 +240,19 @@ function TheForge({ nb, onClose }) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
   }, [content, flashcards]);
 
+  async function autoSave(fullContent, selectedAction) {
+    try {
+      const out = await api.saveForgeOutput(nb.id, selectedAction, fullContent, topic);
+      setSavedOutputs(prev => [out, ...prev]);
+      onToast?.(`Saved to ${nb.title}`);
+    } catch { /* silent — auto-save failure shouldn't block the user */ }
+  }
+
   async function generate(selectedAction) {
     setAction(selectedAction);
     setContent(""); setFlashcards(null);
     setCardIdx(0); setIsFlipped(false); setShuffledOrder(null); setLearned(new Set());
-    setGenerating(true); setSaved(false);
+    setGenerating(true);
 
     let full = "";
     try {
@@ -254,7 +260,7 @@ function TheForge({ nb, onClose }) {
         nb.id, selectedAction, topic,
         (chunk) => { full += chunk; /* buffer silently — don't update UI mid-stream */ },
         () => {
-          // Only reveal content once fully done
+          // Reveal content all at once, then auto-save in background
           if (selectedAction === "flashcards") {
             try {
               const m = full.match(/\[[\s\S]*\]/);
@@ -262,12 +268,13 @@ function TheForge({ nb, onClose }) {
                 const cards = JSON.parse(m[0]);
                 setFlashcards(cards);
                 setShuffledOrder(cards.map((_, i) => i));
-              }
-            } catch { setContent(full); /* fall back to raw text */ }
+              } else { setContent(full); }
+            } catch { setContent(full); }
           } else {
             setContent(full);
           }
           setGenerating(false);
+          autoSave(full, selectedAction); // fire-and-forget
         },
         (err) => { setContent(`Error: ${err}`); setGenerating(false); }
       );
@@ -292,23 +299,12 @@ function TheForge({ nb, onClose }) {
     URL.revokeObjectURL(url);
   }
 
-  async function handleSave() {
-    if (!content || saving) return;
-    setSaving(true);
-    try {
-      const out = await api.saveForgeOutput(nb.id, action, content, topic);
-      setSavedOutputs(prev => [out, ...prev]);
-      setSaved(true); setTimeout(() => setSaved(false), 2500);
-    } catch { setSaved(false); }
-    setSaving(false);
-  }
-
   async function handleDeleteSaved(id) {
     try { await api.deleteForgeOutput(id); setSavedOutputs(p => p.filter(o => o.id !== id)); } catch {}
   }
 
   function loadSaved(o) {
-    setAction(o.type); setContent(o.content); setGenerating(false); setSaved(false); setShowSaved(false);
+    setAction(o.type); setContent(o.content); setGenerating(false); setShowSaved(false);
     if (o.type === "flashcards") {
       try {
         const m = o.content.match(/\[[\s\S]*\]/);
@@ -441,10 +437,6 @@ function TheForge({ nb, onClose }) {
             <button onClick={goNext} disabled={cardIdx === totalCards - 1} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "8px 18px", color: cardIdx === totalCards - 1 ? "#202030" : "#7070A0", cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 16, transition: "all 0.15s" }}>→</button>
           </div>
 
-          {/* Save flashcards */}
-          <button onClick={handleSave} disabled={saving} style={{ marginTop: 10, background: saved ? "rgba(52,211,153,0.1)" : "rgba(167,139,250,0.1)", border: `1px solid ${saved ? "rgba(52,211,153,0.3)" : "rgba(167,139,250,0.3)"}`, borderRadius: 7, padding: "8px", color: saved ? "#34D399" : saving ? "#808090" : "#C4B5FD", fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s" }}>
-            {saved ? "✓ Saved to notebook" : saving ? "Saving…" : "💾 Save flashcards"}
-          </button>
         </div>
 
       ) : (
@@ -482,10 +474,6 @@ function TheForge({ nb, onClose }) {
               <button onClick={handleDownload} style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 7, padding: "7px", color: "#505068", fontSize: 11, cursor: "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", transition: "all 0.15s" }}
                 onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
                 onMouseLeave={e => { e.currentTarget.style.color = "#505068"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}>⬇ Download</button>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 1, background: saved ? "rgba(52,211,153,0.1)" : "rgba(167,139,250,0.1)", border: `1px solid ${saved ? "rgba(52,211,153,0.3)" : "rgba(167,139,250,0.3)"}`, borderRadius: 7, padding: "7px", color: saved ? "#34D399" : saving ? "#808090" : "#C4B5FD", fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, transition: "all 0.15s" }}
-                onMouseEnter={e => { if (!saving && !saved) e.currentTarget.style.background = "rgba(167,139,250,0.18)"; }}
-                onMouseLeave={e => { if (!saving && !saved) e.currentTarget.style.background = "rgba(167,139,250,0.1)"; }}
-              >{saved ? "✓ Saved" : saving ? "Saving…" : "💾 Save"}</button>
             </div>
           )}
         </>
@@ -494,7 +482,7 @@ function TheForge({ nb, onClose }) {
   );
 }
 
-function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
+function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -869,7 +857,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
 
       {/* Forge panel */}
       {showForge && (
-        <TheForge nb={nb} onClose={() => setShowForge(false)} />
+        <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
       )}
 
       </div>{/* end chat+forge split */}
@@ -1884,6 +1872,7 @@ export default function Scholr() {
                 nb={activeNb}
                 currentUserId={user?.id}
                 onBack={() => setActiveNb(null)}
+                onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
                 onDeleted={id => {
                   setNotebooks(prev => prev.filter(n => n.id !== id));
                   setClassUnitsCache(prev => {

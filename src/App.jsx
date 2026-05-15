@@ -268,6 +268,12 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
     }).catch(() => {});
   }, [historyLoaded]);
 
+  // Debug: log messages and currentUserId whenever they change
+  useEffect(() => {
+    console.log("currentUserId prop:", currentUserId);
+    console.log("rendering messages:", messages.map(m => ({ role: m.role, createdBy: m.createdBy, text: m.text?.slice(0, 40) })));
+  }, [messages, currentUserId]);
+
   // Scroll to latest message whenever messages or loading state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -441,6 +447,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
         gap: 12, marginBottom: 16, paddingRight: 4
       }}>
         {messages.map((m, i) => {
+          console.log("message:", { role: m.role, createdBy: m.createdBy, currentUserId, text: m.text?.slice(0, 40) });
           // Own message: sent by current user (role=user, createdBy matches)
           const isOwn = m.role === "user" && (m.createdBy === currentUserId || (!m.createdBy && m.role === "user"));
           // Another member's message: role=user but different user
@@ -1221,16 +1228,20 @@ export default function Scholr() {
   }
 
   async function handleToggleStar(nb) {
+    console.log("star clicked:", nb.id, "currently starred:", starredIds.has(nb.id));
     const isStarred = starredIds.has(nb.id);
     // Optimistic update
     setStarredIds(prev => { const next = new Set(prev); isStarred ? next.delete(nb.id) : next.add(nb.id); return next; });
     setStarredNotebooks(prev => isStarred ? prev.filter(n => n.id !== nb.id) : [...prev, nb]);
+    console.log("calling toggleStar with:", nb.id);
     try {
       const { starred } = await api.toggleStar(nb.id);
+      console.log("toggleStar response:", { starred });
       // Sync to actual server result
       setStarredIds(prev => { const next = new Set(prev); starred ? next.add(nb.id) : next.delete(nb.id); return next; });
       if (!starred) setStarredNotebooks(prev => prev.filter(n => n.id !== nb.id));
-    } catch {
+    } catch (err) {
+      console.error("star toggle failed:", err);
       // Revert on failure
       setStarredIds(prev => { const next = new Set(prev); isStarred ? next.add(nb.id) : next.delete(nb.id); return next; });
       setStarredNotebooks(prev => isStarred ? [...prev, nb] : prev.filter(n => n.id !== nb.id));

@@ -241,11 +241,16 @@ function TheForge({ nb, onClose, onToast }) {
   }, [content, flashcards]);
 
   async function autoSave(fullContent, selectedAction) {
+    console.log("autoSave called:", { notebookId: nb.id, selectedAction, contentLength: fullContent?.length });
     try {
+      console.log("calling api.saveForgeOutput");
       const out = await api.saveForgeOutput(nb.id, selectedAction, fullContent, topic);
+      console.log("autoSave succeeded:", out?.id);
       setSavedOutputs(prev => [out, ...prev]);
       onToast?.(`Saved to ${nb.title}`);
-    } catch { /* silent — auto-save failure shouldn't block the user */ }
+    } catch (err) {
+      console.error("autoSave failed:", err);
+    }
   }
 
   async function generate(selectedAction) {

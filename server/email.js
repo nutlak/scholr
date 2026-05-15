@@ -11,7 +11,7 @@ function getResend() {
 
 // Must exactly match a verified sender domain in your Resend account
 function getFrom() {
-  return process.env.RESEND_FROM ?? "Scholr <noreply@scholr.dev>";
+  return process.env.RESEND_FROM ?? "scholr <noreply@scholr.dev>";
 }
 
 export async function sendOtpEmail(to, code, type) {
@@ -20,13 +20,13 @@ export async function sendOtpEmail(to, code, type) {
   const { error } = await getResend().emails.send({
     from: getFrom(),
     to,
-    subject: isSignup ? "Verify your Scholr account" : "Reset your Scholr password",
+    subject: isSignup ? "Verify your scholr account" : "Reset your scholr password",
     html: `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:40px 20px;background:#0A0A0F;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
     <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
-      Schol<span style="color:#A78BFA;">r</span>
+      schol<span style="color:#A78BFA;">r</span>
     </div>
     <p style="font-size:13px;color:#808098;margin:0 0 28px;">
       ${isSignup ? "Complete your signup" : "Reset your password"}
@@ -67,7 +67,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
 <body style="margin:0;padding:40px 20px;background:#0A0A0F;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
     <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
-      Schol<span style="color:#A78BFA;">r</span>
+      schol<span style="color:#A78BFA;">r</span>
     </div>
     <p style="font-size:13px;color:#808098;margin:0 0 28px;">Study together, learn faster</p>
 

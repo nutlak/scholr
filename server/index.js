@@ -58,6 +58,8 @@ app.use(express.json());
 // Routes that need auth call this middleware explicitly.
 async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace("Bearer ", "");
+  console.log("requireAuth: checking token for", req.method, req.path);
+  console.log("requireAuth: token present:", !!token);
   if (!token) {
     console.warn(`requireAuth: no token on ${req.method} ${req.path}`);
     return res.status(401).json({ error: "Missing auth token" });
@@ -65,7 +67,7 @@ async function requireAuth(req, res, next) {
 
   const { data, error } = await supabaseAuth.auth.getUser(token);
   if (error || !data.user) {
-    console.warn(`requireAuth: invalid/expired token on ${req.method} ${req.path} — ${error?.message ?? "no user"}`);
+    console.log("requireAuth: verification failed:", error?.message ?? "no user returned");
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 

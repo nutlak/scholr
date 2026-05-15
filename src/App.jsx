@@ -1071,7 +1071,11 @@ export default function Scholr() {
     if (!pendingInviteToken || !user || !authReady) return;
     const token = pendingInviteToken;
     setPendingInviteToken(null);
-    api.acceptInvite(token)
+    // Force a session refresh so the JWT in the Supabase client is current
+    // before we make any authenticated API calls (guards against a race
+    // where onAuth fires before the token is stored in the client).
+    supabase.auth.getSession()
+      .then(() => api.acceptInvite(token))
       .then(({ notebook_id }) =>
         Promise.all([
           api.listNotebooks(getDisplayName(user)),

@@ -1478,10 +1478,10 @@ export default function Scholr() {
 
       {/* Dashboard — only rendered when authenticated */}
       <div style={{
-        height: "100vh", overflow: "hidden", background: "#08080D",
+        height: "100vh", overflow: "hidden", background: "#0A0A0F",
         display: user ? "flex" : "none", fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
-        {/* Sidebar — no border, blends into background */}
+        {/* Sidebar — same bg as page, no seam */}
         <div style={{
           width: 210, background: "#0A0A0F",
           padding: "28px 14px", display: "flex", flexDirection: "column", gap: 2,

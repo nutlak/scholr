@@ -34,6 +34,14 @@ export const api = {
     return data.map(nb => shapeNotebook(nb, displayName));
   },
 
+  async listOwnedNotebooks(displayName) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/owned`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data.map(nb => shapeNotebook(nb, displayName));
+  },
+
   async listSharedNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/shared`, { headers });
@@ -183,6 +191,26 @@ export const api = {
       throw new Error(err.error ?? "Failed to upload note");
     }
     return res.json();
+  },
+
+  async getStarredNotebooks(displayName) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/starred`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data.map(nb => shapeNotebook(nb, displayName));
+  },
+
+  async toggleStar(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/star`, {
+      method: "POST", headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to toggle star");
+    }
+    return res.json(); // { starred: true/false }
   },
 
   async getMessages(notebookId) {

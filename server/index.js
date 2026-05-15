@@ -168,6 +168,54 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
   res.json(notebooks);
 });
 
+// GET /api/notebooks/owned — notebooks the calling user created
+app.get("/api/notebooks/owned", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("notebook_members")
+    .select(`
+      role,
+      notebooks (
+        id, title, topic, created_by, created_at, invite_token,
+        notes (count)
+      )
+    `)
+    .eq("user_id", req.user.id)
+    .eq("role", "owner");
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
+    ...nb,
+    notes_count: nb.notes[0]?.count ?? 0,
+    role,
+    notes: undefined,
+  }));
+  res.json(notebooks);
+});
+
+// GET /api/notebooks/starred — notebooks the calling user has starred
+app.get("/api/notebooks/starred", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("starred_notebooks")
+    .select(`
+      notebook_id,
+      notebooks (
+        id, title, topic, created_by, created_at,
+        notes (count)
+      )
+    `)
+    .eq("user_id", req.user.id);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const notebooks = (data ?? []).map(({ notebooks: nb }) => ({
+    ...nb,
+    notes_count: nb.notes[0]?.count ?? 0,
+    notes: undefined,
+  }));
+  res.json(notebooks);
+});
+
 // POST /api/notebooks — create a notebook
 app.post("/api/notebooks", requireAuth, async (req, res) => {
   const { title, topic } = req.body;
@@ -250,6 +298,30 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
   }
   console.log("message saved with id:", data?.id);
   res.status(201).json(data);
+});
+
+// POST /api/notebooks/:id/star — toggle star for the calling user
+app.post("/api/notebooks/:id/star", requireAuth, requireMember, async (req, res) => {
+  const { data: existing } = await supabase
+    .from("starred_notebooks")
+    .select("id")
+    .eq("user_id", req.user.id)
+    .eq("notebook_id", req.params.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("starred_notebooks").delete()
+      .eq("user_id", req.user.id)
+      .eq("notebook_id", req.params.id);
+    return res.json({ starred: false });
+  }
+
+  const { error } = await supabase.from("starred_notebooks").insert({
+    user_id: req.user.id,
+    notebook_id: req.params.id,
+  });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ starred: true });
 });
 
 // DELETE /api/notebooks/:id — owner-only hard delete

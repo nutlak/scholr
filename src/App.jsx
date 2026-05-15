@@ -47,7 +47,7 @@ function AvatarStack({ names }) {
   );
 }
 
-function NotebookCard({ nb, onClick }) {
+function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -76,7 +76,24 @@ function NotebookCard({ nb, onClick }) {
           color: nb.color, textTransform: "uppercase",
           fontFamily: "'DM Mono', monospace"
         }}>{nb.notes} notes</div>
-        <div style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.updated}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 11, color: "#4A4A60", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{nb.updated}</div>
+          {onToggleStar && (
+            <button
+              onClick={e => { e.stopPropagation(); onToggleStar(); }}
+              title={starred ? "Remove star" : "Star this notebook"}
+              style={{
+                background: "none", border: "none", cursor: "pointer", padding: "0 2px",
+                fontSize: 15, color: starred ? "#A78BFA" : "#383855",
+                transition: "color 0.15s", lineHeight: 1,
+              }}
+              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#A78BFA"; }}
+              onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "#383855"; }}
+            >
+              {starred ? "★" : "☆"}
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0", fontFamily: "'Nunito', sans-serif", marginBottom: 4, lineHeight: 1.3 }}>
         {nb.title}
@@ -1055,8 +1072,11 @@ export default function Scholr() {
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
-  const [notebooks, setNotebooks] = useState([]);          // flat list for My Notes
+  const [notebooks, setNotebooks] = useState([]);          // all memberships (used as base)
+  const [ownedNotebooks, setOwnedNotebooks] = useState([]);   // notebooks user created
   const [sharedNotebooks, setSharedNotebooks] = useState([]); // notebooks user was invited to
+  const [starredNotebooks, setStarredNotebooks] = useState([]); // starred by user
+  const [starredIds, setStarredIds] = useState(new Set());    // Set<notebookId> for O(1) lookup
   const [classes, setClasses] = useState([]);              // class folders for dashboard
   const [expandedClassId, setExpandedClassId] = useState(null);
   const [classUnitsCache, setClassUnitsCache] = useState({}); // { classId: unit[] }
@@ -1125,10 +1145,17 @@ export default function Scholr() {
     if (!user || !authReady) return;
     const name = getDisplayName(user);
     api.listNotebooks(name).then(setNotebooks).catch(console.error);
+    api.listOwnedNotebooks(name).then(setOwnedNotebooks).catch(console.error);
     console.log("[shared] fetching shared notebooks on auth ready");
     api.listSharedNotebooks(name)
       .then(shared => { console.log("[shared] listSharedNotebooks returned", shared.length, "notebooks"); setSharedNotebooks(shared); })
       .catch(err => { console.error("[shared] listSharedNotebooks error:", err); });
+    api.getStarredNotebooks(name)
+      .then(starred => {
+        setStarredNotebooks(starred);
+        setStarredIds(new Set(starred.map(n => n.id)));
+      })
+      .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
   }, [user, authReady]);
 
@@ -1156,17 +1183,37 @@ export default function Scholr() {
     setNotebooks(prev => [unit, ...prev]);
   }
 
+  async function handleToggleStar(nb) {
+    const isStarred = starredIds.has(nb.id);
+    // Optimistic update
+    setStarredIds(prev => { const next = new Set(prev); isStarred ? next.delete(nb.id) : next.add(nb.id); return next; });
+    setStarredNotebooks(prev => isStarred ? prev.filter(n => n.id !== nb.id) : [...prev, nb]);
+    try {
+      const { starred } = await api.toggleStar(nb.id);
+      // Sync to actual server result
+      setStarredIds(prev => { const next = new Set(prev); starred ? next.add(nb.id) : next.delete(nb.id); return next; });
+      if (!starred) setStarredNotebooks(prev => prev.filter(n => n.id !== nb.id));
+    } catch {
+      // Revert on failure
+      setStarredIds(prev => { const next = new Set(prev); isStarred ? next.add(nb.id) : next.delete(nb.id); return next; });
+      setStarredNotebooks(prev => isStarred ? [...prev, nb] : prev.filter(n => n.id !== nb.id));
+    }
+  }
+
   async function handleDeleteAccount() {
     await api.deleteAccount();
     localStorage.clear();
     await supabase.auth.signOut();
-    setUser(null); setNotebooks([]); setSharedNotebooks([]); setClasses([]); setClassUnitsCache({});
+    setUser(null); setNotebooks([]); setOwnedNotebooks([]); setSharedNotebooks([]);
+    setStarredNotebooks([]); setStarredIds(new Set());
+    setClasses([]); setClassUnitsCache({});
     setActiveNb(null); setActiveView("dashboard");
   }
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    setUser(null); setActiveNb(null); setNotebooks([]); setSharedNotebooks([]);
+    setUser(null); setActiveNb(null); setNotebooks([]); setOwnedNotebooks([]);
+    setSharedNotebooks([]); setStarredNotebooks([]); setStarredIds(new Set());
     setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
   }
 
@@ -1177,10 +1224,10 @@ export default function Scholr() {
     c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  // My Notes / Shared: filter flat notebook list
-  const viewBase = activeView === "my-notes" ? notebooks.filter(n => n.role === "owner")
+  // My Notes / Shared / Starred: pick the right source list
+  const viewBase = activeView === "my-notes" ? ownedNotebooks
     : activeView === "shared"   ? sharedNotebooks
-    : activeView === "starred"  ? []
+    : activeView === "starred"  ? starredNotebooks
     : notebooks;
 
   const filtered = viewBase.filter(n => {
@@ -1428,14 +1475,12 @@ export default function Scholr() {
               </div>
 
               {/* Search */}
-              {activeView !== "starred" && (
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder={activeView === "dashboard" ? "Search classes…" : `Search ${viewLabel.toLowerCase()}…`}
-                  style={{ width: "100%", background: "#111118", border: "1px solid #1E1E2A", borderRadius: 12, padding: "12px 16px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24 }}
-                />
-              )}
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={activeView === "dashboard" ? "Search classes…" : `Search ${viewLabel.toLowerCase()}…`}
+                style={{ width: "100%", background: "#111118", border: "1px solid #1E1E2A", borderRadius: 12, padding: "12px 16px", color: "#E8E8F0", fontSize: 13, fontFamily: "'Plus Jakarta Sans', sans-serif", outline: "none", marginBottom: 24 }}
+              />
 
               {/* Dashboard: class cards */}
               {activeView === "dashboard" ? (
@@ -1462,19 +1507,20 @@ export default function Scholr() {
                   </div>
                 )
 
-              /* My Notes / Shared: flat notebook list */
-              ) : activeView === "starred" ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
-                  <div style={{ fontSize: 32 }}>★</div>
-                  <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>No starred notebooks yet</div>
-                  <div style={{ fontSize: 12, color: "#2A2A40" }}>Open a notebook and star it to find it here</div>
-                </div>
+              /* My Notes / Shared / Starred: flat notebook list */
               ) : filtered.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12, color: "#404060" }}>
-                  <div style={{ fontSize: 32 }}>📓</div>
+                  <div style={{ fontSize: 32 }}>{activeView === "starred" ? "★" : "📓"}</div>
                   <div style={{ fontSize: 14, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    {search ? "No notebooks match your search" : "No notebooks here yet"}
+                    {search ? "No notebooks match your search"
+                      : activeView === "starred" ? "No starred notebooks yet"
+                      : "No notebooks here yet"}
                   </div>
+                  {activeView === "starred" && !search && (
+                    <div style={{ fontSize: 12, color: "#2A2A40", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                      Click ★ on any notebook card to star it
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -1483,7 +1529,13 @@ export default function Scholr() {
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14, marginBottom: 32 }}>
                     {filtered.map(nb => (
-                      <NotebookCard key={nb.id} nb={nb} onClick={() => setActiveNb(nb)} />
+                      <NotebookCard
+                        key={nb.id}
+                        nb={nb}
+                        onClick={() => setActiveNb(nb)}
+                        starred={starredIds.has(nb.id)}
+                        onToggleStar={() => handleToggleStar(nb)}
+                      />
                     ))}
                   </div>
                 </>

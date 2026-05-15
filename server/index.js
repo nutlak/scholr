@@ -518,13 +518,20 @@ app.post(
     (async () => {
       try {
         const noteTitle = title || req.file?.originalname || "note";
+
+        // Look up uploader's first name for a human-readable description
+        const { data: uploaderData } = await supabase.auth.admin.getUserById(req.user.id);
+        const uploaderName = uploaderData?.user?.user_metadata?.first_name?.trim()
+          || uploaderData?.user?.email?.split("@")[0]
+          || "Someone";
+
         const { data: activity } = await supabase
           .from("activities")
           .insert({
             notebook_id: req.params.id,
             user_id: req.user.id,
             action: "note_uploaded",
-            description: `Uploaded: ${noteTitle}`,
+            description: `${uploaderName} uploaded: ${noteTitle}`,
           })
           .select("id")
           .single();

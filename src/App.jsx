@@ -467,7 +467,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId }) {
           const senderLabel = isAssistant
             ? "🤖 Derek"
             : isOtherMember
-              ? (senderInfo?.first_name || senderInfo?.email || "Member")
+              ? (senderInfo?.first_name?.trim() || senderInfo?.email?.trim() || "Member")
               : null;
 
           const alignRight = isOwn;
@@ -1370,18 +1370,19 @@ export default function Scholr() {
 
       {/* Dashboard — always rendered so layout doesn't flash */}
       <div style={{
-        minHeight: "100vh", background: "#0A0A0F",
+        height: "100vh", overflow: "hidden", background: "#0A0A0F",
         display: "flex", fontFamily: "'Plus Jakarta Sans', sans-serif",
         filter: authReady && !user ? "blur(4px)" : "none",
         pointerEvents: (authReady && !user) || (pendingInviteToken && !user) ? "none" : "auto",
         visibility: pendingInviteToken && !user ? "hidden" : "visible",
         transition: "filter 0.2s",
       }}>
-        {/* Sidebar */}
+        {/* Sidebar — sticky, independent scroll */}
         <div style={{
           width: 220, background: "#0D0D14", borderRight: "1px solid #1A1A24",
           padding: "28px 16px", display: "flex", flexDirection: "column", gap: 4,
-          flexShrink: 0
+          flexShrink: 0, height: "100vh", overflowY: "auto",
+          position: "sticky", top: 0,
         }}>
           <div style={{
             fontFamily: "'Nunito', sans-serif", fontSize: 22, fontWeight: 900,
@@ -1449,7 +1450,7 @@ export default function Scholr() {
         </div>
 
         {/* Main */}
-        <div style={{ flex: 1, padding: "32px 36px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, padding: "32px 36px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView

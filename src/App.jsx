@@ -881,14 +881,22 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
               )}
               <div style={{
                 maxWidth: "75%",
-                background: m.isError ? "#2A1A1A" : isOwn ? "#A78BFA" : "#1A1A28",
-                color: m.isError ? "#F87171" : isOwn ? "#0A0A0F" : "#D0D0E8",
+                background: m.isError
+                  ? "#2A1A1A"
+                  : isOwn
+                    ? "linear-gradient(135deg, #7C3AED, #A78BFA)"
+                    : "rgba(255,255,255,0.05)",
+                color: m.isError ? "#F87171" : "#FFFFFF",
                 borderRadius: isOwn ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                padding: "10px 14px",
+                padding: "12px 16px",
                 fontSize: 13, lineHeight: 1.6,
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
-                border: !isOwn ? `1px solid ${m.isError ? "#5A2020" : "#2A2A38"}` : "none",
+                border: !isOwn ? `1px solid ${m.isError ? "#5A2020" : "rgba(255,255,255,0.1)"}` : "none",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                 whiteSpace: "pre-wrap",
+                animation: isOwn
+                  ? "slideInUp 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both"
+                  : "slideInLeft 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
               }}>
                 {m.text}
               </div>
@@ -897,15 +905,26 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
         })}
 
         {loading && (
-          <div style={{ display: "flex" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <div style={{
-              background: "#1A1A28", border: "1px solid #2A2A38",
-              borderRadius: "16px 16px 16px 4px", padding: "10px 16px",
-              display: "flex", gap: 4, alignItems: "center"
+              fontSize: 10, fontWeight: 600, color: "#A78BFA",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              marginBottom: 3, paddingLeft: 4, letterSpacing: "0.03em",
+            }}>🤖 Derek</div>
+            <div style={{
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "16px 16px 16px 4px", padding: "12px 16px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              display: "flex", gap: 6, alignItems: "center",
+              animation: "slideInLeft 250ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
             }}>
+              <span style={{
+                fontSize: 12, color: "#6060A0", fontStyle: "italic",
+                fontFamily: "'Plus Jakarta Sans', sans-serif", marginRight: 4,
+              }}>Derek is thinking…</span>
               {[0, 1, 2].map(i => (
                 <div key={i} style={{
-                  width: 6, height: 6, borderRadius: "50%", background: "#4A4A70",
+                  width: 5, height: 5, borderRadius: "50%", background: "#6060A0",
                   animation: `pulse 1s ease-in-out ${i * 0.2}s infinite`
                 }} />
               ))}
@@ -1810,6 +1829,14 @@ export default function Scholr() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-12px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
 

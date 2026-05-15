@@ -252,8 +252,9 @@ function TheForge({ nb, onClose }) {
     try {
       await api.forge(
         nb.id, selectedAction, topic,
-        (chunk) => { full += chunk; setContent(full); },
+        (chunk) => { full += chunk; /* buffer silently — don't update UI mid-stream */ },
         () => {
+          // Only reveal content once fully done
           if (selectedAction === "flashcards") {
             try {
               const m = full.match(/\[[\s\S]*\]/);
@@ -262,7 +263,9 @@ function TheForge({ nb, onClose }) {
                 setFlashcards(cards);
                 setShuffledOrder(cards.map((_, i) => i));
               }
-            } catch { /* fall back to text */ }
+            } catch { setContent(full); /* fall back to raw text */ }
+          } else {
+            setContent(full);
           }
           setGenerating(false);
         },
@@ -456,15 +459,17 @@ function TheForge({ nb, onClose }) {
                 <div style={{ fontSize: 12, color: "#282840", lineHeight: 1.7 }}>Pick a material type above to generate study content from your notebook notes.</div>
               </div>
             )}
-            {/* Loading dots */}
-            {generating && !content && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#4A4A70", animation: `pulse 1s ease-in-out ${i*0.2}s infinite` }} />)}
-                <span style={{ fontSize: 11, color: "#404060", marginLeft: 6 }}>Generating…</span>
+            {/* Loading state — centered, no streamed text */}
+            {generating && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 14 }}>
+                <div style={{ display: "flex", gap: 5 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#A78BFA", animation: `pulse 1s ease-in-out ${i*0.25}s infinite` }} />)}
+                </div>
+                <span style={{ fontSize: 12, color: "#606080", fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: "0.04em" }}>Generating…</span>
               </div>
             )}
-            {/* Streaming or final text */}
-            {content && <span>{content}{generating && <span style={{ opacity: 0.3 }}>▋</span>}</span>}
+            {/* Final text — only shown after generation completes */}
+            {!generating && content && <span>{content}</span>}
           </div>
 
           {/* Action bar */}

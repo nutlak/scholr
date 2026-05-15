@@ -525,32 +525,51 @@ app.post(
           || uploaderData?.user?.email?.split("@")[0]
           || "Someone";
 
-        const { data: activity } = await supabase
+        const notebookId = req.params.id;
+        const userId = req.user.id;
+        const description = `${uploaderName} uploaded: ${noteTitle}`;
+        console.log("creating activity:", { notebookId, action: "note_uploaded", description, userId });
+
+        const { data: activity, error: activityError } = await supabase
           .from("activities")
           .insert({
-            notebook_id: req.params.id,
-            user_id: req.user.id,
+            notebook_id: notebookId,
+            user_id: userId,
             action: "note_uploaded",
-            description: `${uploaderName} uploaded: ${noteTitle}`,
+            description,
           })
           .select("id")
           .single();
 
-        if (!activity) return;
+        if (activityError) {
+          console.error("activity/notification error (activity insert):", activityError);
+          return;
+        }
+        console.log("activity created:", activity?.id);
 
-        const { data: otherMembers } = await supabase
+        if (!activity) { console.warn("activity insert returned no row"); return; }
+
+        const { data: otherMembers, error: membersError } = await supabase
           .from("notebook_members")
           .select("user_id")
-          .eq("notebook_id", req.params.id)
-          .neq("user_id", req.user.id);
+          .eq("notebook_id", notebookId)
+          .neq("user_id", userId);
+
+        if (membersError) {
+          console.error("activity/notification error (members query):", membersError);
+          return;
+        }
+
+        console.log("inserting notifications for", otherMembers?.length ?? 0, "members");
 
         if (otherMembers?.length) {
-          await supabase.from("notifications").insert(
+          const { error: notifError } = await supabase.from("notifications").insert(
             otherMembers.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
           );
+          if (notifError) console.error("activity/notification error (notifications insert):", notifError);
         }
       } catch (err) {
-        console.error("activity log failed:", err);
+        console.error("activity/notification error:", err);
       }
     })();
   }
@@ -558,6 +577,7 @@ app.post(
 
 // GET /api/notifications — unread notifications for the current user
 app.get("/api/notifications", requireAuth, async (req, res) => {
+  console.log("fetching notifications for user:", req.user.id);
   const { data, error } = await supabase
     .from("notifications")
     .select(`
@@ -572,7 +592,11 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error("notifications query error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log("found notifications:", data?.length ?? 0);
   res.json(data ?? []);
 });
 

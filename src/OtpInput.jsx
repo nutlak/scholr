@@ -1,15 +1,15 @@
 import { useRef } from "react";
 
+const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+
 export default function OtpInput({ value = "", onChange, disabled = false }) {
   const refs = useRef([]);
-  // Derive individual cell values from the parent string
   const cells = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
   function handleChange(i, e) {
     const raw = e.target.value.replace(/\D/g, "");
 
     if (raw.length > 1) {
-      // Multi-char input (e.g. autofill or browser suggestions) — fill forward
       const digits = raw.slice(0, 6 - i);
       const next = [...cells];
       for (let j = 0; j < digits.length; j++) next[i + j] = digits[j];
@@ -51,7 +51,7 @@ export default function OtpInput({ value = "", onChange, disabled = false }) {
   }
 
   return (
-    <div style={{ display: "flex", gap: 10, justifyContent: "center", margin: "4px 0" }}>
+    <div style={{ display: "flex", gap: 8, justifyContent: "center", margin: "4px 0" }}>
       {cells.map((d, i) => (
         <input
           key={i}
@@ -68,25 +68,28 @@ export default function OtpInput({ value = "", onChange, disabled = false }) {
           onFocus={e => {
             e.target.select();
             e.target.style.borderColor = "#A78BFA";
+            e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)";
           }}
           onBlur={e => {
-            e.target.style.borderColor = d ? "#A78BFA55" : "#2A2A38";
+            e.target.style.borderColor = d ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.1)";
+            e.target.style.boxShadow = "none";
           }}
           style={{
-            width: 46,
-            height: 54,
+            width: 44,
+            height: 52,
             textAlign: "center",
-            fontSize: 22,
-            fontWeight: 700,
-            fontFamily: "'DM Mono', monospace",
-            background: "#0D0D14",
-            border: `2px solid ${d ? "#A78BFA55" : "#2A2A38"}`,
+            fontSize: 20,
+            fontWeight: 600,
+            fontFamily: FONT,
+            background: "#14141F",
+            border: `1.5px solid ${d ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.1)"}`,
             borderRadius: 10,
-            color: "#E8E8F0",
+            color: "#F5F5FA",
             outline: "none",
-            transition: "border-color 0.15s",
+            transition: "border-color 0.18s, box-shadow 0.18s",
             caretColor: "transparent",
             opacity: disabled ? 0.5 : 1,
+            letterSpacing: "-0.02em",
           }}
         />
       ))}

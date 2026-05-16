@@ -4,58 +4,69 @@ import OtpInput from "./OtpInput.jsx";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
-const FONT = `system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif`;
+const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
 
 const inputStyle = {
   width: "100%",
-  background: "#0A0A0A",
-  border: "1px solid rgba(255,255,255,0.06)",
-  borderRadius: 6,
-  padding: "0 12px",
-  height: 36,
-  color: "#FAFAFA",
-  fontSize: 13,
+  background: "#14141F",
+  border: "1px solid rgba(255,255,255,0.09)",
+  borderRadius: 10,
+  padding: "0 14px",
+  height: 42,
+  color: "#F5F5FA",
+  fontSize: 14,
   fontFamily: FONT,
   outline: "none",
-  transition: "border-color 0.1s",
+  transition: "border-color 0.18s, box-shadow 0.18s, background 0.18s",
+  letterSpacing: "-0.01em",
 };
 
 const btnPrimary = {
   width: "100%",
-  background: "#A78BFA",
+  background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
   border: "none",
-  borderRadius: 6,
-  height: 36,
-  color: "#0A0A0A",
+  borderRadius: 10,
+  height: 42,
+  color: "#fff",
   fontWeight: 600,
-  fontSize: 13,
+  fontSize: 14,
   cursor: "pointer",
   fontFamily: FONT,
-  transition: "background 0.1s",
+  transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
+  boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+  letterSpacing: "-0.01em",
 };
 
 const labelStyle = {
   fontSize: 11,
-  color: "rgba(255,255,255,0.4)",
+  color: "rgba(245,245,250,0.55)",
   fontFamily: FONT,
-  letterSpacing: "0.05em",
+  letterSpacing: "0.04em",
   textTransform: "uppercase",
   display: "block",
-  marginBottom: 6,
+  marginBottom: 7,
+  fontWeight: 600,
 };
 
 const errorBox = {
-  background: "rgba(239,68,68,0.08)",
-  border: "1px solid rgba(239,68,68,0.2)",
-  borderRadius: 6,
+  background: "rgba(248,113,113,0.08)",
+  border: "1px solid rgba(248,113,113,0.22)",
+  borderRadius: 10,
   padding: "10px 12px",
-  fontSize: 12,
-  color: "#EF4444",
+  fontSize: 12.5,
+  color: "#F87171",
   fontFamily: FONT,
+  lineHeight: 1.5,
 };
 
-function focusPurple(e) { e.target.style.borderColor = "#A78BFA"; }
-function blurGray(e)    { e.target.style.borderColor = "rgba(255,255,255,0.06)"; }
+function focusPurple(e) {
+  e.target.style.borderColor = "#A78BFA";
+  e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)";
+}
+function blurGray(e) {
+  e.target.style.borderColor = "rgba(255,255,255,0.09)";
+  e.target.style.boxShadow = "none";
+}
 
 export default function AuthModal({ onAuth }) {
   const [tab, setTab]     = useState("login");
@@ -70,7 +81,7 @@ export default function AuthModal({ onAuth }) {
   const [pendingPassword, setPendingPassword] = useState("");
   const [pendingName,     setPendingName]     = useState("");
 
-  const [otp, setOtp]                   = useState("");
+  const [otp, setOtp]                       = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const [resetToken,       setResetToken]       = useState("");
@@ -89,7 +100,6 @@ export default function AuthModal({ onAuth }) {
   function switchTab(t) {
     setTab(t); setScreen(null); setError(""); setOtp("");
   }
-
   function goBackToTab() {
     setScreen(null); setError(""); setOtp("");
   }
@@ -104,7 +114,6 @@ export default function AuthModal({ onAuth }) {
     if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
     return data;
   }
-
   async function sendOtp(emailAddr, type) {
     return apiPost("/api/auth/send-otp", { email: emailAddr, type });
   }
@@ -201,29 +210,56 @@ export default function AuthModal({ onAuth }) {
 
   const shell = (children) => (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0,
+      background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+      display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 400,
-        padding: "24px", boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
-        animation: "fadeIn 0.15s ease",
+        position: "relative",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 420,
+        padding: "32px 28px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease",
+        overflow: "hidden",
       }}>
+        {/* Soft accent glow */}
         <div style={{
-          fontFamily: FONT, fontSize: 20, fontWeight: 700,
-          color: "#FAFAFA", marginBottom: 4, letterSpacing: "-0.02em", textAlign: "center",
-        }}>
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)",
+          width: 280, height: 280, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{ position: "relative" }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            marginBottom: 6,
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+              boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 15, fontWeight: 800, color: "#fff",
+            }}>s</div>
+            <div style={{
+              fontFamily: FONT, fontSize: 22, fontWeight: 700,
+              color: "#F5F5FA", letterSpacing: "-0.03em",
+            }}>
+              schol<span style={{ color: "#A78BFA" }}>r</span>
+            </div>
+          </div>
+          <div style={{
+            fontSize: 12.5, color: "rgba(245,245,250,0.5)", textAlign: "center",
+            fontFamily: FONT, marginBottom: 26,
+          }}>
+            AI-powered collaborative notebooks
+          </div>
+          {children}
         </div>
-        <div style={{
-          fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center",
-          fontFamily: FONT, marginBottom: 24,
-        }}>
-          AI-powered collaborative notebooks
-        </div>
-        {children}
       </div>
     </div>
   );
@@ -234,38 +270,50 @@ export default function AuthModal({ onAuth }) {
         <button
           onClick={goBackToTab}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 4,
             background: "transparent", border: "none",
-            color: "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer",
-            fontFamily: FONT, marginBottom: 20, padding: 0,
+            color: "rgba(245,245,250,0.5)", fontSize: 12, cursor: "pointer",
+            fontFamily: FONT, marginBottom: 20, padding: "4px 0",
+            transition: "color 0.15s",
           }}
+          onMouseEnter={e => e.currentTarget.style.color = "#F5F5FA"}
+          onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.5)"}
         >← Back</button>
 
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4 }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.06))",
+            border: "1px solid rgba(167,139,250,0.3)",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontSize: 26, marginBottom: 12,
+          }}>
+            {otpFlow === "signup" ? "📬" : "🔐"}
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
             {otpFlow === "signup" ? "Verify your email" : "Check your email"}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT, lineHeight: 1.6 }}>
-            We sent a 6-digit code to{" "}
-            <span style={{ color: "#FAFAFA" }}>{pendingEmail}</span>
+          <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.6 }}>
+            We sent a 6-digit code to<br />
+            <span style={{ color: "#F5F5FA", fontWeight: 500 }}>{pendingEmail}</span>
           </div>
         </div>
 
-        <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <form onSubmit={handleVerifyOtp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <OtpInput value={otp} onChange={setOtp} disabled={loading} />
           {error && <div style={errorBox}>{error}</div>}
           <button
             type="submit"
             disabled={otp.length < 6 || loading}
-            style={{ ...btnPrimary, opacity: (otp.length < 6 || loading) ? 0.5 : 1 }}
+            style={{ ...btnPrimary, opacity: (otp.length < 6 || loading) ? 0.55 : 1 }}
           >
             {loading ? "Verifying…" : "Verify code"}
           </button>
         </form>
 
         <div style={{
-          marginTop: 14, textAlign: "center",
-          fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT,
+          marginTop: 18, textAlign: "center",
+          fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT,
         }}>
           Didn't receive it?{" "}
           <button
@@ -274,10 +322,13 @@ export default function AuthModal({ onAuth }) {
             disabled={resendCooldown > 0 || loading}
             style={{
               background: "transparent", border: "none",
-              color: resendCooldown > 0 ? "rgba(255,255,255,0.25)" : "#A78BFA",
-              fontSize: 12, cursor: resendCooldown > 0 ? "default" : "pointer",
+              color: resendCooldown > 0 ? "rgba(245,245,250,0.3)" : "#A78BFA",
+              fontSize: 12.5, cursor: resendCooldown > 0 ? "default" : "pointer",
               fontFamily: FONT, fontWeight: 600, padding: 0,
+              transition: "color 0.15s",
             }}
+            onMouseEnter={e => { if (resendCooldown === 0) e.currentTarget.style.color = "#C4B5FD"; }}
+            onMouseLeave={e => { if (resendCooldown === 0) e.currentTarget.style.color = "#A78BFA"; }}
           >
             {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
           </button>
@@ -289,14 +340,14 @@ export default function AuthModal({ onAuth }) {
   if (screen === "reset-password") {
     return shell(
       <>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, marginTop: 4 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Set a new password
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 18, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
           Choose a strong password for your account.
         </div>
 
-        <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={labelStyle}>New password</label>
             <input
@@ -319,7 +370,7 @@ export default function AuthModal({ onAuth }) {
           <button
             type="submit"
             disabled={loading}
-            style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, marginTop: 4 }}
+            style={{ ...btnPrimary, opacity: loading ? 0.65 : 1, marginTop: 4 }}
           >
             {loading ? "Saving…" : "Update password"}
           </button>
@@ -334,21 +385,24 @@ export default function AuthModal({ onAuth }) {
         <button
           onClick={() => switchTab("login")}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 4,
             background: "transparent", border: "none",
-            color: "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer",
-            fontFamily: FONT, marginBottom: 20, padding: 0,
+            color: "rgba(245,245,250,0.5)", fontSize: 12, cursor: "pointer",
+            fontFamily: FONT, marginBottom: 20, padding: "4px 0",
+            transition: "color 0.15s",
           }}
+          onMouseEnter={e => e.currentTarget.style.color = "#F5F5FA"}
+          onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.5)"}
         >← Back to login</button>
 
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Reset your password
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 18, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
           Enter your email and we'll send you a 6-digit verification code.
         </div>
 
-        <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={labelStyle}>Email</label>
             <input
@@ -362,7 +416,7 @@ export default function AuthModal({ onAuth }) {
           <button
             type="submit"
             disabled={loading}
-            style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, marginTop: 4 }}
+            style={{ ...btnPrimary, opacity: loading ? 0.65 : 1, marginTop: 4 }}
           >
             {loading ? "Sending…" : "Send code"}
           </button>
@@ -375,9 +429,9 @@ export default function AuthModal({ onAuth }) {
     <>
       {/* Tab switcher */}
       <div style={{
-        display: "flex", background: "#0A0A0A",
+        display: "flex", background: "#0B0B12",
         border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 6, padding: 3, marginBottom: 20, gap: 3,
+        borderRadius: 10, padding: 3, marginBottom: 22, gap: 3,
       }}>
         {[["login", "Log in"], ["signup", "Sign up"]].map(([t, label]) => (
           <button
@@ -385,12 +439,16 @@ export default function AuthModal({ onAuth }) {
             type="button"
             onClick={() => switchTab(t)}
             style={{
-              flex: 1, padding: "6px", border: "none", borderRadius: 4,
-              background: tab === t ? "#1A1A1A" : "transparent",
-              color: tab === t ? "#FAFAFA" : "rgba(255,255,255,0.4)",
-              fontWeight: tab === t ? 600 : 400,
+              flex: 1, padding: "8px", border: "none", borderRadius: 8,
+              background: tab === t
+                ? "linear-gradient(180deg, #252537 0%, #1C1C2A 100%)"
+                : "transparent",
+              color: tab === t ? "#F5F5FA" : "rgba(245,245,250,0.5)",
+              fontWeight: tab === t ? 600 : 500,
               fontSize: 13, cursor: "pointer",
-              fontFamily: FONT, transition: "all 0.1s",
+              fontFamily: FONT, transition: "all 0.18s",
+              boxShadow: tab === t ? "0 2px 6px rgba(0,0,0,0.35)" : "none",
+              letterSpacing: "-0.01em",
             }}
           >{label}</button>
         ))}
@@ -398,7 +456,7 @@ export default function AuthModal({ onAuth }) {
 
       <form
         onSubmit={tab === "login" ? handleLogin : handleSignup}
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
+        style={{ display: "flex", flexDirection: "column", gap: 14 }}
       >
         {tab === "signup" && (
           <div>
@@ -435,12 +493,13 @@ export default function AuthModal({ onAuth }) {
               type="button"
               onClick={() => switchTab("forgot")}
               style={{
-                marginTop: 6, background: "transparent", border: "none",
-                color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer",
-                fontFamily: FONT, padding: 0, transition: "color 0.1s",
+                marginTop: 8, background: "transparent", border: "none",
+                color: "rgba(245,245,250,0.45)", fontSize: 12, cursor: "pointer",
+                fontFamily: FONT, padding: 0, transition: "color 0.15s",
+                fontWeight: 500,
               }}
               onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"}
-              onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+              onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.45)"}
             >Forgot password?</button>
           )}
         </div>
@@ -450,7 +509,7 @@ export default function AuthModal({ onAuth }) {
         <button
           type="submit"
           disabled={loading}
-          style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, marginTop: 4 }}
+          style={{ ...btnPrimary, opacity: loading ? 0.65 : 1, marginTop: 4 }}
         >
           {loading
             ? "Please wait…"

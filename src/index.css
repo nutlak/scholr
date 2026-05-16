@@ -1,20 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  --font: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  --mono: ui-monospace, "SF Mono", Consolas, monospace;
-  --bg: #0A0A0A;
-  --s1: #111111;
-  --s2: #1A1A1A;
-  --border: rgba(255,255,255,0.06);
-  --border-h: rgba(255,255,255,0.12);
-  --t1: #FAFAFA;
-  --t2: rgba(255,255,255,0.6);
-  --t3: rgba(255,255,255,0.4);
-  --acc: #A78BFA;
-  --acc-h: #7C3AED;
-  --dest: #EF4444;
+  --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
+
+  /* Surfaces — warm dark with hint of indigo */
+  --bg:        #0B0B12;
+  --s1:        #14141F;
+  --s2:        #1C1C2A;
+  --s3:        #252537;
+
+  /* Borders */
+  --border:    rgba(255,255,255,0.07);
+  --border-h:  rgba(255,255,255,0.14);
+  --border-f:  rgba(167,139,250,0.4);
+
+  /* Text */
+  --t1:        #F5F5FA;
+  --t2:        rgba(245,245,250,0.7);
+  --t3:        rgba(245,245,250,0.45);
+  --t4:        rgba(245,245,250,0.28);
+
+  /* Brand */
+  --acc:       #A78BFA;
+  --acc-h:     #C4B5FD;
+  --acc-d:     #7C3AED;
+  --acc-bg:    rgba(167,139,250,0.08);
+  --acc-bg-h:  rgba(167,139,250,0.14);
+  --acc-glow:  rgba(167,139,250,0.22);
+
+  /* Forge action accents */
+  --c-study:   #34D399;
+  --c-quest:   #FBBF24;
+  --c-flash:   #F472B6;
+  --c-summ:    #60A5FA;
+
+  /* Status */
+  --success:   #34D399;
+  --warning:   #FBBF24;
+  --danger:    #F87171;
+  --info:      #60A5FA;
+
+  /* Radii */
+  --r-sm:  8px;
+  --r-md:  10px;
+  --r-lg:  14px;
+  --r-xl:  18px;
+
+  /* Shadows */
+  --sh-card:      0 2px 8px rgba(0,0,0,0.25);
+  --sh-card-h:    0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.12);
+  --sh-modal:     0 24px 64px rgba(0,0,0,0.6);
+  --sh-glow:      0 0 32px rgba(167,139,250,0.25);
 
   font: 14px/1.5 var(--font);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.011em;
   color: var(--t1);
   background: var(--bg);
   color-scheme: dark;
@@ -24,7 +64,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body { margin: 0; background: #0A0A0A; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(167,139,250,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(96,165,250,0.04) 0%, transparent 50%);
+  background-attachment: fixed;
+}
 
 #root {
   width: 100%;
@@ -37,22 +86,21 @@ body { margin: 0; background: #0A0A0A; }
   box-sizing: border-box;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
 
-h1, h2 {
+h1, h2, h3 {
   font-family: var(--font);
   font-weight: 600;
   color: var(--t1);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
 }
-
-h1 { font-size: 56px; line-height: 1.2; margin: 32px 0; }
-h2 { font-size: 24px; line-height: 1.2; margin: 0 0 8px; }
-p  { margin: 0; }
+p { margin: 0; }
 
 code {
   font-family: var(--mono);
@@ -60,26 +108,46 @@ code {
   padding: 2px 6px;
   background: var(--s1);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--t1);
 }
 
+button { font-family: var(--font); }
+input, textarea, select { font-family: var(--font); }
+
+/* ── Global keyframes ─────────────────────────────────────────────── */
 @keyframes pulse {
   0%, 100% { opacity: 0.3; transform: translateY(0); }
   50%       { opacity: 1;   transform: translateY(-3px); }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-8px); }
+  from { opacity: 0; transform: translateX(-10px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
+  50%       { box-shadow: 0 0 24px 4px rgba(167,139,250,0.18); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); }
+  40%            { opacity: 1;   transform: scale(1); }
+}
+@keyframes orbit {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(20px, -10px); }
 }

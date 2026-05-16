@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
-const FONT = `system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif`;
+const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
 
-function useScrolled(threshold = 20) {
+function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > threshold);
@@ -12,24 +12,44 @@ function useScrolled(threshold = 20) {
   return scrolled;
 }
 
-function useFadeIn() {
+function useFadeIn(delay = 0) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setVisible(true), delay);
+        }
+      },
       { threshold: 0.12 }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
+  }, [delay]);
   return [ref, visible];
 }
 
-function FeatureCard({ icon, title, body }) {
-  const [ref, visible] = useFadeIn();
+const FEATURES = [
+  { icon: "📚", title: "Upload anything",  tint: "#60A5FA", body: "PDFs, slides, Word docs, plain text — Derek reads every word so you don't have to retype anything." },
+  { icon: "💬", title: "Ask Derek",         tint: "#A78BFA", body: "Your personal AI tutor, trained on your actual notes. Definitions, practice questions, summaries — just ask." },
+  { icon: "👥", title: "Study together",    tint: "#F472B6", body: "Share a unit with your group. Everyone sees the same notes, the same chat, the same answers." },
+  { icon: "⭐", title: "Star what matters", tint: "#FBBF24", body: "Pin important units to find them in one tap. Cram week just got a lot less stressful." },
+  { icon: "🔔", title: "Stay in sync",      tint: "#34D399", body: "Get notified when a classmate adds new notes. You're always studying the latest material." },
+  { icon: "🔒", title: "Private by default", tint: "#06B6D4", body: "Your notebooks are yours. Invite-only — no public links, no surprises, no scrapers." },
+];
+
+const STEPS = [
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Name it and you're in.", tint: "#A78BFA" },
+  { n: "2", title: "Upload your notes",      body: "Drag in PDFs, lecture slides, typed notes. Scholr extracts every word for Derek.", tint: "#60A5FA" },
+  { n: "3", title: "Invite your study group", body: "Send an email invite. They join in one click and see everything immediately.", tint: "#F472B6" },
+  { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
+];
+
+function FeatureCard({ icon, title, body, tint, idx }) {
+  const [ref, visible] = useFadeIn(idx * 60);
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -37,60 +57,82 @@ function FeatureCard({ icon, title, body }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
+        position: "relative",
         flex: "1 1 280px",
-        background: hovered ? "#1A1A1A" : "#111111",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)"}`,
-        borderRadius: 6,
-        padding: "24px",
-        transition: "all 0.1s",
+        background: hovered ? "#1C1C2A" : "#14141F",
+        border: `1px solid ${hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 16,
+        padding: "28px 24px",
+        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(16px)",
+        transform: visible ? "translateY(0)" : "translateY(20px)",
+        boxShadow: hovered ? `0 14px 40px rgba(0,0,0,0.4), 0 0 0 1px ${tint}22` : "0 2px 8px rgba(0,0,0,0.2)",
+        overflow: "hidden",
       }}
     >
       <div style={{
-        width: 32, height: 32, borderRadius: 6,
-        background: "rgba(167,139,250,0.08)",
-        border: "1px solid rgba(167,139,250,0.15)",
+        position: "absolute", top: -40, right: -40, width: 160, height: 160,
+        background: `radial-gradient(circle, ${tint}22 0%, transparent 70%)`,
+        opacity: hovered ? 1 : 0.5,
+        transition: "opacity 0.3s ease",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "relative",
+        width: 44, height: 44, borderRadius: 12,
+        background: `linear-gradient(135deg, ${tint}22, ${tint}0A)`,
+        border: `1px solid ${tint}33`,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 16, marginBottom: 16,
+        fontSize: 20, marginBottom: 18,
+        transition: "transform 0.25s ease",
+        transform: hovered ? "scale(1.06)" : "scale(1)",
       }}>{icon}</div>
       <div style={{
-        fontSize: 14, fontWeight: 600, color: "#FAFAFA",
-        fontFamily: FONT, marginBottom: 8, letterSpacing: "-0.01em",
+        position: "relative",
+        fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+        fontFamily: FONT, marginBottom: 8, letterSpacing: "-0.015em",
       }}>{title}</div>
       <div style={{
-        fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6,
+        position: "relative",
+        fontSize: 14, color: "rgba(245,245,250,0.62)", lineHeight: 1.6,
         fontFamily: FONT,
       }}>{body}</div>
     </div>
   );
 }
 
-function Step({ n, title, body, last }) {
-  const [ref, visible] = useFadeIn();
+function Step({ n, title, body, tint, last, idx }) {
+  const [ref, visible] = useFadeIn(idx * 80);
   return (
     <div ref={ref} style={{
       display: "flex", gap: 20, alignItems: "flex-start",
-      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(12px)",
-      transition: "opacity 0.15s ease, transform 0.15s ease",
+      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)",
+      transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <div style={{
-          width: 32, height: 32, borderRadius: "50%",
-          background: "#A78BFA",
+          width: 40, height: 40, borderRadius: "50%",
+          background: `linear-gradient(135deg, ${tint}, ${tint}88)`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 700, color: "#0A0A0A",
+          fontSize: 15, fontWeight: 700, color: "#fff",
           fontFamily: FONT, flexShrink: 0,
+          boxShadow: `0 8px 20px ${tint}40, 0 0 0 4px ${tint}14`,
         }}>{n}</div>
-        {!last && <div style={{ width: 1, flex: 1, background: "rgba(255,255,255,0.06)", marginTop: 8 }} />}
+        {!last && (
+          <div style={{
+            width: 2, flex: 1, marginTop: 4,
+            background: `linear-gradient(180deg, ${tint}44 0%, rgba(255,255,255,0.04) 100%)`,
+            minHeight: 36,
+          }} />
+        )}
       </div>
-      <div style={{ paddingBottom: last ? 0 : 32 }}>
+      <div style={{ paddingBottom: last ? 0 : 40, paddingTop: 6 }}>
         <div style={{
-          fontSize: 14, fontWeight: 600, color: "#FAFAFA",
-          fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em",
+          fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+          fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em",
         }}>{title}</div>
         <div style={{
-          fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6,
+          fontSize: 14, color: "rgba(245,245,250,0.62)", lineHeight: 1.65,
           fontFamily: FONT,
         }}>{body}</div>
       </div>
@@ -98,220 +140,354 @@ function Step({ n, title, body, last }) {
   );
 }
 
+function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
+  const [ref, visible] = useFadeIn();
+  return (
+    <div ref={ref} style={{
+      textAlign: "center",
+      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)",
+      transition: "opacity 0.4s ease, transform 0.4s ease",
+    }}>
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: `${accent}14`, border: `1px solid ${accent}30`,
+        borderRadius: 999, padding: "5px 12px",
+        fontSize: 11, fontWeight: 600, color: accent,
+        marginBottom: 18, letterSpacing: "0.08em", textTransform: "uppercase",
+        fontFamily: FONT,
+      }}>
+        {pill}
+      </div>
+      <h2 style={{
+        fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600,
+        fontFamily: FONT, color: "#F5F5FA",
+        letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14,
+        maxWidth: 640, margin: "0 auto 14px",
+      }}>{title}</h2>
+      <p style={{
+        fontSize: 16, color: "rgba(245,245,250,0.6)", lineHeight: 1.65,
+        maxWidth: 520, margin: "0 auto", fontFamily: FONT,
+      }}>{sub}</p>
+    </div>
+  );
+}
+
 export default function LandingPage({ onSignIn }) {
   const scrolled = useScrolled();
+  const [heroVisible, setHeroVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setHeroVisible(true), 50);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div style={{
-      background: "#0A0A0A", minHeight: "100vh",
-      fontFamily: FONT, color: "#FAFAFA",
+      background: "#0B0B12", minHeight: "100vh",
+      fontFamily: FONT, color: "#F5F5FA",
       overflowX: "hidden",
+      position: "relative",
     }}>
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0A0A0A; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+        @keyframes orbit-slow {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%       { transform: translate(40px, -20px) scale(1.05); }
+        }
+        @keyframes orbit-slow-2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%       { transform: translate(-30px, 30px) scale(1.04); }
+        }
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: translateY(0); }
-          50%       { opacity: 1; transform: translateY(-3px); }
+        @keyframes blink-dot {
+          0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+          40%            { opacity: 1;    transform: scale(1); }
         }
 
-        .landing-btn-primary {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: #A78BFA; color: #0A0A0A;
-          border: none; border-radius: 6px;
-          padding: 0 16px; height: 36px;
+        .nav-link {
+          background: transparent; border: none; cursor: pointer;
+          color: rgba(245,245,250,0.65); font-size: 14px; font-weight: 500;
+          font-family: ${FONT};
+          padding: 0 14px; height: 36px; border-radius: 8px;
+          transition: color 0.15s, background 0.15s;
+        }
+        .nav-link:hover { color: #F5F5FA; background: rgba(255,255,255,0.05); }
+
+        .btn-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+          color: #fff;
+          border: none; border-radius: 10px;
+          padding: 0 18px; height: 38px;
           font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: ${FONT};
-          transition: background 0.1s; white-space: nowrap;
+          white-space: nowrap;
+          box-shadow: 0 4px 14px rgba(167,139,250,0.32), 0 0 0 1px rgba(167,139,250,0.4);
+          transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s ease, opacity 0.18s ease;
+          letter-spacing: -0.01em;
         }
-        .landing-btn-primary:hover { background: #7C3AED; }
+        .btn-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 28px rgba(167,139,250,0.48), 0 0 0 1px rgba(167,139,250,0.55);
+        }
+        .btn-primary:active { transform: translateY(0); }
 
-        .hero-btn-primary {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: #A78BFA; color: #0A0A0A;
-          border: none; border-radius: 6px;
-          padding: 0 24px; height: 44px;
-          font-size: 14px; font-weight: 600;
+        .btn-primary-lg {
+          padding: 0 28px; height: 50px; font-size: 15px;
+          border-radius: 12px;
+          box-shadow: 0 10px 30px rgba(167,139,250,0.4), 0 0 0 1px rgba(167,139,250,0.42);
+        }
+        .btn-primary-lg:hover {
+          box-shadow: 0 14px 40px rgba(167,139,250,0.55), 0 0 0 1px rgba(167,139,250,0.6);
+        }
+
+        .btn-ghost {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: transparent;
+          color: rgba(245,245,250,0.75);
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 10px;
+          padding: 0 18px; height: 38px;
+          font-size: 13px; font-weight: 500;
           cursor: pointer; font-family: ${FONT};
           white-space: nowrap;
-          transition: background 0.1s;
+          transition: all 0.18s ease;
+          letter-spacing: -0.01em;
         }
-        .hero-btn-primary:hover { background: #7C3AED; }
+        .btn-ghost:hover {
+          color: #F5F5FA;
+          border-color: rgba(255,255,255,0.22);
+          background: rgba(255,255,255,0.04);
+        }
 
-        .hero-btn-ghost {
-          display: inline-flex; align-items: center;
-          background: transparent; color: rgba(255,255,255,0.6);
-          border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
-          padding: 0 24px; height: 44px;
-          font-size: 14px; font-weight: 500;
-          cursor: pointer; font-family: ${FONT};
-          white-space: nowrap;
-          transition: border-color 0.1s, color 0.1s;
+        .btn-ghost-lg {
+          padding: 0 26px; height: 50px; font-size: 15px; border-radius: 12px;
         }
-        .hero-btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #FAFAFA; }
-
-        .nav-sign-in {
-          background: none; border: none; cursor: pointer;
-          color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 500;
-          font-family: ${FONT};
-          padding: 0 12px; height: 32px; border-radius: 6px;
-          transition: color 0.1s;
-        }
-        .nav-sign-in:hover { color: #FAFAFA; }
       `}</style>
+
+      {/* Ambient gradient mesh */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: `
+          radial-gradient(circle at 18% 12%, rgba(167,139,250,0.16) 0%, transparent 45%),
+          radial-gradient(circle at 82% 30%, rgba(96,165,250,0.10) 0%, transparent 42%),
+          radial-gradient(circle at 50% 100%, rgba(244,114,182,0.08) 0%, transparent 50%)
+        `,
+      }} />
+
+      {/* Animated orbs */}
+      <div style={{
+        position: "absolute", top: 80, left: "10%",
+        width: 320, height: 320, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+        filter: "blur(40px)",
+        animation: "orbit-slow 18s ease-in-out infinite",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+      <div style={{
+        position: "absolute", top: 200, right: "8%",
+        width: 240, height: 240, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(96,165,250,0.12) 0%, transparent 70%)",
+        filter: "blur(40px)",
+        animation: "orbit-slow-2 22s ease-in-out infinite",
+        pointerEvents: "none", zIndex: 0,
+      }} />
 
       {/* Nav */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: 52, padding: "0 24px",
+        height: 60, padding: "0 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: scrolled ? "rgba(10,10,10,0.9)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
+        background: scrolled ? "rgba(11,11,18,0.78)" : "transparent",
+        backdropFilter: scrolled ? "blur(16px)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(16px)" : "none",
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
-        transition: "background 0.2s, border-color 0.2s",
+        transition: "all 0.25s ease",
       }}>
         <div style={{
-          fontFamily: FONT, fontSize: 18, fontWeight: 700,
-          color: "#FAFAFA", letterSpacing: "-0.02em",
+          fontFamily: FONT, fontSize: 20, fontWeight: 700,
+          color: "#F5F5FA", letterSpacing: "-0.025em",
+          display: "flex", alignItems: "center", gap: 8,
         }}>
+          <div style={{
+            width: 26, height: 26, borderRadius: 7,
+            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 800, color: "#fff",
+          }}>s</div>
           schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button className="nav-sign-in" onClick={onSignIn}>Sign in</button>
-          <button className="landing-btn-primary" onClick={onSignIn}>Get started</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button className="nav-link" onClick={onSignIn}>Sign in</button>
+          <button className="btn-primary" onClick={onSignIn}>Get started free</button>
         </div>
       </nav>
 
       {/* Hero */}
       <section style={{
+        position: "relative", zIndex: 1,
         minHeight: "100vh",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        textAlign: "center", padding: "80px 24px 64px",
-        position: "relative",
+        textAlign: "center", padding: "120px 24px 64px",
       }}>
         <div style={{
-          position: "relative", zIndex: 1, maxWidth: 720,
-          width: "100%", margin: "0 auto", textAlign: "center",
+          width: "100%", maxWidth: 920,
+          margin: "0 auto", textAlign: "center",
           display: "flex", flexDirection: "column", alignItems: "center",
-          animation: "fadeUp 0.3s ease both",
+          opacity: heroVisible ? 1 : 0,
+          transform: heroVisible ? "translateY(0)" : "translateY(20px)",
+          transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
           {/* Badge */}
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-            borderRadius: 100, padding: "4px 12px",
-            fontSize: 12, fontWeight: 500, color: "#A78BFA",
-            marginBottom: 24, letterSpacing: "0.01em",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "linear-gradient(135deg, rgba(167,139,250,0.16), rgba(167,139,250,0.06))",
+            border: "1px solid rgba(167,139,250,0.28)",
+            borderRadius: 999, padding: "6px 14px",
+            fontSize: 12, fontWeight: 500, color: "#C4B5FD",
+            marginBottom: 28, letterSpacing: "-0.005em",
+            fontFamily: FONT,
+            boxShadow: "0 4px 14px rgba(167,139,250,0.12)",
           }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", boxShadow: "0 0 8px #A78BFA" }} />
             AI-powered collaborative studying
           </div>
 
-          {/* Headline */}
+          {/* Headline — single line at widescreen */}
           <h1 style={{
-            fontSize: "clamp(36px, 6vw, 56px)",
-            fontWeight: 600, lineHeight: 1.1,
-            fontFamily: FONT, letterSpacing: "-0.02em",
-            marginBottom: 20, color: "#FAFAFA",
+            fontSize: "clamp(40px, 7vw, 72px)",
+            fontWeight: 700, lineHeight: 1.05,
+            fontFamily: FONT, letterSpacing: "-0.035em",
+            marginBottom: 22,
+            maxWidth: "100%",
+            whiteSpace: "normal",
           }}>
-            Study smarter.{" "}
-            <span style={{ color: "#A78BFA" }}>Study together.</span>
+            <span style={{ color: "#F5F5FA" }}>Study smarter.</span>{" "}
+            <span style={{
+              background: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 40%, #8B5CF6 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>Study together.</span>
           </h1>
 
           {/* Subtext */}
           <p style={{
-            fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6,
-            maxWidth: 520, margin: "0 auto 36px", fontFamily: FONT,
+            fontSize: "clamp(16px, 1.8vw, 19px)",
+            color: "rgba(245,245,250,0.65)", lineHeight: 1.55,
+            maxWidth: 560, margin: "0 auto 40px", fontFamily: FONT,
           }}>
             Scholr turns your class notes into a shared AI tutor. Upload your notes,
             invite your study group, and ask Derek anything.
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="hero-btn-primary" onClick={onSignIn}>
-              Get started free →
+          <div style={{
+            display: "flex", gap: 12, justifyContent: "center",
+            flexWrap: "wrap", marginBottom: 18,
+          }}>
+            <button className="btn-primary btn-primary-lg" onClick={onSignIn}>
+              Get started free
+              <span style={{ fontSize: 16, marginLeft: 2 }}>→</span>
             </button>
-            <button className="hero-btn-ghost" onClick={onSignIn}>
-              See how it works
+            <button className="btn-ghost btn-ghost-lg" onClick={onSignIn}>
+              Sign in
             </button>
           </div>
 
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", marginTop: 16, fontFamily: FONT }}>
-            Free to use · No credit card required
+          <p style={{
+            fontSize: 13, color: "rgba(245,245,250,0.35)", fontFamily: FONT,
+            display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
+          }}>
+            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px #34D399" }} />
+            Free forever for study groups · No credit card required
           </p>
         </div>
 
-        {/* Mock app card */}
+        {/* Mock app preview */}
         <div style={{
           position: "relative", zIndex: 1,
-          marginTop: 56, maxWidth: 640, width: "100%",
-          margin: "56px auto 0",
-          animation: "fadeUp 0.3s 0.1s ease both",
+          marginTop: 64, maxWidth: 720, width: "100%",
+          opacity: heroVisible ? 1 : 0,
+          transform: heroVisible ? "translateY(0)" : "translateY(40px)",
+          transition: "opacity 0.8s 0.2s ease, transform 0.8s 0.2s ease",
         }}>
           <div style={{
-            background: "#111111",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 6,
+            background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            borderRadius: 18,
             padding: "20px",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(167,139,250,0.10)",
           }}>
+            {/* Window chrome */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+              {["#F87171", "#FBBF24", "#34D399"].map(c => (
+                <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: `${c}77` }} />
+              ))}
+              <div style={{ marginLeft: 12, fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT, alignSelf: "center" }}>
+                AP Bio · Cell Division
+              </div>
+            </div>
+
             {/* Mock chat */}
             <div style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
               <div style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: "#A78BFA",
+                width: 30, height: 30, borderRadius: "50%",
+                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                 flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "#0A0A0A",
+                fontSize: 13, fontWeight: 700, color: "#fff",
+                boxShadow: "0 4px 12px rgba(167,139,250,0.3)",
               }}>D</div>
               <div style={{
-                background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 6,
-                padding: "10px 12px", maxWidth: 480,
+                background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12, padding: "10px 14px", maxWidth: 480,
               }}>
-                <div style={{ fontSize: 10, fontWeight: 500, color: "#A78BFA", marginBottom: 4, fontFamily: FONT, letterSpacing: "0.05em", textTransform: "uppercase" }}>Derek</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, fontFamily: FONT }}>
-                  Based on your lecture notes, the three main types of chemical bonds are covalent, ionic, and metallic. Covalent bonds involve sharing electrons between nonmetals. Want me to explain how they differ?
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#A78BFA", marginBottom: 4, fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase" }}>Derek</div>
+                <div style={{ fontSize: 13, color: "rgba(245,245,250,0.82)", lineHeight: 1.6, fontFamily: FONT, textAlign: "left" }}>
+                  The three main types of chemical bonds are covalent, ionic, and metallic. Covalent bonds share electrons between nonmetals. Want me to explain how they differ?
                 </div>
               </div>
             </div>
+
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
               <div style={{
-                background: "#A78BFA", borderRadius: 6,
-                padding: "10px 12px", maxWidth: 340,
-                fontSize: 13, color: "#0A0A0A", fontFamily: FONT, fontWeight: 500,
+                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+                borderRadius: 12,
+                padding: "10px 14px", maxWidth: 380,
+                fontSize: 13, color: "#fff", fontFamily: FONT, fontWeight: 500,
+                boxShadow: "0 4px 12px rgba(167,139,250,0.25)",
+                textAlign: "left",
               }}>
                 What's the difference between ionic and covalent bonds?
               </div>
             </div>
+
             {/* Typing indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: "#A78BFA",
+                width: 30, height: 30, borderRadius: "50%",
+                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "#0A0A0A", flexShrink: 0,
+                fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
+                boxShadow: "0 4px 12px rgba(167,139,250,0.3)",
               }}>D</div>
               <div style={{
-                background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 6,
-                padding: "10px 12px", display: "flex", gap: 4, alignItems: "center",
+                background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12, padding: "10px 14px",
+                display: "flex", gap: 5, alignItems: "center",
               }}>
-                {[0,1,2].map(i => (
+                <span style={{ fontSize: 12, color: "rgba(245,245,250,0.5)", fontStyle: "italic", fontFamily: FONT, marginRight: 4 }}>
+                  Derek is thinking
+                </span>
+                {[0, 1, 2].map(i => (
                   <div key={i} style={{
-                    width: 5, height: 5, borderRadius: "50%", background: "rgba(255,255,255,0.3)",
-                    animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite`,
+                    width: 5, height: 5, borderRadius: "50%", background: "#A78BFA",
+                    animation: `blink-dot 1.4s ${i * 0.15}s ease-in-out infinite both`,
                   }} />
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT }}>Derek is thinking…</div>
             </div>
           </div>
         </div>
@@ -319,147 +495,121 @@ export default function LandingPage({ onSignIn }) {
 
       {/* Features */}
       <section style={{
-        padding: "80px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        position: "relative", zIndex: 1,
+        padding: "96px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
       }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
             pill="Features"
             title="Everything your study group needs"
             sub="One place for notes, AI answers, and real-time collaboration with your classmates."
           />
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 48 }}>
-            <FeatureCard
-              icon="📎"
-              title="Upload anything"
-              body="Drop in PDFs, slides, Word docs, or plain text. Scholr extracts the content so Derek can read every word."
-            />
-            <FeatureCard
-              icon="🤖"
-              title="Ask Derek"
-              body="Derek is your AI tutor, trained on your own notes. Ask anything — definitions, practice questions, summaries, comparisons."
-            />
-            <FeatureCard
-              icon="👥"
-              title="Study together"
-              body="Share a unit with your whole study group. Everyone sees the same chat history, notes, and Derek's answers."
-            />
-            <FeatureCard
-              icon="⭐"
-              title="Star what matters"
-              body="Bookmark important units and find them instantly in your Starred tab. Never dig through folders again."
-            />
-            <FeatureCard
-              icon="🔔"
-              title="Stay in sync"
-              body="Get notified when a classmate uploads new notes, so you always study with the latest material."
-            />
-            <FeatureCard
-              icon="🔒"
-              title="Private by default"
-              body="Your notebooks are yours. Only people you invite can join — no public links, no surprises."
-            />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16, marginTop: 56,
+          }}>
+            {FEATURES.map((f, i) => (
+              <FeatureCard key={f.title} {...f} idx={i} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* How it works */}
       <section style={{
-        padding: "80px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        position: "relative", zIndex: 1,
+        padding: "96px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
       }}>
-        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <SectionHeader
             pill="How it works"
             title="Up and running in minutes"
             sub="No setup, no syllabus parsing, no config. Just upload and ask."
+            accent="#60A5FA"
           />
-          <div style={{ marginTop: 48 }}>
-            <Step n={1} title="Create a unit" body="One unit per subject or exam. Name it, optionally add a topic tag, and you're in." />
-            <Step n={2} title="Upload your notes" body="PDFs, lecture slides, typed notes — anything goes. Scholr reads the text so Derek can reference it instantly." />
-            <Step n={3} title="Invite your study group" body="Share the invite link. Teammates join in one click and see all your uploaded notes immediately." />
-            <Step n={4} title="Ask Derek" body="Type any question in the chat. Derek answers from your actual notes — not generic internet knowledge." last />
+          <div style={{ marginTop: 56 }}>
+            {STEPS.map((s, i) => (
+              <Step key={s.n} {...s} idx={i} last={i === STEPS.length - 1} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
       <section style={{
-        padding: "80px 24px 96px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        position: "relative", zIndex: 1,
+        padding: "96px 24px 120px",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
         textAlign: "center",
       }}>
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ maxWidth: 580, margin: "0 auto", position: "relative" }}>
           <div style={{
-            display: "inline-flex", alignItems: "center",
-            background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
-            borderRadius: 100, padding: "4px 12px",
-            fontSize: 11, fontWeight: 500, color: "#A78BFA",
-            marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase",
-          }}>
-            Free forever for study groups
+            position: "absolute", inset: "-60px -100px",
+            background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 65%)",
+            filter: "blur(40px)", pointerEvents: "none",
+          }} />
+          <div style={{ position: "relative" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.28)",
+              borderRadius: 999, padding: "5px 12px",
+              fontSize: 11, fontWeight: 600, color: "#C4B5FD",
+              marginBottom: 22, letterSpacing: "0.08em", textTransform: "uppercase",
+              fontFamily: FONT,
+            }}>
+              Free forever for study groups
+            </div>
+            <h2 style={{
+              fontSize: "clamp(32px, 5vw, 48px)",
+              fontWeight: 700, lineHeight: 1.05,
+              fontFamily: FONT, color: "#F5F5FA",
+              letterSpacing: "-0.035em", marginBottom: 18,
+            }}>
+              Ready to study smarter?
+            </h2>
+            <p style={{
+              fontSize: 17, color: "rgba(245,245,250,0.65)", lineHeight: 1.6,
+              marginBottom: 36, fontFamily: FONT,
+              maxWidth: 460, margin: "0 auto 36px",
+            }}>
+              Create your first unit, upload your notes, and ask Derek your first question — in under two minutes.
+            </p>
+            <button className="btn-primary btn-primary-lg" onClick={onSignIn}>
+              Get started free
+              <span style={{ fontSize: 16, marginLeft: 2 }}>→</span>
+            </button>
           </div>
-          <h2 style={{
-            fontSize: "clamp(28px, 4vw, 40px)",
-            fontWeight: 600, lineHeight: 1.1,
-            fontFamily: FONT, color: "#FAFAFA",
-            letterSpacing: "-0.02em", marginBottom: 16,
-          }}>
-            Ready to study smarter?
-          </h2>
-          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 32, fontFamily: FONT }}>
-            Create your first unit, upload your notes, and ask Derek your first question — in under two minutes.
-          </p>
-          <button className="landing-btn-primary" onClick={onSignIn} style={{ fontSize: 14, padding: "0 28px", height: 44 }}>
-            Get started free →
-          </button>
         </div>
       </section>
 
       {/* Footer */}
       <footer style={{
+        position: "relative", zIndex: 1,
         borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "24px",
+        padding: "28px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: 12,
+        background: "rgba(11,11,18,0.6)",
       }}>
-        <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 700, color: "#FAFAFA", letterSpacing: "-0.01em" }}>
+        <div style={{
+          fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
+          letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 6,
+            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 800, color: "#fff",
+          }}>s</div>
           schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", fontFamily: FONT }}>
-          © {new Date().getFullYear()} Scholr. All rights reserved.
+        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
+          © {new Date().getFullYear()} Scholr · Built for students, by students
         </div>
       </footer>
-    </div>
-  );
-}
-
-function SectionHeader({ pill, title, sub }) {
-  const [ref, visible] = useFadeIn();
-  return (
-    <div ref={ref} style={{
-      textAlign: "center",
-      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(12px)",
-      transition: "opacity 0.15s ease, transform 0.15s ease",
-    }}>
-      <div style={{
-        display: "inline-flex", alignItems: "center",
-        background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.15)",
-        borderRadius: 100, padding: "4px 12px",
-        fontSize: 11, fontWeight: 500, color: "#A78BFA",
-        marginBottom: 16, letterSpacing: "0.05em", textTransform: "uppercase",
-      }}>
-        {pill}
-      </div>
-      <h2 style={{
-        fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 600,
-        fontFamily: FONT, color: "#FAFAFA",
-        letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 12,
-      }}>{title}</h2>
-      <p style={{
-        fontSize: 15, color: "rgba(255,255,255,0.5)", lineHeight: 1.6,
-        maxWidth: 480, margin: "0 auto", fontFamily: FONT,
-      }}>{sub}</p>
     </div>
   );
 }

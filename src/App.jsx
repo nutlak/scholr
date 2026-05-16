@@ -17,20 +17,40 @@ function timeAgo(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-const FONT = `system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif`;
+const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
-function Avatar({ name, size = 28 }) {
+// Warm tint palette for class/member color accents (deterministic by id/name)
+const TINTS = [
+  { hue: "#A78BFA", deep: "#8B5CF6" }, // violet
+  { hue: "#60A5FA", deep: "#3B82F6" }, // sky
+  { hue: "#34D399", deep: "#10B981" }, // emerald
+  { hue: "#FBBF24", deep: "#F59E0B" }, // amber
+  { hue: "#F472B6", deep: "#EC4899" }, // pink
+  { hue: "#FB7185", deep: "#F43F5E" }, // rose
+  { hue: "#22D3EE", deep: "#06B6D4" }, // cyan
+];
+function tintFor(seed) {
+  if (!seed) return TINTS[0];
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  return TINTS[Math.abs(h) % TINTS.length];
+}
+
+function Avatar({ name, size = 28, seed }) {
+  const t = tintFor(seed ?? name);
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: "#A78BFA",
+      background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.38, fontWeight: 600, color: "#fff",
+      fontSize: size * 0.4, fontWeight: 700, color: "#fff",
       fontFamily: FONT, flexShrink: 0,
-      border: "1.5px solid #0A0A0A",
+      border: "2px solid #0B0B12",
+      boxShadow: `0 2px 6px ${t.hue}40`,
+      letterSpacing: "-0.02em",
     }}>
-      {name[0].toUpperCase()}
+      {(name?.[0] ?? "?").toUpperCase()}
     </div>
   );
 }
@@ -39,16 +59,16 @@ function AvatarStack({ names }) {
   return (
     <div style={{ display: "flex" }}>
       {names.slice(0, 3).map((n, i) => (
-        <div key={n} style={{ marginLeft: i === 0 ? 0 : -6, zIndex: names.length - i }}>
-          <Avatar name={n} size={22} />
+        <div key={`${n}-${i}`} style={{ marginLeft: i === 0 ? 0 : -8, zIndex: names.length - i }}>
+          <Avatar name={n} size={24} seed={n} />
         </div>
       ))}
       {names.length > 3 && (
         <div style={{
-          marginLeft: -6, width: 22, height: 22, borderRadius: "50%",
-          background: "#1A1A1A", border: "1.5px solid #0A0A0A",
+          marginLeft: -8, width: 24, height: 24, borderRadius: "50%",
+          background: "#1C1C2A", border: "2px solid #0B0B12",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: FONT,
+          fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.6)", fontFamily: FONT,
         }}>+{names.length - 3}</div>
       )}
     </div>
@@ -57,21 +77,43 @@ function AvatarStack({ names }) {
 
 function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
   const [hovered, setHovered] = useState(false);
+  const t = tintFor(nb.id ?? nb.title);
   return (
     <div
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className="lift-card"
       style={{
-        background: hovered ? "#1A1A1A" : "#111111",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)"}`,
-        borderRadius: 6,
-        padding: "16px",
-        cursor: "pointer",
-        transition: "background 0.1s, border-color 0.1s",
         position: "relative",
+        background: hovered
+          ? `linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)`
+          : "#14141F",
+        border: `1px solid ${hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 14,
+        padding: "18px 18px 16px",
+        cursor: "pointer",
+        boxShadow: hovered
+          ? `0 14px 32px rgba(0,0,0,0.4), 0 0 0 1px ${t.hue}22`
+          : "0 2px 8px rgba(0,0,0,0.25)",
+        overflow: "hidden",
       }}
     >
+      {/* Color tab + glow */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: `linear-gradient(90deg, ${t.hue} 0%, ${t.deep} 100%)`,
+        opacity: hovered ? 1 : 0.6,
+        transition: "opacity 0.2s ease",
+      }} />
+      <div style={{
+        position: "absolute", top: -40, right: -40, width: 140, height: 140,
+        background: `radial-gradient(circle, ${t.hue}18 0%, transparent 70%)`,
+        opacity: hovered ? 1 : 0.45,
+        transition: "opacity 0.25s",
+        pointerEvents: "none",
+      }} />
+
       {onToggleStar && (
         <button
           onClick={e => { e.stopPropagation(); onToggleStar(); }}
@@ -79,42 +121,58 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
           style={{
             position: "absolute", top: 12, right: 12, zIndex: 10,
             background: "none", border: "none", cursor: "pointer",
-            padding: "2px 4px", fontSize: 14,
-            color: starred ? "#A78BFA" : "rgba(255,255,255,0.3)",
+            padding: "4px 6px", fontSize: 16,
+            color: starred ? "#FBBF24" : "rgba(245,245,250,0.3)",
             opacity: starred ? 1 : hovered ? 1 : 0,
-            transition: "color 0.1s, opacity 0.1s", lineHeight: 1,
+            transition: "color 0.18s, opacity 0.18s, transform 0.18s", lineHeight: 1,
+            textShadow: starred ? "0 0 12px rgba(251,191,36,0.5)" : "none",
           }}
-          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#A78BFA"; }}
-          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#A78BFA" : "rgba(255,255,255,0.3)"; }}
+          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#FBBF24"; e.currentTarget.style.transform = "scale(1.15)"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#FBBF24" : "rgba(245,245,250,0.3)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
           {starred ? "★" : "☆"}
         </button>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{
-          fontSize: 10, fontWeight: 500, letterSpacing: "0.08em",
-          color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
-          fontFamily: MONO,
-        }}>{nb.notes} notes</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT, paddingRight: 20 }}>{nb.updated}</div>
+          fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em",
+          color: t.hue, textTransform: "uppercase",
+          fontFamily: FONT,
+        }}>
+          {nb.notes} {nb.notes === 1 ? "note" : "notes"}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, lineHeight: 1.3, letterSpacing: "-0.01em" }}>
+      <div style={{
+        position: "relative",
+        fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+        fontFamily: FONT, marginBottom: 4, lineHeight: 1.3, letterSpacing: "-0.018em",
+      }}>
         {nb.title}
       </div>
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 12 }}>
-        {nb.topic}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      {nb.topic && (
+        <div style={{
+          position: "relative",
+          fontSize: 12.5, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+          marginBottom: 14, lineHeight: 1.45,
+        }}>
+          {nb.topic}
+        </div>
+      )}
+      {!nb.topic && <div style={{ height: 14 }} />}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <AvatarStack names={nb.contributors} />
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT }}>
-            {nb.contributors.length} member{nb.contributors.length !== 1 ? "s" : ""}
+          <span style={{ fontSize: 11.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT }}>
+            {nb.contributors.length} {nb.contributors.length === 1 ? "member" : "members"}
           </span>
         </div>
         <div style={{
-          fontSize: 11, color: "#A78BFA", fontFamily: FONT,
-          opacity: hovered ? 1 : 0, transition: "opacity 0.1s",
+          fontSize: 12, color: t.hue, fontFamily: FONT, fontWeight: 600,
+          opacity: hovered ? 1 : 0,
+          transform: hovered ? "translateX(0)" : "translateX(-4px)",
+          transition: "opacity 0.2s, transform 0.2s",
         }}>Open →</div>
       </div>
     </div>
@@ -133,30 +191,27 @@ function MemberAvatarStack({ members }) {
           key={m.user_id}
           onMouseEnter={() => setHoveredIdx(i)}
           onMouseLeave={() => setHoveredIdx(null)}
-          style={{ position: "relative", marginLeft: i === 0 ? 0 : -8, zIndex: visible.length - i, cursor: "default" }}
+          style={{ position: "relative", marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i, cursor: "default" }}
         >
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: "#A78BFA",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 600, color: "#fff",
-            fontFamily: FONT, border: "1.5px solid #0A0A0A",
-            userSelect: "none",
-          }}>
-            {m.email[0].toUpperCase()}
-          </div>
+          <Avatar name={m.email} size={28} seed={m.email} />
           {hoveredIdx === i && (
             <div style={{
-              position: "absolute", bottom: "calc(100% + 6px)", left: "50%",
+              position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
               transform: "translateX(-50%)",
-              background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 6, padding: "6px 10px",
-              fontSize: 11, color: "#FAFAFA",
+              background: "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10, padding: "8px 12px",
+              fontSize: 11.5, color: "#F5F5FA",
               fontFamily: FONT, whiteSpace: "nowrap", zIndex: 100,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+              boxShadow: "0 12px 28px rgba(0,0,0,0.55)",
+              animation: "fadeIn 0.15s ease",
             }}>
-              <div style={{ fontWeight: 500 }}>{m.email}</div>
-              <div style={{ color: m.role === "owner" ? "#A78BFA" : "rgba(255,255,255,0.4)", fontSize: 10, marginTop: 2, textTransform: "capitalize" }}>
+              <div style={{ fontWeight: 600 }}>{m.email}</div>
+              <div style={{
+                color: m.role === "owner" ? "#A78BFA" : "rgba(245,245,250,0.4)",
+                fontSize: 10, marginTop: 2, textTransform: "uppercase",
+                letterSpacing: "0.06em", fontWeight: 600,
+              }}>
                 {m.role === "owner" ? "Owner" : "Member"}
               </div>
             </div>
@@ -165,10 +220,10 @@ function MemberAvatarStack({ members }) {
       ))}
       {overflow > 0 && (
         <div style={{
-          marginLeft: -8, width: 28, height: 28, borderRadius: "50%",
-          background: "#1A1A1A", border: "1.5px solid #0A0A0A",
+          marginLeft: -10, width: 28, height: 28, borderRadius: "50%",
+          background: "#1C1C2A", border: "2px solid #0B0B12",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: FONT, zIndex: 0,
+          fontSize: 10.5, fontWeight: 600, color: "rgba(245,245,250,0.55)", fontFamily: FONT, zIndex: 0,
         }}>+{overflow}</div>
       )}
     </div>
@@ -176,11 +231,12 @@ function MemberAvatarStack({ members }) {
 }
 
 const FORGE_ACTIONS = [
-  { id: "study_guide", label: "Study Guide", icon: "📖" },
-  { id: "questions",   label: "Questions",   icon: "❓" },
-  { id: "flashcards",  label: "Flashcards",  icon: "🃏" },
-  { id: "summary",     label: "Summary",     icon: "📝" },
+  { id: "study_guide", label: "Study Guide", icon: "📖", color: "#34D399", desc: "Comprehensive review" },
+  { id: "questions",   label: "Questions",   icon: "❓", color: "#FBBF24", desc: "Practice questions"  },
+  { id: "flashcards",  label: "Flashcards",  icon: "🃏", color: "#F472B6", desc: "Quick recall cards"  },
+  { id: "summary",     label: "Summary",     icon: "📝", color: "#60A5FA", desc: "Concise overview"    },
 ];
+const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
 function TheForge({ nb, onClose, onToast }) {
   const [action, setAction]         = useState(null);
@@ -211,11 +267,8 @@ function TheForge({ nb, onClose, onToast }) {
   }, [content, flashcards]);
 
   async function autoSave(fullContent, selectedAction) {
-    console.log("autoSave called:", { notebookId: nb.id, selectedAction, contentLength: fullContent?.length });
     try {
-      console.log("calling api.saveForgeOutput");
       const out = await api.saveForgeOutput(nb.id, selectedAction, fullContent, topic);
-      console.log("autoSave succeeded:", out?.id);
       setSavedOutputs(prev => [out, ...prev]);
       onToast?.(`Saved to ${nb.title}`);
     } catch (err) {
@@ -233,9 +286,8 @@ function TheForge({ nb, onClose, onToast }) {
     try {
       await api.forge(
         nb.id, selectedAction, topic,
-        (chunk) => { full += chunk; /* buffer silently — don't update UI mid-stream */ },
+        (chunk) => { full += chunk; },
         () => {
-          // Reveal content all at once, then auto-save in background
           if (selectedAction === "flashcards") {
             try {
               const m = full.match(/\[[\s\S]*\]/);
@@ -249,7 +301,7 @@ function TheForge({ nb, onClose, onToast }) {
             setContent(full);
           }
           setGenerating(false);
-          autoSave(full, selectedAction); // fire-and-forget
+          autoSave(full, selectedAction);
         },
         (err) => { setContent(`Error: ${err}`); setGenerating(false); }
       );
@@ -289,14 +341,13 @@ function TheForge({ nb, onClose, onToast }) {
     setFlashcards(null);
   }
 
-  // Flashcard navigation
   const currentOrder = shuffledOrder ?? (flashcards?.map((_, i) => i) ?? []);
   const currentCard  = flashcards?.[currentOrder[cardIdx]];
   const totalCards   = flashcards?.length ?? 0;
   const realIdx      = currentOrder[cardIdx];
 
-  function goNext() { if (cardIdx >= totalCards - 1) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i + 1), 120); }
-  function goPrev() { if (cardIdx <= 0) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i - 1), 120); }
+  function goNext() { if (cardIdx >= totalCards - 1) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i + 1), 140); }
+  function goPrev() { if (cardIdx <= 0) return; setIsFlipped(false); setTimeout(() => setCardIdx(i => i - 1), 140); }
   function handleShuffle() {
     setCardIdx(0); setIsFlipped(false);
     const arr = [...currentOrder];
@@ -306,43 +357,67 @@ function TheForge({ nb, onClose, onToast }) {
   function toggleLearned() { setLearned(p => { const n = new Set(p); n.has(realIdx) ? n.delete(realIdx) : n.add(realIdx); return n; }); }
 
   const showCards = action === "flashcards" && flashcards && !generating;
+  const activeColor = action ? FORGE_BY_ID[action]?.color ?? "#A78BFA" : "#A78BFA";
 
   return (
     <div style={{
       width: "44%", display: "flex", flexDirection: "column",
-      borderLeft: "1px solid rgba(255,255,255,0.06)",
-      background: "#0A0A0A",
-      paddingLeft: 16, marginLeft: 12,
+      borderLeft: "1px solid rgba(255,255,255,0.07)",
+      background: "linear-gradient(180deg, rgba(20,20,31,0.4) 0%, rgba(11,11,18,0.1) 100%)",
+      paddingLeft: 18, marginLeft: 14,
       height: "100%", minHeight: 0, flexShrink: 0,
     }}>
       {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingBottom: 12, marginBottom: 12,
+        paddingBottom: 14, marginBottom: 14,
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT }}>The Forge</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 6,
+            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, boxShadow: "0 2px 8px rgba(167,139,250,0.4)",
+          }}>⚒</div>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
             onClick={() => setShowSaved(v => !v)}
+            className="btn-press"
             style={{
-              background: showSaved ? "rgba(167,139,250,0.1)" : "none",
-              border: `1px solid ${showSaved ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.06)"}`,
-              borderRadius: 4, padding: "3px 8px", cursor: "pointer",
-              fontSize: 10, fontWeight: 500, letterSpacing: "0.06em",
-              color: showSaved ? "#A78BFA" : "rgba(255,255,255,0.4)",
-              fontFamily: FONT, transition: "all 0.1s",
+              background: showSaved ? "rgba(167,139,250,0.12)" : "transparent",
+              border: `1px solid ${showSaved ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.08)"}`,
+              borderRadius: 8, padding: "0 10px", height: 28, cursor: "pointer",
+              fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
+              color: showSaved ? "#C4B5FD" : "rgba(245,245,250,0.55)",
+              fontFamily: FONT,
+              display: "flex", alignItems: "center", gap: 5,
             }}
-            onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "#FAFAFA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}}
-            onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "rgba(255,255,255,0.4)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}}
-          >SAVED{savedOutputs.length > 0 ? ` (${savedOutputs.length})` : ""}</button>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", cursor: "pointer",
-            color: "rgba(255,255,255,0.4)", fontSize: 14, lineHeight: 1, padding: "2px 4px",
-            transition: "color 0.1s",
+            onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}}
+            onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}}
+          >
+            SAVED
+            {savedOutputs.length > 0 && (
+              <span style={{
+                background: showSaved ? "rgba(167,139,250,0.25)" : "rgba(245,245,250,0.08)",
+                color: showSaved ? "#C4B5FD" : "rgba(245,245,250,0.55)",
+                borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 700,
+                letterSpacing: "0",
+              }}>{savedOutputs.length}</span>
+            )}
+          </button>
+          <button onClick={onClose} className="btn-press" style={{
+            background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 8, cursor: "pointer",
+            color: "rgba(245,245,250,0.55)", fontSize: 14, lineHeight: 1,
+            width: 28, height: 28,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.15s",
           }}
-            onMouseEnter={e => e.currentTarget.style.color = "#FAFAFA"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+            onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
           >✕</button>
         </div>
       </div>
@@ -350,20 +425,43 @@ function TheForge({ nb, onClose, onToast }) {
       {/* Saved outputs panel */}
       {showSaved && (
         <div style={{
-          background: "#111111", border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 6, padding: "4px", marginBottom: 12,
-          maxHeight: 180, overflowY: "auto",
+          background: "#14141F", border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: 12, padding: 6, marginBottom: 14,
+          maxHeight: 200, overflowY: "auto",
+          animation: "fadeIn 0.18s ease",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
         }}>
           {savedOutputs.length === 0 ? (
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: FONT, padding: "10px 8px", textAlign: "center" }}>No saved outputs yet</div>
+            <div style={{
+              fontSize: 12.5, color: "rgba(245,245,250,0.4)",
+              fontFamily: FONT, padding: "20px 12px", textAlign: "center",
+            }}>
+              No saved outputs yet. Generate something to start your library.
+            </div>
           ) : savedOutputs.map(o => {
-            const typeIcon = { study_guide: "📖", questions: "❓", flashcards: "🃏", summary: "📝" }[o.type] ?? "📄";
+            const meta = FORGE_BY_ID[o.type];
+            const icon = meta?.icon ?? "📄";
+            const color = meta?.color ?? "#A78BFA";
             return (
               <div key={o.id} className="forge-saved-item">
-                <span style={{ fontSize: 14, flexShrink: 0 }}>{typeIcon}</span>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: `${color}18`, border: `1px solid ${color}30`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, flexShrink: 0,
+                }}>{icon}</div>
                 <div onClick={() => loadSaved(o)} style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: "#FAFAFA", fontFamily: FONT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.title}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: MONO, marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                  <div style={{
+                    fontSize: 12.5, color: "#F5F5FA", fontFamily: FONT, fontWeight: 500,
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    letterSpacing: "-0.01em",
+                  }}>{o.title}</div>
+                  <div style={{
+                    fontSize: 10.5, color: "rgba(245,245,250,0.4)",
+                    fontFamily: FONT, marginTop: 2,
+                  }}>
+                    {new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </div>
                 </div>
                 <button className="forge-del" onClick={e => { e.stopPropagation(); handleDeleteSaved(o.id); }}>✕</button>
               </div>
@@ -372,17 +470,21 @@ function TheForge({ nb, onClose, onToast }) {
         </div>
       )}
 
-      {/* Action buttons — 2×2 grid */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+      {/* Action buttons — color-coded grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
         {FORGE_ACTIONS.map(a => (
           <button
             key={a.id}
             onClick={() => generate(a.id)}
             disabled={generating}
             className={`forge-action-btn${action === a.id ? " forge-active" : ""}`}
+            style={{ "--btn-color": a.color }}
           >
-            <div style={{ fontSize: 18, lineHeight: 1 }}>{a.icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 500, fontFamily: FONT }}>{a.label}</div>
+            <div className="forge-action-icon">{a.icon}</div>
+            <div style={{
+              fontSize: 12, fontWeight: 600, fontFamily: FONT,
+              letterSpacing: "-0.01em",
+            }}>{a.label}</div>
           </button>
         ))}
       </div>
@@ -396,86 +498,203 @@ function TheForge({ nb, onClose, onToast }) {
         disabled={generating}
         className="forge-topic-input"
         style={{
-          width: "100%", background: "#111111",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 6, padding: "0 12px",
-          height: 36,
-          color: "#FAFAFA", fontSize: 13,
+          width: "100%", background: "#14141F",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10, padding: "0 14px",
+          height: 40,
+          color: "#F5F5FA", fontSize: 13,
           fontFamily: FONT,
-          outline: "none", marginBottom: 10,
+          outline: "none", marginBottom: 12,
           boxSizing: "border-box",
-          transition: "border-color 0.1s",
+          transition: "all 0.18s",
+          letterSpacing: "-0.01em",
         }}
       />
 
-      {/* ── Flashcard view ── */}
+      {/* Flashcard view */}
       {showCards && currentCard ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: MONO }}>{cardIdx + 1} / {totalCards}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "center", margin: "0 8px" }}>{nb.title}</div>
-            <div style={{ fontSize: 11, color: learned.size > 0 ? "#4ADE80" : "rgba(255,255,255,0.2)", fontFamily: MONO, flexShrink: 0 }}>{learned.size}/{totalCards}</div>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 10,
+          }}>
+            <div style={{
+              fontSize: 11, color: "rgba(245,245,250,0.5)", fontFamily: MONO,
+              padding: "3px 8px", background: "rgba(255,255,255,0.04)",
+              borderRadius: 6, fontWeight: 600,
+            }}>{cardIdx + 1} / {totalCards}</div>
+            <div style={{
+              fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              flex: 1, textAlign: "center", margin: "0 12px",
+            }}>{nb.title}</div>
+            <div style={{
+              fontSize: 11, color: learned.size > 0 ? "#34D399" : "rgba(245,245,250,0.3)",
+              fontFamily: MONO, flexShrink: 0,
+              padding: "3px 8px",
+              background: learned.size > 0 ? "rgba(52,211,153,0.1)" : "rgba(255,255,255,0.04)",
+              borderRadius: 6, fontWeight: 600,
+            }}>{learned.size}/{totalCards}</div>
           </div>
 
           <div style={{ perspective: "1400px", cursor: "pointer", flex: 1, minHeight: 0 }} onClick={() => setIsFlipped(f => !f)}>
-            <div className={`forge-card${isFlipped ? " flipped" : ""}`} style={{ width: "100%", height: "100%", position: "relative", minHeight: 160 }}>
-              <div className="forge-face" style={{ position: "absolute", inset: 0, background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
-                <div style={{ fontSize: 14, color: "#FAFAFA", textAlign: "center", lineHeight: 1.6, fontFamily: FONT, fontWeight: 500 }}>{currentCard.question}</div>
-                <div style={{ position: "absolute", bottom: 10, fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: MONO, letterSpacing: "0.06em" }}>CLICK TO FLIP</div>
+            <div className={`forge-card${isFlipped ? " flipped" : ""}`} style={{ width: "100%", height: "100%", position: "relative", minHeight: 200 }}>
+              <div className="forge-face" style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 14,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                padding: "28px 22px",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
+              }}>
+                <div style={{
+                  fontSize: 15, color: "#F5F5FA", textAlign: "center", lineHeight: 1.6,
+                  fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.01em",
+                }}>{currentCard.question}</div>
+                <div style={{
+                  position: "absolute", bottom: 12, fontSize: 10,
+                  color: "rgba(245,245,250,0.25)", fontFamily: FONT,
+                  letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600,
+                }}>Click to flip</div>
               </div>
-              <div className="forge-face forge-back" style={{ position: "absolute", inset: 0, background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 6, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
-                <div style={{ fontSize: 13, color: "#A78BFA", textAlign: "center", lineHeight: 1.6, fontFamily: FONT }}>{currentCard.answer}</div>
-                <div style={{ position: "absolute", bottom: 10, fontSize: 10, color: "rgba(167,139,250,0.3)", fontFamily: MONO, letterSpacing: "0.06em" }}>CLICK TO FLIP BACK</div>
+              <div className="forge-face forge-back" style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(180deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
+                border: "1px solid rgba(167,139,250,0.3)",
+                borderRadius: 14,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                padding: "28px 22px",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.3), 0 0 24px rgba(167,139,250,0.15)",
+              }}>
+                <div style={{
+                  fontSize: 14, color: "#C4B5FD", textAlign: "center", lineHeight: 1.65,
+                  fontFamily: FONT, letterSpacing: "-0.005em",
+                }}>{currentCard.answer}</div>
+                <div style={{
+                  position: "absolute", bottom: 12, fontSize: 10,
+                  color: "rgba(167,139,250,0.4)", fontFamily: FONT,
+                  letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600,
+                }}>Click to flip back</div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}>
-            <button onClick={goPrev} disabled={cardIdx === 0} style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 14px", color: cardIdx === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)", cursor: cardIdx === 0 ? "not-allowed" : "pointer", fontSize: 14, transition: "all 0.1s" }}>←</button>
-            <button onClick={handleShuffle} title="Shuffle" style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 10px", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 12, transition: "all 0.1s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}>⇄</button>
-            <button onClick={toggleLearned} style={{ background: learned.has(realIdx) ? "rgba(74,222,128,0.08)" : "#111111", border: `1px solid ${learned.has(realIdx) ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.06)"}`, borderRadius: 6, padding: "6px 10px", color: learned.has(realIdx) ? "#4ADE80" : "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 11, fontFamily: FONT, fontWeight: 500, transition: "all 0.1s", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 }}>
+            <button onClick={goPrev} disabled={cardIdx === 0} className="btn-press" style={{
+              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, height: 36, width: 44,
+              color: cardIdx === 0 ? "rgba(245,245,250,0.2)" : "rgba(245,245,250,0.7)",
+              cursor: cardIdx === 0 ? "not-allowed" : "pointer", fontSize: 15,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>←</button>
+            <button onClick={handleShuffle} title="Shuffle" className="btn-press" style={{
+              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, height: 36, width: 40,
+              color: "rgba(245,245,250,0.5)", cursor: "pointer", fontSize: 13,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.5)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+            >⇄</button>
+            <button onClick={toggleLearned} className="btn-press" style={{
+              background: learned.has(realIdx) ? "rgba(52,211,153,0.12)" : "#14141F",
+              border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.32)" : "rgba(255,255,255,0.08)"}`,
+              borderRadius: 10, padding: "0 14px", height: 36,
+              color: learned.has(realIdx) ? "#34D399" : "rgba(245,245,250,0.55)",
+              cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 600,
+              whiteSpace: "nowrap", letterSpacing: "-0.005em",
+            }}>
               {learned.has(realIdx) ? "✓ Learned" : "Mark learned"}
             </button>
-            <button onClick={goNext} disabled={cardIdx === totalCards - 1} style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 14px", color: cardIdx === totalCards - 1 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)", cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 14, transition: "all 0.1s" }}>→</button>
+            <button onClick={goNext} disabled={cardIdx === totalCards - 1} className="btn-press" style={{
+              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, height: 36, width: 44,
+              color: cardIdx === totalCards - 1 ? "rgba(245,245,250,0.2)" : "rgba(245,245,250,0.7)",
+              cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 15,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>→</button>
           </div>
         </div>
-
       ) : (
         <>
           <div ref={contentRef} style={{
             flex: 1, overflowY: "auto", minHeight: 240,
-            background: "#0A0A0A",
+            background: "#0F0F18",
             border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 6,
-            padding: "16px",
-            fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.6,
+            borderRadius: 12,
+            padding: "18px",
+            fontSize: 13.5, color: "rgba(245,245,250,0.78)", lineHeight: 1.7,
             fontFamily: FONT, whiteSpace: "pre-wrap",
+            letterSpacing: "-0.005em",
           }}>
             {!action && !content && (
-              <div style={{ textAlign: "center", paddingTop: 40 }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.2)", marginBottom: 8, fontFamily: FONT }}>The Forge</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", lineHeight: 1.6 }}>Pick a type above to generate study content.</div>
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", height: "100%", minHeight: 200, gap: 12,
+              }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: 14,
+                  background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
+                  border: "1px solid rgba(167,139,250,0.18)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 24,
+                }}>✨</div>
+                <div style={{
+                  fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT,
+                  letterSpacing: "-0.015em",
+                }}>Ready to forge</div>
+                <div style={{
+                  fontSize: 12.5, color: "rgba(245,245,250,0.45)", lineHeight: 1.55,
+                  textAlign: "center", maxWidth: 260,
+                }}>
+                  Pick a type above to generate study content from your notes.
+                </div>
               </div>
             )}
             {generating && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, minHeight: 200 }}>
-                <div className="forge-spinner" />
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>Generating…</span>
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", height: "100%", gap: 14, minHeight: 200,
+              }}>
+                <div className="forge-spinner" style={{ borderTopColor: activeColor, borderColor: `${activeColor}26` }} />
+                <span style={{
+                  fontSize: 12.5, color: "rgba(245,245,250,0.6)", fontFamily: FONT,
+                  fontWeight: 500, letterSpacing: "-0.005em",
+                }}>
+                  Forging your {FORGE_BY_ID[action]?.label.toLowerCase() ?? "output"}…
+                </span>
               </div>
             )}
             {!generating && content && <span>{content}</span>}
           </div>
 
           {content && !generating && (
-            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              <button onClick={handleCopy} style={{ flex: 1, background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "7px", color: copied ? "#4ADE80" : "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer", fontFamily: FONT, transition: "all 0.1s" }}
-                onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}}
-                onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "rgba(255,255,255,0.4)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}}
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button onClick={handleCopy} className="btn-press" style={{
+                flex: 1, background: copied ? "rgba(52,211,153,0.1)" : "#14141F",
+                border: `1px solid ${copied ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.08)"}`,
+                borderRadius: 10, height: 36,
+                color: copied ? "#34D399" : "rgba(245,245,250,0.65)",
+                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                letterSpacing: "-0.005em",
+              }}
+                onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}}
+                onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}}
               >{copied ? "✓ Copied" : "Copy"}</button>
-              <button onClick={handleDownload} style={{ flex: 1, background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "7px", color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer", fontFamily: FONT, transition: "all 0.1s" }}
-                onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.4)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>Download</button>
+              <button onClick={handleDownload} className="btn-press" style={{
+                flex: 1, background: "#14141F",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 10, height: 36,
+                color: "rgba(245,245,250,0.65)", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: FONT,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                letterSpacing: "-0.005em",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+              >Download</button>
             </div>
           )}
         </>
@@ -497,25 +716,23 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
   const [members, setMembers]       = useState([]);
   const [showForge, setShowForge]   = useState(false);
   const bottomRef = useRef(null);
+  const t = tintFor(nb.id ?? nb.title);
 
   useEffect(() => {
     api.listMembers(nb.id).then(setMembers).catch(() => {});
   }, [nb.id]);
 
-  // Load persistent chat history from backend on open
   useEffect(() => {
     api.getMessages(nb.id)
       .then(rows => {
         if (rows.length > 0) {
           setMessages(rows.map(r => ({ id: r.id, role: r.role, text: r.content, createdBy: r.created_by })));
         } else {
-          // First-ever open: show the welcome message (don't persist it)
           setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
         }
         setHistoryLoaded(true);
       })
       .catch(() => {
-        // Fallback to welcome message if fetch fails
         setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
         setHistoryLoaded(true);
       });
@@ -540,13 +757,10 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
     }
   }
 
-  // Surface note list in chat only when there's no prior history (first open)
   useEffect(() => {
     if (!historyLoaded) return;
-    // If there's already a real conversation (more than the welcome placeholder), skip
     const hasHistory = messages.some(m => m.id);
     if (hasHistory) return;
-
     api.listNotes(nb.id).then(notes => {
       if (notes.length === 0) return;
       const list = notes.map(n => `• ${n.title}`).join("\n");
@@ -555,15 +769,9 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
         text: `📚 ${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
       }]);
     }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyLoaded]);
 
-  // Debug: log messages and currentUserId whenever they change
-  useEffect(() => {
-    console.log("currentUserId prop:", currentUserId);
-    console.log("rendering messages:", messages.map(m => ({ role: m.role, createdBy: m.createdBy, text: m.text?.slice(0, 40) })));
-  }, [messages, currentUserId]);
-
-  // Scroll to latest message whenever messages or loading state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -574,23 +782,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
 
     setQuery("");
     setLoading(true);
-
-    // Optimistically show the user message immediately
     setMessages(m => [...m, { role: "user", text, createdBy: currentUserId }]);
-
-    // Persist the user message (fire-and-forget; don't block the AI call)
-    console.log("calling addMessage:", { notebookId: nb.id, role: "user", content: text });
-    api.addMessage(nb.id, "user", text)
-      .catch(err => console.error("addMessage failed (user):", err));
+    api.addMessage(nb.id, "user", text).catch(err => console.error("addMessage failed (user):", err));
 
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
       setMessages(m => [...m, { role: "assistant", text: data.answer, createdBy: null }]);
-      // Persist the assistant reply
-      console.log("calling addMessage:", { notebookId: nb.id, role: "assistant", content: data.answer.slice(0, 80) });
-      api.addMessage(nb.id, "assistant", data.answer)
-        .catch(err => console.error("addMessage failed (assistant):", err));
+      api.addMessage(nb.id, "assistant", data.answer).catch(err => console.error("addMessage failed (assistant):", err));
     } catch (err) {
       setMessages(m => [...m, {
         role: "assistant",
@@ -606,8 +805,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden" }}>
       {showUpload && (
         <UploadNotesModal
-          notebookId={nb.id}
-          accentColor={nb.color}
+          notebookId={nb.id} accentColor={t.hue}
           onClose={() => setShowUpload(false)}
           onUploaded={handleNoteUploaded}
         />
@@ -617,53 +815,66 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
         <InviteModal notebookId={nb.id} onClose={() => setShowInvite(false)} />
       )}
 
-      {/* Delete confirmation */}
       {confirmDelete && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-          backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+          position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+          backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, padding: 16,
         }}>
           <div style={{
-            background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 6, width: "100%", maxWidth: 380,
-            padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-            animation: "fadeIn 0.15s ease",
+            background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            borderRadius: 18, width: "100%", maxWidth: 400,
+            padding: "24px",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(248,113,113,0.12)",
+            animation: "fadeIn 0.2s ease",
           }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 8 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 20, color: "#F87171", marginBottom: 14,
+            }}>🗑</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
               Delete this notebook?
             </div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.5 }}>
-              <strong style={{ color: "#FAFAFA" }}>{nb.title}</strong> and all its notes will be permanently deleted.
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.6)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.55 }}>
+              <span style={{ color: "#F5F5FA", fontWeight: 500 }}>{nb.title}</span> and all its notes will be permanently deleted.
             </div>
             {deleteError && (
               <div style={{
-                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6,
-                padding: "8px 12px", marginBottom: 16,
-                fontSize: 12, color: "#EF4444", fontFamily: FONT,
+                background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
+                borderRadius: 10, padding: "10px 12px", marginBottom: 16,
+                fontSize: 12.5, color: "#F87171", fontFamily: FONT,
               }}>{deleteError}</div>
             )}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
                 onClick={() => { setConfirmDelete(false); setDeleteError(""); }}
                 disabled={deleting}
+                className="btn-press"
                 style={{
-                  background: "transparent", border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)",
-                  fontSize: 13, cursor: "pointer", fontFamily: FONT,
-                  opacity: deleting ? 0.5 : 1, transition: "all 0.1s",
+                  background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10, padding: "0 16px", height: 36,
+                  color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", fontFamily: FONT,
+                  opacity: deleting ? 0.5 : 1, letterSpacing: "-0.01em",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
               >Cancel</button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
+                className="btn-press"
                 style={{
-                  background: "#EF4444", border: "none",
-                  borderRadius: 6, padding: "0 16px", height: 32, color: "#fff",
-                  fontWeight: 500, fontSize: 13, cursor: deleting ? "not-allowed" : "pointer",
-                  fontFamily: FONT, opacity: deleting ? 0.6 : 1, transition: "opacity 0.1s",
+                  background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
+                  border: "none", borderRadius: 10, padding: "0 18px", height: 36,
+                  color: "#fff", fontWeight: 600, fontSize: 13,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  fontFamily: FONT, opacity: deleting ? 0.65 : 1,
+                  boxShadow: "0 4px 14px rgba(248,113,113,0.35)",
+                  letterSpacing: "-0.01em",
                 }}
               >{deleting ? "Deleting…" : "Delete"}</button>
             </div>
@@ -673,203 +884,271 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
 
       {/* Header */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
-        paddingBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
+        paddingBottom: 14, borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
-        <button onClick={onBack} style={{
-          background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
-          borderRadius: 6, padding: "0 12px", height: 32, cursor: "pointer",
-          fontFamily: FONT, fontSize: 12, transition: "all 0.1s",
+        <button onClick={onBack} className="btn-press" style={{
+          background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+          color: "rgba(245,245,250,0.65)",
+          borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
+          fontFamily: FONT, fontSize: 13, fontWeight: 500,
+          letterSpacing: "-0.01em",
         }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
         >← Back</button>
         <button
           onClick={() => setConfirmDelete(true)}
           title="Delete notebook"
+          className="btn-press"
           style={{
-            background: "transparent", border: "1px solid rgba(239,68,68,0.15)", color: "rgba(239,68,68,0.5)",
-            borderRadius: 6, padding: "0 10px", height: 32, cursor: "pointer",
-            fontFamily: FONT, fontSize: 13, transition: "all 0.1s",
+            background: "transparent", border: "1px solid rgba(248,113,113,0.18)",
+            color: "rgba(248,113,113,0.55)",
+            borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
+            fontFamily: FONT, fontSize: 14,
           }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; e.currentTarget.style.color = "#EF4444"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "rgba(239,68,68,0.5)"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
         >🗑</button>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT, letterSpacing: "-0.01em" }}>{nb.title}</div>
-          {nb.topic && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>{nb.topic}</div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginLeft: 4 }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: 2,
+            background: `linear-gradient(135deg, ${t.hue}, ${t.deep})`,
+            boxShadow: `0 0 12px ${t.hue}66`, flexShrink: 0,
+          }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontSize: 15, fontWeight: 600, color: "#F5F5FA",
+              fontFamily: FONT, letterSpacing: "-0.018em",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{nb.title}</div>
+            {nb.topic && (
+              <div style={{
+                fontSize: 11.5, color: "rgba(245,245,250,0.5)",
+                fontFamily: FONT, marginTop: 1,
+              }}>{nb.topic}</div>
+            )}
+          </div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <button
             onClick={() => setShowForge(f => !f)}
             title="Toggle The Forge"
+            className="btn-press"
             style={{
-              background: showForge ? "rgba(167,139,250,0.1)" : "transparent",
-              border: `1px solid ${showForge ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.06)"}`,
-              borderRadius: 6, padding: "0 12px", height: 32, cursor: "pointer",
-              fontFamily: FONT, fontSize: 12,
-              color: showForge ? "#A78BFA" : "rgba(255,255,255,0.5)",
-              fontWeight: 500, transition: "all 0.1s",
+              background: showForge
+                ? "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(167,139,250,0.06) 100%)"
+                : "transparent",
+              border: `1px solid ${showForge ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.08)"}`,
+              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 600,
+              color: showForge ? "#C4B5FD" : "rgba(245,245,250,0.65)",
+              display: "flex", alignItems: "center", gap: 6,
+              letterSpacing: "-0.01em",
+              boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px rgba(167,139,250,0.14)" : "none",
             }}
-            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}}
-            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}}
-          >Forge</button>
+            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; }}}
+            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}}
+          >⚒ Forge</button>
           <button
             onClick={() => setShowUpload(true)}
+            className="btn-press"
             style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 6, padding: "0 12px", height: 32, cursor: "pointer",
-              fontFamily: FONT, fontSize: 12,
-              color: "rgba(255,255,255,0.5)", fontWeight: 500, transition: "all 0.1s",
+              background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 500,
+              color: "rgba(245,245,250,0.65)", letterSpacing: "-0.01em",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
-          >Upload</button>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
+          >📎 Upload</button>
           <button
             onClick={() => setShowInvite(true)}
             title="Invite collaborators"
+            className="btn-press"
             style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 6, padding: "0 12px", height: 32, cursor: "pointer",
-              fontFamily: FONT, fontSize: 12,
-              color: "rgba(255,255,255,0.5)", fontWeight: 500, transition: "all 0.1s",
+              background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 500,
+              color: "rgba(245,245,250,0.65)", letterSpacing: "-0.01em",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
-          >Invite</button>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
+          >+ Invite</button>
           {members.length > 0 && <MemberAvatarStack members={members} />}
         </div>
       </div>
 
       {/* Chat + Forge split */}
       <div style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
-      {/* Chat column */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+          {/* Message list */}
+          <div style={{
+            flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
+            gap: 12, marginBottom: 14, paddingRight: 4,
+          }}>
+            {messages.map((m, i) => {
+              const isOwn = m.role === "user" && (m.createdBy === currentUserId || (!m.createdBy && m.role === "user"));
+              const isOtherMember = m.role === "user" && m.createdBy && m.createdBy !== currentUserId;
+              const isAssistant = m.role === "assistant";
 
-      {/* Message list */}
-      <div style={{
-        flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
-        gap: 8, marginBottom: 12,
-      }}>
-        {messages.map((m, i) => {
-          console.log("message:", { role: m.role, createdBy: m.createdBy, currentUserId, text: m.text?.slice(0, 40) });
-          const isOwn = m.role === "user" && (m.createdBy === currentUserId || (!m.createdBy && m.role === "user"));
-          const isOtherMember = m.role === "user" && m.createdBy && m.createdBy !== currentUserId;
-          const isAssistant = m.role === "assistant";
+              const senderInfo = isOtherMember ? members.find(mem => mem.user_id === m.createdBy) : null;
+              const senderLabel = isAssistant
+                ? "Derek"
+                : isOtherMember
+                  ? (senderInfo?.first_name?.trim() || senderInfo?.email?.split("@")[0] || "Member")
+                  : null;
+              const senderTint = isOtherMember ? tintFor(senderInfo?.email ?? "") : null;
 
-          const senderInfo = isOtherMember ? members.find(mem => mem.user_id === m.createdBy) : null;
-          const senderLabel = isAssistant
-            ? "Derek"
-            : isOtherMember
-              ? (senderInfo?.first_name?.trim() || senderInfo?.email?.split("@")[0] || "Member")
-              : null;
-
-          return (
-            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isOwn ? "flex-end" : "flex-start" }}>
-              {senderLabel && (
-                <div style={{
-                  fontSize: 10, fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase",
-                  color: isAssistant ? "#A78BFA" : "rgba(255,255,255,0.4)",
-                  fontFamily: FONT, marginBottom: 4,
-                }}>
-                  {senderLabel}
+              return (
+                <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isOwn ? "flex-end" : "flex-start" }}>
+                  {senderLabel && (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 6, marginBottom: 5,
+                      paddingLeft: 4,
+                    }}>
+                      {isAssistant ? (
+                        <div style={{
+                          width: 16, height: 16, borderRadius: "50%",
+                          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 700, color: "#fff",
+                          boxShadow: "0 2px 6px rgba(167,139,250,0.4)",
+                        }}>D</div>
+                      ) : senderTint && (
+                        <div style={{
+                          width: 16, height: 16, borderRadius: "50%",
+                          background: `linear-gradient(135deg, ${senderTint.hue}, ${senderTint.deep})`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 9, fontWeight: 700, color: "#fff",
+                        }}>{(senderLabel[0] || "?").toUpperCase()}</div>
+                      )}
+                      <div style={{
+                        fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                        color: isAssistant ? "#C4B5FD" : senderTint?.hue ?? "rgba(245,245,250,0.5)",
+                        fontFamily: FONT,
+                      }}>
+                        {senderLabel}
+                      </div>
+                    </div>
+                  )}
+                  <div style={{
+                    maxWidth: "78%",
+                    background: m.isError
+                      ? "rgba(248,113,113,0.08)"
+                      : isOwn
+                        ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
+                        : "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "#F5F5FA",
+                    borderRadius: 14,
+                    padding: "11px 14px",
+                    fontSize: 14, lineHeight: 1.6,
+                    fontFamily: FONT,
+                    border: !isOwn
+                      ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "rgba(255,255,255,0.08)"}`
+                      : "none",
+                    boxShadow: isOwn
+                      ? "0 4px 14px rgba(167,139,250,0.28)"
+                      : "0 2px 6px rgba(0,0,0,0.2)",
+                    whiteSpace: "pre-wrap",
+                    letterSpacing: "-0.005em",
+                    animation: isOwn
+                      ? "slideInUp 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both"
+                      : "slideInLeft 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                  }}>
+                    {m.text}
+                  </div>
                 </div>
-              )}
-              <div style={{
-                maxWidth: "72%",
-                background: m.isError
-                  ? "rgba(239,68,68,0.08)"
-                  : isOwn
-                    ? "#A78BFA"
-                    : "#111111",
-                color: m.isError ? "#EF4444" : "#FAFAFA",
-                borderRadius: 6,
-                padding: "10px 12px",
-                fontSize: 13, lineHeight: 1.6,
-                fontFamily: FONT,
-                border: !isOwn ? `1px solid ${m.isError ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.06)"}` : "none",
-                whiteSpace: "pre-wrap",
-                animation: isOwn
-                  ? "slideInUp 150ms ease both"
-                  : "slideInLeft 150ms ease both",
-              }}>
-                {m.text}
+              );
+            })}
+
+            {loading && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6, marginBottom: 5, paddingLeft: 4,
+                }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, fontWeight: 700, color: "#fff",
+                    boxShadow: "0 2px 6px rgba(167,139,250,0.4)",
+                  }}>D</div>
+                  <div style={{
+                    fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
+                    textTransform: "uppercase", color: "#C4B5FD", fontFamily: FONT,
+                  }}>Derek</div>
+                </div>
+                <div style={{
+                  background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 14, padding: "11px 14px",
+                  display: "flex", gap: 6, alignItems: "center",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                  animation: "slideInLeft 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                }}>
+                  <span style={{
+                    fontSize: 13, color: "rgba(245,245,250,0.6)", fontStyle: "italic",
+                    fontFamily: FONT, marginRight: 4,
+                  }}>Derek is thinking</span>
+                  <span className="dot-thinking" />
+                  <span className="dot-thinking" />
+                  <span className="dot-thinking" />
+                </div>
               </div>
-            </div>
-          );
-        })}
-
-        {loading && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <div style={{
-              fontSize: 10, fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase",
-              color: "#A78BFA", fontFamily: FONT, marginBottom: 4,
-            }}>Derek</div>
-            <div style={{
-              background: "#111111", border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 6, padding: "10px 14px",
-              display: "flex", gap: 5, alignItems: "center",
-              animation: "slideInLeft 150ms ease both",
-            }}>
-              <span style={{
-                fontSize: 12, color: "rgba(255,255,255,0.35)", fontStyle: "italic",
-                fontFamily: FONT, marginRight: 4,
-              }}>Derek is thinking…</span>
-              {[0, 1, 2].map(i => (
-                <div key={i} style={{
-                  width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.3)",
-                  animation: `pulse 1s ease-in-out ${i * 0.2}s infinite`,
-                }} />
-              ))}
-            </div>
+            )}
+            <div ref={bottomRef} />
           </div>
+
+          {/* Input row */}
+          <div style={{ display: "flex", gap: 10, position: "relative" }}>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && ask()}
+              placeholder={`Ask anything about ${nb.title}…`}
+              disabled={loading}
+              style={{
+                flex: 1, background: "#14141F",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 12, padding: "0 16px", height: 48,
+                color: "#F5F5FA", fontSize: 14, fontFamily: FONT,
+                outline: "none", transition: "all 0.18s",
+                letterSpacing: "-0.01em",
+              }}
+              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+            />
+            <button
+              onClick={ask}
+              disabled={loading || !query.trim()}
+              className="btn-press"
+              style={{
+                background: query.trim() && !loading
+                  ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
+                  : "#1C1C2A",
+                border: query.trim() && !loading ? "none" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 12,
+                width: 48, height: 48, fontSize: 18, fontWeight: 600,
+                color: "#fff",
+                cursor: loading || !query.trim() ? "not-allowed" : "pointer",
+                opacity: loading || !query.trim() ? 0.5 : 1,
+                boxShadow: query.trim() && !loading ? "0 4px 14px rgba(167,139,250,0.35)" : "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+            >
+              {loading ? "…" : "↑"}
+            </button>
+          </div>
+        </div>
+
+        {/* Forge panel */}
+        {showForge && (
+          <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
         )}
-
-        <div ref={bottomRef} />
       </div>
-
-      {/* Input row */}
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && !e.shiftKey && ask()}
-          placeholder={`Ask anything about ${nb.title}…`}
-          disabled={loading}
-          style={{
-            flex: 1, background: "#111111", border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 6, padding: "0 12px", height: 44,
-            color: "#FAFAFA", fontSize: 13, fontFamily: FONT,
-            outline: "none", transition: "border-color 0.1s",
-          }}
-          onFocus={e => e.target.style.borderColor = "#A78BFA"}
-          onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
-        />
-        <button
-          onClick={ask}
-          disabled={loading || !query.trim()}
-          style={{
-            background: "#A78BFA", border: "none", borderRadius: 6,
-            padding: "0 16px", height: 44, fontSize: 15, fontWeight: 500,
-            color: "#fff", transition: "background 0.1s",
-            cursor: loading || !query.trim() ? "not-allowed" : "pointer",
-            opacity: loading || !query.trim() ? 0.4 : 1,
-          }}
-          onMouseEnter={e => { if (!loading && query.trim()) e.currentTarget.style.background = "#7C3AED"; }}
-          onMouseLeave={e => e.currentTarget.style.background = "#A78BFA"}
-        >
-          {loading ? "…" : "↑"}
-        </button>
-      </div>
-
-      </div>{/* end chat column */}
-
-      {/* Forge panel */}
-      {showForge && (
-        <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
-      )}
-
-      </div>{/* end chat+forge split */}
     </div>
   );
 }
@@ -897,43 +1176,45 @@ function PasswordResetModal({ onDone }) {
   }
 
   const inputBase = {
-    width: "100%", background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 6, padding: "0 12px", height: 36, color: "#FAFAFA", fontSize: 13,
-    fontFamily: FONT, outline: "none", transition: "border-color 0.1s",
+    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
   };
   const label = {
-    fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: FONT,
-    letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6,
-    fontWeight: 500,
+    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    letterSpacing: "0.04em", textTransform: "uppercase", display: "block",
+    marginBottom: 7, fontWeight: 600,
   };
 
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 420,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 440,
+        padding: "28px 26px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em" }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
           Set a new password
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 20, fontFamily: FONT, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", marginBottom: 22, fontFamily: FONT, lineHeight: 1.55 }}>
           Choose a strong password for your account.
         </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={label}>New password</label>
             <input
               type="password" required autoFocus
               value={password} onChange={e => setPassword(e.target.value)}
               placeholder="Min 6 characters" style={inputBase}
-              onFocus={e => e.target.style.borderColor = "#A78BFA"}
-              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
+              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
             />
           </div>
           <div>
@@ -942,25 +1223,25 @@ function PasswordResetModal({ onDone }) {
               type="password" required
               value={confirm} onChange={e => setConfirm(e.target.value)}
               placeholder="Same password again" style={inputBase}
-              onFocus={e => e.target.style.borderColor = "#A78BFA"}
-              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
+              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
             />
           </div>
           {error && (
             <div style={{
-              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6,
-              padding: "8px 12px", fontSize: 12, color: "#EF4444", fontFamily: FONT,
+              background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
+              borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT,
             }}>{error}</div>
           )}
           <button type="submit" disabled={loading} style={{
-            width: "100%", background: "#A78BFA", border: "none", borderRadius: 6,
-            height: 36, color: "#fff", fontWeight: 500, fontSize: 13,
-            cursor: loading ? "not-allowed" : "pointer",
-            fontFamily: FONT, opacity: loading ? 0.6 : 1, marginTop: 4, transition: "opacity 0.1s",
-          }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#7C3AED"; }}
-            onMouseLeave={e => e.currentTarget.style.background = "#A78BFA"}
-          >
+            width: "100%", background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            border: "none", borderRadius: 10, height: 42, color: "#fff",
+            fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer",
+            fontFamily: FONT, opacity: loading ? 0.65 : 1, marginTop: 4,
+            transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
+            boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+            letterSpacing: "-0.01em",
+          }}>
             {loading ? "Saving…" : "Update password"}
           </button>
         </form>
@@ -990,30 +1271,39 @@ function DeleteAccountModal({ onClose, onConfirm }) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 400,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(248,113,113,0.18)",
+        borderRadius: 18, width: "100%", maxWidth: 420,
+        padding: "26px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(248,113,113,0.12)",
+        animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 6 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 20, marginBottom: 14, color: "#F87171",
+        }}>⚠</div>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete your account?
         </div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.5 }}>
-          All notebooks, notes, and data will be <span style={{ color: "#EF4444" }}>permanently deleted</span>. This cannot be undone.
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.6 }}>
+          All notebooks, notes, and data will be <span style={{ color: "#F87171", fontWeight: 500 }}>permanently deleted</span>. This cannot be undone.
         </div>
 
-        <form onSubmit={handleConfirm} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <form onSubmit={handleConfirm} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={{
-              fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: FONT,
-              letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6, fontWeight: 500,
+              fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+              letterSpacing: "0.04em", textTransform: "uppercase",
+              display: "block", marginBottom: 7, fontWeight: 600,
             }}>
-              Type <span style={{ color: "#EF4444", letterSpacing: "0.08em" }}>DELETE</span> to confirm
+              Type <span style={{ color: "#F87171", letterSpacing: "0.08em" }}>DELETE</span> to confirm
             </label>
             <input
               type="text"
@@ -1023,50 +1313,56 @@ function DeleteAccountModal({ onClose, onConfirm }) {
               autoFocus
               spellCheck={false}
               style={{
-                width: "100%", background: "#0A0A0A",
-                border: `1px solid ${confirmed ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.06)"}`,
-                borderRadius: 6, padding: "0 12px", height: 36,
-                color: confirmed ? "#EF4444" : "#FAFAFA",
-                fontSize: 13, fontFamily: MONO,
-                outline: "none", transition: "border-color 0.1s, color 0.1s",
+                width: "100%", background: "#14141F",
+                border: `1px solid ${confirmed ? "rgba(248,113,113,0.45)" : "rgba(255,255,255,0.09)"}`,
+                borderRadius: 10, padding: "0 14px", height: 42,
+                color: confirmed ? "#F87171" : "#F5F5FA",
+                fontSize: 14, fontFamily: MONO,
+                outline: "none", transition: "all 0.18s",
                 letterSpacing: "0.08em",
+                boxShadow: confirmed ? "0 0 0 3px rgba(248,113,113,0.12)" : "none",
               }}
             />
           </div>
 
           {error && (
             <div style={{
-              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-              borderRadius: 6, padding: "8px 12px",
-              fontSize: 12, color: "#EF4444", fontFamily: FONT,
+              background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
+              borderRadius: 10, padding: "10px 12px",
+              fontSize: 12.5, color: "#F87171", fontFamily: FONT,
             }}>{error}</div>
           )}
 
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 6 }}>
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
+              className="btn-press"
               style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)",
-                fontSize: 13, cursor: "pointer", fontFamily: FONT,
-                opacity: loading ? 0.5 : 1, transition: "all 0.1s",
+                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10, padding: "0 16px", height: 36,
+                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                cursor: "pointer", fontFamily: FONT, opacity: loading ? 0.5 : 1,
+                letterSpacing: "-0.01em",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
             >Cancel</button>
             <button
               type="submit"
               disabled={!confirmed || loading}
+              className="btn-press"
               style={{
-                background: confirmed ? "#EF4444" : "#1A1A1A",
-                border: `1px solid ${confirmed ? "#EF4444" : "rgba(255,255,255,0.06)"}`,
-                borderRadius: 6, padding: "0 16px", height: 32,
-                color: confirmed ? "#fff" : "rgba(255,255,255,0.2)",
-                fontWeight: 500, fontSize: 13,
+                background: confirmed ? "linear-gradient(135deg, #F87171 0%, #EF4444 100%)" : "#1C1C2A",
+                border: confirmed ? "none" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10, padding: "0 18px", height: 36,
+                color: confirmed ? "#fff" : "rgba(245,245,250,0.25)",
+                fontWeight: 600, fontSize: 13,
                 cursor: confirmed && !loading ? "pointer" : "not-allowed",
-                fontFamily: FONT, transition: "all 0.1s",
+                fontFamily: FONT,
+                boxShadow: confirmed ? "0 4px 14px rgba(248,113,113,0.35)" : "none",
+                letterSpacing: "-0.01em",
               }}
             >{loading ? "Deleting…" : "Delete account"}</button>
           </div>
@@ -1084,25 +1380,43 @@ function UnitRow({ unit, color, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "0 12px", height: 44,
-        background: hovered ? "#1A1A1A" : "transparent",
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "0 14px", height: 48,
+        background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
-        cursor: "pointer", transition: "background 0.1s",
+        cursor: "pointer", transition: "background 0.15s",
+        position: "relative",
       }}
     >
+      <div style={{
+        width: 4, height: 24, borderRadius: 2,
+        background: hovered ? color : "rgba(255,255,255,0.1)",
+        transition: "background 0.18s",
+      }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 400, color: "#FAFAFA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{
+          fontSize: 13.5, fontWeight: 500, color: "#F5F5FA", fontFamily: FONT,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          letterSpacing: "-0.01em",
+        }}>
           {unit.title}
         </div>
         {unit.topic && (
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>{unit.topic}</div>
+          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.48)", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: MONO, flexShrink: 0 }}>
-        {unit.notes}
+      <div style={{
+        fontSize: 11, color: "rgba(245,245,250,0.42)", fontFamily: FONT,
+        flexShrink: 0, padding: "2px 8px", background: "rgba(255,255,255,0.04)",
+        borderRadius: 6, fontWeight: 500,
+      }}>
+        {unit.notes} {unit.notes === 1 ? "note" : "notes"}
       </div>
-      {hovered && <div style={{ fontSize: 11, color: "#A78BFA", flexShrink: 0 }}>→</div>}
+      <div style={{
+        fontSize: 13, color, flexShrink: 0,
+        opacity: hovered ? 1 : 0, transform: hovered ? "translateX(0)" : "translateX(-4px)",
+        transition: "opacity 0.18s, transform 0.18s", fontWeight: 600,
+      }}>→</div>
     </div>
   );
 }
@@ -1125,39 +1439,61 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 380,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(248,113,113,0.18)",
+        borderRadius: 18, width: "100%", maxWidth: 400,
+        padding: "24px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(248,113,113,0.12)",
+        animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 6 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 20, marginBottom: 14, color: "#F87171",
+        }}>🗑</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete "{cls.title}"?
         </div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: FONT, lineHeight: 1.5, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.6)", fontFamily: FONT, lineHeight: 1.55, marginBottom: 20 }}>
           All units and notes inside will be permanently deleted.
         </div>
         {error && (
-          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#EF4444", fontFamily: FONT, marginBottom: 16 }}>
-            {error}
-          </div>
+          <div style={{
+            background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
+            borderRadius: 10, padding: "10px 12px", fontSize: 12.5,
+            color: "#F87171", fontFamily: FONT, marginBottom: 16,
+          }}>{error}</div>
         )}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button
             type="button" onClick={onClose}
-            style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all 0.1s" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+            className="btn-press"
+            style={{
+              background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10, padding: "0 16px", height: 36,
+              color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+              cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
           >Cancel</button>
           <button
             type="button" onClick={handleConfirm} disabled={loading}
-            style={{ background: "#EF4444", border: "none", borderRadius: 6, padding: "0 16px", height: 32, color: "#fff", fontWeight: 500, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading ? 0.6 : 1, transition: "opacity 0.1s" }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#DC2626"; }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = "#EF4444"; }}
+            className="btn-press"
+            style={{
+              background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
+              border: "none", borderRadius: 10, padding: "0 18px", height: 36,
+              color: "#fff", fontWeight: 600, fontSize: 13,
+              cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT,
+              opacity: loading ? 0.65 : 1, boxShadow: "0 4px 14px rgba(248,113,113,0.35)",
+              letterSpacing: "-0.01em",
+            }}
           >{loading ? "Deleting…" : "Delete class"}</button>
         </div>
       </div>
@@ -1167,33 +1503,63 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
 
 function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass }) {
   const [hovered, setHovered] = useState(false);
+  const t = tintFor(cls.id ?? cls.title);
+
   return (
     <div style={{
-      background: "#111111",
-      border: `1px solid ${expanded ? "rgba(255,255,255,0.12)" : hovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)"}`,
-      borderLeft: expanded ? "2px solid #A78BFA" : `2px solid ${hovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)"}`,
-      borderRadius: 6, overflow: "hidden",
-      transition: "border-color 0.1s",
+      position: "relative",
+      background: expanded
+        ? "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)"
+        : hovered ? "#1C1C2A" : "#14141F",
+      border: `1px solid ${expanded || hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
+      borderRadius: 12,
+      overflow: "hidden",
+      transition: "all 0.18s ease",
+      boxShadow: expanded
+        ? `0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px ${t.hue}18`
+        : "0 1px 3px rgba(0,0,0,0.2)",
     }}>
+      {/* Left accent bar */}
+      <div style={{
+        position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+        background: expanded || hovered
+          ? `linear-gradient(180deg, ${t.hue} 0%, ${t.deep} 100%)`
+          : "rgba(255,255,255,0.06)",
+        transition: "background 0.2s",
+      }} />
+
       <div
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          padding: "0 12px", height: 44, cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 10,
-          background: hovered ? "#1A1A1A" : "transparent",
-          transition: "background 0.1s",
+          padding: "0 14px 0 16px", height: 52, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 12,
         }}
       >
+        <div style={{
+          width: 32, height: 32, borderRadius: 8,
+          background: `linear-gradient(135deg, ${t.hue}22, ${t.deep}11)`,
+          border: `1px solid ${t.hue}30`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 14, color: t.hue, fontWeight: 700, fontFamily: FONT,
+          flexShrink: 0, letterSpacing: "-0.02em",
+        }}>
+          {(cls.title?.[0] ?? "?").toUpperCase()}
+        </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT, letterSpacing: "-0.01em" }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.015em" }}>
             {cls.title}
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: MONO, flexShrink: 0 }}>
-          {units === null ? "" : `${units.length} unit${units.length !== 1 ? "s" : ""}`}
+        <div style={{
+          fontSize: 11, color: "rgba(245,245,250,0.45)", fontFamily: FONT,
+          flexShrink: 0, padding: "3px 9px", background: "rgba(255,255,255,0.04)",
+          borderRadius: 999, fontWeight: 500,
+        }}>
+          {units === null ? "…" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
         </div>
 
         {onDeleteClass && (
@@ -1202,46 +1568,63 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
             title="Delete class"
             style={{
               background: "none", border: "none", cursor: "pointer",
-              padding: "2px 4px", fontSize: 12,
-              color: "rgba(255,255,255,0.3)", opacity: hovered ? 1 : 0,
-              transition: "opacity 0.1s, color 0.1s", flexShrink: 0,
+              padding: "4px 6px", fontSize: 13, lineHeight: 1,
+              color: "rgba(245,245,250,0.3)",
+              opacity: hovered ? 1 : 0,
+              transition: "opacity 0.18s, color 0.18s", flexShrink: 0,
+              borderRadius: 6,
             }}
-            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#EF4444"; }}
-            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "rgba(255,255,255,0.3)"; }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "rgba(245,245,250,0.3)"; e.currentTarget.style.background = "transparent"; }}
           >✕</button>
         )}
 
         <div style={{
-          fontSize: 9, color: expanded ? "#A78BFA" : "rgba(255,255,255,0.3)",
-          transition: "transform 0.15s, color 0.1s",
+          fontSize: 11, color: expanded ? t.hue : "rgba(245,245,250,0.4)",
+          transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
         }}>▶</div>
       </div>
 
       {expanded && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          animation: "fadeIn 0.2s ease",
+        }}>
           {units === null ? (
-            <div style={{ padding: "12px 16px", fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: FONT }}>Loading…</div>
+            <div style={{ padding: "16px 18px", fontSize: 12.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
+              Loading units…
+            </div>
           ) : units.length === 0 ? (
-            <div style={{ padding: "12px 16px", fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: FONT }}>No units yet</div>
+            <div style={{
+              padding: "20px 18px",
+              fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT,
+              textAlign: "center",
+            }}>
+              <div style={{ marginBottom: 6 }}>No units yet</div>
+              <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.3)" }}>Create your first unit below to start studying</div>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column" }}>
               {units.map(unit => (
-                <UnitRow key={unit.id} unit={unit} color={cls.color} onClick={() => onOpenUnit(unit)} />
+                <UnitRow key={unit.id} unit={unit} color={t.hue} onClick={() => onOpenUnit(unit)} />
               ))}
             </div>
           )}
-          <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
             <button
               onClick={onNewUnit}
+              className="btn-press"
               style={{
                 width: "100%", background: "transparent",
-                border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 6,
-                padding: "7px", color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 500,
-                cursor: "pointer", fontFamily: FONT, transition: "all 0.1s",
+                border: `1px dashed ${t.hue}30`, borderRadius: 10,
+                padding: "10px", color: t.hue, fontSize: 12.5, fontWeight: 600,
+                cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
+                letterSpacing: "-0.005em",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; e.currentTarget.style.color = "#A78BFA"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}30`; e.currentTarget.style.background = "transparent"; }}
             >+ New Unit</button>
           </div>
         </div>
@@ -1266,42 +1649,69 @@ function NewClassModal({ onClose, onCreate }) {
     setLoading(false);
   }
 
+  const inp = {
+    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
+  };
+
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 420,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        position: "relative",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 440,
+        padding: "28px 26px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em" }}>New Class</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>A class holds your units and notes for one course</div>
-        </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input
-            ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. AP World History" maxLength={80}
-            style={{ width: "100%", background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 12px", height: 36, color: "#FAFAFA", fontSize: 13, fontFamily: FONT, outline: "none", transition: "border-color 0.1s" }}
-            onFocus={e => e.target.style.borderColor = "#A78BFA"}
-            onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
-          />
-          {error && <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#EF4444", fontFamily: FONT }}>{error}</div>}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button type="button" onClick={onClose} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all 0.1s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-            >Cancel</button>
-            <button type="submit" disabled={loading || !title.trim()} style={{ background: "#A78BFA", border: "none", borderRadius: 6, padding: "0 16px", height: 32, color: "#fff", fontWeight: 500, fontSize: 13, cursor: loading || !title.trim() ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading || !title.trim() ? 0.45 : 1, transition: "background 0.1s, opacity 0.1s" }}
-              onMouseEnter={e => { if (!loading && title.trim()) e.currentTarget.style.background = "#7C3AED"; }}
-              onMouseLeave={e => e.currentTarget.style.background = "#A78BFA"}
-            >{loading ? "Creating…" : "Create Class"}</button>
+        <div style={{
+          position: "absolute", top: -100, right: -60,
+          width: 200, height: 200, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Class</div>
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>A class holds your units and notes for one course</div>
           </div>
-        </form>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <input
+              ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. AP World History" maxLength={80}
+              style={inp}
+              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+            />
+            {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+              <button type="button" onClick={onClose} className="btn-press" style={{
+                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10, padding: "0 16px", height: 38,
+                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+              >Cancel</button>
+              <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
+                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                border: "none", borderRadius: 10, padding: "0 20px", height: 38,
+                color: "#fff", fontWeight: 600, fontSize: 13,
+                cursor: loading || !title.trim() ? "not-allowed" : "pointer",
+                fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
+                boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                letterSpacing: "-0.01em",
+              }}>{loading ? "Creating…" : "Create Class"}</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -1324,46 +1734,83 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
     setLoading(false);
   }
 
-  const inp = { width: "100%", background: "#0A0A0A", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 12px", height: 36, color: "#FAFAFA", fontSize: 13, fontFamily: FONT, outline: "none", transition: "border-color 0.1s" };
-  const lbl = { fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6, fontWeight: 500 };
+  const inp = {
+    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
+  };
+  const lbl = {
+    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    letterSpacing: "0.04em", textTransform: "uppercase", display: "block",
+    marginBottom: 7, fontWeight: 600,
+  };
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 420,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        position: "relative",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 440,
+        padding: "28px 26px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em" }}>New Unit</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>Adding to <span style={{ color: "#A78BFA" }}>{classTitle}</span></div>
+        <div style={{
+          position: "absolute", top: -100, right: -60,
+          width: 200, height: 200, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>
+              Adding to <span style={{ color: "#A78BFA", fontWeight: 500 }}>{classTitle}</span>
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={lbl}>Unit name *</label>
+              <input ref={inputRef} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 5 — Revolutions" maxLength={80} style={inp}
+                onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Topic / description</label>
+              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Industrial Revolution, causes and effects" maxLength={120} style={inp}
+                onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              />
+            </div>
+            {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+              <button type="button" onClick={onClose} className="btn-press" style={{
+                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10, padding: "0 16px", height: 38,
+                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+              >Cancel</button>
+              <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
+                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                border: "none", borderRadius: 10, padding: "0 20px", height: 38,
+                color: "#fff", fontWeight: 600, fontSize: 13,
+                cursor: loading || !title.trim() ? "not-allowed" : "pointer",
+                fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
+                boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                letterSpacing: "-0.01em",
+              }}>{loading ? "Creating…" : "Create Unit"}</button>
+            </div>
+          </form>
         </div>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <label style={lbl}>Unit name *</label>
-            <input ref={inputRef} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 5 — Revolutions" maxLength={80} style={inp} onFocus={e => e.target.style.borderColor = "#A78BFA"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"} />
-          </div>
-          <div>
-            <label style={lbl}>Topic / description</label>
-            <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Industrial Revolution, causes and effects" maxLength={120} style={inp} onFocus={e => e.target.style.borderColor = "#A78BFA"} onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"} />
-          </div>
-          {error && <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#EF4444", fontFamily: FONT }}>{error}</div>}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button type="button" onClick={onClose} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "all 0.1s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-            >Cancel</button>
-            <button type="submit" disabled={loading || !title.trim()} style={{ background: "#A78BFA", border: "none", borderRadius: 6, padding: "0 16px", height: 32, color: "#fff", fontWeight: 500, fontSize: 13, cursor: loading || !title.trim() ? "not-allowed" : "pointer", fontFamily: FONT, opacity: loading || !title.trim() ? 0.45 : 1, transition: "background 0.1s, opacity 0.1s" }}
-              onMouseEnter={e => { if (!loading && title.trim()) e.currentTarget.style.background = "#7C3AED"; }}
-              onMouseLeave={e => e.currentTarget.style.background = "#A78BFA"}
-            >{loading ? "Creating…" : "Create Unit"}</button>
-          </div>
-        </form>
       </div>
     </div>
   );
@@ -1371,7 +1818,7 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
 
 function InviteModal({ notebookId, onClose }) {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | sending | success | error
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [sentTo, setSentTo] = useState("");
 
@@ -1394,76 +1841,96 @@ function InviteModal({ notebookId, onClose }) {
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(8px)", display: "flex", alignItems: "center",
+      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6, width: "100%", maxWidth: 420,
-        padding: "24px", boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
-        animation: "fadeIn 0.15s ease",
+        position: "relative",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 440,
+        padding: "28px 26px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.01em" }}>Invite a collaborator</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>They'll get an email with a link to join this unit</div>
-        </div>
-
-        {status === "success" ? (
-          <div style={{ textAlign: "center", padding: "16px 0" }}>
-            <div style={{ fontSize: 20, marginBottom: 8, color: "#4ADE80" }}>✓</div>
-            <div style={{ fontSize: 13, color: "#4ADE80", fontFamily: FONT, fontWeight: 500 }}>
-              Invite sent to {sentTo}!
-            </div>
+        <div style={{
+          position: "absolute", top: -100, right: -60,
+          width: 200, height: 200, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>Invite a collaborator</div>
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>They'll get an email with a link to join this unit</div>
           </div>
-        ) : (
-          <>
-            <input
-              type="email"
-              placeholder="friend@school.edu"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(""); setStatus("idle"); }}
-              onKeyDown={e => e.key === "Enter" && handleSend()}
-              autoFocus
-              style={{
-                width: "100%", background: "#0A0A0A",
-                border: `1px solid ${error ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.06)"}`,
-                borderRadius: 6, padding: "0 12px", height: 36, color: "#FAFAFA",
-                fontSize: 13, fontFamily: FONT,
-                outline: "none", boxSizing: "border-box", marginBottom: 8,
-                transition: "border-color 0.1s",
-              }}
-              onFocus={e => { if (!error) e.target.style.borderColor = "#A78BFA"; }}
-              onBlur={e => { if (!error) e.target.style.borderColor = "rgba(255,255,255,0.06)"; }}
-            />
-            {error && (
-              <div style={{ fontSize: 12, color: "#EF4444", fontFamily: FONT, marginBottom: 8 }}>{error}</div>
-            )}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={onClose} style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 6, padding: "0 16px", height: 32, color: "rgba(255,255,255,0.6)", fontSize: 13,
-                cursor: "pointer", fontFamily: FONT, transition: "all 0.1s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#FAFAFA"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-              >Cancel</button>
-              <button
-                onClick={handleSend}
-                disabled={status === "sending"}
-                style={{
-                  background: "#A78BFA", border: "none", borderRadius: 6,
-                  padding: "0 16px", height: 32, color: "#fff", fontWeight: 500, fontSize: 13,
-                  cursor: status === "sending" ? "not-allowed" : "pointer",
-                  fontFamily: FONT, opacity: status === "sending" ? 0.6 : 1,
-                  transition: "background 0.1s, opacity 0.1s",
-                }}
-                onMouseEnter={e => { if (status !== "sending") e.currentTarget.style.background = "#7C3AED"; }}
-                onMouseLeave={e => e.currentTarget.style.background = "#A78BFA"}
-              >{status === "sending" ? "Sending…" : "Send Invite"}</button>
+
+          {status === "success" ? (
+            <div style={{ textAlign: "center", padding: "24px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: "50%",
+                background: "linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.06) 100%)",
+                border: "1.5px solid rgba(52,211,153,0.35)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 26, color: "#34D399",
+                boxShadow: "0 0 24px rgba(52,211,153,0.2)",
+              }}>✓</div>
+              <div style={{ fontSize: 15, color: "#34D399", fontFamily: FONT, fontWeight: 600, letterSpacing: "-0.015em" }}>
+                Invite sent to {sentTo}!
+              </div>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <input
+                type="email"
+                placeholder="friend@school.edu"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(""); setStatus("idle"); }}
+                onKeyDown={e => e.key === "Enter" && handleSend()}
+                autoFocus
+                style={{
+                  width: "100%", background: "#14141F",
+                  border: `1px solid ${error ? "rgba(248,113,113,0.45)" : "rgba(255,255,255,0.09)"}`,
+                  borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA",
+                  fontSize: 14, fontFamily: FONT,
+                  outline: "none", marginBottom: 10,
+                  transition: "all 0.18s", letterSpacing: "-0.01em",
+                }}
+                onFocus={e => { if (!error) { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}}
+                onBlur={e => { if (!error) { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}}
+              />
+              {error && (
+                <div style={{ fontSize: 12.5, color: "#F87171", fontFamily: FONT, marginBottom: 10 }}>{error}</div>
+              )}
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button onClick={onClose} className="btn-press" style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10, padding: "0 16px", height: 38,
+                  color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+                >Cancel</button>
+                <button
+                  onClick={handleSend}
+                  disabled={status === "sending"}
+                  className="btn-press"
+                  style={{
+                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                    border: "none", borderRadius: 10,
+                    padding: "0 20px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
+                    cursor: status === "sending" ? "not-allowed" : "pointer",
+                    fontFamily: FONT, opacity: status === "sending" ? 0.65 : 1,
+                    boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >{status === "sending" ? "Sending…" : "Send Invite"}</button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1472,36 +1939,62 @@ function InviteModal({ notebookId, onClose }) {
 function InviteLanding({ inviteInfo, onSignIn }) {
   return (
     <div style={{
-      minHeight: "100vh", background: "#0A0A0A",
+      minHeight: "100vh",
+      background: "#0B0B12",
+      backgroundImage: `
+        radial-gradient(circle at 20% 0%, rgba(167,139,250,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 100%, rgba(96,165,250,0.08) 0%, transparent 50%)
+      `,
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      gap: 16, padding: 32, fontFamily: FONT,
+      gap: 18, padding: 32, fontFamily: FONT,
     }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: "#FAFAFA", letterSpacing: "-0.02em" }}>
-        schol<span style={{ color: "#A78BFA" }}>r</span>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 8,
+          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 16, fontWeight: 800, color: "#fff",
+          boxShadow: "0 6px 18px rgba(167,139,250,0.4)",
+        }}>s</div>
+        <div style={{
+          fontSize: 26, fontWeight: 700, color: "#F5F5FA", letterSpacing: "-0.03em",
+        }}>
+          schol<span style={{ color: "#A78BFA" }}>r</span>
+        </div>
       </div>
-      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", textAlign: "center" }}>
+      <div style={{ fontSize: 15, color: "rgba(245,245,250,0.65)", textAlign: "center" }}>
         You've been invited to join a unit
       </div>
       {inviteInfo ? (
-        <div style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "16px 24px", textAlign: "center", maxWidth: 360 }}>
-          <div style={{ fontSize: 15, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT, marginBottom: 4 }}>{inviteInfo.notebook_title}</div>
-          {inviteInfo.class_title && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>in {inviteInfo.class_title}</div>}
+        <div style={{
+          background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: 14, padding: "18px 24px", textAlign: "center", maxWidth: 380,
+          boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.1)",
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.015em" }}>{inviteInfo.notebook_title}</div>
+          {inviteInfo.class_title && <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.5)" }}>in {inviteInfo.class_title}</div>}
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading invite info…</div>
+        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)" }}>Loading invite info…</div>
       )}
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>Sign in or create an account to join</div>
+      <div style={{ fontSize: 13, color: "rgba(245,245,250,0.5)", textAlign: "center" }}>Sign in or create an account to join</div>
       <button
         onClick={onSignIn}
         style={{
-          background: "#A78BFA", border: "none", borderRadius: 6,
-          padding: "0 24px", height: 36, color: "#fff", fontWeight: 500,
-          fontSize: 13, cursor: "pointer", fontFamily: FONT,
-          transition: "background 0.1s",
+          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+          border: "none", borderRadius: 12,
+          padding: "0 24px", height: 44, color: "#fff", fontWeight: 600,
+          fontSize: 14, cursor: "pointer", fontFamily: FONT,
+          transition: "transform 0.15s, box-shadow 0.2s",
+          boxShadow: "0 8px 24px rgba(167,139,250,0.4), 0 0 0 1px rgba(167,139,250,0.45)",
+          letterSpacing: "-0.01em",
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = "#7C3AED"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "#A78BFA"; }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
       >Sign in or create account</button>
     </div>
   );
@@ -1517,10 +2010,10 @@ function getGreeting(name) {
   const h = new Date().getHours();
   const first = name.split(" ")[0];
   if (h < 5)  return `Still up, ${first}?`;
-  if (h < 12) return `Good morning, ${first} 👋`;
-  if (h < 17) return `Good afternoon, ${first} 👋`;
-  if (h < 21) return `Good evening, ${first} 👋`;
-  return `Back at it, ${first} 🌙`;
+  if (h < 12) return `Good morning, ${first}`;
+  if (h < 17) return `Good afternoon, ${first}`;
+  if (h < 21) return `Good evening, ${first}`;
+  return `Back at it, ${first}`;
 }
 
 const NAV = [
@@ -1537,42 +2030,38 @@ export default function Scholr() {
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
-  const [notebooks, setNotebooks] = useState([]);          // all memberships (used as base)
-  const [ownedNotebooks, setOwnedNotebooks] = useState([]);   // notebooks user created
-  const [sharedNotebooks, setSharedNotebooks] = useState([]); // notebooks user was invited to
-  const [starredNotebooks, setStarredNotebooks] = useState([]); // starred by user
-  const [starredIds, setStarredIds] = useState(new Set());    // Set<notebookId> for O(1) lookup
-  const [notifications, setNotifications] = useState([]);     // unread notifications for dashboard
-  const [classes, setClasses] = useState([]);              // class folders for dashboard
+  const [notebooks, setNotebooks] = useState([]);
+  const [ownedNotebooks, setOwnedNotebooks] = useState([]);
+  const [sharedNotebooks, setSharedNotebooks] = useState([]);
+  const [starredNotebooks, setStarredNotebooks] = useState([]);
+  const [starredIds, setStarredIds] = useState(new Set());
+  const [notifications, setNotifications] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [expandedClassId, setExpandedClassId] = useState(null);
-  const [classUnitsCache, setClassUnitsCache] = useState({}); // { classId: unit[] }
+  const [classUnitsCache, setClassUnitsCache] = useState({});
   const [showNewClassModal, setShowNewClassModal] = useState(false);
-  const [newUnitFor, setNewUnitFor] = useState(null);      // { classId, classTitle }
+  const [newUnitFor, setNewUnitFor] = useState(null);
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
-  const [deleteClassTarget, setDeleteClassTarget] = useState(null); // cls object to confirm-delete
+  const [deleteClassTarget, setDeleteClassTarget] = useState(null);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
 
-  // Restore session on mount; gate data fetches behind authReady to avoid race
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthReady(true);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") { setShowPasswordReset(true); return; }
       setUser(session?.user ?? null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // Detect /invite/:token URL on mount
   useEffect(() => {
     const match = window.location.pathname.match(/^\/invite\/([^/]+)/);
     if (!match) return;
@@ -1582,23 +2071,17 @@ export default function Scholr() {
     api.getInvite(token).then(setInviteInfo).catch(() => {});
   }, []);
 
-  // Accept invite after user logs in
   useEffect(() => {
     if (!pendingInviteToken || !user || !authReady) return;
     const token = pendingInviteToken;
     setPendingInviteToken(null);
-    // Force a session refresh so the JWT in the Supabase client is current
-    // before we make any authenticated API calls (guards against a race
-    // where onAuth fires before the token is stored in the client).
     supabase.auth.getSession()
       .then(() => api.acceptInvite(token))
       .then(({ notebook_id }) => {
-        console.log("[invite] accepted, fetching shared notebooks after invite accept");
         return Promise.all([
           api.listNotebooks(getDisplayName(user)),
           api.listSharedNotebooks(getDisplayName(user)),
         ]).then(([nbs, shared]) => {
-          console.log("[invite] listSharedNotebooks returned", shared.length, "notebooks");
           setNotebooks(nbs);
           setSharedNotebooks(shared);
           const nb = shared.find(n => n.id === notebook_id) ?? nbs.find(n => n.id === notebook_id);
@@ -1608,16 +2091,12 @@ export default function Scholr() {
       .catch(console.error);
   }, [pendingInviteToken, user, authReady]);
 
-  // Only fetch data once auth is fully confirmed (authReady prevents JWT-empty race)
   useEffect(() => {
     if (!user || !authReady) return;
     const name = getDisplayName(user);
     api.listNotebooks(name).then(setNotebooks).catch(console.error);
     api.listOwnedNotebooks(name).then(setOwnedNotebooks).catch(console.error);
-    console.log("[shared] fetching shared notebooks on auth ready");
-    api.listSharedNotebooks(name)
-      .then(shared => { console.log("[shared] listSharedNotebooks returned", shared.length, "notebooks"); setSharedNotebooks(shared); })
-      .catch(err => { console.error("[shared] listSharedNotebooks error:", err); });
+    api.listSharedNotebooks(name).then(setSharedNotebooks).catch(console.error);
     api.getStarredNotebooks(name)
       .then(starred => {
         setStarredNotebooks(starred);
@@ -1631,8 +2110,8 @@ export default function Scholr() {
   async function handleToggleClass(classId) {
     if (expandedClassId === classId) { setExpandedClassId(null); return; }
     setExpandedClassId(classId);
-    if (classUnitsCache[classId]) return; // already fetched
-    setClassUnitsCache(prev => ({ ...prev, [classId]: null })); // null = loading
+    if (classUnitsCache[classId]) return;
+    setClassUnitsCache(prev => ({ ...prev, [classId]: null }));
     try {
       const units = await api.listClassNotebooks(classId, getDisplayName(user));
       setClassUnitsCache(prev => ({ ...prev, [classId]: units }));
@@ -1653,21 +2132,15 @@ export default function Scholr() {
   }
 
   async function handleToggleStar(nb) {
-    console.log("star clicked:", nb.id, "currently starred:", starredIds.has(nb.id));
     const isStarred = starredIds.has(nb.id);
-    // Optimistic update
     setStarredIds(prev => { const next = new Set(prev); isStarred ? next.delete(nb.id) : next.add(nb.id); return next; });
     setStarredNotebooks(prev => isStarred ? prev.filter(n => n.id !== nb.id) : [...prev, nb]);
-    console.log("calling toggleStar with:", nb.id);
     try {
       const { starred } = await api.toggleStar(nb.id);
-      console.log("toggleStar response:", { starred });
-      // Sync to actual server result
       setStarredIds(prev => { const next = new Set(prev); starred ? next.add(nb.id) : next.delete(nb.id); return next; });
       if (!starred) setStarredNotebooks(prev => prev.filter(n => n.id !== nb.id));
     } catch (err) {
       console.error("star toggle failed:", err);
-      // Revert on failure
       setStarredIds(prev => { const next = new Set(prev); isStarred ? next.add(nb.id) : next.delete(nb.id); return next; });
       setStarredNotebooks(prev => isStarred ? [...prev, nb] : prev.filter(n => n.id !== nb.id));
     }
@@ -1701,12 +2174,10 @@ export default function Scholr() {
 
   const displayName = getDisplayName(user);
 
-  // Dashboard: filter classes by search
   const filteredClasses = classes.filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  // My Notes / Shared / Starred: pick the right source list
   const viewBase = activeView === "my-notes" ? ownedNotebooks
     : activeView === "shared"   ? sharedNotebooks
     : activeView === "starred"  ? starredNotebooks
@@ -1721,31 +2192,6 @@ export default function Scholr() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0A0A0A; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: translateY(0); }
-          50% { opacity: 1; transform: translateY(-3px); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInLeft {
-          from { opacity: 0; transform: translateX(-8px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-      `}</style>
-
       {pendingInviteToken && authReady && !user && (
         <InviteLanding inviteInfo={inviteInfo} onSignIn={() => setShowInviteAuth(true)} />
       )}
@@ -1784,15 +2230,23 @@ export default function Scholr() {
       {toast && (
         <div style={{
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          background: "#111111", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 6, padding: "0 16px", height: 36,
-          fontSize: 13, color: "#4ADE80", fontWeight: 500,
+          background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+          border: "1px solid rgba(52,211,153,0.3)",
+          borderRadius: 12, padding: "0 18px", height: 42,
+          fontSize: 13.5, color: "#34D399", fontWeight: 600,
           fontFamily: FONT,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-          zIndex: 2000, animation: "fadeIn 0.15s ease",
+          boxShadow: "0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(52,211,153,0.15), 0 0 24px rgba(52,211,153,0.2)",
+          zIndex: 2000, animation: "slideInUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
           display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+          letterSpacing: "-0.01em",
         }}>
-          ✓ {toast}
+          <span style={{
+            width: 18, height: 18, borderRadius: "50%",
+            background: "rgba(52,211,153,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11,
+          }}>✓</span>
+          {toast}
         </div>
       )}
 
@@ -1811,27 +2265,43 @@ export default function Scholr() {
         />
       )}
 
-      {/* Dashboard — only rendered when authenticated */}
+      {/* App shell */}
       <div style={{
-        height: "100vh", overflow: "hidden", background: "#0A0A0A",
+        height: "100vh", overflow: "hidden",
+        background: "#0B0B12",
         display: user ? "flex" : "none", fontFamily: FONT,
       }}>
         {/* Sidebar */}
         <div style={{
-          width: 240, background: "#0A0A0A",
+          width: 240,
+          background: "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
           borderRight: "1px solid rgba(255,255,255,0.06)",
-          padding: "24px 12px", display: "flex", flexDirection: "column", gap: 2,
+          padding: "20px 12px 16px", display: "flex", flexDirection: "column", gap: 2,
           flexShrink: 0, height: "100vh", overflowY: "auto",
           position: "sticky", top: 0,
         }}>
+          {/* Brand */}
           <div style={{
-            fontSize: 18, fontWeight: 600,
-            color: "#FAFAFA", marginBottom: 24, paddingLeft: 8, letterSpacing: "-0.02em",
-            fontFamily: FONT,
+            display: "flex", alignItems: "center", gap: 8,
+            marginBottom: 22, paddingLeft: 8,
           }}>
-            schol<span style={{ color: "#A78BFA" }}>r</span>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 14, fontWeight: 800, color: "#fff",
+              boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
+            }}>s</div>
+            <div style={{
+              fontSize: 19, fontWeight: 700,
+              color: "#F5F5FA", letterSpacing: "-0.03em",
+              fontFamily: FONT,
+            }}>
+              schol<span style={{ color: "#A78BFA" }}>r</span>
+            </div>
           </div>
 
+          {/* Nav */}
           {NAV.map(({ id, label, icon }) => {
             const active = activeView === id;
             return (
@@ -1839,61 +2309,84 @@ export default function Scholr() {
                 key={id}
                 onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
                 style={{
-                  padding: "0 12px", height: 34, borderRadius: 6,
-                  display: "flex", alignItems: "center", gap: 8,
-                  background: active ? "rgba(167,139,250,0.08)" : "transparent",
-                  color: active ? "#A78BFA" : "rgba(255,255,255,0.5)",
-                  fontSize: 13, fontWeight: active ? 500 : 400,
-                  cursor: "pointer", transition: "background 0.1s, color 0.1s",
+                  position: "relative",
+                  padding: "0 12px", height: 36, borderRadius: 8,
+                  display: "flex", alignItems: "center", gap: 10,
+                  background: active
+                    ? "linear-gradient(90deg, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.05) 100%)"
+                    : "transparent",
+                  color: active ? "#C4B5FD" : "rgba(245,245,250,0.6)",
+                  fontSize: 13.5, fontWeight: active ? 600 : 500,
+                  cursor: "pointer", transition: "all 0.18s",
                   userSelect: "none",
-                  borderLeft: active ? "2px solid #A78BFA" : "2px solid transparent",
+                  letterSpacing: "-0.01em",
+                  marginBottom: 1,
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "#1A1A1A"; e.currentTarget.style.color = "#FAFAFA"; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; } }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#F5F5FA"; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(245,245,250,0.6)"; }}}
               >
-                <span style={{ fontSize: 12, opacity: active ? 1 : 0.6 }}>{icon}</span>
+                {active && (
+                  <div style={{
+                    position: "absolute", left: 0, top: 8, bottom: 8, width: 3,
+                    background: "linear-gradient(180deg, #A78BFA 0%, #8B5CF6 100%)",
+                    borderRadius: 2,
+                    boxShadow: "0 0 8px rgba(167,139,250,0.5)",
+                  }} />
+                )}
+                <span style={{
+                  fontSize: 14, opacity: active ? 1 : 0.7,
+                  width: 18, textAlign: "center",
+                }}>{icon}</span>
                 {label}
               </div>
             );
           })}
 
-          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "8px",
-            }}>
-              <Avatar name={displayName} size={28} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 12, fontWeight: 500, color: "#FAFAFA",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>{displayName}</div>
-                <div style={{
-                  fontSize: 10, color: "rgba(255,255,255,0.3)",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>{user?.email}</div>
-              </div>
-            </div>
+          <div style={{ flex: 1 }} />
 
-            <button
-              onClick={handleLogout}
-              style={{
-                width: "100%", background: "transparent",
-                border: "none", borderRadius: 6,
-                padding: "0 8px", height: 30, color: "rgba(255,255,255,0.25)", fontSize: 12,
-                cursor: "pointer", fontFamily: FONT,
-                transition: "color 0.1s", textAlign: "left",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#EF4444"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.25)"; }}
-            >
-              Sign out
-            </button>
+          {/* User card */}
+          <div style={{
+            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.05)",
+            borderRadius: 10,
+            padding: "10px",
+            display: "flex", alignItems: "center", gap: 10,
+            marginBottom: 6,
+          }}>
+            <Avatar name={displayName} size={32} seed={user?.email ?? displayName} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: 12.5, fontWeight: 600, color: "#F5F5FA",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                letterSpacing: "-0.01em",
+              }}>{displayName}</div>
+              <div style={{
+                fontSize: 10.5, color: "rgba(245,245,250,0.4)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{user?.email}</div>
+            </div>
           </div>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%", background: "transparent",
+              border: "none", borderRadius: 8,
+              padding: "0 12px", height: 32,
+              color: "rgba(245,245,250,0.35)", fontSize: 12,
+              cursor: "pointer", fontFamily: FONT, fontWeight: 500,
+              transition: "color 0.15s, background 0.15s", textAlign: "left",
+              letterSpacing: "-0.01em",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.35)"; e.currentTarget.style.background = "transparent"; }}
+          >
+            Sign out
+          </button>
         </div>
 
         {/* Main */}
-        <div style={{ flex: 1, padding: "40px 48px 40px 40px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+        <div style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView
@@ -1918,85 +2411,142 @@ export default function Scholr() {
             </div>
 
           ) : activeView === "settings" ? (
-            <div style={{ animation: "fadeIn 0.15s ease", maxWidth: 480 }}>
-              <div style={{ fontSize: 22, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, letterSpacing: "-0.02em", marginBottom: 4 }}>
+            <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 520 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.03em", marginBottom: 4 }}>
                 Settings
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 32, textTransform: "uppercase", letterSpacing: "0.08em" }}>ACCOUNT</div>
+              <div style={{ fontSize: 14, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 32 }}>
+                Manage your account preferences
+              </div>
 
-              <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.45)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Account
               </div>
-              <div style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "16px", marginBottom: 32 }}>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: FONT, marginBottom: 4 }}>Signed in as</div>
-                <div style={{ fontSize: 13, color: "#FAFAFA", fontWeight: 500, fontFamily: FONT }}>{user?.email}</div>
+              <div style={{
+                background: "linear-gradient(180deg, #14141F 0%, #181824 100%)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderRadius: 14, padding: "18px 20px", marginBottom: 32,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <Avatar name={displayName} size={42} seed={user?.email ?? displayName} />
+                  <div>
+                    <div style={{ fontSize: 11, color: "rgba(245,245,250,0.45)", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
+                    <div style={{ fontSize: 14, color: "#F5F5FA", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(239,68,68,0.6)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(248,113,113,0.75)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Danger zone
               </div>
-              <div style={{ background: "#111111", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 6, padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <div style={{
+                background: "linear-gradient(180deg, rgba(248,113,113,0.04) 0%, rgba(248,113,113,0.01) 100%)",
+                border: "1px solid rgba(248,113,113,0.18)",
+                borderRadius: 14, padding: "18px 20px",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+              }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "#FAFAFA", fontFamily: FONT, marginBottom: 2 }}>Delete my account</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: FONT }}>This action cannot be undone.</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
+                  <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
                 </div>
                 <button
                   onClick={() => setShowDeleteAccount(true)}
+                  className="btn-press"
                   style={{
-                    background: "transparent", border: "1px solid rgba(239,68,68,0.25)",
-                    borderRadius: 6, padding: "0 12px", height: 32, color: "#EF4444",
-                    fontSize: 12, fontWeight: 500, cursor: "pointer",
-                    fontFamily: FONT,
-                    transition: "all 0.1s", whiteSpace: "nowrap", flexShrink: 0,
+                    background: "transparent", border: "1px solid rgba(248,113,113,0.3)",
+                    borderRadius: 10, padding: "0 14px", height: 36, color: "#F87171",
+                    fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                    fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
+                    letterSpacing: "-0.01em",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.55)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
                 >Delete account</button>
               </div>
             </div>
 
           ) : (
-            <div style={{ animation: "fadeIn 0.15s ease" }}>
+            <div style={{ animation: "fadeIn 0.25s ease" }}>
               {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
                 <div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: "#FAFAFA", fontFamily: FONT, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                    {activeView === "dashboard" ? displayName.split(" ")[0] : viewLabel}
+                  <div style={{
+                    fontSize: 11, fontWeight: 600, color: "rgba(167,139,250,0.85)",
+                    fontFamily: FONT, marginBottom: 4,
+                    letterSpacing: "0.1em", textTransform: "uppercase",
+                  }}>
+                    {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
-                  <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", fontFamily: FONT, marginTop: 2, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                    {activeView === "dashboard" ? "DASHBOARD" : `${filtered.length} notebook${filtered.length !== 1 ? "s" : ""}`}
+                  <div style={{
+                    fontSize: 28, fontWeight: 700, color: "#F5F5FA",
+                    fontFamily: FONT, letterSpacing: "-0.03em", lineHeight: 1.1,
+                  }}>
+                    {activeView === "dashboard"
+                      ? getGreeting(displayName)
+                      : viewLabel}
+                  </div>
+                  <div style={{
+                    fontSize: 13.5, color: "rgba(245,245,250,0.5)",
+                    fontFamily: FONT, marginTop: 6,
+                  }}>
+                    {activeView === "dashboard"
+                      ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
+                      : `${filtered.length} ${filtered.length === 1 ? "notebook" : "notebooks"}`}
                   </div>
                 </div>
                 {activeView === "dashboard" && (
                   <button
                     onClick={() => setShowNewClassModal(true)}
-                    style={{ background: "#A78BFA", border: "none", borderRadius: 6, padding: "0 12px", height: 32, color: "#fff", fontWeight: 500, fontSize: 13, cursor: "pointer", fontFamily: FONT, transition: "background 0.1s", flexShrink: 0 }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#7C3AED"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#A78BFA"; }}
+                    className="btn-press"
+                    style={{
+                      background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                      border: "none", borderRadius: 10, padding: "0 18px", height: 40,
+                      color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+                      fontFamily: FONT, flexShrink: 0,
+                      boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px rgba(167,139,250,0.45)",
+                      letterSpacing: "-0.01em",
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}
                   >+ New Class</button>
                 )}
               </div>
 
               {/* Search */}
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={activeView === "dashboard" ? "Search…" : `Search…`}
-                style={{ width: "100%", background: "#111111", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "0 12px", height: 36, color: "#FAFAFA", fontSize: 13, fontFamily: FONT, outline: "none", marginBottom: 24, transition: "border-color 0.1s" }}
-                onFocus={e => e.target.style.borderColor = "#A78BFA"}
-                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
-              />
+              <div style={{ position: "relative", marginBottom: 28 }}>
+                <span style={{
+                  position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+                  fontSize: 14, color: "rgba(245,245,250,0.35)", pointerEvents: "none",
+                }}>🔍</span>
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search notebooks…"
+                  style={{
+                    width: "100%", background: "#14141F",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: 10, padding: "0 14px 0 38px", height: 40,
+                    color: "#F5F5FA", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                    transition: "all 0.18s", letterSpacing: "-0.01em",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.07)"; e.target.style.boxShadow = "none"; }}
+                />
+              </div>
 
               {/* Dashboard: class cards */}
               {activeView === "dashboard" ? (
                 filteredClasses.length === 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 8 }}>
-                    <div style={{ fontSize: 13, fontFamily: FONT, color: "rgba(255,255,255,0.3)" }}>
-                      {search ? "No classes match your search" : "No classes yet — create one to get started"}
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={search ? "🔎" : "📚"}
+                    title={search ? "No classes match" : "Welcome to Scholr"}
+                    body={search
+                      ? "Try a different search term."
+                      : "Create your first class to start organizing your notes and chatting with Derek."}
+                    cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
+                  />
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 40 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 40 }}>
                     {filteredClasses.map(cls => (
                       <ClassCard
                         key={cls.id}
@@ -2013,24 +2563,34 @@ export default function Scholr() {
                 )
 
               ) : filtered.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 8 }}>
-                  <div style={{ fontSize: 13, fontFamily: FONT, color: "rgba(255,255,255,0.3)" }}>
-                    {search ? "No notebooks match your search"
-                      : activeView === "starred" ? "No starred notebooks yet"
-                      : "No notebooks here yet"}
-                  </div>
-                  {activeView === "starred" && !search && (
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", fontFamily: FONT }}>
-                      Click ★ on any notebook card to star it
-                    </div>
-                  )}
-                </div>
+                <EmptyState
+                  icon={search ? "🔎" : activeView === "starred" ? "⭐" : activeView === "shared" ? "👥" : "📓"}
+                  title={
+                    search ? "No notebooks match"
+                    : activeView === "starred" ? "No starred notebooks"
+                    : activeView === "shared"  ? "Nothing shared with you yet"
+                    : "No notebooks yet"
+                  }
+                  body={
+                    search ? "Try a different search term."
+                    : activeView === "starred" ? "Tap the ★ on any notebook to add it here."
+                    : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
+                    : "Notebooks you create will appear in this view."
+                  }
+                />
               ) : (
                 <>
-                  <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 12, textTransform: "uppercase" }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.4)",
+                    fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
+                  }}>
                     {viewLabel}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 8, marginBottom: 40 }}>
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: 12, marginBottom: 40,
+                  }}>
                     {filtered.map(nb => (
                       <NotebookCard
                         key={nb.id}
@@ -2047,9 +2607,25 @@ export default function Scholr() {
               {/* Notifications — dashboard only */}
               {activeView === "dashboard" && (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      Notifications {notifications.length > 0 && <span style={{ color: "#A78BFA" }}>· {notifications.length}</span>}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    marginBottom: 14, paddingTop: 20,
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.5)",
+                        fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
+                      }}>
+                        Recent activity
+                      </div>
+                      {notifications.length > 0 && (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, color: "#A78BFA",
+                          background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
+                          padding: "1px 7px", borderRadius: 999,
+                        }}>{notifications.length}</span>
+                      )}
                     </div>
                     {notifications.length > 0 && (
                       <button
@@ -2059,39 +2635,65 @@ export default function Scholr() {
                         }}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT,
-                          padding: "2px 6px", borderRadius: 4, transition: "color 0.1s",
+                          fontSize: 12, color: "rgba(245,245,250,0.45)", fontFamily: FONT,
+                          padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                          fontWeight: 500,
                         }}
-                        onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"}
-                        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.3)"}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.background = "rgba(167,139,250,0.08)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.45)"; e.currentTarget.style.background = "transparent"; }}
                       >
                         Clear all
                       </button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: "4px 0", fontSize: 12, color: "rgba(255,255,255,0.2)", fontFamily: FONT }}>
-                      No new notifications
+                    <div style={{
+                      padding: "20px 16px", display: "flex", alignItems: "center", gap: 12,
+                      background: "rgba(255,255,255,0.015)", border: "1px dashed rgba(255,255,255,0.06)",
+                      borderRadius: 12,
+                    }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.16)",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                      }}>✨</div>
+                      <div>
+                        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.7)", fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.005em" }}>
+                          You're all caught up!
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
+                          New activity from your study groups will appear here.
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {notifications.map(n => (
-                        <div key={n.id} style={{
-                          display: "flex", alignItems: "center", gap: 12,
-                          background: "#111111", border: "1px solid rgba(255,255,255,0.06)",
-                          borderRadius: 6, padding: "10px 12px",
+                        <div key={n.id} className="lift-card" style={{
+                          display: "flex", alignItems: "center", gap: 14,
+                          background: "#14141F", border: "1px solid rgba(255,255,255,0.06)",
+                          borderRadius: 10, padding: "12px 14px",
                         }}>
+                          <div style={{
+                            width: 8, height: 8, borderRadius: "50%",
+                            background: "#A78BFA",
+                            boxShadow: "0 0 8px rgba(167,139,250,0.5)",
+                            flexShrink: 0,
+                          }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: FONT, lineHeight: 1.4 }}>
+                            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.82)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em" }}>
                               {n.activities?.description ?? n.activities?.action}
                             </div>
                             {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: FONT, marginTop: 2 }}>
+                              <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
                                 in {n.activities.notebooks.title}
                               </div>
                             )}
                           </div>
-                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: MONO, flexShrink: 0 }}>
+                          <div style={{
+                            fontSize: 11, color: "rgba(245,245,250,0.35)", fontFamily: FONT, flexShrink: 0,
+                            padding: "2px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 6,
+                          }}>
                             {timeAgo(n.created_at)}
                           </div>
                         </div>
@@ -2105,5 +2707,45 @@ export default function Scholr() {
         </div>
       </div>
     </>
+  );
+}
+
+function EmptyState({ icon, title, body, cta }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      justifyContent: "center", padding: "72px 24px", gap: 14, textAlign: "center",
+      animation: "fadeIn 0.3s ease",
+    }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: 18,
+        background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
+        border: "1px solid rgba(167,139,250,0.2)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 32, marginBottom: 6,
+        boxShadow: "0 0 32px rgba(167,139,250,0.12)",
+      }}>{icon}</div>
+      <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+        {title}
+      </div>
+      <div style={{ fontSize: 14, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>
+        {body}
+      </div>
+      {cta && (
+        <button
+          onClick={cta.onClick}
+          className="btn-press"
+          style={{
+            marginTop: 8,
+            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            border: "none", borderRadius: 10, padding: "0 20px", height: 40,
+            color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+            fontFamily: FONT,
+            boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px rgba(167,139,250,0.45)",
+            letterSpacing: "-0.01em",
+          }}
+        >{cta.label}</button>
+      )}
+    </div>
   );
 }

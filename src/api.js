@@ -304,8 +304,13 @@ export const api = {
   async saveForgeOutput(notebookId, type, content, topic) {
     console.log("saveForgeOutput API called:", { notebookId, type, contentLength: content?.length });
     const headers = await authHeaders();
+    // Send the date label formatted in the user's local timezone so the title
+    // reflects the user's actual local date (not the server's UTC date).
+    const dateLabel = new Date().toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+    });
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge-output`, {
-      method: "POST", headers, body: JSON.stringify({ type, content, topic }),
+      method: "POST", headers, body: JSON.stringify({ type, content, topic, dateLabel }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));

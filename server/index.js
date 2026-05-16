@@ -756,14 +756,20 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
 
 // POST /api/notebooks/:id/forge-output — save a Forge-generated output
 app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (req, res) => {
-  const { type, content, topic } = req.body;
+  const { type, content, topic, dateLabel } = req.body;
   console.log("saving forge output:", { type, notebookId: req.params.id, contentLength: content?.length });
   const VALID_TYPES = ["study_guide", "questions", "flashcards", "summary"];
   if (!type || !VALID_TYPES.includes(type)) return res.status(400).json({ error: "Invalid type" });
   if (!content) return res.status(400).json({ error: "content is required" });
 
   const labels = { study_guide: "Study Guide", questions: "Questions", flashcards: "Flashcards", summary: "Summary" };
-  const date = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  // Prefer the user's local date label (the server runs in UTC and would otherwise
+  // embed a future-day date for users in earlier timezones near midnight UTC).
+  // Lightly validate the shape before trusting it.
+  const looksLikeDate = typeof dateLabel === "string" && /^[A-Za-z]+ \d{1,2}, \d{4}$/.test(dateLabel);
+  const date = looksLikeDate
+    ? dateLabel
+    : new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const title = `${labels[type]}${topic ? ` — ${topic}` : ""} — ${date}`;
 
   const { data, error } = await supabase

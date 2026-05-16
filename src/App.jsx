@@ -179,43 +179,33 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
   );
 }
 
+function memberLabel(m) {
+  const first = m.first_name?.trim();
+  if (first) return first;
+  const local = m.email?.split("@")[0] ?? "Member";
+  return local.charAt(0).toUpperCase() + local.slice(1);
+}
+
 function MemberAvatarStack({ members }) {
-  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [open, setOpen] = useState(false);
   const visible = members.slice(0, 3);
   const overflow = members.length - 3;
 
+  // Owners first, then alphabetical by display label
+  const sorted = [...members].sort((a, b) => {
+    if (a.role !== b.role) return a.role === "owner" ? -1 : 1;
+    return memberLabel(a).localeCompare(memberLabel(b));
+  });
+
   return (
-    <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+    <div
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      style={{ display: "flex", alignItems: "center", position: "relative", cursor: "default" }}
+    >
       {visible.map((m, i) => (
-        <div
-          key={m.user_id}
-          onMouseEnter={() => setHoveredIdx(i)}
-          onMouseLeave={() => setHoveredIdx(null)}
-          style={{ position: "relative", marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i, cursor: "default" }}
-        >
+        <div key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i }}>
           <Avatar name={m.email} size={28} seed={m.email} />
-          {hoveredIdx === i && (
-            <div style={{
-              position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
-              transform: "translateX(-50%)",
-              background: "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 10, padding: "8px 12px",
-              fontSize: 11.5, color: "#F5F5FA",
-              fontFamily: FONT, whiteSpace: "nowrap", zIndex: 100,
-              boxShadow: "0 12px 28px rgba(0,0,0,0.55)",
-              animation: "fadeIn 0.15s ease",
-            }}>
-              <div style={{ fontWeight: 600 }}>{m.email}</div>
-              <div style={{
-                color: m.role === "owner" ? "#A78BFA" : "rgba(245,245,250,0.4)",
-                fontSize: 10, marginTop: 2, textTransform: "uppercase",
-                letterSpacing: "0.06em", fontWeight: 600,
-              }}>
-                {m.role === "owner" ? "Owner" : "Member"}
-              </div>
-            </div>
-          )}
         </div>
       ))}
       {overflow > 0 && (
@@ -225,6 +215,65 @@ function MemberAvatarStack({ members }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 10.5, fontWeight: 600, color: "rgba(245,245,250,0.55)", fontFamily: FONT, zIndex: 0,
         }}>+{overflow}</div>
+      )}
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 10px)", right: 0,
+          minWidth: 240, maxWidth: 320, maxHeight: 300, overflowY: "auto",
+          background: "rgba(20,20,31,0.92)",
+          backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10, padding: 12,
+          fontFamily: FONT, zIndex: 100,
+          boxShadow: "0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(167,139,250,0.08), 0 0 32px rgba(167,139,250,0.08)",
+          animation: "fadeIn 0.15s ease",
+          display: "flex", flexDirection: "column", gap: 4,
+        }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.45)",
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            padding: "2px 4px 8px",
+          }}>
+            {members.length} {members.length === 1 ? "Member" : "Members"}
+          </div>
+          {sorted.map(m => {
+            const label = memberLabel(m);
+            const isOwner = m.role === "owner";
+            return (
+              <div key={m.user_id} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "6px 4px", borderRadius: 8,
+              }}>
+                <Avatar name={m.email} size={26} seed={m.email} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 500, color: "#F5F5FA",
+                    letterSpacing: "-0.01em",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
+                    <span style={{ color: "rgba(245,245,250,0.3)", flexShrink: 0 }}>•</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600,
+                      color: isOwner ? "#A78BFA" : "rgba(245,245,250,0.5)",
+                      letterSpacing: "-0.005em", flexShrink: 0,
+                    }}>
+                      {isOwner ? "Owner" : "Member"}
+                    </span>
+                  </div>
+                  {m.email && m.email !== label && (
+                    <div style={{
+                      fontSize: 11, color: "rgba(245,245,250,0.4)", marginTop: 1,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>{m.email}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

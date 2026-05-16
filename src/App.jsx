@@ -363,7 +363,7 @@ function TheForge({ nb, onClose, onToast }) {
                 <span style={{ fontSize: 14, flexShrink: 0 }}>{typeIcon}</span>
                 <div onClick={() => loadSaved(o)} style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: "#FAFAFA", fontFamily: FONT, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.title}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: MONO, marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: MONO, marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
                 </div>
                 <button className="forge-del" onClick={e => { e.stopPropagation(); handleDeleteSaved(o.id); }}>✕</button>
               </div>

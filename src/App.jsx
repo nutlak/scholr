@@ -477,7 +477,7 @@ function TheForge({ nb, onClose, onToast }) {
   const activeColor = action ? FORGE_BY_ID[action]?.color ?? "#A78BFA" : "#A78BFA";
 
   return (
-    <div style={{
+    <div className="forge-panel" style={{
       width: "44%", display: "flex", flexDirection: "column",
       borderLeft: "1px solid rgba(255,255,255,0.07)",
       background: "linear-gradient(180deg, rgba(20,20,31,0.4) 0%, rgba(11,11,18,0.1) 100%)",
@@ -1873,7 +1873,7 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
   }
 
   return (
-    <div style={{
+    <div className="notes-section" style={{
       marginTop: 14,
       maxHeight: 320,
       display: "flex", flexDirection: "column", minHeight: 0,
@@ -3665,7 +3665,7 @@ export default function Scholr() {
         <div className="sidebar" style={{
           width: 240,
           background: theme === "light"
-            ? "linear-gradient(180deg, #FFFFFF 0%, #F5F5FB 100%)"
+            ? "var(--bg, #F5F5F5)"
             : "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
           borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
           display: "flex", flexDirection: "column",
@@ -3695,7 +3695,7 @@ export default function Scholr() {
               color: "var(--t1, #F5F5FA)", letterSpacing: "-0.03em",
               fontFamily: FONT,
             }}>
-              schol<span style={{ color: "#A78BFA" }}>r</span>
+              schol<span style={{ color: "var(--acc, #A78BFA)" }}>r</span>
             </div>
             <button
               className="mobile-only"
@@ -3724,24 +3724,24 @@ export default function Scholr() {
                   padding: "0 12px", height: 36, borderRadius: 8,
                   display: "flex", alignItems: "center", gap: 10,
                   background: active
-                    ? "linear-gradient(90deg, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.05) 100%)"
+                    ? "linear-gradient(90deg, var(--acc-bg, rgba(167,139,250,0.14)) 0%, transparent 100%)"
                     : "transparent",
-                  color: active ? "#C4B5FD" : "rgba(245,245,250,0.6)",
+                  color: active ? "var(--acc-h, #C4B5FD)" : "var(--t2, rgba(245,245,250,0.6))",
                   fontSize: 13.5, fontWeight: active ? 600 : 500,
                   cursor: "pointer", transition: "all 0.18s",
                   userSelect: "none",
                   letterSpacing: "-0.01em",
                   marginBottom: 1,
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#F5F5FA"; }}}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(245,245,250,0.6)"; }}}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--s2, rgba(255,255,255,0.04))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.6))"; }}}
               >
                 {active && (
                   <div style={{
                     position: "absolute", left: 0, top: 8, bottom: 8, width: 3,
-                    background: "linear-gradient(180deg, #A78BFA 0%, #8B5CF6 100%)",
+                    background: "linear-gradient(180deg, var(--acc, #A78BFA) 0%, var(--acc-d, #7C3AED) 100%)",
                     borderRadius: 2,
-                    boxShadow: "0 0 8px rgba(167,139,250,0.5)",
+                    boxShadow: "0 0 8px var(--acc-glow, rgba(167,139,250,0.5))",
                   }} />
                 )}
                 <span style={{
@@ -3761,7 +3761,7 @@ export default function Scholr() {
             {profileOpen && (
               <div style={{
                 position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0,
-                background: theme === "light" ? "rgba(255,255,255,0.97)" : "rgba(20,20,31,0.97)",
+                background: "var(--s1, #14141F)",
                 backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
                 border: "1px solid var(--border-h, rgba(255,255,255,0.12))",
                 borderRadius: 12, padding: "12px",

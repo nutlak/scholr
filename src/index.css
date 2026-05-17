@@ -1,5 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
 
+/* ── Light theme override ─────────────────────────────────────────── */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg:        #F7F7FB;
+  --s1:        #FFFFFF;
+  --s2:        #F1F1F6;
+  --s3:        #E8E8F0;
+  --border:    rgba(15,15,30,0.08);
+  --border-h:  rgba(15,15,30,0.16);
+  --border-f:  rgba(124,58,237,0.4);
+  --t1:        #14141F;
+  --t2:        rgba(20,20,31,0.7);
+  --t3:        rgba(20,20,31,0.5);
+  --t4:        rgba(20,20,31,0.3);
+}
+html[data-theme="light"] body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(124,58,237,0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, rgba(59,130,246,0.04) 0%, transparent 50%);
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(15,15,30,0.12); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(15,15,30,0.22); }
+html[data-theme="light"] code {
+  background: var(--s2);
+  color: var(--t1);
+}
+
 :root {
   --font: "Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
@@ -160,4 +188,39 @@ input, textarea, select { font-family: var(--font); }
 @keyframes orbit {
   0%, 100% { transform: translate(0, 0); }
   50%      { transform: translate(20px, -10px); }
+}
+
+/* ── Mobile responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { font-size: 13px; }
+  .mobile-hide-sidebar > .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 0;
+    z-index: 200;
+    transition: transform 0.25s ease;
+    width: 240px !important;
+    box-shadow: 16px 0 32px rgba(0,0,0,0.5);
+  }
+  .sidebar-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(8,8,14,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 150;
+    animation: fadeIn 0.18s ease;
+  }
+  .mobile-menu-btn { display: flex !important; }
+  .main-pane { padding: 16px !important; }
+  .notebook-split { flex-direction: column !important; }
+  .notebook-split > * { width: 100% !important; }
+  .heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  button { min-height: 36px; }
+  input, textarea, select { font-size: 16px !important; }
+  .desktop-only { display: none !important; }
+}
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+  .mobile-menu-btn { display: none !important; }
 }

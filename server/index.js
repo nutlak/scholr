@@ -121,7 +121,7 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
     .select(`
       role,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -147,7 +147,7 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
     .select(`
       role,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -173,7 +173,7 @@ app.get("/api/notebooks/owned", requireAuth, async (req, res) => {
   // Query notebooks directly by created_by to avoid join embedding issues
   const { data, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, created_by, created_at, notes(count)")
+    .select("id, title, topic, created_by, created_at, due_date, status, class_id, notes(count)")
     .eq("created_by", req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
@@ -194,7 +194,7 @@ app.get("/api/notebooks/starred", requireAuth, async (req, res) => {
     .select(`
       notebook_id,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -297,6 +297,64 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
   }
   console.log("message saved with id:", data?.id);
   res.status(201).json(data);
+
+  // Activity log + @mention notifications — fire-and-forget
+  if (role === "user") {
+    logUserActivity(userId);
+    (async () => {
+      try {
+        const mentions = [...new Set((content.match(/@([A-Za-z][A-Za-z0-9_]*)/g) ?? []).map(m => m.slice(1).toLowerCase()))];
+        if (!mentions.length) return;
+
+        const { data: members } = await supabase
+          .from("notebook_members")
+          .select("user_id")
+          .eq("notebook_id", notebookId)
+          .neq("user_id", userId);
+        if (!members?.length) return;
+
+        // Resolve member first names for matching
+        const memberInfo = await Promise.all(members.map(async (m) => {
+          const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
+          const fullName = u?.user?.user_metadata?.full_name ?? "";
+          const first = fullName.split(" ")[0]?.trim() ?? "";
+          const emailLocal = u?.user?.email?.split("@")[0] ?? "";
+          return { user_id: m.user_id, first: first.toLowerCase(), emailLocal: emailLocal.toLowerCase() };
+        }));
+
+        const matched = memberInfo.filter(m =>
+          mentions.includes(m.first) || mentions.includes(m.emailLocal)
+        );
+        if (!matched.length) return;
+
+        // Look up notebook title for the description
+        const { data: nb } = await supabase
+          .from("notebooks").select("title").eq("id", notebookId).single();
+        const { data: actor } = await supabase.auth.admin.getUserById(userId);
+        const actorName = actor?.user?.user_metadata?.full_name?.split(" ")[0]?.trim()
+          || actor?.user?.email?.split("@")[0]
+          || "Someone";
+
+        const { data: activity } = await supabase
+          .from("activities")
+          .insert({
+            notebook_id: notebookId,
+            user_id: userId,
+            action: "mention",
+            description: `${actorName} mentioned you in ${nb?.title ?? "a unit"}`,
+          })
+          .select("id")
+          .single();
+        if (!activity) return;
+
+        await supabase.from("notifications").insert(
+          matched.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
+        );
+      } catch (err) {
+        console.error("mention notification error:", err);
+      }
+    })();
+  }
 });
 
 // POST /api/notebooks/:id/star — toggle star for the calling user
@@ -399,7 +457,7 @@ app.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
 
   const { data, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, created_at, notes(count)")
+    .select("id, title, topic, created_at, due_date, status, class_id, notes(count)")
     .eq("class_id", req.params.id)
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
@@ -557,6 +615,9 @@ app.post(
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json(data);
 
+    // Bump daily activity for streak/heatmap
+    logUserActivity(req.user.id);
+
     // Fire-and-forget: log activity and notify other members
     (async () => {
       try {
@@ -693,12 +754,16 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
-      system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise. When you reference specific information from the notes, mention the source note title naturally. Example: "Based on the lecture notes titled 'Biology 101 Midterm Review', the mitochondria..." This helps the student trace facts back to their notes.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: question }],
     });
 
     const answer = message.content.find((b) => b.type === "text")?.text ?? "";
-    res.json({ answer });
+    // Build a sources list: titles of notes whose names appear in the answer.
+    const sources = (notes ?? [])
+      .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
+      .map(n => n.title);
+    res.json({ answer, sources });
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
     res.status(500).json({ error: err.message });
@@ -807,6 +872,7 @@ app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (r
   }
   console.log("forge output saved:", data?.id);
   res.status(201).json(data);
+  logUserActivity(req.user.id);
 });
 
 // GET /api/notebooks/:id/forge-outputs — list saved Forge outputs
@@ -858,11 +924,34 @@ app.get("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req,
     };
   }));
 
+  // Fetch reaction + comment counts in bulk for these notes
+  const noteIds = (rows ?? []).map(r => r.id);
+  const reactionsByNote = {};
+  const commentCountByNote = {};
+  if (noteIds.length) {
+    const { data: rxRows } = await supabase
+      .from("note_reactions")
+      .select("unit_note_id, emoji, user_id")
+      .in("unit_note_id", noteIds);
+    for (const r of rxRows ?? []) {
+      (reactionsByNote[r.unit_note_id] ??= []).push({ emoji: r.emoji, user_id: r.user_id });
+    }
+    const { data: cmRows } = await supabase
+      .from("note_comments")
+      .select("unit_note_id")
+      .in("unit_note_id", noteIds);
+    for (const c of cmRows ?? []) {
+      commentCountByNote[c.unit_note_id] = (commentCountByNote[c.unit_note_id] ?? 0) + 1;
+    }
+  }
+
   res.json((rows ?? []).map(r => ({
     ...r,
     email: userInfo[r.user_id]?.email ?? null,
     first_name: userInfo[r.user_id]?.first_name ?? null,
     full_name: userInfo[r.user_id]?.full_name ?? null,
+    reactions: reactionsByNote[r.id] ?? [],
+    comment_count: commentCountByNote[r.id] ?? 0,
   })));
 });
 
@@ -888,7 +977,10 @@ app.post("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req
     email: u?.user?.email ?? null,
     first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
     full_name: u?.user?.user_metadata?.full_name ?? null,
+    reactions: [],
+    comment_count: 0,
   });
+  logUserActivity(req.user.id);
 });
 
 // DELETE /api/unit-notes/:id — delete a unit note (author only)
@@ -994,6 +1086,299 @@ app.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
 
   console.log(`[invite] accepted — user ${req.user.id} joined notebook ${invite.notebook_id}`);
   res.json({ notebook_id: invite.notebook_id, title: invite.notebooks?.title });
+});
+
+// ── Activity logging helper ───────────────────────────────────────────────
+// Bumps the user's daily_activity counter for today (server-local date).
+// Fire-and-forget — never blocks the request.
+async function logUserActivity(userId) {
+  if (!userId) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("id, activity_count")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .maybeSingle();
+    if (existing) {
+      await supabase
+        .from("daily_activity")
+        .update({ activity_count: (existing.activity_count ?? 0) + 1 })
+        .eq("id", existing.id);
+    } else {
+      await supabase
+        .from("daily_activity")
+        .insert({ user_id: userId, date: today, activity_count: 1 });
+    }
+  } catch (err) {
+    console.error("logUserActivity error:", err.message);
+  }
+}
+
+// ── Activity heatmap ──────────────────────────────────────────────────────
+// GET /api/user/activity-heatmap — last 365 days of activity for current user
+app.get("/api/user/activity-heatmap", requireAuth, async (req, res) => {
+  const start = new Date();
+  start.setDate(start.getDate() - 365);
+  const startStr = start.toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("daily_activity")
+    .select("date, activity_count")
+    .eq("user_id", req.user.id)
+    .gte("date", startStr)
+    .order("date", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json((data ?? []).map(r => ({ date: r.date, count: r.activity_count ?? 0 })));
+});
+
+// ── Reactions on unit notes ───────────────────────────────────────────────
+// POST /api/unit-notes/:id/react — body: { emoji }
+app.post("/api/unit-notes/:id/react", requireAuth, async (req, res) => {
+  const { emoji } = req.body;
+  if (typeof emoji !== "string" || !emoji.trim()) {
+    return res.status(400).json({ error: "emoji is required" });
+  }
+  // Verify access: caller must be a member of the note's notebook
+  const { data: note } = await supabase
+    .from("unit_notes")
+    .select("id, notebook_id")
+    .eq("id", req.params.id)
+    .maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members")
+    .select("role")
+    .eq("notebook_id", note.notebook_id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
+  const { data, error } = await supabase
+    .from("note_reactions")
+    .upsert(
+      { unit_note_id: req.params.id, user_id: req.user.id, emoji: emoji.trim() },
+      { onConflict: "unit_note_id,user_id,emoji" }
+    )
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// DELETE /api/unit-notes/:id/react/:emoji — remove user's reaction
+app.delete("/api/unit-notes/:id/react/:emoji", requireAuth, async (req, res) => {
+  const emoji = decodeURIComponent(req.params.emoji);
+  const { error } = await supabase
+    .from("note_reactions")
+    .delete()
+    .eq("unit_note_id", req.params.id)
+    .eq("user_id", req.user.id)
+    .eq("emoji", emoji);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// GET /api/unit-notes/:id/reactions — list reactions for a note (with names)
+app.get("/api/unit-notes/:id/reactions", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("note_reactions")
+    .select("id, emoji, user_id, created_at")
+    .eq("unit_note_id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const userIds = [...new Set((data ?? []).map(r => r.user_id))];
+  const info = {};
+  await Promise.all(userIds.map(async (uid) => {
+    const { data: u } = await supabase.auth.admin.getUserById(uid);
+    info[uid] = {
+      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      email: u?.user?.email ?? null,
+    };
+  }));
+  res.json((data ?? []).map(r => ({
+    ...r,
+    first_name: info[r.user_id]?.first_name ?? null,
+    email: info[r.user_id]?.email ?? null,
+  })));
+});
+
+// ── Comments on unit notes ────────────────────────────────────────────────
+// POST /api/unit-notes/:id/comments — body: { content }
+app.post("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
+  const { content } = req.body;
+  if (typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({ error: "content is required" });
+  }
+  // Membership check via the note's notebook
+  const { data: note } = await supabase
+    .from("unit_notes")
+    .select("id, notebook_id")
+    .eq("id", req.params.id)
+    .maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members")
+    .select("role")
+    .eq("notebook_id", note.notebook_id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
+  const trimmed = content.trim().slice(0, 2000);
+  const { data, error } = await supabase
+    .from("note_comments")
+    .insert({ unit_note_id: req.params.id, user_id: req.user.id, content: trimmed })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { data: u } = await supabase.auth.admin.getUserById(req.user.id);
+  res.status(201).json({
+    ...data,
+    first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+    full_name: u?.user?.user_metadata?.full_name ?? null,
+    email: u?.user?.email ?? null,
+  });
+});
+
+// GET /api/unit-notes/:id/comments — list comments with user info
+app.get("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("note_comments")
+    .select("id, user_id, content, created_at")
+    .eq("unit_note_id", req.params.id)
+    .order("created_at", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const userIds = [...new Set((data ?? []).map(r => r.user_id))];
+  const info = {};
+  await Promise.all(userIds.map(async (uid) => {
+    const { data: u } = await supabase.auth.admin.getUserById(uid);
+    info[uid] = {
+      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      full_name: u?.user?.user_metadata?.full_name ?? null,
+      email: u?.user?.email ?? null,
+    };
+  }));
+  res.json((data ?? []).map(r => ({
+    ...r,
+    first_name: info[r.user_id]?.first_name ?? null,
+    full_name: info[r.user_id]?.full_name ?? null,
+    email: info[r.user_id]?.email ?? null,
+  })));
+});
+
+// DELETE /api/note-comments/:id — delete a comment (author only)
+app.delete("/api/note-comments/:id", requireAuth, async (req, res) => {
+  const { data: c } = await supabase
+    .from("note_comments")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!c) return res.status(403).json({ error: "Not found or not authorized" });
+  const { error } = await supabase.from("note_comments").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// ── Due date and status on notebooks ──────────────────────────────────────
+// PATCH /api/notebooks/:id/due-date — body: { due_date }
+app.patch("/api/notebooks/:id/due-date", requireAuth, requireMember, async (req, res) => {
+  const { due_date } = req.body;
+  // Allow null to clear, otherwise must be a valid ISO string
+  if (due_date !== null && (typeof due_date !== "string" || isNaN(Date.parse(due_date)))) {
+    return res.status(400).json({ error: "due_date must be an ISO date string or null" });
+  }
+  const { data, error } = await supabase
+    .from("notebooks")
+    .update({ due_date })
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// PATCH /api/notebooks/:id/status — body: { status }
+app.patch("/api/notebooks/:id/status", requireAuth, requireMember, async (req, res) => {
+  const { status } = req.body;
+  const VALID = ["in_progress", "done", "need_help"];
+  if (!VALID.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${VALID.join(", ")}` });
+  }
+  const { data, error } = await supabase
+    .from("notebooks")
+    .update({ status })
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// ── Explain Differently ───────────────────────────────────────────────────
+// POST /api/notebooks/:id/explain-differently — body: { messageId, level }
+app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, async (req, res) => {
+  const { messageId, level } = req.body;
+  const VALID = ["simpler", "more_advanced", "different_angle"];
+  if (!VALID.includes(level)) {
+    return res.status(400).json({ error: `level must be one of: ${VALID.join(", ")}` });
+  }
+  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Fetch the original assistant message
+  const { data: orig } = await supabase
+    .from("messages")
+    .select("id, role, content")
+    .eq("id", messageId)
+    .eq("notebook_id", req.params.id)
+    .maybeSingle();
+  if (!orig) return res.status(404).json({ error: "Original message not found" });
+
+  // Fetch notes for context
+  const { data: notes } = await supabase
+    .from("notes")
+    .select("title, content")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  const { data: nb } = await supabase
+    .from("notebooks")
+    .select("title, topic")
+    .eq("id", req.params.id)
+    .single();
+
+  const notesContext = (notes ?? [])
+    .map(n => `Note: ${n.title || "Untitled"}\n${n.content || "[file attachment — no text content]"}`)
+    .join("\n\n---\n\n");
+
+  const directives = {
+    simpler: "Re-explain the previous answer as if I'm a 10-year-old. Use simple words and friendly analogies. No jargon.",
+    more_advanced: "Re-explain the previous answer at a more rigorous, technical level. Use precise terminology and dive deeper into mechanisms.",
+    different_angle: "Re-explain the previous answer from a different perspective or angle — try a different mental model or framing.",
+  };
+
+  const anthropic = new Anthropic({ apiKey: claudeKey });
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: `You are Derek, a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer using the notes below. Write in plain conversational text — no markdown, no asterisks, no headers.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      messages: [
+        { role: "assistant", content: orig.content },
+        { role: "user", content: directives[level] },
+      ],
+    });
+    const answer = message.content.find(b => b.type === "text")?.text ?? "";
+    res.json({ answer });
+  } catch (err) {
+    if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── OTP helpers ──────────────────────────────────────────────────────────────

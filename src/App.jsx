@@ -17,6 +17,30 @@ function timeAgo(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+const REACTION_EMOJIS = ["👍", "✅", "🔥", "❤️", "😂", "🚀"];
+
+function formatDueDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function dueDateTone(iso) {
+  if (!iso) return null;
+  const now = Date.now();
+  const due = new Date(iso).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (due < now) return { color: "#F87171", label: "Overdue", tone: "red" };
+  if (due - now <= 3 * dayMs) return { color: "#FBBF24", label: "Due soon", tone: "amber" };
+  return { color: "#34D399", label: "Upcoming", tone: "green" };
+}
+
+const STATUS_META = {
+  in_progress: { label: "In Progress", color: "#60A5FA", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.32)" },
+  done:        { label: "Done",        color: "#34D399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.32)" },
+  need_help:   { label: "Need Help",   color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.32)" },
+};
+
 const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
@@ -90,7 +114,7 @@ function AvatarStack({ names }) {
   );
 }
 
-function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
+function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChange }) {
   const [hovered, setHovered] = useState(false);
   const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
   return (
@@ -149,15 +173,22 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
         </button>
       )}
 
-      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{
-          fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em",
-          color: t.hue, textTransform: "uppercase",
-          fontFamily: FONT,
-        }}>
-          {nb.notes} {nb.notes === 1 ? "note" : "notes"}
+      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <div style={{
+            fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em",
+            color: t.hue, textTransform: "uppercase",
+            fontFamily: FONT,
+          }}>
+            {nb.notes} {nb.notes === 1 ? "note" : "notes"}
+          </div>
+          {onStatusChange && (
+            <span onClick={e => e.stopPropagation()}>
+              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onStatusChange(s)} />
+            </span>
+          )}
         </div>
-        <div style={{ fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
+        <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.4))", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
       </div>
       <div style={{
         position: "relative",
@@ -179,7 +210,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <AvatarStack names={nb.contributors} />
-          <span style={{ fontSize: 11.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT }}>
+          <span style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.4))", fontFamily: FONT }}>
             {nb.contributors.length} {nb.contributors.length === 1 ? "member" : "members"}
           </span>
         </div>
@@ -190,6 +221,19 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
           transition: "opacity 0.2s, transform 0.2s",
         }}>Open →</div>
       </div>
+      {nb.due_date && (
+        <div style={{
+          position: "absolute", top: 12, right: starred || hovered ? 36 : 12,
+          fontSize: 10.5, fontWeight: 600,
+          color: dueDateTone(nb.due_date).color,
+          background: `${dueDateTone(nb.due_date).color}1A`,
+          border: `1px solid ${dueDateTone(nb.due_date).color}55`,
+          padding: "2px 8px", borderRadius: 999, fontFamily: FONT,
+          transition: "right 0.18s",
+        }}>
+          Due {formatDueDate(nb.due_date)}
+        </div>
+      )}
     </div>
   );
 }
@@ -767,7 +811,61 @@ function TheForge({ nb, onClose, onToast }) {
   );
 }
 
-function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
+function renderMessageText(text, isOwn) {
+  // Highlight @mentions inline (e.g. "@Alice ...")
+  const parts = String(text ?? "").split(/(@[A-Za-z][A-Za-z0-9_]*)/g);
+  return parts.map((p, i) => {
+    if (/^@[A-Za-z][A-Za-z0-9_]*$/.test(p)) {
+      return (
+        <span key={i} style={{
+          color: isOwn ? "#F5F5FA" : "#C4B5FD",
+          fontWeight: 600,
+          background: isOwn ? "rgba(255,255,255,0.18)" : "rgba(167,139,250,0.16)",
+          padding: "0 4px", borderRadius: 4,
+        }}>{p}</span>
+      );
+    }
+    return <span key={i}>{p}</span>;
+  });
+}
+
+function SourcesPanel({ sources }) {
+  const [open, setOpen] = useState(false);
+  if (!sources || sources.length === 0) return null;
+  return (
+    <div style={{ marginTop: 6, marginLeft: 2 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: "transparent",
+          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+          borderRadius: 8, padding: "0 10px", height: 24,
+          fontSize: 11, fontWeight: 600, fontFamily: FONT,
+          color: "var(--t3, rgba(245,245,250,0.5))",
+          cursor: "pointer",
+          display: "inline-flex", alignItems: "center", gap: 4,
+        }}
+      >📎 {sources.length} source{sources.length === 1 ? "" : "s"} {open ? "▾" : "▸"}</button>
+      {open && (
+        <div style={{
+          marginTop: 6, padding: "8px 10px",
+          background: "var(--s2, #1C1C2A)",
+          border: "1px solid var(--border, rgba(255,255,255,0.07))",
+          borderRadius: 8, maxWidth: 360,
+        }}>
+          {sources.map((s, i) => (
+            <div key={i} style={{
+              fontSize: 11.5, color: "var(--t2, rgba(245,245,250,0.7))",
+              fontFamily: FONT, padding: "2px 0",
+            }}>• {s}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueDate, onSetStatus }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -780,7 +878,12 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
   const [members, setMembers]       = useState([]);
   const [showForge, setShowForge]   = useState(false);
   const [showNotes, setShowNotes]   = useState(false);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [explainLevel, setExplainLevel] = useState(null); // { messageId } showing submenu
+  const [explainingId, setExplainingId] = useState(null);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
   // Prefer the class-assigned color when available, otherwise fall back to
   // the deterministic per-notebook tint so other views still render nicely.
   const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
@@ -791,9 +894,19 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
 
   useEffect(() => {
     api.getMessages(nb.id)
-      .then(rows => {
+      .then(async (rows) => {
         if (rows.length > 0) {
-          setMessages(rows.map(r => ({ id: r.id, role: r.role, text: r.content, createdBy: r.created_by })));
+          // For prior assistant messages, derive sources by matching known note titles against the content
+          let notesByTitle = [];
+          try { notesByTitle = await api.listNotes(nb.id); } catch { /* ignore */ }
+          setMessages(rows.map(r => ({
+            id: r.id, role: r.role, text: r.content, createdBy: r.created_by,
+            sources: r.role === "assistant"
+              ? notesByTitle
+                  .filter(n => n.title && r.content.toLowerCase().includes(n.title.toLowerCase()))
+                  .map(n => n.title)
+              : undefined,
+          })));
         } else {
           setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
         }
@@ -848,6 +961,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
     if (!text || loading) return;
 
     setQuery("");
+    setMentionOpen(false);
     setLoading(true);
     setMessages(m => [...m, { role: "user", text, createdBy: currentUserId }]);
     api.addMessage(nb.id, "user", text).catch(err => console.error("addMessage failed (user):", err));
@@ -855,8 +969,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
-      setMessages(m => [...m, { role: "assistant", text: data.answer, createdBy: null }]);
-      api.addMessage(nb.id, "assistant", data.answer).catch(err => console.error("addMessage failed (assistant):", err));
+      const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(err => { console.error("addMessage failed (assistant):", err); return null; });
+      setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
     } catch (err) {
       setMessages(m => [...m, {
         role: "assistant",
@@ -867,6 +981,56 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
       setLoading(false);
     }
   }
+
+  function onQueryChange(e) {
+    const value = e.target.value;
+    setQuery(value);
+    // Detect @mention pattern: word starting with @ at cursor
+    const caret = e.target.selectionStart ?? value.length;
+    const upToCaret = value.slice(0, caret);
+    const m = upToCaret.match(/(?:^|\s)@([A-Za-z0-9_]*)$/);
+    if (m) {
+      setMentionQuery(m[1].toLowerCase());
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+    }
+  }
+
+  function pickMention(name) {
+    if (!inputRef.current) return;
+    const el = inputRef.current;
+    const caret = el.selectionStart ?? query.length;
+    const before = query.slice(0, caret).replace(/@([A-Za-z0-9_]*)$/, `@${name} `);
+    const after = query.slice(caret);
+    const next = before + after;
+    setQuery(next);
+    setMentionOpen(false);
+    setTimeout(() => { el.focus(); el.selectionStart = el.selectionEnd = before.length; }, 0);
+  }
+
+  async function doExplainDifferently(messageId, level) {
+    setExplainLevel(null);
+    setExplainingId(messageId);
+    try {
+      const data = await api.explainDifferently(nb.id, messageId, level);
+      const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(() => null);
+      setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null }]);
+    } catch (err) {
+      setMessages(m => [...m, { role: "assistant", text: `Couldn't re-explain: ${err.message}`, isError: true }]);
+    } finally {
+      setExplainingId(null);
+    }
+  }
+
+  const mentionCandidates = mentionOpen
+    ? members
+        .filter(m => {
+          const name = (m.first_name || m.email?.split("@")[0] || "").toLowerCase();
+          return name && name !== (members.find(x => x.user_id === currentUserId)?.first_name || "").toLowerCase() && name.startsWith(mentionQuery);
+        })
+        .slice(0, 6)
+    : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden" }}>
@@ -977,7 +1141,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
           onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
         >🗑</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginLeft: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginLeft: 4, flex: 1 }}>
           <div style={{
             width: 8, height: 8, borderRadius: 2,
             background: `linear-gradient(135deg, ${t.hue}, ${t.deep})`,
@@ -985,17 +1149,25 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
           }} />
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontSize: 15, fontWeight: 600, color: "#F5F5FA",
+              fontSize: 15, fontWeight: 600, color: "var(--t1, #F5F5FA)",
               fontFamily: FONT, letterSpacing: "-0.018em",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>{nb.title}</div>
             {nb.topic && (
               <div style={{
-                fontSize: 11.5, color: "rgba(245,245,250,0.5)",
+                fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.5))",
                 fontFamily: FONT, marginTop: 1,
               }}>{nb.topic}</div>
             )}
           </div>
+          {onSetStatus && (
+            <span style={{ marginLeft: 6 }}>
+              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="md" />
+            </span>
+          )}
+          {onSetDueDate && (
+            <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} />
+          )}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <button
@@ -1066,7 +1238,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
       </div>
 
       {/* Chat + Forge split */}
-      <div style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
+      <div className="notebook-split" style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
           {/* Message list */}
           <div style={{
@@ -1125,14 +1297,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
                         ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
-                        : "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "#F5F5FA",
+                        : "linear-gradient(180deg, var(--s1, #14141F) 0%, var(--s2, #1C1C2A) 100%)",
+                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--t1, #F5F5FA)",
                     borderRadius: 14,
                     padding: "11px 14px",
                     fontSize: 14, lineHeight: 1.6,
                     fontFamily: FONT,
                     border: !isOwn
-                      ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "rgba(255,255,255,0.08)"}`
+                      ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border, rgba(255,255,255,0.08))"}`
                       : "none",
                     boxShadow: isOwn
                       ? "0 4px 14px rgba(167,139,250,0.28)"
@@ -1143,8 +1315,53 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
                       ? "slideInUp 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both"
                       : "slideInLeft 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
                   }}>
-                    {m.text}
+                    {renderMessageText(m.text, isOwn)}
                   </div>
+                  {/* Sources display under Derek's message */}
+                  {isAssistant && !m.isError && m.sources && m.sources.length > 0 && (
+                    <SourcesPanel sources={m.sources} />
+                  )}
+                  {/* Explain Differently controls */}
+                  {isAssistant && !m.isError && m.id && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, marginLeft: 2 }}>
+                      <button
+                        onClick={() => setExplainLevel(explainLevel === m.id ? null : m.id)}
+                        disabled={explainingId !== null}
+                        title="Explain differently"
+                        style={{
+                          background: explainLevel === m.id ? "rgba(167,139,250,0.14)" : "transparent",
+                          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                          borderRadius: 8, padding: "0 10px", height: 26,
+                          fontSize: 11, fontWeight: 600, fontFamily: FONT,
+                          color: "var(--t2, rgba(245,245,250,0.65))",
+                          cursor: explainingId !== null ? "not-allowed" : "pointer",
+                          opacity: explainingId !== null ? 0.5 : 1,
+                          display: "flex", alignItems: "center", gap: 4,
+                        }}
+                      >🔄 {explainingId === m.id ? "Re-explaining…" : "Explain differently"}</button>
+                      {explainLevel === m.id && (
+                        <>
+                          {[
+                            { id: "simpler", label: "Simpler" },
+                            { id: "more_advanced", label: "More advanced" },
+                            { id: "different_angle", label: "Different angle" },
+                          ].map(l => (
+                            <button
+                              key={l.id}
+                              onClick={() => doExplainDifferently(m.id, l.id)}
+                              style={{
+                                background: "var(--s2, #1C1C2A)",
+                                border: "1px solid rgba(167,139,250,0.32)",
+                                borderRadius: 8, padding: "0 10px", height: 26,
+                                fontSize: 11, fontWeight: 600, fontFamily: FONT,
+                                color: "#C4B5FD", cursor: "pointer",
+                              }}
+                            >{l.label}</button>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1189,22 +1406,62 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
 
           {/* Input row */}
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
+            {mentionOpen && mentionCandidates.length > 0 && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 6px)", left: 0,
+                background: "var(--s2, #1C1C2A)",
+                border: "1px solid var(--border, rgba(255,255,255,0.1))",
+                borderRadius: 10, padding: 4, zIndex: 50,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+                minWidth: 200,
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", padding: "6px 8px", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Mention a member
+                </div>
+                {mentionCandidates.map(m => {
+                  const name = m.first_name || m.email?.split("@")[0] || "Member";
+                  const tnt = tintFor(m.email ?? name);
+                  return (
+                    <div
+                      key={m.user_id}
+                      onMouseDown={e => { e.preventDefault(); pickMention(name); }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                        fontSize: 13, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <div style={{
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: `linear-gradient(135deg, ${tnt.hue}, ${tnt.deep})`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 10, fontWeight: 700, color: "#fff",
+                      }}>{name[0]?.toUpperCase()}</div>
+                      {name}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <input
+              ref={inputRef}
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={onQueryChange}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && ask()}
-              placeholder={`Ask anything about ${nb.title}…`}
+              placeholder={`Ask anything about ${nb.title}… (use @ to mention)`}
               disabled={loading}
               style={{
-                flex: 1, background: "#14141F",
-                border: "1px solid rgba(255,255,255,0.09)",
+                flex: 1, background: "var(--s1, #14141F)",
+                border: "1px solid var(--border, rgba(255,255,255,0.09))",
                 borderRadius: 12, padding: "0 16px", height: 48,
-                color: "#F5F5FA", fontSize: 14, fontFamily: FONT,
+                color: "var(--t1, #F5F5FA)", fontSize: 14, fontFamily: FONT,
                 outline: "none", transition: "all 0.18s",
                 letterSpacing: "-0.01em",
               }}
               onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              onBlur={e => { e.target.style.borderColor = "var(--border, rgba(255,255,255,0.09))"; e.target.style.boxShadow = "none"; }}
             />
             <button
               onClick={ask}
@@ -1245,6 +1502,295 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
           <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
         )}
       </div>
+    </div>
+  );
+}
+
+function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
+  const author = note.first_name || note.full_name || note.email?.split("@")[0] || "Member";
+  const mine = note.user_id === currentUserId;
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [reactionUsers, setReactionUsers] = useState(null); // hover tooltip cache
+
+  // Build aggregated reaction counts from note.reactions = [{ emoji, user_id }]
+  const reactionMap = {};
+  for (const r of note.reactions ?? []) {
+    if (!reactionMap[r.emoji]) reactionMap[r.emoji] = { emoji: r.emoji, count: 0, mine: false, userIds: [] };
+    reactionMap[r.emoji].count++;
+    reactionMap[r.emoji].userIds.push(r.user_id);
+    if (r.user_id === currentUserId) reactionMap[r.emoji].mine = true;
+  }
+  const reactionList = Object.values(reactionMap);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  async function toggleReaction(emoji) {
+    const existing = (note.reactions ?? []).find(r => r.user_id === currentUserId && r.emoji === emoji);
+    const next = existing
+      ? (note.reactions ?? []).filter(r => !(r.user_id === currentUserId && r.emoji === emoji))
+      : [...(note.reactions ?? []), { emoji, user_id: currentUserId }];
+    onChange({ reactions: next });
+    try {
+      if (existing) await api.removeReaction(note.id, emoji);
+      else await api.addReaction(note.id, emoji);
+    } catch (err) {
+      console.error("reaction toggle failed:", err);
+      onChange({ reactions: note.reactions ?? [] });
+    }
+  }
+
+  async function loadComments() {
+    setCommentsOpen(true);
+    if (commentsLoaded) return;
+    try {
+      const rows = await api.getNoteComments(note.id);
+      setComments(rows);
+      setCommentsLoaded(true);
+    } catch (err) {
+      console.error(err);
+      setCommentsLoaded(true);
+    }
+  }
+
+  async function addComment(e) {
+    e.preventDefault();
+    const text = commentDraft.trim();
+    if (!text || postingComment) return;
+    setPostingComment(true);
+    try {
+      const c = await api.addNoteComment(note.id, text);
+      setComments(cs => [...cs, c]);
+      setCommentDraft("");
+      onChange({ comment_count: (note.comment_count ?? 0) + 1 });
+    } catch (err) {
+      console.error(err);
+    }
+    setPostingComment(false);
+  }
+
+  async function deleteComment(id) {
+    const prev = comments;
+    setComments(cs => cs.filter(c => c.id !== id));
+    onChange({ comment_count: Math.max(0, (note.comment_count ?? 0) - 1) });
+    try { await api.deleteNoteComment(id); }
+    catch (err) {
+      console.error(err);
+      setComments(prev);
+      onChange({ comment_count: note.comment_count });
+    }
+  }
+
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px",
+      background: "rgba(255,255,255,0.025)",
+      border: "1px solid var(--border, rgba(255,255,255,0.05))",
+      borderRadius: 10,
+      animation: "fadeIn 0.18s ease",
+    }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        <Avatar name={note.email ?? author} size={26} seed={note.email ?? author} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT }}>
+              {mine ? "You" : author}
+            </span>
+            <span style={{ fontSize: 10.5, color: "var(--t4, rgba(245,245,250,0.35))", fontFamily: MONO }}>
+              {timeAgo(note.created_at)}
+            </span>
+          </div>
+          <div style={{
+            fontSize: 13, color: "var(--t2, rgba(245,245,250,0.85))",
+            fontFamily: FONT, lineHeight: 1.6, whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}>{note.content}</div>
+        </div>
+        {mine && (
+          <button
+            onClick={onDelete}
+            title="Delete note"
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              padding: "2px 6px", fontSize: 12,
+              color: "var(--t4, rgba(245,245,250,0.3))",
+              transition: "color 0.15s, background 0.15s",
+              borderRadius: 6, height: 24, flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--t4, rgba(245,245,250,0.3))"; e.currentTarget.style.background = "transparent"; }}
+          >✕</button>
+        )}
+      </div>
+
+      {/* Reactions row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", paddingLeft: 36 }}>
+        {reactionList.map(r => (
+          <button
+            key={r.emoji}
+            onClick={() => toggleReaction(r.emoji)}
+            onMouseEnter={async () => {
+              if (reactionUsers && reactionUsers[r.emoji]) return;
+              try {
+                const rows = await api.getNoteReactions(note.id);
+                const byEmoji = {};
+                for (const row of rows) {
+                  const name = row.user_id === currentUserId ? "You" : (row.first_name || row.email?.split("@")[0] || "Member");
+                  (byEmoji[row.emoji] ??= []).push(name);
+                }
+                setReactionUsers(byEmoji);
+              } catch { /* ignore */ }
+            }}
+            title={(reactionUsers?.[r.emoji] ?? []).join(", ")}
+            style={{
+              background: r.mine ? "rgba(167,139,250,0.18)" : "var(--s2, rgba(255,255,255,0.04))",
+              border: `1px solid ${r.mine ? "rgba(167,139,250,0.45)" : "var(--border, rgba(255,255,255,0.07))"}`,
+              borderRadius: 999, padding: "1px 8px", height: 22,
+              fontSize: 12, fontFamily: FONT,
+              color: r.mine ? "#C4B5FD" : "var(--t2, rgba(245,245,250,0.7))",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            <span>{r.emoji}</span>
+            <span style={{ fontWeight: 600 }}>{r.count}</span>
+          </button>
+        ))}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setPickerOpen(o => !o)}
+            title="Add reaction"
+            style={{
+              background: "transparent",
+              border: "1px dashed var(--border, rgba(255,255,255,0.12))",
+              borderRadius: 999, padding: "1px 8px", height: 22,
+              fontSize: 12, fontFamily: FONT,
+              color: "var(--t3, rgba(245,245,250,0.5))", cursor: "pointer",
+            }}
+          >+ 😊</button>
+          {pickerOpen && (
+            <>
+              <div onClick={() => setPickerOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
+              <div onClick={e => e.stopPropagation()} style={{
+                position: "absolute", top: "calc(100% + 4px)", left: 0,
+                background: "var(--s2, #1C1C2A)",
+                border: "1px solid var(--border, rgba(255,255,255,0.12))",
+                borderRadius: 10, padding: 6, zIndex: 110,
+                display: "flex", gap: 4,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+              }}>
+                {REACTION_EMOJIS.map(e => (
+                  <button
+                    key={e}
+                    onClick={() => { toggleReaction(e); setPickerOpen(false); }}
+                    style={{
+                      background: "transparent", border: "none", cursor: "pointer",
+                      fontSize: 16, padding: "4px 6px", borderRadius: 6,
+                    }}
+                    onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                    onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; }}
+                  >{e}</button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <button
+          onClick={() => commentsOpen ? setCommentsOpen(false) : loadComments()}
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.5))",
+            fontFamily: FONT, padding: "1px 4px", fontWeight: 600,
+            marginLeft: 4,
+          }}
+        >
+          💬 {(note.comment_count ?? 0) > 0 ? `${note.comment_count} comment${note.comment_count === 1 ? "" : "s"}` : "Comment"}
+        </button>
+      </div>
+
+      {commentsOpen && (
+        <div style={{
+          marginLeft: 36, padding: "8px 10px",
+          background: "var(--bg, rgba(0,0,0,0.15))",
+          border: "1px solid var(--border, rgba(255,255,255,0.05))",
+          borderRadius: 8,
+        }}>
+          {!commentsLoaded ? (
+            <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT }}>Loading…</div>
+          ) : (
+            <>
+              {comments.map(c => {
+                const cAuthor = c.first_name || c.full_name || c.email?.split("@")[0] || "Member";
+                const cMine = c.user_id === currentUserId;
+                return (
+                  <div key={c.id} style={{
+                    display: "flex", gap: 8, padding: "6px 0",
+                    borderBottom: "1px solid var(--border, rgba(255,255,255,0.04))",
+                  }}>
+                    <Avatar name={c.email ?? cAuthor} size={20} seed={c.email ?? cAuthor} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t1)", fontFamily: FONT }}>
+                          {cMine ? "You" : cAuthor}
+                        </span>
+                        <span style={{ fontSize: 10, color: "var(--t4)", fontFamily: MONO }}>
+                          {timeAgo(c.created_at)}
+                        </span>
+                      </div>
+                      <div style={{
+                        fontSize: 12.5, color: "var(--t2)", fontFamily: FONT,
+                        lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                      }}>{c.content}</div>
+                    </div>
+                    {cMine && (
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        title="Delete comment"
+                        style={{
+                          background: "none", border: "none", cursor: "pointer",
+                          fontSize: 11, color: "var(--t4)", padding: "0 4px", borderRadius: 4,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "var(--t4)"; }}
+                      >✕</button>
+                    )}
+                  </div>
+                );
+              })}
+              <form onSubmit={addComment} style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                <input
+                  value={commentDraft}
+                  onChange={e => setCommentDraft(e.target.value)}
+                  placeholder="Add a comment…"
+                  maxLength={2000}
+                  style={{
+                    flex: 1, background: "var(--s1, #0F0F18)",
+                    border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                    borderRadius: 7, padding: "0 10px", height: 30,
+                    color: "var(--t1, #F5F5FA)", fontSize: 12, fontFamily: FONT,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={!commentDraft.trim() || postingComment}
+                  style={{
+                    background: commentDraft.trim() && !postingComment
+                      ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`
+                      : "var(--s2, #1C1C2A)",
+                    border: "none", borderRadius: 7, padding: "0 10px", height: 30,
+                    color: "#fff", fontSize: 11.5, fontWeight: 600,
+                    cursor: commentDraft.trim() && !postingComment ? "pointer" : "not-allowed",
+                    fontFamily: FONT,
+                    opacity: commentDraft.trim() && !postingComment ? 1 : 0.55,
+                  }}
+                >{postingComment ? "…" : "Post"}</button>
+              </form>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1392,55 +1938,16 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
           }}>
             No notes yet — be the first to share a thought with your group.
           </div>
-        ) : notes.map(n => {
-          const author = n.first_name || n.full_name || n.email?.split("@")[0] || "Member";
-          const mine = n.user_id === currentUserId;
-          return (
-            <div key={n.id} style={{
-              display: "flex", gap: 10, padding: "10px 12px",
-              background: "rgba(255,255,255,0.025)",
-              border: "1px solid rgba(255,255,255,0.05)",
-              borderRadius: 10,
-              animation: "fadeIn 0.18s ease",
-            }}>
-              <Avatar name={n.email ?? author} size={26} seed={n.email ?? author} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 6, marginBottom: 3,
-                }}>
-                  <span style={{
-                    fontSize: 12.5, fontWeight: 600, color: "#F5F5FA",
-                    fontFamily: FONT, letterSpacing: 0,
-                  }}>{mine ? "You" : author}</span>
-                  <span style={{
-                    fontSize: 10.5, color: "rgba(245,245,250,0.35)",
-                    fontFamily: MONO,
-                  }}>{timeAgo(n.created_at)}</span>
-                </div>
-                <div style={{
-                  fontSize: 13, color: "rgba(245,245,250,0.85)",
-                  fontFamily: FONT, lineHeight: 1.6, whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}>{n.content}</div>
-              </div>
-              {mine && (
-                <button
-                  onClick={() => remove(n.id)}
-                  title="Delete note"
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    padding: "2px 6px", fontSize: 12,
-                    color: "rgba(245,245,250,0.3)",
-                    transition: "color 0.15s, background 0.15s",
-                    borderRadius: 6, height: 24, flexShrink: 0,
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.3)"; e.currentTarget.style.background = "transparent"; }}
-                >✕</button>
-              )}
-            </div>
-          );
-        })}
+        ) : notes.map(n => (
+          <UnitNoteRow
+            key={n.id}
+            note={n}
+            currentUserId={currentUserId}
+            tint={tint}
+            onDelete={() => remove(n.id)}
+            onChange={updated => setNotes(ns => ns.map(x => x.id === n.id ? { ...x, ...updated } : x))}
+          />
+        ))}
       </div>
     </div>
   );
@@ -1665,7 +2172,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
   );
 }
 
-function UnitRow({ unit, color, onClick }) {
+function UnitRow({ unit, color, onClick, onStatusChange }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -1688,18 +2195,33 @@ function UnitRow({ unit, color, onClick }) {
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 13.5, fontWeight: 500, color: "#F5F5FA", fontFamily: FONT,
+          fontSize: 13.5, fontWeight: 500, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           letterSpacing: "-0.01em",
+          display: "flex", alignItems: "center", gap: 8,
         }}>
-          {unit.title}
+          <span>{unit.title}</span>
+          {unit.due_date && (
+            <span style={{
+              fontSize: 10.5, fontWeight: 600,
+              color: dueDateTone(unit.due_date).color,
+              background: `${dueDateTone(unit.due_date).color}1A`,
+              border: `1px solid ${dueDateTone(unit.due_date).color}55`,
+              padding: "1px 7px", borderRadius: 999,
+            }}>Due {formatDueDate(unit.due_date)}</span>
+          )}
         </div>
         {unit.topic && (
-          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.48)", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
+          <div style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.48))", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
         )}
       </div>
+      {onStatusChange && (
+        <span onClick={e => e.stopPropagation()} style={{ flexShrink: 0 }}>
+          <StatusPill status={unit.status ?? "in_progress"} onChange={s => onStatusChange(s)} />
+        </span>
+      )}
       <div style={{
-        fontSize: 11, color: "rgba(245,245,250,0.42)", fontFamily: FONT,
+        fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT,
         flexShrink: 0, padding: "2px 8px", background: "rgba(255,255,255,0.04)",
         borderRadius: 6, fontWeight: 500,
       }}>
@@ -1794,7 +2316,7 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
   );
 }
 
-function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor }) {
+function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
@@ -1972,7 +2494,13 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
           ) : (
             <div style={{ display: "flex", flexDirection: "column" }}>
               {units.map(unit => (
-                <UnitRow key={unit.id} unit={unit} color={t.hue} onClick={() => onOpenUnit(unit)} />
+                <UnitRow
+                  key={unit.id}
+                  unit={unit}
+                  color={t.hue}
+                  onClick={() => onOpenUnit(unit)}
+                  onStatusChange={onUnitStatusChange ? (status) => onUnitStatusChange(unit, status) : undefined}
+                />
               ))}
             </div>
           )}
@@ -2412,6 +2940,316 @@ function InviteLanding({ inviteInfo, onSignIn }) {
   );
 }
 
+function ActivityHeatmap({ data }) {
+  // Build 52 weeks × 7 days = 364 days grid ending today.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = [];
+  const map = new Map(data.map(d => [d.date, d.count]));
+  for (let i = 363; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    days.push({ date: key, label: d, count: map.get(key) ?? 0 });
+  }
+  // Group into weeks (columns of 7 days, starting Sunday)
+  const weeks = [];
+  let week = [];
+  // pad start so first column begins on Sunday
+  const firstDow = days[0].label.getDay();
+  for (let i = 0; i < firstDow; i++) week.push(null);
+  for (const d of days) {
+    week.push(d);
+    if (week.length === 7) { weeks.push(week); week = []; }
+  }
+  if (week.length) {
+    while (week.length < 7) week.push(null);
+    weeks.push(week);
+  }
+
+  function intensity(count) {
+    if (!count) return { bg: "var(--s2, #1C1C2A)", glow: 0 };
+    if (count < 2) return { bg: "rgba(167,139,250,0.25)", glow: 0 };
+    if (count < 4) return { bg: "rgba(167,139,250,0.45)", glow: 0.15 };
+    if (count < 6) return { bg: "rgba(167,139,250,0.7)",  glow: 0.25 };
+    return { bg: "#A78BFA", glow: 0.4 };
+  }
+
+  const todayKey = today.toISOString().slice(0, 10);
+  const total = data.reduce((acc, d) => acc + (d.count ?? 0), 0);
+  const activeDays = data.filter(d => (d.count ?? 0) > 0).length;
+  // Current streak (consecutive days ending today with activity)
+  let streak = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].count > 0) streak++; else break;
+  }
+
+  return (
+    <div style={{
+      background: "var(--s1, #14141F)",
+      border: "1px solid var(--border, rgba(255,255,255,0.07))",
+      borderRadius: 14,
+      padding: "18px 20px",
+      marginBottom: 32,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
+            🔥 Study Streak
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT, marginTop: 2 }}>
+            {streak} day{streak === 1 ? "" : "s"} · {total} activities · {activeDays} active days
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+          <span>Less</span>
+          {[0, 1, 3, 5, 7].map(c => {
+            const it = intensity(c);
+            return <div key={c} style={{ width: 10, height: 10, borderRadius: 2, background: it.bg }} />;
+          })}
+          <span>More</span>
+        </div>
+      </div>
+      <div className="heatmap-scroll" style={{ display: "flex", gap: 3, overflowX: "auto" }}>
+        {weeks.map((wk, wi) => (
+          <div key={wi} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {wk.map((d, di) => {
+              if (!d) return <div key={di} style={{ width: 10, height: 10 }} />;
+              const it = intensity(d.count);
+              const isToday = d.date === todayKey;
+              const dateLabel = d.label.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+              return (
+                <div
+                  key={di}
+                  title={`${d.count} activit${d.count === 1 ? "y" : "ies"} on ${dateLabel}`}
+                  style={{
+                    width: 10, height: 10, borderRadius: 2,
+                    background: it.bg,
+                    border: isToday ? "1px solid #C4B5FD" : "1px solid transparent",
+                    boxShadow: it.glow ? `0 0 6px rgba(167,139,250,${it.glow})` : "none",
+                    transition: "transform 0.12s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.6)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingDeadlines({ notebooks, classes, onOpen }) {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const in7 = new Date(now); in7.setDate(in7.getDate() + 7);
+  const upcoming = notebooks
+    .filter(n => {
+      if (!n.due_date) return false;
+      const d = new Date(n.due_date);
+      return d >= now && d <= in7;
+    })
+    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{
+        fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.5))",
+        fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
+        marginBottom: 10, display: "flex", alignItems: "center", gap: 8,
+      }}>
+        📅 Upcoming Deadlines
+        {upcoming.length > 0 && (
+          <span style={{
+            fontSize: 10.5, fontWeight: 700, color: "#A78BFA",
+            background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
+            padding: "1px 7px", borderRadius: 999,
+          }}>{upcoming.length}</span>
+        )}
+      </div>
+      {upcoming.length === 0 ? (
+        <div style={{
+          padding: "14px 16px",
+          background: "rgba(255,255,255,0.015)", border: "1px dashed var(--border, rgba(255,255,255,0.06))",
+          borderRadius: 10, color: "var(--t3, rgba(245,245,250,0.45))", fontSize: 12.5, fontFamily: FONT,
+        }}>
+          No deadlines in the next 7 days. Set a due date on a unit to see it here.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {upcoming.map(nb => {
+            const cls = classes.find(c => c.id === nb.class_id);
+            const t = classTint(cls?.color ?? nb.color);
+            const tone = dueDateTone(nb.due_date);
+            return (
+              <div
+                key={nb.id}
+                onClick={() => onOpen(nb, cls?.color)}
+                className="lift-card"
+                style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 14px",
+                  background: "var(--s1, #14141F)",
+                  border: "1px solid var(--border, rgba(255,255,255,0.06))",
+                  borderRadius: 10, cursor: "pointer",
+                }}
+              >
+                <div style={{
+                  width: 6, height: 32, borderRadius: 3,
+                  background: `linear-gradient(180deg, ${t.hue}, ${t.deep})`,
+                  flexShrink: 0,
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{nb.title}{cls?.title ? <span style={{ fontWeight: 400, color: "var(--t3)" }}> · {cls.title}</span> : null}</div>
+                  <div style={{ fontSize: 11.5, color: tone.color, fontFamily: FONT, marginTop: 2, fontWeight: 600 }}>
+                    Due {formatDueDate(nb.due_date)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ status, onChange, size = "sm" }) {
+  const [open, setOpen] = useState(false);
+  const meta = STATUS_META[status] ?? STATUS_META.in_progress;
+  const padding = size === "sm" ? "2px 8px" : "4px 10px";
+  const fontSize = size === "sm" ? 10.5 : 12;
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        style={{
+          background: meta.bg,
+          border: `1px solid ${meta.border}`,
+          borderRadius: 999, padding, fontSize, fontWeight: 600,
+          color: meta.color, fontFamily: FONT, cursor: "pointer",
+          letterSpacing: "0.02em",
+        }}
+      >{meta.label}</button>
+      {open && (
+        <>
+          <div onClick={e => { e.stopPropagation(); setOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
+          <div onClick={e => e.stopPropagation()} style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0,
+            background: "var(--s2, #1C1C2A)",
+            border: "1px solid var(--border, rgba(255,255,255,0.1))",
+            borderRadius: 10, padding: 4, zIndex: 110,
+            boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+            minWidth: 140,
+          }}>
+            {Object.entries(STATUS_META).map(([key, m]) => (
+              <div
+                key={key}
+                onClick={() => { onChange(key); setOpen(false); }}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 10px", borderRadius: 7, cursor: "pointer",
+                  fontSize: 12.5, color: m.color, fontFamily: FONT, fontWeight: 500,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <span>{m.label}</span>
+                {status === key && <span>✓</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DueDateButton({ dueDate, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(dueDate ? new Date(dueDate).toISOString().slice(0, 10) : "");
+  const tone = dueDateTone(dueDate);
+
+  async function save() {
+    const iso = draft ? new Date(draft + "T23:59:59").toISOString() : null;
+    await onChange(iso);
+    setOpen(false);
+  }
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Edit due date"
+        style={{
+          background: tone ? `${tone.color}1A` : "transparent",
+          border: `1px solid ${tone ? `${tone.color}55` : "var(--border, rgba(255,255,255,0.08))"}`,
+          borderRadius: 8, padding: "0 10px", height: 30, cursor: "pointer",
+          fontSize: 12, fontWeight: 600, fontFamily: FONT,
+          color: tone ? tone.color : "var(--t3, rgba(245,245,250,0.5))",
+          display: "flex", alignItems: "center", gap: 6,
+        }}
+      >
+        📅 {dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
+          <div onClick={e => e.stopPropagation()} style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0,
+            background: "var(--s2, #1C1C2A)",
+            border: "1px solid var(--border, rgba(255,255,255,0.12))",
+            borderRadius: 10, padding: 12, zIndex: 110,
+            boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+            minWidth: 240,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+              Due date
+            </div>
+            <input
+              type="date"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              style={{
+                width: "100%", background: "var(--bg, #0F0F18)",
+                border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                borderRadius: 8, padding: "0 10px", height: 36,
+                color: "var(--t1, #F5F5FA)", fontSize: 13, fontFamily: FONT,
+                outline: "none", colorScheme: "dark",
+              }}
+            />
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              {dueDate && (
+                <button
+                  onClick={async () => { setDraft(""); await onChange(null); setOpen(false); }}
+                  style={{
+                    background: "transparent", border: "1px solid var(--border)",
+                    borderRadius: 8, padding: "0 12px", height: 30,
+                    color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                  }}
+                >Clear</button>
+              )}
+              <button
+                onClick={save}
+                style={{
+                  flex: 1,
+                  background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                  border: "none", borderRadius: 8, padding: "0 12px", height: 30,
+                  color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+                }}
+              >Save</button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]
@@ -2460,6 +3298,17 @@ export default function Scholr() {
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
+  const [heatmap, setHeatmap] = useState([]);
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem("scholr-theme") ?? "dark"; }
+    catch { return "dark"; }
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem("scholr-theme", theme); } catch { /* ignore */ }
+  }, [theme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -2516,7 +3365,36 @@ export default function Scholr() {
       .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
     api.getNotifications().then(setNotifications).catch(console.error);
+    api.getActivityHeatmap().then(setHeatmap).catch(console.error);
   }, [user, authReady]);
+
+  function patchNotebookEverywhere(notebookId, patch) {
+    const apply = list => list.map(n => n.id === notebookId ? { ...n, ...patch } : n);
+    setNotebooks(apply);
+    setOwnedNotebooks(apply);
+    setSharedNotebooks(apply);
+    setStarredNotebooks(apply);
+    setClassUnitsCache(prev => {
+      const next = { ...prev };
+      for (const cid of Object.keys(next)) {
+        if (Array.isArray(next[cid])) next[cid] = apply(next[cid]);
+      }
+      return next;
+    });
+    setActiveNb(curr => curr && curr.id === notebookId ? { ...curr, ...patch } : curr);
+  }
+
+  async function handleSetStatus(nb, status) {
+    patchNotebookEverywhere(nb.id, { status });
+    try { await api.updateNotebookStatus(nb.id, status); }
+    catch (err) { console.error(err); setToast("Couldn't update status"); setTimeout(() => setToast(""), 2500); }
+  }
+
+  async function handleSetDueDate(nb, isoOrNull) {
+    patchNotebookEverywhere(nb.id, { due_date: isoOrNull });
+    try { await api.updateDueDate(nb.id, isoOrNull); }
+    catch (err) { console.error(err); setToast("Couldn't update due date"); setTimeout(() => setToast(""), 2500); }
+  }
 
   async function handleToggleClass(classId) {
     if (expandedClassId === classId) { setExpandedClassId(null); return; }
@@ -2698,16 +3576,21 @@ export default function Scholr() {
       )}
 
       {/* App shell */}
-      <div style={{
+      <div className={sidebarOpen ? "" : "mobile-hide-sidebar"} style={{
         height: "100vh", overflow: "hidden",
-        background: "#0B0B12",
+        background: "var(--bg, #0B0B12)",
         display: user ? "flex" : "none", fontFamily: FONT,
       }}>
+        {sidebarOpen && (
+          <div className="sidebar-backdrop mobile-only" onClick={() => setSidebarOpen(false)} />
+        )}
         {/* Sidebar */}
-        <div style={{
+        <div className="sidebar" style={{
           width: 240,
-          background: "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
+          background: theme === "light"
+            ? "linear-gradient(180deg, #FFFFFF 0%, #F5F5FB 100%)"
+            : "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
+          borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
           padding: "20px 12px 16px", display: "flex", flexDirection: "column", gap: 2,
           flexShrink: 0, height: "100vh", overflowY: "auto",
           position: "sticky", top: 0,
@@ -2726,11 +3609,24 @@ export default function Scholr() {
             }}>s</div>
             <div style={{
               fontSize: 19, fontWeight: 700,
-              color: "#F5F5FA", letterSpacing: "-0.03em",
+              color: "var(--t1, #F5F5FA)", letterSpacing: "-0.03em",
               fontFamily: FONT,
             }}>
               schol<span style={{ color: "#A78BFA" }}>r</span>
             </div>
+            <button
+              className="mobile-only"
+              onClick={() => setSidebarOpen(false)}
+              title="Close menu"
+              style={{
+                marginLeft: "auto",
+                background: "transparent",
+                border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                borderRadius: 8, width: 28, height: 28, cursor: "pointer",
+                color: "var(--t2, rgba(245,245,250,0.65))", fontSize: 14,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >✕</button>
           </div>
 
           {/* Nav */}
@@ -2739,7 +3635,7 @@ export default function Scholr() {
             return (
               <div
                 key={id}
-                onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
+                onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); setSidebarOpen(false); }}
                 style={{
                   position: "relative",
                   padding: "0 12px", height: 36, borderRadius: 8,
@@ -2800,31 +3696,68 @@ export default function Scholr() {
           </div>
 
           <button
+            onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            style={{
+              width: "100%", background: "transparent",
+              border: "1px solid var(--border, rgba(255,255,255,0.06))", borderRadius: 8,
+              padding: "0 12px", height: 32, marginBottom: 4,
+              color: "var(--t2, rgba(245,245,250,0.65))", fontSize: 12,
+              cursor: "pointer", fontFamily: FONT, fontWeight: 500,
+              transition: "all 0.15s", textAlign: "left",
+              letterSpacing: "-0.01em",
+              display: "flex", alignItems: "center", gap: 8,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border, rgba(255,255,255,0.06))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}
+          >
+            <span style={{ fontSize: 14 }}>{theme === "dark" ? "🌙" : "☀️"}</span>
+            {theme === "dark" ? "Dark mode" : "Light mode"}
+          </button>
+
+          <button
             onClick={handleLogout}
             style={{
               width: "100%", background: "transparent",
               border: "none", borderRadius: 8,
               padding: "0 12px", height: 32,
-              color: "rgba(245,245,250,0.35)", fontSize: 12,
+              color: "var(--t4, rgba(245,245,250,0.35))", fontSize: 12,
               cursor: "pointer", fontFamily: FONT, fontWeight: 500,
               transition: "color 0.15s, background 0.15s", textAlign: "left",
               letterSpacing: "-0.01em",
             }}
             onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.35)"; e.currentTarget.style.background = "transparent"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--t4, rgba(245,245,250,0.35))"; e.currentTarget.style.background = "transparent"; }}
           >
             Sign out
           </button>
         </div>
 
         {/* Main */}
-        <div style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+        <div className="main-pane" style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            title="Open menu"
+            className="mobile-menu-btn"
+            style={{
+              display: "none",
+              position: "fixed", top: 12, left: 12, zIndex: 90,
+              background: "var(--s1, #14141F)",
+              border: "1px solid var(--border, rgba(255,255,255,0.08))",
+              borderRadius: 10, width: 40, height: 40,
+              alignItems: "center", justifyContent: "center",
+              fontSize: 18, color: "var(--t1, #F5F5FA)", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            }}
+          >☰</button>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView
                 nb={activeNb}
                 currentUserId={user?.id}
                 onBack={() => setActiveNb(null)}
+                onSetStatus={status => handleSetStatus(activeNb, status)}
+                onSetDueDate={iso => handleSetDueDate(activeNb, iso)}
                 onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
                 onDeleted={id => {
                   setNotebooks(prev => prev.filter(n => n.id !== id));
@@ -2978,6 +3911,15 @@ export default function Scholr() {
                 />
               </div>
 
+              {/* Dashboard: upcoming deadlines */}
+              {activeView === "dashboard" && (
+                <UpcomingDeadlines
+                  notebooks={notebooks}
+                  classes={classes}
+                  onOpen={(nb, classColor) => openUnitWithClassColor(nb, classColor)}
+                />
+              )}
+
               {/* Dashboard: class cards */}
               {activeView === "dashboard" ? (
                 filteredClasses.length === 0 ? (
@@ -3002,6 +3944,7 @@ export default function Scholr() {
                         onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
                         onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
                         onDeleteClass={() => setDeleteClassTarget(cls)}
+                        onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
                       />
                     ))}
                   </div>
@@ -3043,10 +3986,16 @@ export default function Scholr() {
                         onClick={() => setActiveNb(nb)}
                         starred={starredIds.has(nb.id)}
                         onToggleStar={() => handleToggleStar(nb)}
+                        onStatusChange={status => handleSetStatus(nb, status)}
                       />
                     ))}
                   </div>
                 </>
+              )}
+
+              {/* Dashboard: activity heatmap */}
+              {activeView === "dashboard" && (
+                <ActivityHeatmap data={heatmap} />
               )}
 
               {/* Notifications — dashboard only */}
@@ -3055,7 +4004,7 @@ export default function Scholr() {
                   <div style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     marginBottom: 14, paddingTop: 20,
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    borderTop: "1px solid var(--border, rgba(255,255,255,0.06))",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{

@@ -22,6 +22,9 @@ function shapeNotebook(nb, displayName) {
     updated: nb.created_at
       ? new Date(nb.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       : "Today",
+    due_date: nb.due_date ?? null,
+    status: nb.status ?? "in_progress",
+    class_id: nb.class_id ?? null,
   };
 }
 
@@ -395,5 +398,112 @@ export const api = {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       throw new Error(err.error ?? "Failed to delete note");
     }
+  },
+
+  // ── Activity heatmap ────────────────────────────────────────────────
+  async getActivityHeatmap() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/activity-heatmap`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ date, count }]
+  },
+
+  // ── Reactions ───────────────────────────────────────────────────────
+  async addReaction(unitNoteId, emoji) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/react`, {
+      method: "POST", headers, body: JSON.stringify({ emoji }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to react");
+    }
+    return res.json();
+  },
+
+  async removeReaction(unitNoteId, emoji) {
+    const headers = await authHeaders();
+    const res = await fetch(
+      `${API_URL}/api/unit-notes/${unitNoteId}/react/${encodeURIComponent(emoji)}`,
+      { method: "DELETE", headers }
+    );
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to remove reaction");
+    }
+  },
+
+  async getNoteReactions(unitNoteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/reactions`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  // ── Comments ────────────────────────────────────────────────────────
+  async addNoteComment(unitNoteId, content) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, {
+      method: "POST", headers, body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to add comment");
+    }
+    return res.json();
+  },
+
+  async getNoteComments(unitNoteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async deleteNoteComment(commentId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/note-comments/${commentId}`, {
+      method: "DELETE", headers,
+    });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete comment");
+    }
+  },
+
+  // ── Due date / Status ───────────────────────────────────────────────
+  async updateDueDate(notebookId, dueDate) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/due-date`, {
+      method: "PATCH", headers, body: JSON.stringify({ due_date: dueDate }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update due date");
+    }
+    return res.json();
+  },
+
+  async updateNotebookStatus(notebookId, status) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/status`, {
+      method: "PATCH", headers, body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update status");
+    }
+    return res.json();
+  },
+
+  // ── Explain Differently ─────────────────────────────────────────────
+  async explainDifferently(notebookId, messageId, level) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/explain-differently`, {
+      method: "POST", headers, body: JSON.stringify({ messageId, level }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+    return data;
   },
 };

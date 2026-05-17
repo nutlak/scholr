@@ -3668,10 +3668,16 @@ export default function Scholr() {
             ? "linear-gradient(180deg, #FFFFFF 0%, #F5F5FB 100%)"
             : "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
           borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
-          padding: "20px 12px 16px", display: "flex", flexDirection: "column", gap: 2,
-          flexShrink: 0, height: "100vh", overflowY: "auto",
+          display: "flex", flexDirection: "column",
+          flexShrink: 0, height: "100vh", overflow: "hidden",
           position: "sticky", top: 0,
         }}>
+          {/* Scrollable section: brand + nav */}
+          <div style={{
+            flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0,
+            padding: "20px 12px 8px",
+            display: "flex", flexDirection: "column", gap: 2,
+          }}>
           {/* Brand */}
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
@@ -3747,9 +3753,10 @@ export default function Scholr() {
             );
           })}
 
-          <div style={{ flex: 1 }} />
+          </div>{/* end scrollable nav section */}
 
-          {/* Profile card — clickable, opens dropdown above */}
+          {/* Profile card — pinned to bottom, never scrolls away */}
+          <div style={{ padding: "0 12px 16px", flexShrink: 0 }}>
           <div ref={profileRef} style={{ position: "relative" }}>
             {profileOpen && (
               <div style={{
@@ -3861,6 +3868,7 @@ export default function Scholr() {
               <div style={{ fontSize: 10, color: "var(--t3, rgba(245,245,250,0.42))", flexShrink: 0 }}>{profileOpen ? "▲" : "▼"}</div>
             </div>
           </div>
+          </div>{/* end padding wrapper */}
         </div>
 
         {/* Main */}

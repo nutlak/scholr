@@ -3000,13 +3000,9 @@ function InviteLanding({ inviteInfo, onSignIn }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 16, fontWeight: 800, color: "#fff",
-          boxShadow: "0 6px 18px rgba(167,139,250,0.4)",
-        }}>s</div>
+        <div style={{ width: 32, height: 32, borderRadius: 8, overflow: "hidden", position: "relative" }}>
+          <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
+        </div>
         <div style={{
           fontSize: 26, fontWeight: 700, color: "#F5F5FA", letterSpacing: "-0.03em",
         }}>
@@ -3750,7 +3746,9 @@ export default function Scholr() {
             display: "flex", alignItems: "center", gap: 8,
             marginBottom: 22, paddingLeft: 8,
           }}>
-            <img src="/scholr-logo.png" alt="scholr" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+            <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+              <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
+            </div>
             <div style={{
               fontSize: 19, fontWeight: 700,
               color: "var(--t1, #F5F5FA)", letterSpacing: "-0.03em",

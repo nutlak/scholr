@@ -235,10 +235,12 @@ export default function AuthModal({ onAuth }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
             marginBottom: 6,
           }}>
-            <img src="/scholr-logo.png" width="36" height="36" style={{ borderRadius: 8, marginBottom: 8, display: "block" }} alt="scholr" />
+            <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", position: "relative" }}>
+              <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
+            </div>
             <div style={{
               fontFamily: FONT, fontSize: 22, fontWeight: 700,
               color: "#F5F5FA", letterSpacing: "-0.03em",

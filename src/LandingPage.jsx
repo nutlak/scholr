@@ -310,8 +310,10 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo.png" width="28" height="28" style={{ borderRadius: 6 }} alt="scholr" />
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+            <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
+          </div>
+          <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button className="nav-link" onClick={onSignIn}>Sign in</button>
@@ -592,8 +594,10 @@ export default function LandingPage({ onSignIn }) {
           fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo.png" style={{ width: 22, height: 22, borderRadius: 5 }} alt="scholr" />
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          <div style={{ width: 22, height: 22, borderRadius: 5, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+            <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
+          </div>
+          <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
           © {new Date().getFullYear()} Scholr · Built for students, by students

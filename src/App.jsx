@@ -35,6 +35,15 @@ function dueDateTone(iso) {
   return { color: "#34D399", label: "Upcoming", tone: "green" };
 }
 
+const ACCENT_PRESETS = [
+  { color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", name: "Purple" },
+  { color: "#60A5FA", hover: "#93C5FD", deep: "#3B82F6", name: "Blue" },
+  { color: "#34D399", hover: "#6EE7B7", deep: "#10B981", name: "Emerald" },
+  { color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", name: "Amber" },
+  { color: "#F472B6", hover: "#F9A8D4", deep: "#EC4899", name: "Pink" },
+  { color: "#FB7185", hover: "#FDA4AF", deep: "#F43F5E", name: "Rose" },
+];
+
 const STATUS_META = {
   in_progress: { label: "In Progress", color: "#60A5FA", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.32)" },
   done:        { label: "Done",        color: "#34D399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.32)" },
@@ -126,9 +135,9 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       style={{
         position: "relative",
         background: hovered
-          ? `linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)`
-          : "#14141F",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)"}`,
+          ? `var(--s2, #1C1C2A)`
+          : `var(--s1, #14141F)`,
+        border: `1px solid ${hovered ? "var(--border-h, rgba(255,255,255,0.14))" : "var(--border, rgba(255,255,255,0.07))"}`,
         borderRadius: 14,
         padding: "18px 18px 16px",
         cursor: "pointer",
@@ -192,7 +201,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       </div>
       <div style={{
         position: "relative",
-        fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+        fontSize: 16, fontWeight: 600, color: "var(--t1, #F5F5FA)",
         fontFamily: FONT, marginBottom: 4, lineHeight: 1.3, letterSpacing: "-0.018em",
       }}>
         {nb.title}
@@ -200,7 +209,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       {nb.topic && (
         <div style={{
           position: "relative",
-          fontSize: 12.5, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+          fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.55))", fontFamily: FONT,
           marginBottom: 14, lineHeight: 1.45,
         }}>
           {nb.topic}
@@ -488,7 +497,7 @@ function TheForge({ nb, onClose, onToast }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 12, boxShadow: "0 2px 8px rgba(167,139,250,0.4)",
           }}>⚒</div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
@@ -2336,9 +2345,9 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
     <div style={{
       position: "relative",
       background: expanded
-        ? "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)"
-        : hovered ? "#1C1C2A" : "#14141F",
-      border: `1px solid ${expanded || hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
+        ? "var(--s2, #1C1C2A)"
+        : hovered ? "var(--s2, #1C1C2A)" : "var(--s1, #14141F)",
+      border: `1px solid ${expanded || hovered ? "var(--border-h, rgba(255,255,255,0.12))" : "var(--border, rgba(255,255,255,0.07))"}`,
       borderRadius: 12,
       overflow: "hidden",
       transition: "all 0.18s ease",
@@ -2376,14 +2385,14 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.015em" }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.015em" }}>
             {cls.title}
           </div>
         </div>
 
         <div style={{
-          fontSize: 11, color: "rgba(245,245,250,0.45)", fontFamily: FONT,
-          flexShrink: 0, padding: "3px 9px", background: "rgba(255,255,255,0.04)",
+          fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT,
+          flexShrink: 0, padding: "3px 9px", background: "var(--border, rgba(255,255,255,0.04))",
           borderRadius: 999, fontWeight: 500,
         }}>
           {units === null ? "…" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
@@ -3303,12 +3312,39 @@ export default function Scholr() {
     try { return localStorage.getItem("scholr-theme") ?? "dark"; }
     catch { return "dark"; }
   });
+  const [accentColor, setAccentColor] = useState(() => {
+    try { return localStorage.getItem("scholr-accent") ?? "#A78BFA"; }
+    catch { return "#A78BFA"; }
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem("scholr-theme", theme); } catch { /* ignore */ }
   }, [theme]);
+
+  useEffect(() => {
+    const preset = ACCENT_PRESETS.find(p => p.color === accentColor) ?? ACCENT_PRESETS[0];
+    const root = document.documentElement;
+    root.style.setProperty("--acc", preset.color);
+    root.style.setProperty("--acc-h", preset.hover);
+    root.style.setProperty("--acc-d", preset.deep);
+    root.style.setProperty("--acc-bg", `${preset.color}14`);
+    root.style.setProperty("--acc-bg-h", `${preset.color}24`);
+    root.style.setProperty("--acc-glow", `${preset.color}38`);
+    try { localStorage.setItem("scholr-accent", accentColor); } catch { /* ignore */ }
+  }, [accentColor]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    function handleOutsideClick(e) {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [profileOpen]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -3672,36 +3708,14 @@ export default function Scholr() {
 
           <div style={{ flex: 1 }} />
 
-          {/* User card */}
-          <div style={{
-            background: "rgba(255,255,255,0.025)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            borderRadius: 10,
-            padding: "10px",
-            display: "flex", alignItems: "center", gap: 10,
-            marginBottom: 6,
-          }}>
-            <Avatar name={displayName} size={32} seed={user?.email ?? displayName} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: 12.5, fontWeight: 600, color: "#F5F5FA",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                letterSpacing: "-0.01em",
-              }}>{displayName}</div>
-              <div style={{
-                fontSize: 10.5, color: "rgba(245,245,250,0.4)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}>{user?.email}</div>
-            </div>
-          </div>
-
+          {/* Theme toggle */}
           <button
             onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             style={{
               width: "100%", background: "transparent",
               border: "1px solid var(--border, rgba(255,255,255,0.06))", borderRadius: 8,
-              padding: "0 12px", height: 32, marginBottom: 4,
+              padding: "0 12px", height: 32, marginBottom: 6,
               color: "var(--t2, rgba(245,245,250,0.65))", fontSize: 12,
               cursor: "pointer", fontFamily: FONT, fontWeight: 500,
               transition: "all 0.15s", textAlign: "left",
@@ -3711,26 +3725,91 @@ export default function Scholr() {
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border, rgba(255,255,255,0.06))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}
           >
-            <span style={{ fontSize: 14 }}>{theme === "dark" ? "🌙" : "☀️"}</span>
-            {theme === "dark" ? "Dark mode" : "Light mode"}
+            <span style={{ fontSize: 14 }}>{theme === "dark" ? "☀️" : "🌙"}</span>
+            {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
 
-          <button
-            onClick={handleLogout}
-            style={{
-              width: "100%", background: "transparent",
-              border: "none", borderRadius: 8,
-              padding: "0 12px", height: 32,
-              color: "var(--t4, rgba(245,245,250,0.35))", fontSize: 12,
-              cursor: "pointer", fontFamily: FONT, fontWeight: 500,
-              transition: "color 0.15s, background 0.15s", textAlign: "left",
-              letterSpacing: "-0.01em",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--t4, rgba(245,245,250,0.35))"; e.currentTarget.style.background = "transparent"; }}
-          >
-            Sign out
-          </button>
+          {/* Profile card — clickable, opens dropdown above */}
+          <div ref={profileRef} style={{ position: "relative" }}>
+            {profileOpen && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0,
+                background: theme === "light" ? "rgba(255,255,255,0.97)" : "rgba(20,20,31,0.97)",
+                backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+                border: "1px solid var(--border-h, rgba(255,255,255,0.12))",
+                borderRadius: 12, padding: "12px",
+                boxShadow: "0 -16px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(167,139,250,0.06)",
+                animation: "slideInUp 0.15s ease",
+                zIndex: 100,
+              }}>
+                {/* Header */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+                  <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                </div>
+                <div style={{ height: 1, background: "var(--border, rgba(255,255,255,0.07))", marginBottom: 10 }} />
+                {/* Accent Color */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.45))", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>🎨 Accent Color</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {ACCENT_PRESETS.map(p => (
+                      <button
+                        key={p.color}
+                        onClick={() => setAccentColor(p.color)}
+                        title={p.name}
+                        style={{
+                          width: 22, height: 22, borderRadius: 6, padding: 0, cursor: "pointer",
+                          background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
+                          border: accentColor === p.color ? `2px solid var(--t1, #F5F5FA)` : "2px solid transparent",
+                          outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
+                          outlineOffset: "1px",
+                          transition: "transform 0.12s",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.18)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ height: 1, background: "var(--border, rgba(255,255,255,0.07))", marginBottom: 8 }} />
+                {/* Sign out */}
+                <button
+                  onClick={() => { setProfileOpen(false); handleLogout(); }}
+                  style={{
+                    width: "100%", background: "transparent", border: "none",
+                    borderRadius: 7, padding: "6px 8px", color: "#F87171",
+                    fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+                    fontFamily: FONT, textAlign: "left",
+                    display: "flex", alignItems: "center", gap: 7,
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >🚪 Sign out</button>
+              </div>
+            )}
+            <div
+              onClick={() => setProfileOpen(v => !v)}
+              style={{
+                background: profileOpen ? "var(--border, rgba(255,255,255,0.05))" : "rgba(255,255,255,0.025)",
+                border: `1px solid ${profileOpen ? "var(--border-h, rgba(255,255,255,0.12))" : "rgba(255,255,255,0.05)"}`,
+                borderRadius: 10, padding: "10px",
+                display: "flex", alignItems: "center", gap: 10,
+                cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+                userSelect: "none",
+              }}
+              onMouseEnter={e => { if (!profileOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.1))"; }}}
+              onMouseLeave={e => { if (!profileOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}}
+            >
+              <Avatar name={displayName} size={32} seed={user?.email ?? displayName} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{displayName}</div>
+                <div style={{ fontSize: 10.5, color: "var(--t3, rgba(245,245,250,0.42))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+              </div>
+              <div style={{ fontSize: 10, color: "var(--t3, rgba(245,245,250,0.42))", flexShrink: 0 }}>{profileOpen ? "▲" : "▼"}</div>
+            </div>
+          </div>
         </div>
 
         {/* Main */}
@@ -3837,14 +3916,14 @@ export default function Scholr() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "rgba(167,139,250,0.85)",
+                    fontSize: 11, fontWeight: 600, color: "var(--acc, #A78BFA)",
                     fontFamily: FONT, marginBottom: 4,
                     letterSpacing: "0.1em", textTransform: "uppercase",
                   }}>
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 30, fontWeight: 600, color: "#F5F5FA",
+                    fontSize: 30, fontWeight: 600, color: "var(--t1, #F5F5FA)",
                     fontFamily: FONT, letterSpacing: "0.3px", lineHeight: 1.15,
                     textShadow: "0 0 24px rgba(167,139,250,0.18)",
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
@@ -3864,7 +3943,7 @@ export default function Scholr() {
                     })() : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 13.5, color: "rgba(245,245,250,0.5)",
+                    fontSize: 13.5, color: "var(--t3, rgba(245,245,250,0.5))",
                     fontFamily: FONT, marginTop: 6,
                   }}>
                     {activeView === "dashboard"
@@ -3900,14 +3979,14 @@ export default function Scholr() {
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search notebooks…"
                   style={{
-                    width: "100%", background: "#14141F",
-                    border: "1px solid rgba(255,255,255,0.07)",
+                    width: "100%", background: "var(--s1, #14141F)",
+                    border: "1px solid var(--border, rgba(255,255,255,0.07))",
                     borderRadius: 10, padding: "0 14px 0 38px", height: 40,
-                    color: "#F5F5FA", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                    color: "var(--t1, #F5F5FA)", fontSize: 13.5, fontFamily: FONT, outline: "none",
                     transition: "all 0.18s", letterSpacing: "-0.01em",
                   }}
-                  onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.07)"; e.target.style.boxShadow = "none"; }}
+                  onFocus={e => { e.target.style.borderColor = "var(--acc, #A78BFA)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg, rgba(167,139,250,0.14))"; }}
+                  onBlur={e => { e.target.style.borderColor = "var(--border, rgba(255,255,255,0.07))"; e.target.style.boxShadow = "none"; }}
                 />
               </div>
 

@@ -310,7 +310,7 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo.png" style={{ width: 26, height: 26, borderRadius: 6 }} alt="scholr" />
+          <img src="/scholr-logo.png" width="28" height="28" style={{ borderRadius: 6 }} alt="scholr" />
           schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

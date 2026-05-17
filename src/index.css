@@ -259,7 +259,12 @@ input, textarea, select { font-family: var(--font); }
   button { min-height: 44px; }
   input, textarea, select { font-size: 16px !important; }
   .desktop-only { display: none !important; }
-  .forge-panel { padding-left: 12px !important; margin-left: 0 !important; border-left: none !important; }
+  .forge-panel {
+    width: 100% !important; height: 100% !important;
+    padding: 0 16px 16px !important; margin-left: 0 !important;
+    border-left: none !important;
+    background: var(--bg, #0B0B12) !important;
+  }
   .notes-section { padding: 10px 12px 12px !important; max-height: none !important; }
 }
 @media (min-width: 769px) {

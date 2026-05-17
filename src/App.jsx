@@ -3737,7 +3737,7 @@ export default function Scholr() {
           borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
           display: "flex", flexDirection: "column",
           flexShrink: 0, overflow: "hidden",
-          position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 100,
+          position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 200,
         }}>
           {/* Scrollable section: brand + nav */}
           <div style={{
@@ -3751,12 +3751,10 @@ export default function Scholr() {
             marginBottom: 22, paddingLeft: 8,
           }}>
             <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, fontWeight: 800, color: "#fff",
-              boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
-            }}>s</div>
+              width: 28, height: 28, borderRadius: 6, overflow: "hidden", flexShrink: 0,
+            }}>
+            <img src="/scholr-logo.png" style={{ width: 28, height: 28, display: "block" }} alt="scholr" />
+            </div>
             <div style={{
               fontSize: 19, fontWeight: 700,
               color: "var(--t1, #F5F5FA)", letterSpacing: "-0.03em",
@@ -3982,27 +3980,27 @@ export default function Scholr() {
 
           ) : activeView === "settings" ? (
             <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 520 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.03em", marginBottom: 4 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.03em", marginBottom: 4 }}>
                 Settings
               </div>
-              <div style={{ fontSize: 14, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 32 }}>
+              <div style={{ fontSize: 14, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, marginBottom: 32 }}>
                 Manage your account preferences
               </div>
 
-              <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.45)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Account
               </div>
               <div style={{
-                background: "linear-gradient(180deg, #14141F 0%, #181824 100%)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                background: "var(--s1, #14141F)",
+                border: "1px solid var(--border, rgba(255,255,255,0.07))",
                 borderRadius: 14, padding: "18px 20px", marginBottom: 32,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                boxShadow: "var(--sh-card, 0 1px 3px rgba(0,0,0,0.2))",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <Avatar name={displayName} size={42} seed={user?.email ?? displayName} />
                   <div>
-                    <div style={{ fontSize: 11, color: "rgba(245,245,250,0.45)", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
-                    <div style={{ fontSize: 14, color: "#F5F5FA", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
+                    <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
+                    <div style={{ fontSize: 14, color: "var(--t1, #F5F5FA)", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
                   </div>
                 </div>
               </div>
@@ -4011,14 +4009,14 @@ export default function Scholr() {
                 Danger zone
               </div>
               <div style={{
-                background: "linear-gradient(180deg, rgba(248,113,113,0.04) 0%, rgba(248,113,113,0.01) 100%)",
-                border: "1px solid rgba(248,113,113,0.18)",
+                background: "var(--s1, #14141F)",
+                border: "1px solid rgba(248,113,113,0.2)",
                 borderRadius: 14, padding: "18px 20px",
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
               }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
-                  <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
+                  <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
                 </div>
                 <button
                   onClick={() => setShowDeleteAccount(true)}

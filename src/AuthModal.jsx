@@ -238,13 +238,7 @@ export default function AuthModal({ onAuth }) {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             marginBottom: 6,
           }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-              boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 15, fontWeight: 800, color: "#fff",
-            }}>s</div>
+            <img src="/scholr-logo.png" style={{ width: 30, height: 30, borderRadius: 8 }} alt="scholr" />
             <div style={{
               fontFamily: FONT, fontSize: 22, fontWeight: 700,
               color: "#F5F5FA", letterSpacing: "-0.03em",

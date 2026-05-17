@@ -310,13 +310,7 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 14, fontWeight: 800, color: "#fff",
-          }}>s</div>
+          <img src="/scholr-logo.png" style={{ width: 26, height: 26, borderRadius: 6 }} alt="scholr" />
           schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -598,12 +592,7 @@ export default function LandingPage({ onSignIn }) {
           fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 800, color: "#fff",
-          }}>s</div>
+          <img src="/scholr-logo.png" style={{ width: 22, height: 22, borderRadius: 5 }} alt="scholr" />
           schol<span style={{ color: "#A78BFA" }}>r</span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>

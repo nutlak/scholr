@@ -199,15 +199,9 @@ input, textarea, select { font-family: var(--font); }
   50%      { transform: translate(20px, -10px); }
 }
 
-/* ── Sidebar height — iPad / Safari address-bar fix ──────────────── */
+/* ── Desktop: offset main content for fixed sidebar ──────────────── */
 @media (min-width: 769px) {
-  .sidebar {
-    height: 100vh;    /* fallback */
-    height: 100dvh;   /* dynamic viewport — iOS 15.4+, Chrome 108+, FF 101+ */
-  }
-}
-@supports (-webkit-touch-callout: none) and (not (height: 100dvh)) {
-  .sidebar { height: -webkit-fill-available; }
+  .main-pane { margin-left: 240px; }
 }
 
 /* ── Notebook header responsive ──────────────────────────────────── */

@@ -887,6 +887,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
   const [members, setMembers]       = useState([]);
   const [showForge, setShowForge]   = useState(false);
   const [showNotes, setShowNotes]   = useState(false);
+  const [mobilePanelView, setMobilePanelView] = useState('chat'); // 'chat' | 'forge' | 'notes'
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [explainLevel, setExplainLevel] = useState(null); // { messageId } showing submenu
@@ -965,6 +967,12 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+
   async function ask() {
     const text = query.trim();
     if (!text || loading) return;
@@ -1042,7 +1050,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
     : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
       {showUpload && (
         <UploadNotesModal
           notebookId={nb.id} accentColor={t.hue}
@@ -1207,7 +1215,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
           )}
 
           <button
-            onClick={() => setShowNotes(v => !v)}
+            onClick={() => { if (isMobile) { setMobilePanelView('notes'); setShowNotes(true); } else setShowNotes(v => !v); }}
             title="Toggle Unit Notes"
             className="btn-press"
             style={{
@@ -1225,7 +1233,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
           >📝 <span className="nb-action-text">Notes</span></button>
 
           <button
-            onClick={() => setShowForge(f => !f)}
+            onClick={() => { if (isMobile) { setMobilePanelView('forge'); setShowForge(true); } else setShowForge(f => !f); }}
             title="Toggle The Forge"
             className="btn-press"
             style={{
@@ -1527,8 +1535,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             </button>
           </div>
 
-          {/* Unit notes panel (collapsible, sits under the chat input) */}
-          {showNotes && (
+          {/* Unit notes panel (collapsible, sits under the chat input — desktop only) */}
+          {showNotes && !isMobile && (
             <UnitNotes
               notebookId={nb.id}
               currentUserId={currentUserId}
@@ -1538,11 +1546,70 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
           )}
         </div>
 
-        {/* Forge panel */}
-        {showForge && (
+        {/* Forge panel — desktop only; mobile uses full-screen overlay below */}
+        {showForge && !isMobile && (
           <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
         )}
       </div>
+
+      {/* Mobile full-screen Forge overlay */}
+      {isMobile && mobilePanelView === 'forge' && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 5,
+          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
+          animation: "fadeIn 0.2s ease",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", padding: "10px 16px", flexShrink: 0,
+            borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+          }}>
+            <button
+              onClick={() => { setMobilePanelView('chat'); setShowForge(false); }}
+              style={{
+                background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+                borderRadius: 10, padding: "0 14px", height: 36,
+                color: "var(--t2, rgba(245,245,250,0.65))", cursor: "pointer",
+                fontFamily: FONT, fontSize: 13,
+              }}
+            >← Chat</button>
+          </div>
+          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <TheForge nb={nb} onClose={() => { setMobilePanelView('chat'); setShowForge(false); }} onToast={onToast} />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile full-screen Notes overlay */}
+      {isMobile && mobilePanelView === 'notes' && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 5,
+          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
+          animation: "fadeIn 0.2s ease",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", padding: "10px 16px 12px", flexShrink: 0,
+            borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+          }}>
+            <button
+              onClick={() => { setMobilePanelView('chat'); setShowNotes(false); }}
+              style={{
+                background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+                borderRadius: 10, padding: "0 14px", height: 36,
+                color: "var(--t2, rgba(245,245,250,0.65))", cursor: "pointer",
+                fontFamily: FONT, fontSize: 13,
+              }}
+            >← Chat</button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+            <UnitNotes
+              notebookId={nb.id}
+              currentUserId={currentUserId}
+              tint={t}
+              onClose={() => { setMobilePanelView('chat'); setShowNotes(false); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3669,8 +3736,8 @@ export default function Scholr() {
             : "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
           borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
           display: "flex", flexDirection: "column",
-          flexShrink: 0, height: "100vh", overflow: "hidden",
-          position: "sticky", top: 0,
+          flexShrink: 0, overflow: "hidden",
+          position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 100,
         }}>
           {/* Scrollable section: brand + nav */}
           <div style={{
@@ -3879,13 +3946,13 @@ export default function Scholr() {
             className="mobile-menu-btn"
             style={{
               display: "none",
-              position: "fixed", top: 12, left: 12, zIndex: 90,
-              background: "var(--s1, #14141F)",
-              border: "1px solid var(--border, rgba(255,255,255,0.08))",
-              borderRadius: 10, width: 40, height: 40,
+              position: "fixed", bottom: 80, left: 16, zIndex: 50,
+              background: "var(--acc, #A78BFA)",
+              border: "none",
+              borderRadius: "50%", width: 44, height: 44,
               alignItems: "center", justifyContent: "center",
-              fontSize: 18, color: "var(--t1, #F5F5FA)", cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+              fontSize: 20, color: "#fff", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
             }}
           >☰</button>
           {activeNb ? (

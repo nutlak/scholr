@@ -1797,7 +1797,18 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
 function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
+  const pickerBtnRef = useRef(null);
   const t = classTint(cls.color);
+
+  function openPicker(e) {
+    e.stopPropagation();
+    if (!pickerOpen && pickerBtnRef.current) {
+      const r = pickerBtnRef.current.getBoundingClientRect();
+      setPickerPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    }
+    setPickerOpen(v => !v);
+  }
 
   return (
     <div style={{
@@ -1857,9 +1868,10 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         </div>
 
         {onChangeColor && (
-          <div style={{ position: "relative", flexShrink: 0 }}>
+          <div style={{ flexShrink: 0 }}>
             <button
-              onClick={e => { e.stopPropagation(); setPickerOpen(v => !v); }}
+              ref={pickerBtnRef}
+              onClick={openPicker}
               title="Change color"
               style={{
                 width: 22, height: 22, borderRadius: 7, padding: 0,
@@ -1877,7 +1889,6 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
             />
             {pickerOpen && (
               <>
-                {/* click-outside catcher */}
                 <div
                   onClick={e => { e.stopPropagation(); setPickerOpen(false); }}
                   style={{ position: "fixed", inset: 0, zIndex: 50 }}
@@ -1885,12 +1896,17 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
                 <div
                   onClick={e => e.stopPropagation()}
                   style={{
-                    position: "absolute", top: "calc(100% + 8px)", right: 0,
+                    position: "fixed",
+                    top: pickerPos.top,
+                    right: pickerPos.right,
                     background: "rgba(20,20,31,0.96)",
                     backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: 12, padding: 12,
                     zIndex: 60,
+                    maxHeight: 300,
+                    overflowY: "auto",
+                    overflowX: "hidden",
                     boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.1)",
                     animation: "fadeIn 0.15s ease",
                   }}

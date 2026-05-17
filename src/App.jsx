@@ -1123,34 +1123,24 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       )}
 
       {/* Header */}
-      <div style={{
+      <div className="nb-header" style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
-        paddingBottom: 14, borderBottom: "1px solid rgba(255,255,255,0.06)",
+        paddingBottom: 14, borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
       }}>
+        {/* Back — always Row 1 */}
         <button onClick={onBack} className="btn-press" style={{
-          background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
-          color: "rgba(245,245,250,0.65)",
+          background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+          color: "var(--t2, rgba(245,245,250,0.65))",
           borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
           fontFamily: FONT, fontSize: 13, fontWeight: 500,
-          letterSpacing: "-0.01em",
+          letterSpacing: "-0.01em", flexShrink: 0,
         }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
         >← Back</button>
-        <button
-          onClick={() => setConfirmDelete(true)}
-          title="Delete notebook"
-          className="btn-press"
-          style={{
-            background: "transparent", border: "1px solid rgba(248,113,113,0.18)",
-            color: "rgba(248,113,113,0.55)",
-            borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
-            fontFamily: FONT, fontSize: 14,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
-        >🗑</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, marginLeft: 4, flex: 1 }}>
+
+        {/* Title + (desktop) status + due date */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
           <div style={{
             width: 8, height: 8, borderRadius: 2,
             background: `linear-gradient(135deg, ${t.hue}, ${t.deep})`,
@@ -1170,79 +1160,121 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             )}
           </div>
           {onSetStatus && (
-            <span style={{ marginLeft: 6 }}>
+            <span className="nb-desktop-only" style={{ marginLeft: 4 }}>
               <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="md" />
             </span>
           )}
           {onSetDueDate && (
-            <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} />
+            <span className="nb-desktop-only">
+              <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} />
+            </span>
           )}
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+
+        {/* Avatar — mobile: in Row 1 right; desktop: in actions */}
+        {members.length > 0 && (
+          <span className="nb-mobile-only" style={{ flexShrink: 0 }}>
+            <MemberAvatarStack members={members} />
+          </span>
+        )}
+
+        {/* Action buttons — desktop: inline; mobile: full-width scrollable Row 2 */}
+        <div className="nb-header-actions">
+          <button
+            onClick={() => setConfirmDelete(true)}
+            title="Delete notebook"
+            className="btn-press"
+            style={{
+              background: "transparent", border: "1px solid rgba(248,113,113,0.18)",
+              color: "rgba(248,113,113,0.55)",
+              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 14, flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
+          >🗑</button>
+
+          {/* Status + DueDate mobile-only compact variants */}
+          {onSetStatus && (
+            <span className="nb-mobile-only">
+              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" compact />
+            </span>
+          )}
+          {onSetDueDate && (
+            <span className="nb-mobile-only">
+              <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} compact />
+            </span>
+          )}
+
           <button
             onClick={() => setShowNotes(v => !v)}
             title="Toggle Unit Notes"
             className="btn-press"
             style={{
-              background: showNotes
-                ? `linear-gradient(135deg, ${t.hue}28 0%, ${t.hue}10 100%)`
-                : "transparent",
-              border: `1px solid ${showNotes ? `${t.hue}55` : "rgba(255,255,255,0.08)"}`,
+              background: showNotes ? `linear-gradient(135deg, ${t.hue}28 0%, ${t.hue}10 100%)` : "transparent",
+              border: `1px solid ${showNotes ? `${t.hue}55` : "var(--border-h, rgba(255,255,255,0.08))"}`,
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showNotes ? t.hue : "rgba(245,245,250,0.65)",
+              color: showNotes ? t.hue : "var(--t2, rgba(245,245,250,0.65))",
               display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em",
+              letterSpacing: "-0.01em", flexShrink: 0,
               boxShadow: showNotes ? `0 0 0 1px ${t.hue}22, 0 4px 14px ${t.hue}22` : "none",
             }}
-            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; }}}
-            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}}
-          >📝 Notes</button>
+            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
+            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
+          >📝 <span className="nb-action-text">Notes</span></button>
+
           <button
             onClick={() => setShowForge(f => !f)}
             title="Toggle The Forge"
             className="btn-press"
             style={{
-              background: showForge
-                ? "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(167,139,250,0.06) 100%)"
-                : "transparent",
-              border: `1px solid ${showForge ? "rgba(167,139,250,0.4)" : "rgba(255,255,255,0.08)"}`,
+              background: showForge ? "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(167,139,250,0.06) 100%)" : "transparent",
+              border: `1px solid ${showForge ? "rgba(167,139,250,0.4)" : "var(--border-h, rgba(255,255,255,0.08))"}`,
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showForge ? "#C4B5FD" : "rgba(245,245,250,0.65)",
+              color: showForge ? "#C4B5FD" : "var(--t2, rgba(245,245,250,0.65))",
               display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em",
+              letterSpacing: "-0.01em", flexShrink: 0,
               boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px rgba(167,139,250,0.14)" : "none",
             }}
-            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; }}}
-            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}}
-          >⚒ Forge</button>
+            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
+            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
+          >⚒ <span className="nb-action-text">Forge</span></button>
+
           <button
             onClick={() => setShowUpload(true)}
             className="btn-press"
             style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+              background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "rgba(245,245,250,0.65)", letterSpacing: "-0.01em",
+              color: "var(--t2, rgba(245,245,250,0.65))", letterSpacing: "-0.01em", flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
-          >📎 Upload</button>
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
+          >📎 <span className="nb-action-text">Upload</span></button>
+
           <button
             onClick={() => setShowInvite(true)}
             title="Invite collaborators"
             className="btn-press"
             style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+              background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "rgba(245,245,250,0.65)", letterSpacing: "-0.01em",
+              color: "var(--t2, rgba(245,245,250,0.65))", letterSpacing: "-0.01em", flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
-          >+ Invite</button>
-          {members.length > 0 && <MemberAvatarStack members={members} />}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
+          >+ <span className="nb-action-text">Invite</span></button>
+
+          {/* Avatar — desktop: in actions (right-most); mobile: shown in Row 1 via nb-mobile-only above */}
+          {members.length > 0 && (
+            <span className="nb-desktop-only">
+              <MemberAvatarStack members={members} />
+            </span>
+          )}
         </div>
       </div>
 
@@ -3127,7 +3159,7 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
   );
 }
 
-function StatusPill({ status, onChange, size = "sm" }) {
+function StatusPill({ status, onChange, size = "sm", compact = false }) {
   const [open, setOpen] = useState(false);
   const meta = STATUS_META[status] ?? STATUS_META.in_progress;
   const padding = size === "sm" ? "2px 8px" : "4px 10px";
@@ -3136,14 +3168,23 @@ function StatusPill({ status, onChange, size = "sm" }) {
     <div style={{ position: "relative", display: "inline-block" }}>
       <button
         onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        title={compact ? meta.label : undefined}
         style={{
           background: meta.bg,
           border: `1px solid ${meta.border}`,
-          borderRadius: 999, padding, fontSize, fontWeight: 600,
+          borderRadius: compact ? 8 : 999,
+          padding: compact ? "0 8px" : padding,
+          height: compact ? 30 : "auto",
+          fontSize, fontWeight: 600,
           color: meta.color, fontFamily: FONT, cursor: "pointer",
           letterSpacing: "0.02em",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}
-      >{meta.label}</button>
+      >
+        {compact
+          ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+          : meta.label}
+      </button>
       {open && (
         <>
           <div onClick={e => { e.stopPropagation(); setOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
@@ -3178,7 +3219,7 @@ function StatusPill({ status, onChange, size = "sm" }) {
   );
 }
 
-function DueDateButton({ dueDate, onChange }) {
+function DueDateButton({ dueDate, onChange, compact = false }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(dueDate ? new Date(dueDate).toISOString().slice(0, 10) : "");
   const tone = dueDateTone(dueDate);
@@ -3193,17 +3234,17 @@ function DueDateButton({ dueDate, onChange }) {
     <div style={{ position: "relative", display: "inline-block" }}>
       <button
         onClick={() => setOpen(o => !o)}
-        title="Edit due date"
+        title={compact ? (dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date") : "Edit due date"}
         style={{
           background: tone ? `${tone.color}1A` : "transparent",
           border: `1px solid ${tone ? `${tone.color}55` : "var(--border, rgba(255,255,255,0.08))"}`,
-          borderRadius: 8, padding: "0 10px", height: 30, cursor: "pointer",
+          borderRadius: 8, padding: compact ? "0 8px" : "0 10px", height: 30, cursor: "pointer",
           fontSize: 12, fontWeight: 600, fontFamily: FONT,
           color: tone ? tone.color : "var(--t3, rgba(245,245,250,0.5))",
-          display: "flex", alignItems: "center", gap: 6,
+          display: "flex", alignItems: "center", gap: compact ? 0 : 6,
         }}
       >
-        📅 {dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}
+        📅{!compact && ` ${dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}`}
       </button>
       {open && (
         <>

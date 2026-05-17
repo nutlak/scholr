@@ -199,6 +199,32 @@ input, textarea, select { font-family: var(--font); }
   50%      { transform: translate(20px, -10px); }
 }
 
+/* ── Notebook header responsive ──────────────────────────────────── */
+.nb-header { flex-wrap: wrap; row-gap: 0; }
+.nb-header-actions {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+}
+.nb-desktop-only { display: inline-flex; align-items: center; }
+.nb-mobile-only  { display: none; }
+
+@media (max-width: 768px) {
+  .nb-header { row-gap: 8px; }
+  .nb-header-actions {
+    order: 99; width: 100%; margin-left: 0;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; gap: 6px; padding-bottom: 2px;
+  }
+  .nb-header-actions::-webkit-scrollbar { display: none; }
+  .nb-header-actions > button,
+  .nb-header-actions > span > button {
+    flex-shrink: 0 !important; height: 32px !important;
+    font-size: 12px !important; white-space: nowrap !important;
+  }
+  .nb-action-text { display: none; }
+  .nb-desktop-only { display: none !important; }
+  .nb-mobile-only  { display: inline-flex !important; align-items: center; flex-shrink: 0; }
+}
+
 /* ── Mobile responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
   :root { font-size: 13px; }

@@ -3708,27 +3708,6 @@ export default function Scholr() {
 
           <div style={{ flex: 1 }} />
 
-          {/* Theme toggle */}
-          <button
-            onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            style={{
-              width: "100%", background: "transparent",
-              border: "1px solid var(--border, rgba(255,255,255,0.06))", borderRadius: 8,
-              padding: "0 12px", height: 32, marginBottom: 6,
-              color: "var(--t2, rgba(245,245,250,0.65))", fontSize: 12,
-              cursor: "pointer", fontFamily: FONT, fontWeight: 500,
-              transition: "all 0.15s", textAlign: "left",
-              letterSpacing: "-0.01em",
-              display: "flex", alignItems: "center", gap: 8,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border, rgba(255,255,255,0.06))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}
-          >
-            <span style={{ fontSize: 14 }}>{theme === "dark" ? "☀️" : "🌙"}</span>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
-
           {/* Profile card — clickable, opens dropdown above */}
           <div ref={profileRef} style={{ position: "relative" }}>
             {profileOpen && (
@@ -3769,6 +3748,37 @@ export default function Scholr() {
                         onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.18)"; }}
                         onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
                       />
+                    ))}
+                  </div>
+                </div>
+                {/* Theme toggle */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.45))", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Theme</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[
+                      { value: "dark", label: "🌙 Dark" },
+                      { value: "light", label: "☀️ Light" },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTheme(opt.value)}
+                        style={{
+                          flex: 1, padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                          fontFamily: FONT, fontSize: 12, fontWeight: 500,
+                          background: theme === opt.value
+                            ? "var(--acc-bg, rgba(167,139,250,0.12))"
+                            : "transparent",
+                          border: theme === opt.value
+                            ? "1px solid var(--acc, #A78BFA)"
+                            : "1px solid var(--border, rgba(255,255,255,0.07))",
+                          color: theme === opt.value
+                            ? "var(--acc, #A78BFA)"
+                            : "var(--t2, rgba(245,245,250,0.6))",
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
+                        onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.6))"; }}}
+                      >{opt.label}</button>
                     ))}
                   </div>
                 </div>

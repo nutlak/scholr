@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
 
 :root {
-  --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font: "Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
   /* Surfaces — warm dark with hint of indigo */
@@ -53,8 +53,8 @@
   --sh-modal:     0 24px 64px rgba(0,0,0,0.6);
   --sh-glow:      0 0 32px rgba(167,139,250,0.25);
 
-  font: 14px/1.5 var(--font);
-  letter-spacing: -0.011em;
+  font: 14px/1.6 var(--font);
+  letter-spacing: 0;
   color: var(--t1);
   background: var(--bg);
   color-scheme: dark;
@@ -96,11 +96,21 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--t1);
-  letter-spacing: -0.022em;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
 }
-p { margin: 0; }
+p { margin: 0; line-height: 1.6; }
+
+/* Small/label utility — slightly open tracking for friendliness */
+.label-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--t3);
+}
 
 code {
   font-family: var(--mono);

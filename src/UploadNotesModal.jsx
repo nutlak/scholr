@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "./api.js";
 
-const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
 
 const labelStyle = {

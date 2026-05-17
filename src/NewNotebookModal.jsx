@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 const inputStyle = {
   width: "100%",

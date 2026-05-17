@@ -363,6 +363,30 @@ app.post("/api/classes", requireAuth, async (req, res) => {
   res.status(201).json(data);
 });
 
+// PATCH /api/classes/:id/color — update a class's color (owner only)
+app.patch("/api/classes/:id/color", requireAuth, async (req, res) => {
+  const { color } = req.body;
+  if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+    return res.status(400).json({ error: "color must be a 6-digit hex string (e.g. #A78BFA)" });
+  }
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!cls) return res.status(403).json({ error: "Class not found or not authorized" });
+
+  const { data, error } = await supabase
+    .from("classes")
+    .update({ color })
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // GET /api/classes/:id/notebooks — list units inside a class
 app.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
   const { data: cls } = await supabase
@@ -807,6 +831,77 @@ app.delete("/api/forge-outputs/:id", requireAuth, async (req, res) => {
   if (!fo) return res.status(403).json({ error: "Not found or not authorized" });
 
   const { error } = await supabase.from("forge_outputs").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).send();
+});
+
+// ── Unit notes endpoints ──────────────────────────────────────────────────────
+
+// GET /api/notebooks/:id/unit-notes — list all member-authored notes on a unit
+app.get("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req, res) => {
+  const { data: rows, error } = await supabase
+    .from("unit_notes")
+    .select("id, user_id, content, created_at, updated_at")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Resolve display name + email per row via auth.admin
+  const userIds = [...new Set((rows ?? []).map(r => r.user_id))];
+  const userInfo = {};
+  await Promise.all(userIds.map(async (uid) => {
+    const { data } = await supabase.auth.admin.getUserById(uid);
+    userInfo[uid] = {
+      email: data?.user?.email ?? null,
+      first_name: data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      full_name: data?.user?.user_metadata?.full_name ?? null,
+    };
+  }));
+
+  res.json((rows ?? []).map(r => ({
+    ...r,
+    email: userInfo[r.user_id]?.email ?? null,
+    first_name: userInfo[r.user_id]?.first_name ?? null,
+    full_name: userInfo[r.user_id]?.full_name ?? null,
+  })));
+});
+
+// POST /api/notebooks/:id/unit-notes — add a note to this unit
+app.post("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req, res) => {
+  const { content } = req.body;
+  if (typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({ error: "content is required" });
+  }
+  const trimmed = content.trim().slice(0, 2000);
+
+  const { data, error } = await supabase
+    .from("unit_notes")
+    .insert({ notebook_id: req.params.id, user_id: req.user.id, content: trimmed })
+    .select("id, user_id, content, created_at, updated_at")
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Resolve user info for the new note before returning
+  const { data: u } = await supabase.auth.admin.getUserById(req.user.id);
+  res.status(201).json({
+    ...data,
+    email: u?.user?.email ?? null,
+    first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+    full_name: u?.user?.user_metadata?.full_name ?? null,
+  });
+});
+
+// DELETE /api/unit-notes/:id — delete a unit note (author only)
+app.delete("/api/unit-notes/:id", requireAuth, async (req, res) => {
+  const { data: note } = await supabase
+    .from("unit_notes")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!note) return res.status(403).json({ error: "Not found or not authorized" });
+
+  const { error } = await supabase.from("unit_notes").delete().eq("id", req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
 });

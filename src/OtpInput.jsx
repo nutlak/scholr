@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 export default function OtpInput({ value = "", onChange, disabled = false }) {
   const refs = useRef([]);

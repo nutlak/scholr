@@ -17,7 +17,7 @@ function timeAgo(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
 // Warm tint palette for class/member color accents (deterministic by id/name)
@@ -35,6 +35,21 @@ function tintFor(seed) {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return TINTS[Math.abs(h) % TINTS.length];
+}
+
+// Named class-color palette (the .color column stores the hex `hue`)
+const CLASS_COLORS = [
+  { id: "purple",  hue: "#A78BFA", deep: "#8B5CF6", label: "Purple"  },
+  { id: "blue",    hue: "#60A5FA", deep: "#3B82F6", label: "Blue"    },
+  { id: "emerald", hue: "#34D399", deep: "#10B981", label: "Emerald" },
+  { id: "amber",   hue: "#FBBF24", deep: "#F59E0B", label: "Amber"   },
+  { id: "pink",    hue: "#F472B6", deep: "#EC4899", label: "Pink"    },
+  { id: "rose",    hue: "#FB7185", deep: "#F43F5E", label: "Rose"    },
+];
+function classTint(color) {
+  if (!color) return CLASS_COLORS[0];
+  const lower = color.toLowerCase();
+  return CLASS_COLORS.find(c => c.hue.toLowerCase() === lower) ?? CLASS_COLORS[0];
 }
 
 function Avatar({ name, size = 28, seed }) {
@@ -77,7 +92,7 @@ function AvatarStack({ names }) {
 
 function NotebookCard({ nb, onClick, starred = false, onToggleStar }) {
   const [hovered, setHovered] = useState(false);
-  const t = tintFor(nb.id ?? nb.title);
+  const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
   return (
     <div
       onClick={onClick}
@@ -764,8 +779,11 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
   const [deleteError, setDeleteError] = useState("");
   const [members, setMembers]       = useState([]);
   const [showForge, setShowForge]   = useState(false);
+  const [showNotes, setShowNotes]   = useState(false);
   const bottomRef = useRef(null);
-  const t = tintFor(nb.id ?? nb.title);
+  // Prefer the class-assigned color when available, otherwise fall back to
+  // the deterministic per-notebook tint so other views still render nicely.
+  const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
 
   useEffect(() => {
     api.listMembers(nb.id).then(setMembers).catch(() => {});
@@ -981,6 +999,25 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <button
+            onClick={() => setShowNotes(v => !v)}
+            title="Toggle Unit Notes"
+            className="btn-press"
+            style={{
+              background: showNotes
+                ? `linear-gradient(135deg, ${t.hue}28 0%, ${t.hue}10 100%)`
+                : "transparent",
+              border: `1px solid ${showNotes ? `${t.hue}55` : "rgba(255,255,255,0.08)"}`,
+              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 600,
+              color: showNotes ? t.hue : "rgba(245,245,250,0.65)",
+              display: "flex", alignItems: "center", gap: 6,
+              letterSpacing: "-0.01em",
+              boxShadow: showNotes ? `0 0 0 1px ${t.hue}22, 0 4px 14px ${t.hue}22` : "none",
+            }}
+            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#F5F5FA"; }}}
+            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}}
+          >📝 Notes</button>
+          <button
             onClick={() => setShowForge(f => !f)}
             title="Toggle The Forge"
             className="btn-press"
@@ -1191,12 +1228,219 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast }) {
               {loading ? "…" : "↑"}
             </button>
           </div>
+
+          {/* Unit notes panel (collapsible, sits under the chat input) */}
+          {showNotes && (
+            <UnitNotes
+              notebookId={nb.id}
+              currentUserId={currentUserId}
+              tint={t}
+              onClose={() => setShowNotes(false)}
+            />
+          )}
         </div>
 
         {/* Forge panel */}
         {showForge && (
           <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
         )}
+      </div>
+    </div>
+  );
+}
+
+function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
+  const [notes, setNotes]     = useState([]);
+  const [draft, setDraft]     = useState("");
+  const [posting, setPosting] = useState(false);
+  const [loaded, setLoaded]   = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getUnitNotes(notebookId)
+      .then(rows => { if (!cancelled) { setNotes(rows); setLoaded(true); } })
+      .catch(() => { if (!cancelled) setLoaded(true); });
+    return () => { cancelled = true; };
+  }, [notebookId]);
+
+  async function add(e) {
+    e?.preventDefault?.();
+    const text = draft.trim();
+    if (!text || posting) return;
+    setPosting(true);
+    try {
+      const note = await api.addUnitNote(notebookId, text);
+      setNotes(n => [note, ...n]);
+      setDraft("");
+    } catch (err) {
+      console.error("addUnitNote failed:", err);
+    }
+    setPosting(false);
+  }
+
+  async function remove(id) {
+    const prev = notes;
+    setNotes(n => n.filter(x => x.id !== id));
+    try { await api.deleteUnitNote(id); }
+    catch (err) { console.error(err); setNotes(prev); }
+  }
+
+  return (
+    <div style={{
+      marginTop: 14,
+      maxHeight: 320,
+      display: "flex", flexDirection: "column", minHeight: 0,
+      background: "linear-gradient(180deg, #14141F 0%, #181824 100%)",
+      border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: 14,
+      padding: "12px 14px 14px",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+      animation: "fadeIn 0.2s ease",
+    }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 10,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 6,
+            background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, boxShadow: `0 2px 8px ${tint.hue}50`,
+          }}>📝</div>
+          <div style={{
+            fontSize: 13.5, fontWeight: 600, color: "#F5F5FA",
+            fontFamily: FONT, letterSpacing: "0.3px",
+          }}>
+            Unit Notes {notes.length > 0 && (
+              <span style={{
+                fontSize: 11, fontWeight: 600, color: tint.hue,
+                background: `${tint.hue}18`, border: `1px solid ${tint.hue}30`,
+                padding: "1px 7px", borderRadius: 999, marginLeft: 6,
+              }}>{notes.length}</span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          title="Hide notes"
+          style={{
+            background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 8, width: 26, height: 26, cursor: "pointer",
+            color: "rgba(245,245,250,0.55)", fontSize: 12, lineHeight: 1,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+        >✕</button>
+      </div>
+
+      <form onSubmit={add} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          placeholder="Add a note for your study group…"
+          maxLength={2000}
+          style={{
+            flex: 1, background: "#0F0F18",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 10, padding: "0 12px", height: 38,
+            color: "#F5F5FA", fontSize: 13, fontFamily: FONT,
+            outline: "none", transition: "all 0.18s", letterSpacing: 0,
+          }}
+          onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
+          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.boxShadow = "none"; }}
+        />
+        <button
+          type="submit"
+          disabled={!draft.trim() || posting}
+          className="btn-press"
+          style={{
+            background: draft.trim() && !posting
+              ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`
+              : "#1C1C2A",
+            border: draft.trim() && !posting ? "none" : "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 10, padding: "0 14px", height: 38,
+            color: "#fff", fontWeight: 600, fontSize: 13,
+            cursor: draft.trim() && !posting ? "pointer" : "not-allowed",
+            fontFamily: FONT, letterSpacing: "-0.01em",
+            opacity: draft.trim() && !posting ? 1 : 0.55,
+            boxShadow: draft.trim() && !posting ? `0 4px 12px ${tint.hue}40` : "none",
+          }}
+        >{posting ? "…" : "Add"}</button>
+      </form>
+
+      <div style={{
+        flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8,
+        minHeight: 0,
+      }}>
+        {!loaded ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            color: "rgba(245,245,250,0.4)", fontSize: 12.5, padding: "12px 4px",
+          }}>
+            <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5, borderTopColor: tint.hue, borderColor: `${tint.hue}26` }} />
+            Loading notes…
+          </div>
+        ) : notes.length === 0 ? (
+          <div style={{
+            padding: "16px 12px", textAlign: "center",
+            color: "rgba(245,245,250,0.4)", fontSize: 12.5,
+            border: "1px dashed rgba(255,255,255,0.07)", borderRadius: 10,
+            fontFamily: FONT,
+          }}>
+            No notes yet — be the first to share a thought with your group.
+          </div>
+        ) : notes.map(n => {
+          const author = n.first_name || n.full_name || n.email?.split("@")[0] || "Member";
+          const mine = n.user_id === currentUserId;
+          return (
+            <div key={n.id} style={{
+              display: "flex", gap: 10, padding: "10px 12px",
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              borderRadius: 10,
+              animation: "fadeIn 0.18s ease",
+            }}>
+              <Avatar name={n.email ?? author} size={26} seed={n.email ?? author} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6, marginBottom: 3,
+                }}>
+                  <span style={{
+                    fontSize: 12.5, fontWeight: 600, color: "#F5F5FA",
+                    fontFamily: FONT, letterSpacing: 0,
+                  }}>{mine ? "You" : author}</span>
+                  <span style={{
+                    fontSize: 10.5, color: "rgba(245,245,250,0.35)",
+                    fontFamily: MONO,
+                  }}>{timeAgo(n.created_at)}</span>
+                </div>
+                <div style={{
+                  fontSize: 13, color: "rgba(245,245,250,0.85)",
+                  fontFamily: FONT, lineHeight: 1.6, whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}>{n.content}</div>
+              </div>
+              {mine && (
+                <button
+                  onClick={() => remove(n.id)}
+                  title="Delete note"
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "2px 6px", fontSize: 12,
+                    color: "rgba(245,245,250,0.3)",
+                    transition: "color 0.15s, background 0.15s",
+                    borderRadius: 6, height: 24, flexShrink: 0,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.3)"; e.currentTarget.style.background = "transparent"; }}
+                >✕</button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1550,9 +1794,10 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
   );
 }
 
-function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass }) {
+function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor }) {
   const [hovered, setHovered] = useState(false);
-  const t = tintFor(cls.id ?? cls.title);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const t = classTint(cls.color);
 
   return (
     <div style={{
@@ -1610,6 +1855,60 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         }}>
           {units === null ? "…" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
         </div>
+
+        {onChangeColor && (
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              onClick={e => { e.stopPropagation(); setPickerOpen(v => !v); }}
+              title="Change color"
+              style={{
+                width: 22, height: 22, borderRadius: 7, padding: 0,
+                border: "1.5px solid rgba(255,255,255,0.15)",
+                background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
+                cursor: "pointer",
+                opacity: hovered || pickerOpen ? 1 : 0.6,
+                transition: "opacity 0.18s, transform 0.15s, box-shadow 0.18s",
+                boxShadow: pickerOpen
+                  ? `0 0 0 3px ${t.hue}33, 0 4px 12px ${t.hue}55`
+                  : `0 1px 4px ${t.hue}40`,
+              }}
+              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.transform = "scale(1.1)"; }}
+              onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.transform = "scale(1)"; }}
+            />
+            {pickerOpen && (
+              <>
+                {/* click-outside catcher */}
+                <div
+                  onClick={e => { e.stopPropagation(); setPickerOpen(false); }}
+                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                />
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    position: "absolute", top: "calc(100% + 8px)", right: 0,
+                    background: "rgba(20,20,31,0.96)",
+                    backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 12, padding: 12,
+                    zIndex: 60,
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.1)",
+                    animation: "fadeIn 0.15s ease",
+                  }}
+                >
+                  <div style={{
+                    fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.5)",
+                    letterSpacing: "0.5px", textTransform: "uppercase",
+                    marginBottom: 10, padding: "0 2px",
+                  }}>Class Color</div>
+                  <ColorSwatchPicker
+                    value={cls.color}
+                    onChange={hue => { onChangeColor(hue); setPickerOpen(false); }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {onDeleteClass && (
           <button
@@ -1682,18 +1981,53 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
   );
 }
 
+function ColorSwatchPicker({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {CLASS_COLORS.map(c => {
+        const selected = c.hue.toLowerCase() === (value ?? "").toLowerCase();
+        return (
+          <button
+            key={c.id}
+            type="button"
+            title={c.label}
+            onClick={() => onChange(c.hue)}
+            className="btn-press"
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: `linear-gradient(135deg, ${c.hue} 0%, ${c.deep} 100%)`,
+              border: selected
+                ? `2px solid #F5F5FA`
+                : "2px solid transparent",
+              cursor: "pointer", padding: 0,
+              boxShadow: selected
+                ? `0 0 0 3px ${c.hue}44, 0 6px 16px ${c.hue}55`
+                : `0 2px 6px ${c.hue}30`,
+              transition: "all 0.18s",
+              outline: "none",
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function NewClassModal({ onClose, onCreate }) {
   const [title, setTitle] = useState("");
+  const [color, setColor] = useState(CLASS_COLORS[0].hue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  const tint = classTint(color);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) { setError("Class name is required."); return; }
     setError(""); setLoading(true);
-    try { await onCreate(title.trim()); onClose(); }
+    try { await onCreate(title.trim(), color); onClose(); }
     catch (err) { setError(err.message); }
     setLoading(false);
   }
@@ -1702,6 +2036,11 @@ function NewClassModal({ onClose, onCreate }) {
     width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
     borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
     fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
+  };
+  const lbl = {
+    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    letterSpacing: "0.5px", textTransform: "uppercase",
+    display: "block", marginBottom: 9, fontWeight: 600,
   };
 
   return (
@@ -1716,28 +2055,35 @@ function NewClassModal({ onClose, onCreate }) {
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: `0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px ${tint.hue}22`,
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
-          pointerEvents: "none",
+          background: `radial-gradient(circle, ${tint.hue}28 0%, transparent 70%)`,
+          pointerEvents: "none", transition: "background 0.25s",
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Class</div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>A class holds your units and notes for one course</div>
+            <div style={{ fontSize: 19, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "0.3px" }}>New Class</div>
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.6 }}>A class holds your units and notes for one course</div>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <input
-              ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. AP World History" maxLength={80}
-              style={inp}
-              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
-            />
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={lbl}>Class Name</label>
+              <input
+                ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
+                placeholder="e.g. AP World History" maxLength={80}
+                style={inp}
+                onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
+                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Color</label>
+              <ColorSwatchPicker value={color} onChange={setColor} />
+            </div>
             {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
               <button type="button" onClick={onClose} className="btn-press" style={{
@@ -1750,13 +2096,14 @@ function NewClassModal({ onClose, onCreate }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
               >Cancel</button>
               <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
-                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
                 border: "none", borderRadius: 10, padding: "0 20px", height: 38,
                 color: "#fff", fontWeight: 600, fontSize: 13,
                 cursor: loading || !title.trim() ? "not-allowed" : "pointer",
                 fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
-                boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                boxShadow: `0 4px 14px ${tint.hue}55, 0 0 0 1px ${tint.hue}66`,
                 letterSpacing: "-0.01em",
+                transition: "all 0.18s",
               }}>{loading ? "Creating…" : "Create Class"}</button>
             </div>
           </form>
@@ -2058,11 +2405,10 @@ function getDisplayName(user) {
 function getGreeting(name) {
   const h = new Date().getHours();
   const first = name.split(" ")[0];
-  if (h < 5)  return `Still up, ${first}?`;
-  if (h < 12) return `Good morning, ${first}`;
-  if (h < 17) return `Good afternoon, ${first}`;
-  if (h < 21) return `Good evening, ${first}`;
-  return `Back at it, ${first}`;
+  if (h >= 6 && h < 12)  return { text: `Good morning, ${first}`,   emoji: "☕"  };
+  if (h >= 12 && h < 17) return { text: `Good afternoon, ${first}`, emoji: "☀️" };
+  if (h >= 17 && h < 21) return { text: `Good evening, ${first}`,   emoji: "🌙" };
+  return { text: `Burning the midnight oil, ${first}`, emoji: "🦉" };
 }
 
 const NAV = [
@@ -2169,15 +2515,36 @@ export default function Scholr() {
     }
   }
 
-  async function handleCreateClass(title) {
-    const cls = await api.createClass(title);
+  async function handleCreateClass(title, color) {
+    const cls = await api.createClass(title, color);
     setClasses(prev => [...prev, cls]);
+  }
+
+  async function handleChangeClassColor(classId, color) {
+    // Optimistic update so the UI feels snappy
+    const prevClasses = classes;
+    setClasses(cs => cs.map(c => c.id === classId ? { ...c, color } : c));
+    try {
+      await api.updateClassColor(classId, color);
+    } catch (err) {
+      console.error("updateClassColor failed:", err);
+      setClasses(prevClasses);
+      setToast("Could not update color");
+      setTimeout(() => setToast(""), 2500);
+    }
   }
 
   async function handleCreateUnit(classId, title, topic) {
     const unit = await api.createClassNotebook(classId, title, topic, getDisplayName(user));
     setClassUnitsCache(prev => ({ ...prev, [classId]: [...(prev[classId] ?? []), unit] }));
     setNotebooks(prev => [unit, ...prev]);
+  }
+
+  // When opening a unit from a class card, attach the class's color so
+  // NotebookView/Forge can tint accordingly. For units opened from My Notes /
+  // Shared / Starred views we fall back to the deterministic per-notebook tint.
+  function openUnitWithClassColor(unit, classColor) {
+    setActiveNb(classColor ? { ...unit, color: classColor } : unit);
   }
 
   async function handleToggleStar(nb) {
@@ -2528,12 +2895,24 @@ export default function Scholr() {
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 28, fontWeight: 700, color: "#F5F5FA",
-                    fontFamily: FONT, letterSpacing: "-0.03em", lineHeight: 1.1,
+                    fontSize: 30, fontWeight: 600, color: "#F5F5FA",
+                    fontFamily: FONT, letterSpacing: "0.3px", lineHeight: 1.15,
+                    textShadow: "0 0 24px rgba(167,139,250,0.18)",
+                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+                    animation: "fadeIn 0.35s ease",
                   }}>
-                    {activeView === "dashboard"
-                      ? getGreeting(displayName)
-                      : viewLabel}
+                    {activeView === "dashboard" ? (() => {
+                      const g = getGreeting(displayName);
+                      return (
+                        <>
+                          <span>{g.text}</span>
+                          <span style={{
+                            fontSize: 26,
+                            filter: "drop-shadow(0 0 12px rgba(167,139,250,0.35))",
+                          }}>{g.emoji}</span>
+                        </>
+                      );
+                    })() : viewLabel}
                   </div>
                   <div style={{
                     fontSize: 13.5, color: "rgba(245,245,250,0.5)",
@@ -2603,7 +2982,8 @@ export default function Scholr() {
                         expanded={expandedClassId === cls.id}
                         units={classUnitsCache[cls.id] ?? null}
                         onToggle={() => handleToggleClass(cls.id)}
-                        onOpenUnit={unit => setActiveNb(unit)}
+                        onChangeColor={color => handleChangeClassColor(cls.id, color)}
+                        onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
                         onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
                         onDeleteClass={() => setDeleteClassTarget(cls)}
                       />

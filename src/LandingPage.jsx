@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const FONT = `"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);

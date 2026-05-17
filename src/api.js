@@ -96,14 +96,27 @@ export const api = {
     return res.json();
   },
 
-  async createClass(title) {
+  async createClass(title, color) {
     const headers = await authHeaders();
+    const body = color ? { title, color } : { title };
     const res = await fetch(`${API_URL}/api/classes`, {
-      method: "POST", headers, body: JSON.stringify({ title }),
+      method: "POST", headers, body: JSON.stringify(body),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       throw new Error(err.error ?? "Failed to create class");
+    }
+    return res.json();
+  },
+
+  async updateClassColor(classId, color) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/${classId}/color`, {
+      method: "PATCH", headers, body: JSON.stringify({ color }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update color");
     }
     return res.json();
   },
@@ -349,5 +362,38 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
     return data;
+  },
+
+  async getUnitNotes(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/unit-notes`, { headers });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to load notes");
+    }
+    return res.json();
+  },
+
+  async addUnitNote(notebookId, content) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/unit-notes`, {
+      method: "POST", headers, body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to add note");
+    }
+    return res.json();
+  },
+
+  async deleteUnitNote(noteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${noteId}`, {
+      method: "DELETE", headers,
+    });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete note");
+    }
   },
 };

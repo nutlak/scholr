@@ -291,6 +291,9 @@ app.get("/api/health", (_, res) => res.json({
     CLAUDE_API_KEY:            !!process.env.CLAUDE_API_KEY,
     RESEND_API_KEY:            !!process.env.RESEND_API_KEY,
     CLIENT_ORIGIN:             !!process.env.CLIENT_ORIGIN,
+    STRIPE_SECRET_KEY:         !!process.env.STRIPE_SECRET_KEY,
+    STRIPE_PRICE_ID:           !!process.env.STRIPE_PRICE_ID,
+    STRIPE_WEBHOOK_SECRET:     !!process.env.STRIPE_WEBHOOK_SECRET,
   },
 }));
 

@@ -394,13 +394,6 @@ export default function LandingPage({ onSignIn }) {
             </button>
           </div>
 
-          <p style={{
-            fontSize: 13, color: "rgba(245,245,250,0.35)", fontFamily: FONT,
-            display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
-          }}>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px #34D399" }} />
-            Free forever for study groups · No credit card required
-          </p>
         </div>
 
         {/* Mock app preview */}
@@ -549,16 +542,6 @@ export default function LandingPage({ onSignIn }) {
             filter: "blur(40px)", pointerEvents: "none",
           }} />
           <div style={{ position: "relative" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.28)",
-              borderRadius: 999, padding: "5px 12px",
-              fontSize: 11, fontWeight: 600, color: "#C4B5FD",
-              marginBottom: 22, letterSpacing: "0.08em", textTransform: "uppercase",
-              fontFamily: FONT,
-            }}>
-              Free forever for study groups
-            </div>
             <h2 style={{
               fontSize: "clamp(32px, 5vw, 48px)",
               fontWeight: 700, lineHeight: 1.05,

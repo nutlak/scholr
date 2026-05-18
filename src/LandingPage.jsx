@@ -520,7 +520,7 @@ export default function LandingPage({ onSignIn }) {
             sub="No setup, no syllabus parsing, no config. Just upload and ask."
             accent="#60A5FA"
           />
-          <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%" }}>
+          <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
               <Step key={s.n} {...s} idx={i} last={i === STEPS.length - 1} />
             ))}

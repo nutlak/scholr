@@ -1776,37 +1776,38 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    console.log(`[delete-account] starting cleanup for user=${userId}`);
+    console.log(`[delete-account] starting for user=${userId}`);
 
-    // Belt-and-suspenders: explicitly clean every table that references auth.users,
-    // whether or not it has ON DELETE CASCADE. Log row counts so Railway logs show
-    // exactly what was found if deleteUser still fails.
-    const steps = [
-      // No-CASCADE tables (MUST be cleaned before deleteUser)
-      { table: "activities",           col: "user_id",    label: "activities (cascades → notifications)" },
-      { table: "messages",             col: "created_by", label: "messages" },
-      { table: "invites",              col: "created_by", label: "invites" },
-      { table: "verification_codes",   col: "user_id",    label: "verification_codes" },
-      // Has-CASCADE tables (belt-and-suspenders)
-      { table: "notifications",        col: "user_id",    label: "notifications" },
-      { table: "notebook_members",     col: "user_id",    label: "notebook_members" },
-      { table: "subscriptions",        col: "user_id",    label: "subscriptions" },
-      { table: "usage",                col: "user_id",    label: "usage" },
-    ];
+    // 1. Delete subscriptions first (FK to auth.users, no CASCADE)
+    await supabase.from("subscriptions").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted subscriptions");
 
-    for (const { table, col, label } of steps) {
-      const { error: delErr, count } = await supabase
-        .from(table)
-        .delete({ count: "exact" })
-        .eq(col, userId);
-      if (delErr) {
-        console.error(`[delete-account] cleanup error on ${label}:`, delErr.message, delErr);
-      } else {
-        console.log(`[delete-account] cleared ${label}: ${count ?? 0} rows`);
-      }
-    }
+    // 2. Delete usage (FK to auth.users, no CASCADE)
+    await supabase.from("usage").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted usage");
 
-    console.log(`[delete-account] calling admin.deleteUser for user=${userId}`);
+    // 3. Delete notifications (references activities + user_id)
+    await supabase.from("notifications").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted notifications");
+
+    // 4. Delete activities (FK to auth.users, no CASCADE)
+    await supabase.from("activities").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted activities");
+
+    // 5. Delete messages (FK to auth.users, no CASCADE)
+    await supabase.from("messages").delete().eq("created_by", userId);
+    console.log("[delete-account] deleted messages");
+
+    // 6. Delete invites (FK to auth.users, no CASCADE)
+    await supabase.from("invites").delete().eq("created_by", userId);
+    console.log("[delete-account] deleted invites");
+
+    // 7. Delete notebook membership rows (CASCADE, but clean explicitly)
+    await supabase.from("notebook_members").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted notebook_members");
+
+    // 8. Now safe to delete the auth user — Postgres CASCADE handles the rest
+    console.log("[delete-account] calling admin.deleteUser");
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
       console.error("[delete-account] admin.deleteUser failed:", error.message, JSON.stringify(error));

@@ -10,35 +10,35 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail } from "./email.js";
-import { rateLimit } from "express-rate-limit";
+import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
+// Auth'd routes key by user ID; IP is the fallback (ipKeyGenerator handles IPv6 safely)
 const queryLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100,
-  keyGenerator: req => req.user?.id ?? req.ip,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many requests. Please try again later." },
-  skip: req => !req.user, // auth middleware runs before; unauthenticated rejected earlier
 });
 const forgeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  keyGenerator: req => req.user?.id ?? req.ip,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many Forge requests. Please try again later." },
 });
 const checkoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 5,
-  keyGenerator: req => req.user?.id ?? req.ip,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many checkout attempts. Please wait a moment." },
 });
 const webhookLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 1000,
-  keyGenerator: req => req.ip,
+  keyGenerator: req => ipKeyGenerator(req),
   standardHeaders: true, legacyHeaders: false,
 });
 

@@ -1776,26 +1776,44 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // 1. Delete rows in tables that reference auth.users WITHOUT ON DELETE CASCADE.
-    //    These must be removed first or Postgres will block the auth user deletion.
-    //    Order matters: activities → notifications cascade, so delete activities first.
-    //    Tables with CASCADE (subscriptions, usage, notebook_members, classes,
-    //    starred, forge_outputs, note_reactions, note_comments, activity_log,
-    //    notifications) are handled automatically by Postgres after deleteUser.
-    await supabase.from("activities").delete().eq("user_id", userId);   // cascades → notifications
-    await Promise.all([
-      supabase.from("messages").delete().eq("created_by", userId),
-      supabase.from("invites").delete().eq("created_by", userId),
-      supabase.from("verification_codes").delete().eq("user_id", userId),
-    ]);
+    console.log(`[delete-account] starting cleanup for user=${userId}`);
 
-    // 2. Delete the auth user — Postgres CASCADE handles the rest
+    // Belt-and-suspenders: explicitly clean every table that references auth.users,
+    // whether or not it has ON DELETE CASCADE. Log row counts so Railway logs show
+    // exactly what was found if deleteUser still fails.
+    const steps = [
+      // No-CASCADE tables (MUST be cleaned before deleteUser)
+      { table: "activities",           col: "user_id",    label: "activities (cascades → notifications)" },
+      { table: "messages",             col: "created_by", label: "messages" },
+      { table: "invites",              col: "created_by", label: "invites" },
+      { table: "verification_codes",   col: "user_id",    label: "verification_codes" },
+      // Has-CASCADE tables (belt-and-suspenders)
+      { table: "notifications",        col: "user_id",    label: "notifications" },
+      { table: "notebook_members",     col: "user_id",    label: "notebook_members" },
+      { table: "subscriptions",        col: "user_id",    label: "subscriptions" },
+      { table: "usage",                col: "user_id",    label: "usage" },
+    ];
+
+    for (const { table, col, label } of steps) {
+      const { error: delErr, count } = await supabase
+        .from(table)
+        .delete({ count: "exact" })
+        .eq(col, userId);
+      if (delErr) {
+        console.error(`[delete-account] cleanup error on ${label}:`, delErr.message, delErr);
+      } else {
+        console.log(`[delete-account] cleared ${label}: ${count ?? 0} rows`);
+      }
+    }
+
+    console.log(`[delete-account] calling admin.deleteUser for user=${userId}`);
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
-      console.error("[delete-account] Supabase admin deleteUser error:", error);
+      console.error("[delete-account] admin.deleteUser failed:", error.message, JSON.stringify(error));
       return res.status(500).json({ error: "Failed to delete account. Please try again." });
     }
 
+    console.log(`[delete-account] success for user=${userId}`);
     res.status(204).end();
   } catch (err) {
     console.error("[delete-account] Unexpected error:", err);

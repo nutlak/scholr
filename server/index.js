@@ -1810,11 +1810,19 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
     await supabase.from("invites").delete().eq("created_by", userId);
     console.log("[delete-account] deleted invites");
 
-    // 7. Delete notebook membership rows (CASCADE, but clean explicitly)
+    // 7. Delete starred notebooks (CASCADE, but cascade is unreliable via GoTrue)
+    await supabase.from("starred_notebooks").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted starred_notebooks");
+
+    // 8. Delete notebook membership rows (CASCADE, but clean explicitly)
     await supabase.from("notebook_members").delete().eq("user_id", userId);
     console.log("[delete-account] deleted notebook_members");
 
-    // 8. Now safe to delete the auth user — Postgres CASCADE handles the rest
+    // 9. Delete daily_activity (FK to auth.users)
+    await supabase.from("daily_activity").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted daily_activity");
+
+    // 10. Now safe to delete the auth user — Postgres CASCADE handles the rest
     console.log("[delete-account] calling admin.deleteUser");
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {

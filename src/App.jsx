@@ -3767,10 +3767,8 @@ export default function Scholr() {
   }
 
   async function handleLogout() {
-    await api.signOut();          // notifies server + clears local Supabase session
-    setUser(null); setActiveNb(null); setNotebooks([]); setOwnedNotebooks([]);
-    setSharedNotebooks([]); setStarredNotebooks([]); setStarredIds(new Set());
-    setNotifications([]); setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");
+    await supabase.auth.signOut();
+    window.location.href = "/";
   }
 
   const displayName = getDisplayName(user);
@@ -4224,6 +4222,7 @@ export default function Scholr() {
                 </div>
               </div>
 
+              {/* Delete account — temporarily disabled
               <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(248,113,113,0.75)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Danger zone
               </div>
@@ -4237,20 +4236,9 @@ export default function Scholr() {
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
                   <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
                 </div>
-                <button
-                  onClick={() => setShowDeleteAccount(true)}
-                  className="btn-press"
-                  style={{
-                    background: "transparent", border: "1px solid rgba(248,113,113,0.3)",
-                    borderRadius: 10, padding: "0 14px", height: 36, color: "#F87171",
-                    fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-                    fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
-                    letterSpacing: "-0.01em",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.55)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
-                >Delete account</button>
+                <button onClick={() => setShowDeleteAccount(true)}>Delete account</button>
               </div>
+              */}
             </div>
 
           ) : (

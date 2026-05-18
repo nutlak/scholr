@@ -310,8 +310,8 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo-final.png" alt="scholr" width="32" height="32" style={{ borderRadius: 8, objectFit: "cover" }} />
-          <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
+          <span style={{ fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button className="nav-link" onClick={onSignIn}>Sign in</button>
@@ -336,7 +336,7 @@ export default function LandingPage({ onSignIn }) {
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
           {/* Logo */}
-          <img src="/scholr-logo-final.png" alt="scholr" width="64" height="64" style={{ borderRadius: 16, marginBottom: 20, objectFit: "cover" }} />
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 20, objectFit: "cover" }} />
 
           {/* Badge */}
           <div style={{
@@ -520,7 +520,7 @@ export default function LandingPage({ onSignIn }) {
             sub="No setup, no syllabus parsing, no config. Just upload and ask."
             accent="#60A5FA"
           />
-          <div style={{ marginTop: 56 }}>
+          <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%" }}>
             {STEPS.map((s, i) => (
               <Step key={s.n} {...s} idx={i} last={i === STEPS.length - 1} />
             ))}
@@ -578,8 +578,8 @@ export default function LandingPage({ onSignIn }) {
           fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo-final.png" alt="scholr" width="22" height="22" style={{ borderRadius: 5, objectFit: "cover" }} />
-          <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover" }} />
+          <span style={{ fontWeight: 700, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
           © {new Date().getFullYear()} Scholr · Built for students, by students

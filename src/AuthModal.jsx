@@ -238,7 +238,7 @@ export default function AuthModal({ onAuth }) {
             display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
             marginBottom: 6,
           }}>
-            <img src="/scholr-logo-final.png" alt="scholr" width="48" height="48" style={{ borderRadius: 12, marginBottom: 12, display: "block", objectFit: "cover" }} />
+            <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover", marginBottom: 12 }} />
             <div style={{
               fontFamily: FONT, fontSize: 22, fontWeight: 700,
               color: "#F5F5FA", letterSpacing: "-0.03em",

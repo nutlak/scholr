@@ -1775,11 +1775,30 @@ app.post("/api/auth/reset-password", async (req, res) => {
 app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
-  // Delete the Supabase auth user (cascades to notebooks/notes via DB foreign keys)
-  const { error } = await supabase.auth.admin.deleteUser(userId);
-  if (error) return res.status(500).json({ error: error.message });
+  try {
+    // 1. Delete rows in tables that reference auth.users WITHOUT ON DELETE CASCADE.
+    //    These must be removed first or Postgres will block the auth user deletion.
+    //    (Tables with ON DELETE CASCADE / SET NULL — subscriptions, usage, notebooks,
+    //     notes, notebook_members, etc. — are handled automatically by Postgres.)
+    await Promise.all([
+      supabase.from("notifications").delete().eq("user_id", userId),
+      supabase.from("messages").delete().eq("created_by", userId),
+      supabase.from("invites").delete().eq("created_by", userId),
+      supabase.from("verification_codes").delete().eq("user_id", userId),
+    ]);
 
-  res.status(204).end();
+    // 2. Delete the auth user — Postgres CASCADE handles the rest
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("[delete-account] Supabase admin deleteUser error:", error);
+      return res.status(500).json({ error: "Failed to delete account. Please try again." });
+    }
+
+    res.status(204).end();
+  } catch (err) {
+    console.error("[delete-account] Unexpected error:", err);
+    res.status(500).json({ error: "Failed to delete account. Please try again." });
+  }
 });
 
 // ── Subscription endpoints ────────────────────────────────────────────────────

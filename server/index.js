@@ -10,6 +10,37 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail } from "./email.js";
+import { rateLimit } from "express-rate-limit";
+
+// ── Rate limiters (applied per-route below) ───────────────────────────────────
+const queryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 100,
+  keyGenerator: req => req.user?.id ?? req.ip,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+  skip: req => !req.user, // auth middleware runs before; unauthenticated rejected earlier
+});
+const forgeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: req => req.user?.id ?? req.ip,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many Forge requests. Please try again later." },
+});
+const checkoutLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  keyGenerator: req => req.user?.id ?? req.ip,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many checkout attempts. Please wait a moment." },
+});
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1000,
+  keyGenerator: req => req.ip,
+  standardHeaders: true, legacyHeaders: false,
+});
 
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -58,7 +89,7 @@ app.use(cors({
 }));
 
 // ── Stripe webhook — raw body MUST be parsed before express.json() ────────────
-app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -124,7 +155,7 @@ app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), asyn
     res.json({ received: true });
   } catch (err) {
     console.error("Stripe webhook handler error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 
@@ -910,7 +941,7 @@ app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
 });
 
 // POST /api/notebooks/:id/query — AI query against notebook notes (Derek chat)
-app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res) => {
+app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, async (req, res) => {
   const { question } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
@@ -973,12 +1004,13 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
     incrementUsage(userId, "message").catch(err => console.error("usage increment error:", err));
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
-    res.status(500).json({ error: err.message });
+    console.error("[query] Claude error:", err);
+    res.status(500).json({ error: "Failed to get answer. Please try again." });
   }
 });
 
 // POST /api/notebooks/:id/forge — generate study materials with streaming SSE
-app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res) => {
+app.post("/api/notebooks/:id/forge", requireAuth, requireMember, forgeLimiter, async (req, res) => {
   const { action, topic } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
@@ -1263,7 +1295,7 @@ app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, r
     res.status(201).json({ success: true });
   } catch (err) {
     console.error("Invite endpoint error:", err);
-    res.status(500).json({ error: err.message ?? "Failed to send invite email." });
+    res.status(500).json({ error: "Failed to send invite email. Please try again." });
   }
 });
 
@@ -1601,7 +1633,8 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, a
     res.json({ answer });
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
-    res.status(500).json({ error: err.message });
+    console.error("[explain] Claude error:", err);
+    res.status(500).json({ error: "Failed to generate explanation. Please try again." });
   }
 });
 
@@ -1736,19 +1769,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/test-email?to=you@example.com — smoke-test Resend delivery
-// Remove or gate this route before going to production.
-app.get("/api/test-email", async (req, res) => {
-  const to = req.query.to;
-  if (!to) return res.status(400).json({ error: "Pass ?to=your@email.com" });
-
-  try {
-    await sendOtpEmail(to, "123456", "signup");
-    res.json({ ok: true, message: `Test OTP sent to ${to}` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// /api/test-email removed — was unprotected; use transactional email directly
 
 // DELETE /api/auth/delete-account — permanently delete the calling user's account
 app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
@@ -1793,7 +1814,7 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
 });
 
 // POST /api/create-checkout-session — create a Stripe checkout session
-app.post("/api/create-checkout-session", requireAuth, async (req, res) => {
+app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
   if (!process.env.STRIPE_PRICE_ID) return res.status(500).json({ error: "STRIPE_PRICE_ID not configured" });
 
@@ -1823,6 +1844,7 @@ app.post("/api/create-checkout-session", requireAuth, async (req, res) => {
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
+    client_reference_id: userId, // ties checkout back to our user_id in webhook
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],

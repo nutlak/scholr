@@ -1,0 +1,9 @@
+#!/bin/sh
+# Block commits containing Stripe, Anthropic, or Supabase secrets
+if git diff --cached | grep -E "(sk_live_|sk_test_|whsec_|SUPABASE_SERVICE_ROLE_KEY=|ANTHROPIC_API_KEY=|CLAUDE_API_KEY=|RESEND_API_KEY=|sb_secret_)"; then
+  echo ""
+  echo "❌ BLOCKED: Staged changes appear to contain secrets."
+  echo "   Remove the sensitive values and try again."
+  echo ""
+  exit 1
+fi

@@ -310,9 +310,7 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{ width: 28, height: 28, borderRadius: 6, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-            <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
-          </div>
+          <img src="/scholr-logo-final.png" alt="scholr" width="32" height="32" style={{ borderRadius: 8, objectFit: "cover" }} />
           <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -337,6 +335,9 @@ export default function LandingPage({ onSignIn }) {
           transform: heroVisible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
+          {/* Logo */}
+          <img src="/scholr-logo-final.png" alt="scholr" width="64" height="64" style={{ borderRadius: 16, marginBottom: 20, objectFit: "cover" }} />
+
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -594,9 +595,7 @@ export default function LandingPage({ onSignIn }) {
           fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{ width: 22, height: 22, borderRadius: 5, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-            <img src="/scholr-logo.png" alt="" style={{ position: "absolute", right: 0, top: 0, width: "200%", height: "200%", maxWidth: "none" }} />
-          </div>
+          <img src="/scholr-logo-final.png" alt="scholr" width="22" height="22" style={{ borderRadius: 5, objectFit: "cover" }} />
           <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>

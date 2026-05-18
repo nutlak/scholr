@@ -106,8 +106,11 @@ export const api = {
       method: "POST", headers, body: JSON.stringify(body),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create class");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create class");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
@@ -289,8 +292,11 @@ export const api = {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to generate");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to generate");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
 
     const reader = res.body.getReader();
@@ -363,7 +369,12 @@ export const api = {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+    if (!res.ok) {
+      const err = new Error(data.message ?? data.error ?? `Request failed (${res.status})`);
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
+    }
     return data;
   },
 
@@ -505,5 +516,35 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
     return data;
+  },
+
+  // ── Subscription & billing ──────────────────────────────────────────
+  async getSubscription() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/subscription`, { headers });
+    if (!res.ok) return { tier: "free", messagesUsed: 0, messagesLimit: 75, forgeUsed: 0, forgeLimit: 5 };
+    return res.json();
+  },
+
+  async createCheckoutSession() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/create-checkout-session`, { method: "POST", headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Failed to start checkout");
+    }
+    const { url } = await res.json();
+    window.location.href = url;
+  },
+
+  async createPortalSession() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/create-portal-session`, { method: "POST", headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Failed to open billing portal");
+    }
+    const { url } = await res.json();
+    window.location.href = url;
   },
 };

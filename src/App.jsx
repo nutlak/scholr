@@ -355,7 +355,7 @@ const FORGE_ACTIONS = [
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
-function TheForge({ nb, onClose, onToast }) {
+function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
   const [action, setAction]         = useState(null);
   const [topic, setTopic]           = useState("");
   const [content, setContent]       = useState("");
@@ -423,6 +423,12 @@ function TheForge({ nb, onClose, onToast }) {
         (err) => { setContent(`Error: ${err}`); setGenerating(false); }
       );
     } catch (err) {
+      if (err.code === "forge_limit_reached") {
+        setGenerating(false);
+        setAction(null);
+        onUpgradeNeeded?.("forge_limit_reached");
+        return;
+      }
       setContent(`Error: ${err.message}`);
       setGenerating(false);
     }
@@ -874,7 +880,7 @@ function SourcesPanel({ sources }) {
   );
 }
 
-function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueDate, onSetStatus }) {
+function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueDate, onSetStatus, onUpgradeNeeded }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -989,11 +995,17 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(err => { console.error("addMessage failed (assistant):", err); return null; });
       setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
     } catch (err) {
-      setMessages(m => [...m, {
-        role: "assistant",
-        text: `Sorry, something went wrong: ${err.message}`,
-        isError: true,
-      }]);
+      if (err.code === "message_limit_reached") {
+        // Remove the optimistic user message bubble and show upgrade modal
+        setMessages(m => m.slice(0, -1));
+        onUpgradeNeeded?.("message_limit_reached");
+      } else {
+        setMessages(m => [...m, {
+          role: "assistant",
+          text: `Sorry, something went wrong: ${err.message}`,
+          isError: true,
+        }]);
+      }
     } finally {
       setLoading(false);
     }
@@ -1548,7 +1560,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
 
         {/* Forge panel — desktop only; mobile uses full-screen overlay below */}
         {showForge && !isMobile && (
-          <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} />
+          <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
         )}
       </div>
 
@@ -1574,7 +1586,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             >← Chat</button>
           </div>
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <TheForge nb={nb} onClose={() => { setMobilePanelView('chat'); setShowForge(false); }} onToast={onToast} />
+            <TheForge nb={nb} onClose={() => { setMobilePanelView('chat'); setShowForge(false); }} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           </div>
         </div>
       )}
@@ -3384,6 +3396,127 @@ const NAV = [
   { id: "settings",  label: "Settings",   icon: "⚙"  },
 ];
 
+// ── UpgradeModal ─────────────────────────────────────────────────────────────
+function UpgradeModal({ limitType, onClose }) {
+  const [loading, setLoading] = useState(false);
+
+  const context = {
+    message_limit_reached: {
+      icon: "💬",
+      headline: "Message limit reached",
+      detail: "You've used all 75 messages this month on the free plan.",
+    },
+    forge_limit_reached: {
+      icon: "⚡",
+      headline: "Forge limit reached",
+      detail: "You've used all 5 Forge outputs this month on the free plan.",
+    },
+    class_limit_reached: {
+      icon: "📚",
+      headline: "Class limit reached",
+      detail: "Free accounts are limited to 3 classes.",
+    },
+  }[limitType] ?? {
+    icon: "🚀",
+    headline: "Upgrade to Pro",
+    detail: "Unlock the full scholr experience.",
+  };
+
+  async function handleUpgrade() {
+    setLoading(true);
+    try {
+      await api.createCheckoutSession();
+    } catch (err) {
+      setLoading(false);
+      console.error("Checkout error:", err);
+    }
+  }
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 3000,
+      background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 16, animation: "fadeIn 0.18s ease",
+    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{
+        background: "var(--s1, #14141F)",
+        border: "1px solid rgba(167,139,250,0.28)",
+        borderRadius: 20, padding: "32px 28px",
+        maxWidth: 400, width: "100%",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.12)",
+        animation: "slideInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+        fontFamily: FONT,
+      }}>
+        {/* Icon + headline */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>{context.icon}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.025em", marginBottom: 6 }}>
+            Upgrade to scholr <span style={{ color: "#A78BFA" }}>Pro</span>
+          </div>
+          <div style={{ fontSize: 13.5, color: "var(--t2, rgba(245,245,250,0.65))", lineHeight: 1.5 }}>
+            {context.detail}
+          </div>
+        </div>
+
+        {/* Price */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(167,139,250,0.04))",
+          border: "1px solid rgba(167,139,250,0.22)",
+          borderRadius: 12, padding: "14px 18px", marginBottom: 20,
+          display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
+        }}>
+          <span style={{ fontSize: 32, fontWeight: 700, color: "#A78BFA", letterSpacing: "-0.03em" }}>$8.49</span>
+          <span style={{ fontSize: 13, color: "var(--t3, rgba(245,245,250,0.45))", fontWeight: 500 }}>/month</span>
+        </div>
+
+        {/* Features */}
+        <div style={{ marginBottom: 24 }}>
+          {[
+            "Unlimited messages with Claude Sonnet (smarter AI)",
+            "Unlimited Forge outputs",
+            "Unlimited classes",
+          ].map(f => (
+            <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <span style={{ color: "#34D399", fontSize: 14, flexShrink: 0, marginTop: 1 }}>✓</span>
+              <span style={{ fontSize: 13.5, color: "var(--t1, #F5F5FA)", lineHeight: 1.4 }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Buttons */}
+        <button
+          onClick={handleUpgrade}
+          disabled={loading}
+          style={{
+            width: "100%", height: 46, marginBottom: 10,
+            background: loading ? "rgba(167,139,250,0.4)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+            border: "none", borderRadius: 12,
+            color: "#fff", fontWeight: 700, fontSize: 15,
+            fontFamily: FONT, cursor: loading ? "wait" : "pointer",
+            boxShadow: "0 4px 18px rgba(167,139,250,0.38)",
+            transition: "all 0.18s",
+          }}
+        >
+          {loading ? "Redirecting…" : "Upgrade now →"}
+        </button>
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%", height: 40, background: "transparent",
+            border: "1px solid var(--border, rgba(255,255,255,0.08))",
+            borderRadius: 12, color: "var(--t3, rgba(245,245,250,0.45))",
+            fontSize: 13, fontFamily: FONT, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          Maybe later
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Scholr() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -3421,6 +3554,8 @@ export default function Scholr() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  const [subscription, setSubscription] = useState({ tier: "free", messagesUsed: 0, messagesLimit: 75, forgeUsed: 0, forgeLimit: 5 });
+  const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -3504,6 +3639,15 @@ export default function Scholr() {
     api.listClasses().then(setClasses).catch(console.error);
     api.getNotifications().then(setNotifications).catch(console.error);
     api.getActivityHeatmap().then(setHeatmap).catch(console.error);
+    api.getSubscription().then(setSubscription).catch(console.error);
+
+    // Handle ?upgraded=true from Stripe success redirect
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "true") {
+      window.history.replaceState({}, "", "/app");
+      setToast("Welcome to scholr Pro! 🎉");
+      setTimeout(() => setToast(""), 4000);
+    }
   }, [user, authReady]);
 
   function patchNotebookEverywhere(notebookId, patch) {
@@ -3548,8 +3692,17 @@ export default function Scholr() {
   }
 
   async function handleCreateClass(title, color) {
-    const cls = await api.createClass(title, color);
-    setClasses(prev => [...prev, cls]);
+    try {
+      const cls = await api.createClass(title, color);
+      setClasses(prev => [...prev, cls]);
+    } catch (err) {
+      if (err.code === "class_limit_reached") {
+        setShowNewClassModal(false);
+        setUpgradeModal({ limitType: "class_limit_reached" });
+        return;
+      }
+      throw err;
+    }
   }
 
   async function handleChangeClassColor(classId, color) {
@@ -3672,6 +3825,13 @@ export default function Scholr() {
           cls={deleteClassTarget}
           onClose={() => setDeleteClassTarget(null)}
           onConfirm={() => handleDeleteClass(deleteClassTarget.id)}
+        />
+      )}
+
+      {upgradeModal && (
+        <UpgradeModal
+          limitType={upgradeModal.limitType}
+          onClose={() => setUpgradeModal(null)}
         />
       )}
 
@@ -3809,6 +3969,74 @@ export default function Scholr() {
           })}
 
           </div>{/* end scrollable nav section */}
+
+          {/* Usage indicator — free users only */}
+          {subscription.tier === "free" && (
+            <div style={{ padding: "0 12px 10px", flexShrink: 0 }}>
+              <div style={{
+                background: "var(--s2, #1C1C2A)",
+                border: "1px solid var(--border, rgba(255,255,255,0.07))",
+                borderRadius: 10, padding: "10px 12px",
+              }}>
+                {/* Messages */}
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      💬 Messages
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      {subscription.messagesUsed}/{subscription.messagesLimit}
+                    </span>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2,
+                      width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
+                      background: subscription.messagesUsed >= subscription.messagesLimit
+                        ? "#F87171"
+                        : "linear-gradient(90deg, #A78BFA, #8B5CF6)",
+                      transition: "width 0.4s ease",
+                    }} />
+                  </div>
+                </div>
+                {/* Forge */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      ⚡ Forge
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      {subscription.forgeUsed}/{subscription.forgeLimit}
+                    </span>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2,
+                      width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
+                      background: subscription.forgeUsed >= subscription.forgeLimit
+                        ? "#F87171"
+                        : "linear-gradient(90deg, #FBBF24, #F59E0B)",
+                      transition: "width 0.4s ease",
+                    }} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => setUpgradeModal({ limitType: "upgrade" })}
+                  style={{
+                    width: "100%", height: 30,
+                    background: "linear-gradient(135deg, rgba(167,139,250,0.18), rgba(167,139,250,0.08))",
+                    border: "1px solid rgba(167,139,250,0.25)",
+                    borderRadius: 7, color: "#A78BFA",
+                    fontSize: 11.5, fontWeight: 600, fontFamily: FONT,
+                    cursor: "pointer", letterSpacing: "-0.01em",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  ✦ Upgrade to Pro
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Profile card — pinned to bottom, never scrolls away */}
           <div style={{ padding: "0 12px 16px", flexShrink: 0 }}>
@@ -3952,6 +4180,7 @@ export default function Scholr() {
                 onSetStatus={status => handleSetStatus(activeNb, status)}
                 onSetDueDate={iso => handleSetDueDate(activeNb, iso)}
                 onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
+                onUpgradeNeeded={limitType => setUpgradeModal({ limitType })}
                 onDeleted={id => {
                   setNotebooks(prev => prev.filter(n => n.id !== id));
                   setClassUnitsCache(prev => {

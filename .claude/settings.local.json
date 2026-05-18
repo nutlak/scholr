@@ -19,7 +19,25 @@
       "mcp__Claude_in_Chrome__navigate",
       "mcp__Claude_in_Chrome__find",
       "mcp__Claude_in_Chrome__get_page_text",
-      "mcp__Claude_in_Chrome__read_page"
+      "mcp__Claude_in_Chrome__read_page",
+      "Bash(node --check index.js)",
+      "Bash(npx eslint *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(cp /mnt/user-data/uploads/scholr.png /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo.png && echo \"copied\")",
+      "Read(//private/tmp/**)",
+      "Read(//Users/noahbutlak/Downloads/**)",
+      "Bash(ls ~/Downloads/*.png ~/Desktop/*.png 2>/dev/null | grep -i \"scholr\")",
+      "Bash(ls /mnt/)",
+      "Read(//private/var/folders/**)",
+      "Bash(cp \"/Users/noahbutlak/Library/Mobile Documents/com~apple~CloudDocs/scholr.png\" /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo.png && echo \"copied\" && ls -la /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo.png)",
+      "Bash(grep \"const \\\\|= \\\\`\")",
+      "Bash(grep -n \"const.*style.*=\\\\s*\\\\`\" /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/src/App.jsx)",
+      "Bash(grep -n \"style.*=.*\\\\\\\\\\\\`\\\\|innerHTML\\\\|insertRule\\\\|document.head\\\\|styleSheet\" /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/src/App.jsx)",
+      "Bash(cp ~/Downloads/scholr-logo.png /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo.png && echo \"copied $\\(wc -c < /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo.png\\) bytes\")",
+      "Bash(git commit *)",
+      "Bash(find /Users/noahbutlak -name \"scholr-logo-final*\" 2>/dev/null; ls /Users/noahbutlak/scholr/.claude/worktrees/thirsty-curran-9e3e5e/public/scholr-logo-final.png 2>/dev/null || echo \"NOT FOUND\")"
     ]
   }
 }

@@ -7,6 +7,7 @@ import cors from "cors";
 import multer from "multer";
 import { randomBytes } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail } from "./email.js";
 
@@ -20,6 +21,9 @@ if (missing.length) {
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// ── Stripe ────────────────────────────────────────────────────────────────────
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ── Supabase clients ──────────────────────────────────────────────────────────
 // Service-role client: bypasses RLS, used for all server-side mutations
@@ -52,6 +56,78 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// ── Stripe webhook — raw body MUST be parsed before express.json() ────────────
+app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripe || !webhookSecret) {
+    return res.status(400).json({ error: "Stripe webhook not configured" });
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    console.error("Stripe webhook signature failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const customerId = session.customer;
+        const subscriptionId = session.subscription;
+        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        const periodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
+        const userId = await getUserIdByStripeCustomer(customerId);
+        if (userId) {
+          await supabase.from("subscriptions").upsert({
+            user_id: userId,
+            tier: "pro",
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            current_period_end: periodEnd,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+          console.log(`[stripe] checkout.session.completed: user=${userId} → pro`);
+        }
+        break;
+      }
+      case "customer.subscription.updated": {
+        const sub = event.data.object;
+        const isActive = sub.status === "active" || sub.status === "trialing";
+        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        await supabase.from("subscriptions")
+          .update({
+            tier: isActive ? "pro" : "free",
+            current_period_end: periodEnd,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", sub.id);
+        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status}`);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        await supabase.from("subscriptions")
+          .update({ tier: "free", updated_at: new Date().toISOString() })
+          .eq("stripe_subscription_id", sub.id);
+        console.log(`[stripe] subscription.deleted: id=${sub.id} → free`);
+        break;
+      }
+      default:
+        console.log(`[stripe] unhandled event: ${event.type}`);
+    }
+    res.json({ received: true });
+  } catch (err) {
+    console.error("Stripe webhook handler error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.json());
 
 // Attach authenticated user to req.user from Supabase JWT in Authorization header.
@@ -94,6 +170,110 @@ async function requireMember(req, res, next) {
   }
   req.membership = data; // { role: 'owner' | 'member' }
   next();
+}
+
+// ── Subscription & usage helpers ─────────────────────────────────────────────
+
+async function getUserIdByStripeCustomer(customerId) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("user_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  return data?.user_id ?? null;
+}
+
+async function getUserTier(userId) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("tier, current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data?.tier === "pro" && data?.current_period_end && new Date(data.current_period_end) > new Date()) {
+    return "pro";
+  }
+  return "free";
+}
+
+function getModel(tier) {
+  return tier === "pro" ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+}
+
+async function resetUsageIfNeeded(userId) {
+  const { data } = await supabase
+    .from("usage")
+    .select("id, reset_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data && new Date(data.reset_at) < new Date()) {
+    const nextReset = new Date();
+    nextReset.setMonth(nextReset.getMonth() + 1);
+    nextReset.setDate(1);
+    nextReset.setHours(0, 0, 0, 0);
+    await supabase.from("usage").update({
+      messages_this_month: 0,
+      forge_outputs_this_month: 0,
+      reset_at: nextReset.toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+  }
+}
+
+async function checkUsageLimit(userId, type) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  await resetUsageIfNeeded(userId);
+  const { data } = await supabase
+    .from("usage")
+    .select("messages_this_month, forge_outputs_this_month")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return { allowed: true }; // no record yet = new user
+  if (type === "message" && (data.messages_this_month ?? 0) >= 75) {
+    return { allowed: false, reason: "message_limit" };
+  }
+  if (type === "forge" && (data.forge_outputs_this_month ?? 0) >= 5) {
+    return { allowed: false, reason: "forge_limit" };
+  }
+  return { allowed: true };
+}
+
+async function checkClassLimit(userId) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  const { count, error } = await supabase
+    .from("classes")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (error) return { allowed: true }; // fail open
+  if ((count ?? 0) >= 3) return { allowed: false, reason: "class_limit" };
+  return { allowed: true };
+}
+
+async function incrementUsage(userId, type) {
+  const field = type === "message" ? "messages_this_month" : "forge_outputs_this_month";
+  const { data: existing } = await supabase
+    .from("usage")
+    .select(`id, ${field}`)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing) {
+    await supabase.from("usage").update({
+      [field]: (existing[field] ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+  } else {
+    const nextReset = new Date();
+    nextReset.setMonth(nextReset.getMonth() + 1);
+    nextReset.setDate(1);
+    nextReset.setHours(0, 0, 0, 0);
+    await supabase.from("usage").insert({
+      user_id: userId,
+      messages_this_month: type === "message" ? 1 : 0,
+      forge_outputs_this_month: type === "forge" ? 1 : 0,
+      reset_at: nextReset.toISOString(),
+    });
+  }
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -412,6 +592,15 @@ app.get("/api/classes", requireAuth, async (req, res) => {
 app.post("/api/classes", requireAuth, async (req, res) => {
   const { title, color } = req.body;
   if (!title) return res.status(400).json({ error: "title is required" });
+
+  const classLimit = await checkClassLimit(req.user.id);
+  if (!classLimit.allowed) {
+    return res.status(403).json({
+      error: "class_limit_reached",
+      message: "Free accounts are limited to 3 classes. Upgrade to Pro for unlimited.",
+    });
+  }
+
   const { data, error } = await supabase
     .from("classes")
     .insert({ user_id: req.user.id, title, color: color || "#A78BFA" })
@@ -717,13 +906,26 @@ app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
   res.json({ cleared: data?.length ?? 0 });
 });
 
-// POST /api/notebooks/:id/query — AI query against notebook notes (BYOK)
+// POST /api/notebooks/:id/query — AI query against notebook notes (Derek chat)
 app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res) => {
   const { question } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
   if (!question) return res.status(400).json({ error: "question is required" });
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Usage limit check
+  const userId = req.user.id;
+  const usageCheck = await checkUsageLimit(userId, "message");
+  if (!usageCheck.allowed) {
+    return res.status(403).json({
+      error: "message_limit_reached",
+      message: "You have reached your 75 message limit for this month. Upgrade to Pro for unlimited messages.",
+    });
+  }
+
+  const tier = await getUserTier(userId);
+  const model = getModel(tier);
 
   // Pull all text notes for this notebook
   const { data: notes, error } = await supabase
@@ -752,18 +954,20 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model,
       max_tokens: 1024,
       system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise. When you reference specific information from the notes, mention the source note title naturally. Example: "Based on the lecture notes titled 'Biology 101 Midterm Review', the mitochondria..." This helps the student trace facts back to their notes.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: question }],
     });
 
     const answer = message.content.find((b) => b.type === "text")?.text ?? "";
-    // Build a sources list: titles of notes whose names appear in the answer.
     const sources = (notes ?? [])
       .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
       .map(n => n.title);
     res.json({ answer, sources });
+
+    // Increment usage counter fire-and-forget
+    incrementUsage(userId, "message").catch(err => console.error("usage increment error:", err));
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
     res.status(500).json({ error: err.message });
@@ -780,6 +984,18 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
     return res.status(400).json({ error: "action must be one of: " + VALID_ACTIONS.join(", ") });
   if (!claudeKey)
     return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Usage limit check (before starting stream)
+  const forgeUsage = await checkUsageLimit(req.user.id, "forge");
+  if (!forgeUsage.allowed) {
+    return res.status(403).json({
+      error: "forge_limit_reached",
+      message: "You have reached your 5 Forge output limit this month. Upgrade to Pro for unlimited.",
+    });
+  }
+
+  const tier = await getUserTier(req.user.id);
+  const forgeModel = getModel(tier);
 
   const { data: notes, error } = await supabase
     .from("notes")
@@ -822,7 +1038,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
 
   try {
     stream = anthropic.messages.stream({
-      model: "claude-sonnet-4-6",
+      model: forgeModel,
       max_tokens: 2048,
       system: `You are a study material generator for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Generate high-quality, accurate study materials based solely on the notebook notes provided below. CRITICAL: Never use markdown formatting — no #, ##, **, *, -, or other markdown symbols. Write in plain, clean text only.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: prompts[action] }],
@@ -835,6 +1051,9 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
     await stream.finalMessage();
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+
+    // Increment forge usage fire-and-forget
+    incrementUsage(req.user.id, "forge").catch(err => console.error("forge usage increment error:", err));
   } catch (err) {
     if (!res.writableEnded) {
       res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
@@ -1362,10 +1581,12 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, a
     different_angle: "Re-explain the previous answer from a different perspective or angle — try a different mental model or framing.",
   };
 
+  const explainTier = await getUserTier(req.user.id);
+  const explainModel = getModel(explainTier);
   const anthropic = new Anthropic({ apiKey: claudeKey });
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model: explainModel,
       max_tokens: 1024,
       system: `You are Derek, a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer using the notes below. Write in plain conversational text — no markdown, no asterisks, no headers.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [
@@ -1535,6 +1756,100 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
 
   res.status(204).end();
+});
+
+// ── Subscription endpoints ────────────────────────────────────────────────────
+
+// GET /api/user/subscription — current tier + usage stats
+app.get("/api/user/subscription", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const tier = await getUserTier(userId);
+  await resetUsageIfNeeded(userId);
+
+  const { data: usageRow } = await supabase
+    .from("usage")
+    .select("messages_this_month, forge_outputs_this_month, reset_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  res.json({
+    tier,
+    messagesUsed:   usageRow?.messages_this_month ?? 0,
+    messagesLimit:  tier === "pro" ? null : 75,
+    forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
+    forgeLimit:     tier === "pro" ? null : 5,
+    resetAt:        usageRow?.reset_at ?? null,
+    currentPeriodEnd: sub?.current_period_end ?? null,
+  });
+});
+
+// POST /api/create-checkout-session — create a Stripe checkout session
+app.post("/api/create-checkout-session", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+  if (!process.env.STRIPE_PRICE_ID) return res.status(500).json({ error: "STRIPE_PRICE_ID not configured" });
+
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  // Get or create Stripe customer
+  let { data: sub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let customerId = sub?.stripe_customer_id;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: userEmail,
+      metadata: { supabase_user_id: userId },
+    });
+    customerId = customer.id;
+    await supabase.from("subscriptions").upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      tier: "free",
+    }, { onConflict: "user_id" });
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: "subscription",
+    payment_method_types: ["card"],
+    line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+    success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?upgraded=true`,
+    cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
+  });
+
+  res.json({ url: session.url });
+});
+
+// POST /api/create-portal-session — create a Stripe billing portal session
+app.post("/api/create-portal-session", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+
+  if (!sub?.stripe_customer_id) {
+    return res.status(400).json({ error: "No Stripe customer found for this user" });
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: sub.stripe_customer_id,
+    return_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app`,
+  });
+
+  res.json({ url: session.url });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

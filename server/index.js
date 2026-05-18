@@ -1778,10 +1778,12 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   try {
     // 1. Delete rows in tables that reference auth.users WITHOUT ON DELETE CASCADE.
     //    These must be removed first or Postgres will block the auth user deletion.
-    //    (Tables with ON DELETE CASCADE / SET NULL — subscriptions, usage, notebooks,
-    //     notes, notebook_members, etc. — are handled automatically by Postgres.)
+    //    Order matters: activities → notifications cascade, so delete activities first.
+    //    Tables with CASCADE (subscriptions, usage, notebook_members, classes,
+    //    starred, forge_outputs, note_reactions, note_comments, activity_log,
+    //    notifications) are handled automatically by Postgres after deleteUser.
+    await supabase.from("activities").delete().eq("user_id", userId);   // cascades → notifications
     await Promise.all([
-      supabase.from("notifications").delete().eq("user_id", userId),
       supabase.from("messages").delete().eq("created_by", userId),
       supabase.from("invites").delete().eq("created_by", userId),
       supabase.from("verification_codes").delete().eq("user_id", userId),

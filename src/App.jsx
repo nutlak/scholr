@@ -3757,9 +3757,9 @@ export default function Scholr() {
   }
 
   async function handleDeleteAccount() {
-    await api.deleteAccount();
+    await api.deleteAccount();    // cleans DB rows + deletes auth user
     localStorage.clear();
-    await supabase.auth.signOut();
+    await api.signOut();          // notifies server + clears local Supabase session
     setUser(null); setNotebooks([]); setOwnedNotebooks([]); setSharedNotebooks([]);
     setStarredNotebooks([]); setStarredIds(new Set()); setNotifications([]);
     setClasses([]); setClassUnitsCache({});
@@ -3767,7 +3767,7 @@ export default function Scholr() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await api.signOut();          // notifies server + clears local Supabase session
     setUser(null); setActiveNb(null); setNotebooks([]); setOwnedNotebooks([]);
     setSharedNotebooks([]); setStarredNotebooks([]); setStarredIds(new Set());
     setNotifications([]); setClasses([]); setClassUnitsCache({}); setActiveView("dashboard");

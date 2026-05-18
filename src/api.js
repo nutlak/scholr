@@ -68,6 +68,13 @@ export const api = {
     return shapeNotebook(nb, displayName);
   },
 
+  async signOut() {
+    // Tell the server first, then clear the local Supabase session
+    const headers = await authHeaders();
+    await fetch(`${API_URL}/api/auth/sign-out`, { method: "POST", headers }).catch(() => {});
+    await supabase.auth.signOut();
+  },
+
   async deleteAccount() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/auth/delete-account`, {

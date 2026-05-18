@@ -1771,6 +1771,14 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
 // /api/test-email removed — was unprotected; use transactional email directly
 
+// POST /api/auth/sign-out — server-side session invalidation
+// The real work (clearing local session) happens via supabase.auth.signOut() on the client.
+// This endpoint exists so the frontend has a consistent API surface and lets us
+// invalidate the session server-side if needed in the future.
+app.post("/api/auth/sign-out", requireAuth, async (req, res) => {
+  res.status(200).json({ success: true });
+});
+
 // DELETE /api/auth/delete-account — permanently delete the calling user's account
 app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;

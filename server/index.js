@@ -111,26 +111,44 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
         const session = event.data.object;
         const customerId = session.customer;
         const subscriptionId = session.subscription;
-        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        const periodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
-        const userId = await getUserIdByStripeCustomer(customerId);
-        if (userId) {
-          await supabase.from("subscriptions").upsert({
-            user_id: userId,
-            tier: "pro",
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            current_period_end: periodEnd,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id" });
-          console.log(`[stripe] checkout.session.completed: user=${userId} → pro`);
+
+        if (!subscriptionId) {
+          console.log("[stripe] checkout.session.completed: no subscription ID (one-time payment?), skipping");
+          break;
         }
+
+        // Look up userId via customer first, then fall back to client_reference_id
+        let userId = await getUserIdByStripeCustomer(customerId);
+        if (!userId && session.client_reference_id) {
+          userId = session.client_reference_id;
+          console.log(`[stripe] userId from client_reference_id: ${userId}`);
+        }
+
+        if (!userId) {
+          console.error(`[stripe] checkout.session.completed: no userId found for customer=${customerId}`);
+          break;
+        }
+
+        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        const rawEnd = stripeSub.current_period_end;
+        const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
+
+        await supabase.from("subscriptions").upsert({
+          user_id: userId,
+          tier: "pro",
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+        console.log(`[stripe] checkout.session.completed: user=${userId} → pro, period_end=${periodEnd}`);
         break;
       }
       case "customer.subscription.updated": {
         const sub = event.data.object;
         const isActive = sub.status === "active" || sub.status === "trialing";
-        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        const rawEnd = sub.current_period_end;
+        const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
         await supabase.from("subscriptions")
           .update({
             tier: isActive ? "pro" : "free",
@@ -138,13 +156,13 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", sub.id);
-        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status}`);
+        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status} tier=${isActive ? "pro" : "free"}`);
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object;
         await supabase.from("subscriptions")
-          .update({ tier: "free", updated_at: new Date().toISOString() })
+          .update({ tier: "free", stripe_subscription_id: null, updated_at: new Date().toISOString() })
           .eq("stripe_subscription_id", sub.id);
         console.log(`[stripe] subscription.deleted: id=${sub.id} → free`);
         break;

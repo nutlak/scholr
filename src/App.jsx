@@ -3717,6 +3717,20 @@ export default function Scholr() {
     }
   }
 
+  const [portalLoading, setPortalLoading] = useState(false);
+  async function handleManageSubscription() {
+    setPortalLoading(true);
+    try {
+      // api.createPortalSession() redirects via window.location.href on success
+      await api.createPortalSession();
+    } catch (err) {
+      console.error("Portal session error:", err);
+      setToast("Could not open subscription management. Please try again.");
+      setTimeout(() => setToast(""), 3500);
+      setPortalLoading(false);
+    }
+  }
+
   async function handleChangeClassColor(classId, color) {
     // Optimistic update so the UI feels snappy
     const prevClasses = classes;
@@ -4262,6 +4276,107 @@ export default function Scholr() {
                     <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
                     <div style={{ fontSize: 14, color: "var(--t1, #F5F5FA)", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
                   </div>
+                </div>
+              </div>
+
+              {/* ── Subscription ──────────────────────────────────────────── */}
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+                Subscription
+              </div>
+              <div style={{
+                background: subscription.tier === "pro"
+                  ? "linear-gradient(180deg, rgba(167,139,250,0.08) 0%, var(--s1, #14141F) 100%)"
+                  : "var(--s1, #14141F)",
+                border: `1px solid ${subscription.tier === "pro" ? "rgba(167,139,250,0.28)" : "var(--border, rgba(255,255,255,0.07))"}`,
+                borderRadius: 14, padding: "20px 22px", marginBottom: 32,
+                boxShadow: subscription.tier === "pro"
+                  ? "0 12px 30px rgba(167,139,250,0.12), 0 0 0 1px rgba(167,139,250,0.12)"
+                  : "var(--sh-card, 0 1px 3px rgba(0,0,0,0.2))",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 220px", minWidth: 200 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: subscription.tier === "pro" ? "#A78BFA" : "var(--t3, rgba(245,245,250,0.5))",
+                        fontFamily: FONT,
+                      }}>
+                        Current plan
+                      </div>
+                      {subscription.tier === "pro" && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                          color: "#fff", fontFamily: FONT,
+                          background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+                          padding: "2px 8px", borderRadius: 999,
+                          boxShadow: "0 2px 8px rgba(167,139,250,0.4)",
+                        }}>
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: 18, fontWeight: 700,
+                      color: "var(--t1, #F5F5FA)",
+                      fontFamily: FONT, letterSpacing: "-0.02em", marginBottom: 4,
+                    }}>
+                      {subscription.tier === "pro" ? (
+                        <>scholr <span style={{ color: "#A78BFA" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t2, rgba(245,245,250,0.65))" }}>$8.49/month</span></>
+                      ) : "scholr Free"}
+                    </div>
+                    {subscription.tier === "pro" && subscription.currentPeriodEnd && (
+                      <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>
+                        Next billing on {new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </div>
+                    )}
+                    {subscription.tier !== "pro" && (
+                      <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>
+                        Upgrade for unlimited messages, Forge, classes, and storage.
+                      </div>
+                    )}
+                  </div>
+                  {subscription.tier === "pro" ? (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="btn-press"
+                      style={{
+                        background: "transparent",
+                        border: "1px solid rgba(167,139,250,0.45)",
+                        borderRadius: 10, padding: "0 16px", height: 38,
+                        color: "#A78BFA",
+                        fontSize: 13, fontWeight: 600,
+                        cursor: portalLoading ? "wait" : "pointer",
+                        fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
+                        letterSpacing: "-0.01em",
+                        opacity: portalLoading ? 0.7 : 1,
+                        transition: "all 0.18s",
+                      }}
+                      onMouseEnter={e => { if (!portalLoading) { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.7)"; }}}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.45)"; }}
+                    >
+                      {portalLoading ? "Opening…" : "Manage subscription"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setUpgradeModal({ limitType: "upgrade" })}
+                      className="btn-press"
+                      style={{
+                        background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+                        border: "none",
+                        borderRadius: 10, padding: "0 18px", height: 38,
+                        color: "#fff",
+                        fontSize: 13, fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
+                        letterSpacing: "-0.01em",
+                        boxShadow: "0 6px 18px rgba(167,139,250,0.38)",
+                        transition: "transform 0.18s, box-shadow 0.18s",
+                      }}
+                    >
+                      Upgrade to Pro
+                    </button>
+                  )}
                 </div>
               </div>
 

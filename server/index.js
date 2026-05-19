@@ -130,7 +130,9 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
         }
 
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
-        const rawEnd = stripeSub.current_period_end;
+        // Stripe's newer API moves current_period_end to items.data[0]; fall back to top-level
+        const rawEnd = stripeSub.current_period_end
+          ?? stripeSub.items?.data?.[0]?.current_period_end;
         const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
 
         await supabase.from("subscriptions").upsert({
@@ -147,7 +149,9 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
       case "customer.subscription.updated": {
         const sub = event.data.object;
         const isActive = sub.status === "active" || sub.status === "trialing";
-        const rawEnd = sub.current_period_end;
+        // current_period_end may be on items.data[0] in newer Stripe API versions
+        const rawEnd = sub.current_period_end
+          ?? sub.items?.data?.[0]?.current_period_end;
         const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
         await supabase.from("subscriptions")
           .update({

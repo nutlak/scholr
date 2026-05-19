@@ -3404,7 +3404,7 @@ function UpgradeModal({ limitType, onClose }) {
     message_limit_reached: {
       icon: "💬",
       headline: "Message limit reached",
-      detail: "You've used all 50 messages this month on the free plan.",
+      detail: "You've used all 30 messages this month on the free plan.",
     },
     forge_limit_reached: {
       icon: "⚡",
@@ -3419,7 +3419,7 @@ function UpgradeModal({ limitType, onClose }) {
     notebook_limit_reached: {
       icon: "📒",
       headline: "Storage limit reached",
-      detail: "Free accounts are limited to 30 notes. Upgrade for unlimited storage.",
+      detail: "Free accounts are limited to 15 notes. Upgrade for unlimited storage.",
     },
   }[limitType] ?? {
     icon: "🚀",
@@ -3563,9 +3563,9 @@ export default function Scholr() {
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
     tier: "free",
-    messagesUsed: 0, messagesLimit: 50,
+    messagesUsed: 0, messagesLimit: 30,
     forgeUsed: 0, forgeLimit: 3,
-    notebooksUsed: 0, notebooksLimit: 30,
+    notebooksUsed: 0, notebooksLimit: 15,
   });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
 

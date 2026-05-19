@@ -537,9 +537,9 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/subscription`, { headers });
     if (!res.ok) return {
       tier: "free",
-      messagesUsed: 0, messagesLimit: 50,
+      messagesUsed: 0, messagesLimit: 30,
       forgeUsed: 0, forgeLimit: 3,
-      notebooksUsed: 0, notebooksLimit: 30,
+      notebooksUsed: 0, notebooksLimit: 15,
     };
     return res.json();
   },

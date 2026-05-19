@@ -61,8 +61,11 @@ export const api = {
       body: JSON.stringify({ title, topic }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create notebook");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create notebook");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     const nb = await res.json();
     return shapeNotebook(nb, displayName);
@@ -161,8 +164,11 @@ export const api = {
       method: "POST", headers, body: JSON.stringify({ title, topic }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create unit");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create unit");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     const nb = await res.json();
     return shapeNotebook({ ...nb, role: "owner" }, displayName);
@@ -529,7 +535,12 @@ export const api = {
   async getSubscription() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/user/subscription`, { headers });
-    if (!res.ok) return { tier: "free", messagesUsed: 0, messagesLimit: 75, forgeUsed: 0, forgeLimit: 5 };
+    if (!res.ok) return {
+      tier: "free",
+      messagesUsed: 0, messagesLimit: 75,
+      forgeUsed: 0, forgeLimit: 5,
+      notebooksUsed: 0, notebooksLimit: 50,
+    };
     return res.json();
   },
 

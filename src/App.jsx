@@ -3416,6 +3416,11 @@ function UpgradeModal({ limitType, onClose }) {
       headline: "Class limit reached",
       detail: "Free accounts are limited to 3 classes.",
     },
+    notebook_limit_reached: {
+      icon: "📒",
+      headline: "Storage limit reached",
+      detail: "Free accounts are limited to 50 notes. Upgrade for unlimited storage.",
+    },
   }[limitType] ?? {
     icon: "🚀",
     headline: "Upgrade to Pro",
@@ -3473,9 +3478,11 @@ function UpgradeModal({ limitType, onClose }) {
         {/* Features */}
         <div style={{ marginBottom: 24 }}>
           {[
-            "Unlimited messages with Claude Sonnet (smarter AI)",
-            "Unlimited Forge outputs",
+            "Unlimited AI messages with Claude Sonnet (smarter AI)",
+            "Unlimited Forge outputs (study guides, flashcards, summaries)",
             "Unlimited classes",
+            "Unlimited notes & storage",
+            "Priority support",
           ].map(f => (
             <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
               <span style={{ color: "#34D399", fontSize: 14, flexShrink: 0, marginTop: 1 }}>✓</span>
@@ -3554,7 +3561,12 @@ export default function Scholr() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
-  const [subscription, setSubscription] = useState({ tier: "free", messagesUsed: 0, messagesLimit: 75, forgeUsed: 0, forgeLimit: 5 });
+  const [subscription, setSubscription] = useState({
+    tier: "free",
+    messagesUsed: 0, messagesLimit: 75,
+    forgeUsed: 0, forgeLimit: 5,
+    notebooksUsed: 0, notebooksLimit: 50,
+  });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
 
   useEffect(() => {
@@ -3720,9 +3732,19 @@ export default function Scholr() {
   }
 
   async function handleCreateUnit(classId, title, topic) {
-    const unit = await api.createClassNotebook(classId, title, topic, getDisplayName(user));
-    setClassUnitsCache(prev => ({ ...prev, [classId]: [...(prev[classId] ?? []), unit] }));
-    setNotebooks(prev => [unit, ...prev]);
+    try {
+      const unit = await api.createClassNotebook(classId, title, topic, getDisplayName(user));
+      setClassUnitsCache(prev => ({ ...prev, [classId]: [...(prev[classId] ?? []), unit] }));
+      setNotebooks(prev => [unit, ...prev]);
+      setSubscription(prev => ({ ...prev, notebooksUsed: (prev.notebooksUsed ?? 0) + 1 }));
+    } catch (err) {
+      if (err.code === "notebook_limit_reached") {
+        setNewUnitFor(null);
+        setUpgradeModal({ limitType: "notebook_limit_reached" });
+        return;
+      }
+      throw err;
+    }
   }
 
   // When opening a unit from a class card, attach the class's color so
@@ -3998,7 +4020,7 @@ export default function Scholr() {
                   </div>
                 </div>
                 {/* Forge */}
-                <div style={{ marginBottom: 10 }}>
+                <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
                       ⚡ Forge
@@ -4014,6 +4036,27 @@ export default function Scholr() {
                       background: subscription.forgeUsed >= subscription.forgeLimit
                         ? "#F87171"
                         : "linear-gradient(90deg, #FBBF24, #F59E0B)",
+                      transition: "width 0.4s ease",
+                    }} />
+                  </div>
+                </div>
+                {/* Notes / storage */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      📒 Notes
+                    </span>
+                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                      {subscription.notebooksUsed}/{subscription.notebooksLimit}
+                    </span>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2,
+                      width: `${Math.min(100, Math.round((subscription.notebooksUsed / subscription.notebooksLimit) * 100))}%`,
+                      background: subscription.notebooksUsed >= subscription.notebooksLimit
+                        ? "#F87171"
+                        : "linear-gradient(90deg, #34D399, #10B981)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>

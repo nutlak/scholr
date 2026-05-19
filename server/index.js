@@ -303,6 +303,25 @@ async function checkClassLimit(userId) {
   return { allowed: true };
 }
 
+// Count notebooks the user OWNS (created/role=owner). Pro = unlimited; Free = 50.
+async function countOwnedNotebooks(userId) {
+  const { count, error } = await supabase
+    .from("notebook_members")
+    .select("notebook_id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("role", "owner");
+  if (error) return 0;
+  return count ?? 0;
+}
+
+async function checkNotebookLimit(userId) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  const count = await countOwnedNotebooks(userId);
+  if (count >= 50) return { allowed: false, reason: "notebook_limit" };
+  return { allowed: true };
+}
+
 async function incrementUsage(userId, type) {
   const field = type === "message" ? "messages_this_month" : "forge_outputs_this_month";
   const { data: existing } = await supabase
@@ -450,6 +469,14 @@ app.get("/api/notebooks/starred", requireAuth, async (req, res) => {
 app.post("/api/notebooks", requireAuth, async (req, res) => {
   const { title, topic } = req.body;
   if (!title) return res.status(400).json({ error: "title is required" });
+
+  const nbLimit = await checkNotebookLimit(req.user.id);
+  if (!nbLimit.allowed) {
+    return res.status(403).json({
+      error: "notebook_limit_reached",
+      message: "Free accounts are limited to 50 notes. Upgrade to Pro for unlimited storage.",
+    });
+  }
 
   const { data: nb, error } = await supabase
     .from("notebooks")
@@ -726,6 +753,14 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
     .eq("user_id", req.user.id)
     .maybeSingle();
   if (!cls) return res.status(403).json({ error: "Class not found" });
+
+  const nbLimit = await checkNotebookLimit(req.user.id);
+  if (!nbLimit.allowed) {
+    return res.status(403).json({
+      error: "notebook_limit_reached",
+      message: "Free accounts are limited to 50 notes. Upgrade to Pro for unlimited storage.",
+    });
+  }
 
   const { data: nb, error } = await supabase
     .from("notebooks")
@@ -1868,17 +1903,17 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
   const tier = await getUserTier(userId);
   await resetUsageIfNeeded(userId);
 
-  const { data: usageRow } = await supabase
-    .from("usage")
-    .select("messages_this_month, forge_outputs_this_month, reset_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("current_period_end")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const [{ data: usageRow }, { data: sub }, notebooksUsed] = await Promise.all([
+    supabase.from("usage")
+      .select("messages_this_month, forge_outputs_this_month, reset_at")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase.from("subscriptions")
+      .select("current_period_end")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    countOwnedNotebooks(userId),
+  ]);
 
   res.json({
     tier,
@@ -1886,6 +1921,8 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
     messagesLimit:  tier === "pro" ? null : 75,
     forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
     forgeLimit:     tier === "pro" ? null : 5,
+    notebooksUsed,
+    notebooksLimit: tier === "pro" ? null : 50,
     resetAt:        usageRow?.reset_at ?? null,
     currentPeriodEnd: sub?.current_period_end ?? null,
   });

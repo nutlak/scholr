@@ -282,10 +282,10 @@ async function checkUsageLimit(userId, type) {
     .eq("user_id", userId)
     .maybeSingle();
   if (!data) return { allowed: true }; // no record yet = new user
-  if (type === "message" && (data.messages_this_month ?? 0) >= 75) {
+  if (type === "message" && (data.messages_this_month ?? 0) >= 50) {
     return { allowed: false, reason: "message_limit" };
   }
-  if (type === "forge" && (data.forge_outputs_this_month ?? 0) >= 5) {
+  if (type === "forge" && (data.forge_outputs_this_month ?? 0) >= 3) {
     return { allowed: false, reason: "forge_limit" };
   }
   return { allowed: true };
@@ -318,7 +318,7 @@ async function checkNotebookLimit(userId) {
   const tier = await getUserTier(userId);
   if (tier === "pro") return { allowed: true };
   const count = await countOwnedNotebooks(userId);
-  if (count >= 50) return { allowed: false, reason: "notebook_limit" };
+  if (count >= 30) return { allowed: false, reason: "notebook_limit" };
   return { allowed: true };
 }
 
@@ -474,7 +474,7 @@ app.post("/api/notebooks", requireAuth, async (req, res) => {
   if (!nbLimit.allowed) {
     return res.status(403).json({
       error: "notebook_limit_reached",
-      message: "Free accounts are limited to 50 notes. Upgrade to Pro for unlimited storage.",
+      message: "Free accounts are limited to 30 notes. Upgrade to Pro for unlimited storage.",
     });
   }
 
@@ -758,7 +758,7 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
   if (!nbLimit.allowed) {
     return res.status(403).json({
       error: "notebook_limit_reached",
-      message: "Free accounts are limited to 50 notes. Upgrade to Pro for unlimited storage.",
+      message: "Free accounts are limited to 30 notes. Upgrade to Pro for unlimited storage.",
     });
   }
 
@@ -1011,7 +1011,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, a
   if (!usageCheck.allowed) {
     return res.status(403).json({
       error: "message_limit_reached",
-      message: "You have reached your 75 message limit for this month. Upgrade to Pro for unlimited messages.",
+      message: "You have reached your 50 message limit for this month. Upgrade to Pro for unlimited messages.",
     });
   }
 
@@ -1082,7 +1082,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, forgeLimiter, a
   if (!forgeUsage.allowed) {
     return res.status(403).json({
       error: "forge_limit_reached",
-      message: "You have reached your 5 Forge output limit this month. Upgrade to Pro for unlimited.",
+      message: "You have reached your 3 Forge output limit this month. Upgrade to Pro for unlimited.",
     });
   }
 
@@ -1918,11 +1918,11 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
   res.json({
     tier,
     messagesUsed:   usageRow?.messages_this_month ?? 0,
-    messagesLimit:  tier === "pro" ? null : 75,
+    messagesLimit:  tier === "pro" ? null : 50,
     forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
-    forgeLimit:     tier === "pro" ? null : 5,
+    forgeLimit:     tier === "pro" ? null : 3,
     notebooksUsed,
-    notebooksLimit: tier === "pro" ? null : 50,
+    notebooksLimit: tier === "pro" ? null : 30,
     resetAt:        usageRow?.reset_at ?? null,
     currentPeriodEnd: sub?.current_period_end ?? null,
   });

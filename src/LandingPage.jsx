@@ -663,10 +663,10 @@ export default function LandingPage({ onSignIn }) {
               ctaLabel="Get started free"
               onClick={onSignIn}
               features={[
-                "75 AI messages per month",
-                "5 Forge outputs per month",
+                "50 AI messages per month",
+                "3 Forge outputs per month",
                 "Up to 3 classes",
-                "Up to 50 notes",
+                "Up to 30 notes",
                 "Claude Haiku model",
               ]}
             />

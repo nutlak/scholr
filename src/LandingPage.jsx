@@ -140,6 +140,110 @@ function Step({ n, title, body, tint, last, idx }) {
   );
 }
 
+function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick, highlighted = false }) {
+  const [ref, visible] = useFadeIn(highlighted ? 80 : 0);
+  const [hovered, setHovered] = useState(false);
+  const gradient = `linear-gradient(135deg, ${accent} 0%, ${accent}99 100%)`;
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: "relative",
+        background: highlighted
+          ? `linear-gradient(180deg, ${accent}14 0%, #1C1C2A 100%)`
+          : "#14141F",
+        border: `1px solid ${highlighted ? `${accent}55` : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 18,
+        padding: "30px 26px",
+        opacity: visible ? 1 : 0,
+        transform: visible
+          ? (hovered ? "translateY(-4px)" : "translateY(0)")
+          : "translateY(24px)",
+        transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, box-shadow 0.25s ease, border-color 0.2s ease",
+        boxShadow: highlighted
+          ? `0 24px 60px ${accent}33, 0 0 0 1px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.06)`
+          : (hovered ? "0 14px 40px rgba(0,0,0,0.45)" : "0 4px 14px rgba(0,0,0,0.25)"),
+        overflow: "hidden",
+      }}
+    >
+      {highlighted && (
+        <div style={{
+          position: "absolute", top: 14, right: 14,
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "#fff",
+          background: gradient,
+          borderRadius: 999, padding: "4px 10px",
+          fontFamily: FONT,
+          boxShadow: `0 4px 14px ${accent}55`,
+        }}>
+          Most popular
+        </div>
+      )}
+      <div style={{
+        fontSize: 13, fontWeight: 600, color: accent,
+        letterSpacing: "0.08em", textTransform: "uppercase",
+        fontFamily: FONT, marginBottom: 12,
+      }}>{tier}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
+        <span style={{
+          fontSize: 44, fontWeight: 700, color: "#F5F5FA",
+          letterSpacing: "-0.04em", fontFamily: FONT, lineHeight: 1,
+        }}>{price}</span>
+        <span style={{
+          fontSize: 13, color: "rgba(245,245,250,0.5)",
+          fontFamily: FONT, fontWeight: 500,
+        }}>{period}</span>
+      </div>
+      <div style={{
+        height: 1, background: "rgba(255,255,255,0.08)",
+        margin: "22px 0 20px",
+      }} />
+      <ul style={{
+        listStyle: "none", padding: 0, margin: "0 0 28px",
+        display: "flex", flexDirection: "column", gap: 12,
+      }}>
+        {features.map(f => (
+          <li key={f} style={{
+            display: "flex", alignItems: "flex-start", gap: 10,
+            fontSize: 14, color: "rgba(245,245,250,0.85)",
+            fontFamily: FONT, lineHeight: 1.45,
+          }}>
+            <span style={{
+              flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
+              background: `${accent}22`, border: `1px solid ${accent}44`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: accent, fontSize: 11, fontWeight: 700, marginTop: 1,
+            }}>✓</span>
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={onClick}
+        style={{
+          width: "100%", height: 46,
+          background: highlighted ? gradient : "transparent",
+          border: highlighted ? "none" : `1px solid ${accent}55`,
+          color: highlighted ? "#fff" : accent,
+          borderRadius: 12,
+          fontSize: 14, fontWeight: 600,
+          fontFamily: FONT, cursor: "pointer",
+          boxShadow: highlighted ? `0 8px 24px ${accent}55` : "none",
+          transition: "transform 0.18s, box-shadow 0.22s, background 0.18s",
+          letterSpacing: "-0.01em",
+        }}
+        onMouseDown={e => e.currentTarget.style.transform = "translateY(1px)"}
+        onMouseUp={e => e.currentTarget.style.transform = "translateY(0)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+      >
+        {ctaLabel}
+      </button>
+    </div>
+  );
+}
+
 function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
   const [ref, visible] = useFadeIn();
   return (
@@ -310,16 +414,14 @@ export default function LandingPage({ onSignIn }) {
           color: "#F5F5FA", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 14, fontWeight: 800, color: "#fff",
-          }}>s</div>
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
+          <span style={{ fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            className="nav-link"
+            onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+          >Pricing</button>
           <button className="nav-link" onClick={onSignIn}>Sign in</button>
           <button className="btn-primary" onClick={onSignIn}>Get started free</button>
         </div>
@@ -341,6 +443,9 @@ export default function LandingPage({ onSignIn }) {
           transform: heroVisible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
+          {/* Logo */}
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 20, objectFit: "cover" }} />
+
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -397,13 +502,6 @@ export default function LandingPage({ onSignIn }) {
             </button>
           </div>
 
-          <p style={{
-            fontSize: 13, color: "rgba(245,245,250,0.35)", fontFamily: FONT,
-            display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
-          }}>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#34D399", boxShadow: "0 0 6px #34D399" }} />
-            Free forever for study groups · No credit card required
-          </p>
         </div>
 
         {/* Mock app preview */}
@@ -530,10 +628,66 @@ export default function LandingPage({ onSignIn }) {
             sub="No setup, no syllabus parsing, no config. Just upload and ask."
             accent="#60A5FA"
           />
-          <div style={{ marginTop: 56 }}>
+          <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
               <Step key={s.n} {...s} idx={i} last={i === STEPS.length - 1} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" style={{
+        position: "relative", zIndex: 1,
+        padding: "96px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
+      }}>
+        <div style={{ maxWidth: 980, margin: "0 auto" }}>
+          <SectionHeader
+            pill="Pricing"
+            title="Simple, student-friendly pricing"
+            sub="Start free. Upgrade when you outgrow the limits — cancel anytime."
+            accent="#F472B6"
+          />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 20, maxWidth: 760, margin: "56px auto 0",
+          }}>
+            {/* FREE card */}
+            <PricingCard
+              tier="Free"
+              price="$0"
+              period="forever"
+              accent="#60A5FA"
+              ctaLabel="Get started free"
+              onClick={onSignIn}
+              features={[
+                "30 AI messages per month",
+                "3 Forge outputs per month",
+                "Up to 3 classes",
+                "Up to 15 notes",
+                "Claude Haiku model",
+              ]}
+            />
+            {/* PRO card */}
+            <PricingCard
+              tier="Pro"
+              price="$8.49"
+              period="/ month"
+              accent="#A78BFA"
+              highlighted
+              ctaLabel="Upgrade to Pro"
+              onClick={onSignIn}
+              features={[
+                "Unlimited AI messages",
+                "Unlimited Forge outputs",
+                "Unlimited classes",
+                "Unlimited notes",
+                "Claude Sonnet (smarter AI)",
+                "Priority support",
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -552,16 +706,6 @@ export default function LandingPage({ onSignIn }) {
             filter: "blur(40px)", pointerEvents: "none",
           }} />
           <div style={{ position: "relative" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.28)",
-              borderRadius: 999, padding: "5px 12px",
-              fontSize: 11, fontWeight: 600, color: "#C4B5FD",
-              marginBottom: 22, letterSpacing: "0.08em", textTransform: "uppercase",
-              fontFamily: FONT,
-            }}>
-              Free forever for study groups
-            </div>
             <h2 style={{
               fontSize: "clamp(32px, 5vw, 48px)",
               fontWeight: 700, lineHeight: 1.05,
@@ -598,13 +742,8 @@ export default function LandingPage({ onSignIn }) {
           fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 800, color: "#fff",
-          }}>s</div>
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover" }} />
+          <span style={{ fontWeight: 700, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
           © {new Date().getFullYear()} Scholr · Built for students, by students

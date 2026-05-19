@@ -22,6 +22,9 @@ function shapeNotebook(nb, displayName) {
     updated: nb.created_at
       ? new Date(nb.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       : "Today",
+    due_date: nb.due_date ?? null,
+    status: nb.status ?? "in_progress",
+    class_id: nb.class_id ?? null,
   };
 }
 
@@ -58,11 +61,21 @@ export const api = {
       body: JSON.stringify({ title, topic }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create notebook");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create notebook");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     const nb = await res.json();
     return shapeNotebook(nb, displayName);
+  },
+
+  async signOut() {
+    // Tell the server first, then clear the local Supabase session
+    const headers = await authHeaders();
+    await fetch(`${API_URL}/api/auth/sign-out`, { method: "POST", headers }).catch(() => {});
+    await supabase.auth.signOut();
   },
 
   async deleteAccount() {
@@ -103,8 +116,11 @@ export const api = {
       method: "POST", headers, body: JSON.stringify(body),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create class");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create class");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
@@ -148,8 +164,11 @@ export const api = {
       method: "POST", headers, body: JSON.stringify({ title, topic }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to create unit");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to create unit");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
     const nb = await res.json();
     return shapeNotebook({ ...nb, role: "owner" }, displayName);
@@ -286,8 +305,11 @@ export const api = {
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to generate");
+      const data = await res.json().catch(() => ({ error: res.statusText }));
+      const err = new Error(data.message ?? data.error ?? "Failed to generate");
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
     }
 
     const reader = res.body.getReader();
@@ -360,7 +382,12 @@ export const api = {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+    if (!res.ok) {
+      const err = new Error(data.message ?? data.error ?? `Request failed (${res.status})`);
+      err.code = data.error;
+      err.status = res.status;
+      throw err;
+    }
     return data;
   },
 
@@ -395,5 +422,147 @@ export const api = {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       throw new Error(err.error ?? "Failed to delete note");
     }
+  },
+
+  // ── Activity heatmap ────────────────────────────────────────────────
+  async getActivityHeatmap() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/activity-heatmap`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ date, count }]
+  },
+
+  // ── Reactions ───────────────────────────────────────────────────────
+  async addReaction(unitNoteId, emoji) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/react`, {
+      method: "POST", headers, body: JSON.stringify({ emoji }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to react");
+    }
+    return res.json();
+  },
+
+  async removeReaction(unitNoteId, emoji) {
+    const headers = await authHeaders();
+    const res = await fetch(
+      `${API_URL}/api/unit-notes/${unitNoteId}/react/${encodeURIComponent(emoji)}`,
+      { method: "DELETE", headers }
+    );
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to remove reaction");
+    }
+  },
+
+  async getNoteReactions(unitNoteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/reactions`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  // ── Comments ────────────────────────────────────────────────────────
+  async addNoteComment(unitNoteId, content) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, {
+      method: "POST", headers, body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to add comment");
+    }
+    return res.json();
+  },
+
+  async getNoteComments(unitNoteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async deleteNoteComment(commentId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/note-comments/${commentId}`, {
+      method: "DELETE", headers,
+    });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete comment");
+    }
+  },
+
+  // ── Due date / Status ───────────────────────────────────────────────
+  async updateDueDate(notebookId, dueDate) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/due-date`, {
+      method: "PATCH", headers, body: JSON.stringify({ due_date: dueDate }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update due date");
+    }
+    return res.json();
+  },
+
+  async updateNotebookStatus(notebookId, status) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/status`, {
+      method: "PATCH", headers, body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update status");
+    }
+    return res.json();
+  },
+
+  // ── Explain Differently ─────────────────────────────────────────────
+  async explainDifferently(notebookId, messageId, level) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/explain-differently`, {
+      method: "POST", headers, body: JSON.stringify({ messageId, level }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
+    return data;
+  },
+
+  // ── Subscription & billing ──────────────────────────────────────────
+  async getSubscription() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/subscription`, { headers });
+    if (!res.ok) return {
+      tier: "free",
+      messagesUsed: 0, messagesLimit: 30,
+      forgeUsed: 0, forgeLimit: 3,
+      notebooksUsed: 0, notebooksLimit: 15,
+    };
+    return res.json();
+  },
+
+  async createCheckoutSession() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/create-checkout-session`, { method: "POST", headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Failed to start checkout");
+    }
+    const { url } = await res.json();
+    window.location.href = url;
+  },
+
+  async createPortalSession() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/create-portal-session`, { method: "POST", headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Failed to open billing portal");
+    }
+    const { url } = await res.json();
+    window.location.href = url;
   },
 };

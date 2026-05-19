@@ -7,8 +7,40 @@ import cors from "cors";
 import multer from "multer";
 import { randomBytes } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail } from "./email.js";
+import { rateLimit, ipKeyGenerator } from "express-rate-limit";
+
+// ── Rate limiters (applied per-route below) ───────────────────────────────────
+// Auth'd routes key by user ID; IP is the fallback (ipKeyGenerator handles IPv6 safely)
+const queryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 100,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many requests. Please try again later." },
+});
+const forgeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many Forge requests. Please try again later." },
+});
+const checkoutLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "Too many checkout attempts. Please wait a moment." },
+});
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1000,
+  keyGenerator: req => ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+});
 
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -20,6 +52,9 @@ if (missing.length) {
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// ── Stripe ────────────────────────────────────────────────────────────────────
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ── Supabase clients ──────────────────────────────────────────────────────────
 // Service-role client: bypasses RLS, used for all server-side mutations
@@ -52,6 +87,100 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// ── Stripe webhook — raw body MUST be parsed before express.json() ────────────
+app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripe || !webhookSecret) {
+    return res.status(400).json({ error: "Stripe webhook not configured" });
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    console.error("Stripe webhook signature failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const customerId = session.customer;
+        const subscriptionId = session.subscription;
+
+        if (!subscriptionId) {
+          console.log("[stripe] checkout.session.completed: no subscription ID (one-time payment?), skipping");
+          break;
+        }
+
+        // Look up userId via customer first, then fall back to client_reference_id
+        let userId = await getUserIdByStripeCustomer(customerId);
+        if (!userId && session.client_reference_id) {
+          userId = session.client_reference_id;
+          console.log(`[stripe] userId from client_reference_id: ${userId}`);
+        }
+
+        if (!userId) {
+          console.error(`[stripe] checkout.session.completed: no userId found for customer=${customerId}`);
+          break;
+        }
+
+        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        // Stripe's newer API moves current_period_end to items.data[0]; fall back to top-level
+        const rawEnd = stripeSub.current_period_end
+          ?? stripeSub.items?.data?.[0]?.current_period_end;
+        const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
+
+        await supabase.from("subscriptions").upsert({
+          user_id: userId,
+          tier: "pro",
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          current_period_end: periodEnd,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+        console.log(`[stripe] checkout.session.completed: user=${userId} → pro, period_end=${periodEnd}`);
+        break;
+      }
+      case "customer.subscription.updated": {
+        const sub = event.data.object;
+        const isActive = sub.status === "active" || sub.status === "trialing";
+        // current_period_end may be on items.data[0] in newer Stripe API versions
+        const rawEnd = sub.current_period_end
+          ?? sub.items?.data?.[0]?.current_period_end;
+        const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
+        await supabase.from("subscriptions")
+          .update({
+            tier: isActive ? "pro" : "free",
+            current_period_end: periodEnd,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", sub.id);
+        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status} tier=${isActive ? "pro" : "free"}`);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        await supabase.from("subscriptions")
+          .update({ tier: "free", stripe_subscription_id: null, updated_at: new Date().toISOString() })
+          .eq("stripe_subscription_id", sub.id);
+        console.log(`[stripe] subscription.deleted: id=${sub.id} → free`);
+        break;
+      }
+      default:
+        console.log(`[stripe] unhandled event: ${event.type}`);
+    }
+    res.json({ received: true });
+  } catch (err) {
+    console.error("Stripe webhook handler error:", err);
+    res.status(500).json({ error: "Webhook processing failed" });
+  }
+});
+
 app.use(express.json());
 
 // Attach authenticated user to req.user from Supabase JWT in Authorization header.
@@ -96,6 +225,129 @@ async function requireMember(req, res, next) {
   next();
 }
 
+// ── Subscription & usage helpers ─────────────────────────────────────────────
+
+async function getUserIdByStripeCustomer(customerId) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("user_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  return data?.user_id ?? null;
+}
+
+async function getUserTier(userId) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("tier, current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data?.tier === "pro" && data?.current_period_end && new Date(data.current_period_end) > new Date()) {
+    return "pro";
+  }
+  return "free";
+}
+
+function getModel(tier) {
+  return tier === "pro" ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+}
+
+async function resetUsageIfNeeded(userId) {
+  const { data } = await supabase
+    .from("usage")
+    .select("id, reset_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data && new Date(data.reset_at) < new Date()) {
+    const nextReset = new Date();
+    nextReset.setMonth(nextReset.getMonth() + 1);
+    nextReset.setDate(1);
+    nextReset.setHours(0, 0, 0, 0);
+    await supabase.from("usage").update({
+      messages_this_month: 0,
+      forge_outputs_this_month: 0,
+      reset_at: nextReset.toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+  }
+}
+
+async function checkUsageLimit(userId, type) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  await resetUsageIfNeeded(userId);
+  const { data } = await supabase
+    .from("usage")
+    .select("messages_this_month, forge_outputs_this_month")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return { allowed: true }; // no record yet = new user
+  if (type === "message" && (data.messages_this_month ?? 0) >= 30) {
+    return { allowed: false, reason: "message_limit" };
+  }
+  if (type === "forge" && (data.forge_outputs_this_month ?? 0) >= 3) {
+    return { allowed: false, reason: "forge_limit" };
+  }
+  return { allowed: true };
+}
+
+async function checkClassLimit(userId) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  const { count, error } = await supabase
+    .from("classes")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (error) return { allowed: true }; // fail open
+  if ((count ?? 0) >= 3) return { allowed: false, reason: "class_limit" };
+  return { allowed: true };
+}
+
+// Count notebooks the user OWNS (created/role=owner). Pro = unlimited; Free = 50.
+async function countOwnedNotebooks(userId) {
+  const { count, error } = await supabase
+    .from("notebook_members")
+    .select("notebook_id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("role", "owner");
+  if (error) return 0;
+  return count ?? 0;
+}
+
+async function checkNotebookLimit(userId) {
+  const tier = await getUserTier(userId);
+  if (tier === "pro") return { allowed: true };
+  const count = await countOwnedNotebooks(userId);
+  if (count >= 15) return { allowed: false, reason: "notebook_limit" };
+  return { allowed: true };
+}
+
+async function incrementUsage(userId, type) {
+  const field = type === "message" ? "messages_this_month" : "forge_outputs_this_month";
+  const { data: existing } = await supabase
+    .from("usage")
+    .select(`id, ${field}`)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing) {
+    await supabase.from("usage").update({
+      [field]: (existing[field] ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+  } else {
+    const nextReset = new Date();
+    nextReset.setMonth(nextReset.getMonth() + 1);
+    nextReset.setDate(1);
+    nextReset.setHours(0, 0, 0, 0);
+    await supabase.from("usage").insert({
+      user_id: userId,
+      messages_this_month: type === "message" ? 1 : 0,
+      forge_outputs_this_month: type === "forge" ? 1 : 0,
+      reset_at: nextReset.toISOString(),
+    });
+  }
+}
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 // GET /healthz — Railway healthcheck
@@ -111,6 +363,9 @@ app.get("/api/health", (_, res) => res.json({
     CLAUDE_API_KEY:            !!process.env.CLAUDE_API_KEY,
     RESEND_API_KEY:            !!process.env.RESEND_API_KEY,
     CLIENT_ORIGIN:             !!process.env.CLIENT_ORIGIN,
+    STRIPE_SECRET_KEY:         !!process.env.STRIPE_SECRET_KEY,
+    STRIPE_PRICE_ID:           !!process.env.STRIPE_PRICE_ID,
+    STRIPE_WEBHOOK_SECRET:     !!process.env.STRIPE_WEBHOOK_SECRET,
   },
 }));
 
@@ -121,7 +376,7 @@ app.get("/api/notebooks", requireAuth, async (req, res) => {
     .select(`
       role,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -147,7 +402,7 @@ app.get("/api/notebooks/shared", requireAuth, async (req, res) => {
     .select(`
       role,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -173,7 +428,7 @@ app.get("/api/notebooks/owned", requireAuth, async (req, res) => {
   // Query notebooks directly by created_by to avoid join embedding issues
   const { data, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, created_by, created_at, notes(count)")
+    .select("id, title, topic, created_by, created_at, due_date, status, class_id, notes(count)")
     .eq("created_by", req.user.id);
 
   if (error) return res.status(500).json({ error: error.message });
@@ -194,7 +449,7 @@ app.get("/api/notebooks/starred", requireAuth, async (req, res) => {
     .select(`
       notebook_id,
       notebooks (
-        id, title, topic, created_by, created_at,
+        id, title, topic, created_by, created_at, due_date, status, class_id,
         notes (count)
       )
     `)
@@ -214,6 +469,14 @@ app.get("/api/notebooks/starred", requireAuth, async (req, res) => {
 app.post("/api/notebooks", requireAuth, async (req, res) => {
   const { title, topic } = req.body;
   if (!title) return res.status(400).json({ error: "title is required" });
+
+  const nbLimit = await checkNotebookLimit(req.user.id);
+  if (!nbLimit.allowed) {
+    return res.status(403).json({
+      error: "notebook_limit_reached",
+      message: "Free accounts are limited to 15 notes. Upgrade to Pro for unlimited storage.",
+    });
+  }
 
   const { data: nb, error } = await supabase
     .from("notebooks")
@@ -297,6 +560,64 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
   }
   console.log("message saved with id:", data?.id);
   res.status(201).json(data);
+
+  // Activity log + @mention notifications — fire-and-forget
+  if (role === "user") {
+    logUserActivity(userId);
+    (async () => {
+      try {
+        const mentions = [...new Set((content.match(/@([A-Za-z][A-Za-z0-9_]*)/g) ?? []).map(m => m.slice(1).toLowerCase()))];
+        if (!mentions.length) return;
+
+        const { data: members } = await supabase
+          .from("notebook_members")
+          .select("user_id")
+          .eq("notebook_id", notebookId)
+          .neq("user_id", userId);
+        if (!members?.length) return;
+
+        // Resolve member first names for matching
+        const memberInfo = await Promise.all(members.map(async (m) => {
+          const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
+          const fullName = u?.user?.user_metadata?.full_name ?? "";
+          const first = fullName.split(" ")[0]?.trim() ?? "";
+          const emailLocal = u?.user?.email?.split("@")[0] ?? "";
+          return { user_id: m.user_id, first: first.toLowerCase(), emailLocal: emailLocal.toLowerCase() };
+        }));
+
+        const matched = memberInfo.filter(m =>
+          mentions.includes(m.first) || mentions.includes(m.emailLocal)
+        );
+        if (!matched.length) return;
+
+        // Look up notebook title for the description
+        const { data: nb } = await supabase
+          .from("notebooks").select("title").eq("id", notebookId).single();
+        const { data: actor } = await supabase.auth.admin.getUserById(userId);
+        const actorName = actor?.user?.user_metadata?.full_name?.split(" ")[0]?.trim()
+          || actor?.user?.email?.split("@")[0]
+          || "Someone";
+
+        const { data: activity } = await supabase
+          .from("activities")
+          .insert({
+            notebook_id: notebookId,
+            user_id: userId,
+            action: "mention",
+            description: `${actorName} mentioned you in ${nb?.title ?? "a unit"}`,
+          })
+          .select("id")
+          .single();
+        if (!activity) return;
+
+        await supabase.from("notifications").insert(
+          matched.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
+        );
+      } catch (err) {
+        console.error("mention notification error:", err);
+      }
+    })();
+  }
 });
 
 // POST /api/notebooks/:id/star — toggle star for the calling user
@@ -354,6 +675,15 @@ app.get("/api/classes", requireAuth, async (req, res) => {
 app.post("/api/classes", requireAuth, async (req, res) => {
   const { title, color } = req.body;
   if (!title) return res.status(400).json({ error: "title is required" });
+
+  const classLimit = await checkClassLimit(req.user.id);
+  if (!classLimit.allowed) {
+    return res.status(403).json({
+      error: "class_limit_reached",
+      message: "Free accounts are limited to 3 classes. Upgrade to Pro for unlimited.",
+    });
+  }
+
   const { data, error } = await supabase
     .from("classes")
     .insert({ user_id: req.user.id, title, color: color || "#A78BFA" })
@@ -399,7 +729,7 @@ app.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
 
   const { data, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, created_at, notes(count)")
+    .select("id, title, topic, created_at, due_date, status, class_id, notes(count)")
     .eq("class_id", req.params.id)
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
@@ -423,6 +753,14 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
     .eq("user_id", req.user.id)
     .maybeSingle();
   if (!cls) return res.status(403).json({ error: "Class not found" });
+
+  const nbLimit = await checkNotebookLimit(req.user.id);
+  if (!nbLimit.allowed) {
+    return res.status(403).json({
+      error: "notebook_limit_reached",
+      message: "Free accounts are limited to 15 notes. Upgrade to Pro for unlimited storage.",
+    });
+  }
 
   const { data: nb, error } = await supabase
     .from("notebooks")
@@ -557,6 +895,9 @@ app.post(
     if (error) return res.status(500).json({ error: error.message });
     res.status(201).json(data);
 
+    // Bump daily activity for streak/heatmap
+    logUserActivity(req.user.id);
+
     // Fire-and-forget: log activity and notify other members
     (async () => {
       try {
@@ -656,13 +997,26 @@ app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
   res.json({ cleared: data?.length ?? 0 });
 });
 
-// POST /api/notebooks/:id/query — AI query against notebook notes (BYOK)
-app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res) => {
+// POST /api/notebooks/:id/query — AI query against notebook notes (Derek chat)
+app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, async (req, res) => {
   const { question } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
   if (!question) return res.status(400).json({ error: "question is required" });
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Usage limit check
+  const userId = req.user.id;
+  const usageCheck = await checkUsageLimit(userId, "message");
+  if (!usageCheck.allowed) {
+    return res.status(403).json({
+      error: "message_limit_reached",
+      message: "You have reached your 30 message limit for this month. Upgrade to Pro for unlimited messages.",
+    });
+  }
+
+  const tier = await getUserTier(userId);
+  const model = getModel(tier);
 
   // Pull all text notes for this notebook
   const { data: notes, error } = await supabase
@@ -691,22 +1045,29 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, async (req, res
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+      model,
       max_tokens: 1024,
-      system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      system: `You are a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer the student's questions using the notes below as your source of truth. Write in plain conversational text like a helpful human tutor — no markdown, no asterisks, no pound signs, no bullet dashes, no headers, no bold. Just natural sentences and paragraphs. Keep answers concise. When you reference specific information from the notes, mention the source note title naturally. Example: "Based on the lecture notes titled 'Biology 101 Midterm Review', the mitochondria..." This helps the student trace facts back to their notes.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: question }],
     });
 
     const answer = message.content.find((b) => b.type === "text")?.text ?? "";
-    res.json({ answer });
+    const sources = (notes ?? [])
+      .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
+      .map(n => n.title);
+    res.json({ answer, sources });
+
+    // Increment usage counter fire-and-forget
+    incrementUsage(userId, "message").catch(err => console.error("usage increment error:", err));
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
-    res.status(500).json({ error: err.message });
+    console.error("[query] Claude error:", err);
+    res.status(500).json({ error: "Failed to get answer. Please try again." });
   }
 });
 
 // POST /api/notebooks/:id/forge — generate study materials with streaming SSE
-app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res) => {
+app.post("/api/notebooks/:id/forge", requireAuth, requireMember, forgeLimiter, async (req, res) => {
   const { action, topic } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
@@ -715,6 +1076,18 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
     return res.status(400).json({ error: "action must be one of: " + VALID_ACTIONS.join(", ") });
   if (!claudeKey)
     return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Usage limit check (before starting stream)
+  const forgeUsage = await checkUsageLimit(req.user.id, "forge");
+  if (!forgeUsage.allowed) {
+    return res.status(403).json({
+      error: "forge_limit_reached",
+      message: "You have reached your 3 Forge output limit this month. Upgrade to Pro for unlimited.",
+    });
+  }
+
+  const tier = await getUserTier(req.user.id);
+  const forgeModel = getModel(tier);
 
   const { data: notes, error } = await supabase
     .from("notes")
@@ -757,7 +1130,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
 
   try {
     stream = anthropic.messages.stream({
-      model: "claude-sonnet-4-6",
+      model: forgeModel,
       max_tokens: 2048,
       system: `You are a study material generator for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Generate high-quality, accurate study materials based solely on the notebook notes provided below. CRITICAL: Never use markdown formatting — no #, ##, **, *, -, or other markdown symbols. Write in plain, clean text only.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
       messages: [{ role: "user", content: prompts[action] }],
@@ -770,6 +1143,9 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, async (req, res
     await stream.finalMessage();
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+
+    // Increment forge usage fire-and-forget
+    incrementUsage(req.user.id, "forge").catch(err => console.error("forge usage increment error:", err));
   } catch (err) {
     if (!res.writableEnded) {
       res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
@@ -807,6 +1183,7 @@ app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (r
   }
   console.log("forge output saved:", data?.id);
   res.status(201).json(data);
+  logUserActivity(req.user.id);
 });
 
 // GET /api/notebooks/:id/forge-outputs — list saved Forge outputs
@@ -858,11 +1235,34 @@ app.get("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req,
     };
   }));
 
+  // Fetch reaction + comment counts in bulk for these notes
+  const noteIds = (rows ?? []).map(r => r.id);
+  const reactionsByNote = {};
+  const commentCountByNote = {};
+  if (noteIds.length) {
+    const { data: rxRows } = await supabase
+      .from("note_reactions")
+      .select("unit_note_id, emoji, user_id")
+      .in("unit_note_id", noteIds);
+    for (const r of rxRows ?? []) {
+      (reactionsByNote[r.unit_note_id] ??= []).push({ emoji: r.emoji, user_id: r.user_id });
+    }
+    const { data: cmRows } = await supabase
+      .from("note_comments")
+      .select("unit_note_id")
+      .in("unit_note_id", noteIds);
+    for (const c of cmRows ?? []) {
+      commentCountByNote[c.unit_note_id] = (commentCountByNote[c.unit_note_id] ?? 0) + 1;
+    }
+  }
+
   res.json((rows ?? []).map(r => ({
     ...r,
     email: userInfo[r.user_id]?.email ?? null,
     first_name: userInfo[r.user_id]?.first_name ?? null,
     full_name: userInfo[r.user_id]?.full_name ?? null,
+    reactions: reactionsByNote[r.id] ?? [],
+    comment_count: commentCountByNote[r.id] ?? 0,
   })));
 });
 
@@ -888,7 +1288,10 @@ app.post("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req
     email: u?.user?.email ?? null,
     first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
     full_name: u?.user?.user_metadata?.full_name ?? null,
+    reactions: [],
+    comment_count: 0,
   });
+  logUserActivity(req.user.id);
 });
 
 // DELETE /api/unit-notes/:id — delete a unit note (author only)
@@ -949,7 +1352,7 @@ app.post("/api/notebooks/:id/invites", requireAuth, requireMember, async (req, r
     res.status(201).json({ success: true });
   } catch (err) {
     console.error("Invite endpoint error:", err);
-    res.status(500).json({ error: err.message ?? "Failed to send invite email." });
+    res.status(500).json({ error: "Failed to send invite email. Please try again." });
   }
 });
 
@@ -994,6 +1397,302 @@ app.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
 
   console.log(`[invite] accepted — user ${req.user.id} joined notebook ${invite.notebook_id}`);
   res.json({ notebook_id: invite.notebook_id, title: invite.notebooks?.title });
+});
+
+// ── Activity logging helper ───────────────────────────────────────────────
+// Bumps the user's daily_activity counter for today (server-local date).
+// Fire-and-forget — never blocks the request.
+async function logUserActivity(userId) {
+  if (!userId) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("id, activity_count")
+      .eq("user_id", userId)
+      .eq("date", today)
+      .maybeSingle();
+    if (existing) {
+      await supabase
+        .from("daily_activity")
+        .update({ activity_count: (existing.activity_count ?? 0) + 1 })
+        .eq("id", existing.id);
+    } else {
+      await supabase
+        .from("daily_activity")
+        .insert({ user_id: userId, date: today, activity_count: 1 });
+    }
+  } catch (err) {
+    console.error("logUserActivity error:", err.message);
+  }
+}
+
+// ── Activity heatmap ──────────────────────────────────────────────────────
+// GET /api/user/activity-heatmap — last 365 days of activity for current user
+app.get("/api/user/activity-heatmap", requireAuth, async (req, res) => {
+  const start = new Date();
+  start.setDate(start.getDate() - 365);
+  const startStr = start.toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("daily_activity")
+    .select("date, activity_count")
+    .eq("user_id", req.user.id)
+    .gte("date", startStr)
+    .order("date", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json((data ?? []).map(r => ({ date: r.date, count: r.activity_count ?? 0 })));
+});
+
+// ── Reactions on unit notes ───────────────────────────────────────────────
+// POST /api/unit-notes/:id/react — body: { emoji }
+app.post("/api/unit-notes/:id/react", requireAuth, async (req, res) => {
+  const { emoji } = req.body;
+  if (typeof emoji !== "string" || !emoji.trim()) {
+    return res.status(400).json({ error: "emoji is required" });
+  }
+  // Verify access: caller must be a member of the note's notebook
+  const { data: note } = await supabase
+    .from("unit_notes")
+    .select("id, notebook_id")
+    .eq("id", req.params.id)
+    .maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members")
+    .select("role")
+    .eq("notebook_id", note.notebook_id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
+  const { data, error } = await supabase
+    .from("note_reactions")
+    .upsert(
+      { unit_note_id: req.params.id, user_id: req.user.id, emoji: emoji.trim() },
+      { onConflict: "unit_note_id,user_id,emoji" }
+    )
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+// DELETE /api/unit-notes/:id/react/:emoji — remove user's reaction
+app.delete("/api/unit-notes/:id/react/:emoji", requireAuth, async (req, res) => {
+  const emoji = decodeURIComponent(req.params.emoji);
+  const { error } = await supabase
+    .from("note_reactions")
+    .delete()
+    .eq("unit_note_id", req.params.id)
+    .eq("user_id", req.user.id)
+    .eq("emoji", emoji);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// GET /api/unit-notes/:id/reactions — list reactions for a note (with names)
+app.get("/api/unit-notes/:id/reactions", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("note_reactions")
+    .select("id, emoji, user_id, created_at")
+    .eq("unit_note_id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const userIds = [...new Set((data ?? []).map(r => r.user_id))];
+  const info = {};
+  await Promise.all(userIds.map(async (uid) => {
+    const { data: u } = await supabase.auth.admin.getUserById(uid);
+    info[uid] = {
+      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      email: u?.user?.email ?? null,
+    };
+  }));
+  res.json((data ?? []).map(r => ({
+    ...r,
+    first_name: info[r.user_id]?.first_name ?? null,
+    email: info[r.user_id]?.email ?? null,
+  })));
+});
+
+// ── Comments on unit notes ────────────────────────────────────────────────
+// POST /api/unit-notes/:id/comments — body: { content }
+app.post("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
+  const { content } = req.body;
+  if (typeof content !== "string" || !content.trim()) {
+    return res.status(400).json({ error: "content is required" });
+  }
+  // Membership check via the note's notebook
+  const { data: note } = await supabase
+    .from("unit_notes")
+    .select("id, notebook_id")
+    .eq("id", req.params.id)
+    .maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members")
+    .select("role")
+    .eq("notebook_id", note.notebook_id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
+  const trimmed = content.trim().slice(0, 2000);
+  const { data, error } = await supabase
+    .from("note_comments")
+    .insert({ unit_note_id: req.params.id, user_id: req.user.id, content: trimmed })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { data: u } = await supabase.auth.admin.getUserById(req.user.id);
+  res.status(201).json({
+    ...data,
+    first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+    full_name: u?.user?.user_metadata?.full_name ?? null,
+    email: u?.user?.email ?? null,
+  });
+});
+
+// GET /api/unit-notes/:id/comments — list comments with user info
+app.get("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("note_comments")
+    .select("id, user_id, content, created_at")
+    .eq("unit_note_id", req.params.id)
+    .order("created_at", { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const userIds = [...new Set((data ?? []).map(r => r.user_id))];
+  const info = {};
+  await Promise.all(userIds.map(async (uid) => {
+    const { data: u } = await supabase.auth.admin.getUserById(uid);
+    info[uid] = {
+      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      full_name: u?.user?.user_metadata?.full_name ?? null,
+      email: u?.user?.email ?? null,
+    };
+  }));
+  res.json((data ?? []).map(r => ({
+    ...r,
+    first_name: info[r.user_id]?.first_name ?? null,
+    full_name: info[r.user_id]?.full_name ?? null,
+    email: info[r.user_id]?.email ?? null,
+  })));
+});
+
+// DELETE /api/note-comments/:id — delete a comment (author only)
+app.delete("/api/note-comments/:id", requireAuth, async (req, res) => {
+  const { data: c } = await supabase
+    .from("note_comments")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!c) return res.status(403).json({ error: "Not found or not authorized" });
+  const { error } = await supabase.from("note_comments").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// ── Due date and status on notebooks ──────────────────────────────────────
+// PATCH /api/notebooks/:id/due-date — body: { due_date }
+app.patch("/api/notebooks/:id/due-date", requireAuth, requireMember, async (req, res) => {
+  const { due_date } = req.body;
+  // Allow null to clear, otherwise must be a valid ISO string
+  if (due_date !== null && (typeof due_date !== "string" || isNaN(Date.parse(due_date)))) {
+    return res.status(400).json({ error: "due_date must be an ISO date string or null" });
+  }
+  const { data, error } = await supabase
+    .from("notebooks")
+    .update({ due_date })
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// PATCH /api/notebooks/:id/status — body: { status }
+app.patch("/api/notebooks/:id/status", requireAuth, requireMember, async (req, res) => {
+  const { status } = req.body;
+  const VALID = ["in_progress", "done", "need_help"];
+  if (!VALID.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${VALID.join(", ")}` });
+  }
+  const { data, error } = await supabase
+    .from("notebooks")
+    .update({ status })
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// ── Explain Differently ───────────────────────────────────────────────────
+// POST /api/notebooks/:id/explain-differently — body: { messageId, level }
+app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, async (req, res) => {
+  const { messageId, level } = req.body;
+  const VALID = ["simpler", "more_advanced", "different_angle"];
+  if (!VALID.includes(level)) {
+    return res.status(400).json({ error: `level must be one of: ${VALID.join(", ")}` });
+  }
+  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
+
+  // Fetch the original assistant message
+  const { data: orig } = await supabase
+    .from("messages")
+    .select("id, role, content")
+    .eq("id", messageId)
+    .eq("notebook_id", req.params.id)
+    .maybeSingle();
+  if (!orig) return res.status(404).json({ error: "Original message not found" });
+
+  // Fetch notes for context
+  const { data: notes } = await supabase
+    .from("notes")
+    .select("title, content")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  const { data: nb } = await supabase
+    .from("notebooks")
+    .select("title, topic")
+    .eq("id", req.params.id)
+    .single();
+
+  const notesContext = (notes ?? [])
+    .map(n => `Note: ${n.title || "Untitled"}\n${n.content || "[file attachment — no text content]"}`)
+    .join("\n\n---\n\n");
+
+  const directives = {
+    simpler: "Re-explain the previous answer as if I'm a 10-year-old. Use simple words and friendly analogies. No jargon.",
+    more_advanced: "Re-explain the previous answer at a more rigorous, technical level. Use precise terminology and dive deeper into mechanisms.",
+    different_angle: "Re-explain the previous answer from a different perspective or angle — try a different mental model or framing.",
+  };
+
+  const explainTier = await getUserTier(req.user.id);
+  const explainModel = getModel(explainTier);
+  const anthropic = new Anthropic({ apiKey: claudeKey });
+  try {
+    const message = await anthropic.messages.create({
+      model: explainModel,
+      max_tokens: 1024,
+      system: `You are Derek, a friendly study assistant for a notebook called "${nb?.title}" on the topic "${nb?.topic}". Answer using the notes below. Write in plain conversational text — no markdown, no asterisks, no headers.\n\nNOTEBOOK NOTES:\n${notesContext || "(no notes uploaded yet)"}`,
+      messages: [
+        { role: "assistant", content: orig.content },
+        { role: "user", content: directives[level] },
+      ],
+    });
+    const answer = message.content.find(b => b.type === "text")?.text ?? "";
+    res.json({ answer });
+  } catch (err) {
+    if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
+    console.error("[explain] Claude error:", err);
+    res.status(500).json({ error: "Failed to generate explanation. Please try again." });
+  }
 });
 
 // ── OTP helpers ──────────────────────────────────────────────────────────────
@@ -1127,29 +1826,170 @@ app.post("/api/auth/reset-password", async (req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/test-email?to=you@example.com — smoke-test Resend delivery
-// Remove or gate this route before going to production.
-app.get("/api/test-email", async (req, res) => {
-  const to = req.query.to;
-  if (!to) return res.status(400).json({ error: "Pass ?to=your@email.com" });
+// /api/test-email removed — was unprotected; use transactional email directly
 
-  try {
-    await sendOtpEmail(to, "123456", "signup");
-    res.json({ ok: true, message: `Test OTP sent to ${to}` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// POST /api/auth/sign-out — server-side session invalidation
+// The real work (clearing local session) happens via supabase.auth.signOut() on the client.
+// This endpoint exists so the frontend has a consistent API surface and lets us
+// invalidate the session server-side if needed in the future.
+app.post("/api/auth/sign-out", requireAuth, async (req, res) => {
+  res.status(200).json({ success: true });
 });
 
 // DELETE /api/auth/delete-account — permanently delete the calling user's account
 app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;
 
-  // Delete the Supabase auth user (cascades to notebooks/notes via DB foreign keys)
-  const { error } = await supabase.auth.admin.deleteUser(userId);
-  if (error) return res.status(500).json({ error: error.message });
+  try {
+    console.log(`[delete-account] starting for user=${userId}`);
 
-  res.status(204).end();
+    // 1. Delete subscriptions first (FK to auth.users, no CASCADE)
+    await supabase.from("subscriptions").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted subscriptions");
+
+    // 2. Delete usage (FK to auth.users, no CASCADE)
+    await supabase.from("usage").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted usage");
+
+    // 3. Delete notifications (references activities + user_id)
+    await supabase.from("notifications").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted notifications");
+
+    // 4. Delete activities (FK to auth.users, no CASCADE)
+    await supabase.from("activities").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted activities");
+
+    // 5. Delete messages (FK to auth.users, no CASCADE)
+    await supabase.from("messages").delete().eq("created_by", userId);
+    console.log("[delete-account] deleted messages");
+
+    // 6. Delete invites (FK to auth.users, no CASCADE)
+    await supabase.from("invites").delete().eq("created_by", userId);
+    console.log("[delete-account] deleted invites");
+
+    // 7. Delete starred notebooks (CASCADE, but cascade is unreliable via GoTrue)
+    await supabase.from("starred_notebooks").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted starred_notebooks");
+
+    // 8. Delete notebook membership rows (CASCADE, but clean explicitly)
+    await supabase.from("notebook_members").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted notebook_members");
+
+    // 9. Delete daily_activity (FK to auth.users)
+    await supabase.from("daily_activity").delete().eq("user_id", userId);
+    console.log("[delete-account] deleted daily_activity");
+
+    // 10. Now safe to delete the auth user — Postgres CASCADE handles the rest
+    console.log("[delete-account] calling admin.deleteUser");
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("[delete-account] admin.deleteUser failed:", error.message, JSON.stringify(error));
+      return res.status(500).json({ error: "Failed to delete account. Please try again." });
+    }
+
+    console.log(`[delete-account] success for user=${userId}`);
+    res.status(204).end();
+  } catch (err) {
+    console.error("[delete-account] Unexpected error:", err);
+    res.status(500).json({ error: "Failed to delete account. Please try again." });
+  }
+});
+
+// ── Subscription endpoints ────────────────────────────────────────────────────
+
+// GET /api/user/subscription — current tier + usage stats
+app.get("/api/user/subscription", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const tier = await getUserTier(userId);
+  await resetUsageIfNeeded(userId);
+
+  const [{ data: usageRow }, { data: sub }, notebooksUsed] = await Promise.all([
+    supabase.from("usage")
+      .select("messages_this_month, forge_outputs_this_month, reset_at")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase.from("subscriptions")
+      .select("current_period_end")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    countOwnedNotebooks(userId),
+  ]);
+
+  res.json({
+    tier,
+    messagesUsed:   usageRow?.messages_this_month ?? 0,
+    messagesLimit:  tier === "pro" ? null : 30,
+    forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
+    forgeLimit:     tier === "pro" ? null : 3,
+    notebooksUsed,
+    notebooksLimit: tier === "pro" ? null : 15,
+    resetAt:        usageRow?.reset_at ?? null,
+    currentPeriodEnd: sub?.current_period_end ?? null,
+  });
+});
+
+// POST /api/create-checkout-session — create a Stripe checkout session
+app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+  if (!process.env.STRIPE_PRICE_ID) return res.status(500).json({ error: "STRIPE_PRICE_ID not configured" });
+
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  // Get or create Stripe customer
+  let { data: sub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let customerId = sub?.stripe_customer_id;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: userEmail,
+      metadata: { supabase_user_id: userId },
+    });
+    customerId = customer.id;
+    await supabase.from("subscriptions").upsert({
+      user_id: userId,
+      stripe_customer_id: customerId,
+      tier: "free",
+    }, { onConflict: "user_id" });
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    client_reference_id: userId, // ties checkout back to our user_id in webhook
+    mode: "subscription",
+    payment_method_types: ["card"],
+    line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+    success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?upgraded=true`,
+    cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
+  });
+
+  res.json({ url: session.url });
+});
+
+// POST /api/create-portal-session — create a Stripe billing portal session
+app.post("/api/create-portal-session", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+
+  if (!sub?.stripe_customer_id) {
+    return res.status(400).json({ error: "No Stripe customer found for this user" });
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: sub.stripe_customer_id,
+    return_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app`,
+  });
+
+  res.json({ url: session.url });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

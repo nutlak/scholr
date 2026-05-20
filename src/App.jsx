@@ -3115,99 +3115,247 @@ function InviteLanding({ inviteInfo, onSignIn }) {
 }
 
 function ActivityHeatmap({ data }) {
-  // Build 52 weeks × 7 days = 364 days grid ending today.
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = [];
-  const map = new Map(data.map(d => [d.date, d.count]));
-  for (let i = 363; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    days.push({ date: key, label: d, count: map.get(key) ?? 0 });
-  }
-  // Group into weeks (columns of 7 days, starting Sunday)
-  const weeks = [];
-  let week = [];
-  // pad start so first column begins on Sunday
-  const firstDow = days[0].label.getDay();
-  for (let i = 0; i < firstDow; i++) week.push(null);
-  for (const d of days) {
-    week.push(d);
-    if (week.length === 7) { weeks.push(week); week = []; }
-  }
-  if (week.length) {
-    while (week.length < 7) week.push(null);
-    weeks.push(week);
-  }
+  const [viewMode, setViewMode] = useState("week"); // 'week' | 'month' | 'year'
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
+  });
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear());
 
-  function intensity(count) {
-    if (!count) return { bg: "var(--s2, #1C1C2A)", glow: 0 };
-    if (count < 2) return { bg: "rgba(167,139,250,0.25)", glow: 0 };
-    if (count < 4) return { bg: "rgba(167,139,250,0.45)", glow: 0.15 };
-    if (count < 6) return { bg: "rgba(167,139,250,0.7)",  glow: 0.25 };
-    return { bg: "#A78BFA", glow: 0.4 };
-  }
+  // Build lookup map from API data: 'YYYY-MM-DD' → count
+  const activityMap = new Map(data.map(d => [d.date, d.count]));
+  const fmtKey = dt => dt.toISOString().slice(0, 10);
+  const isActive = key => (activityMap.get(key) ?? 0) > 0;
 
-  const todayKey = today.toISOString().slice(0, 10);
-  const total = data.reduce((acc, d) => acc + (d.count ?? 0), 0);
-  const activeDays = data.filter(d => (d.count ?? 0) > 0).length;
-  // Current streak (consecutive days ending today with activity)
+  const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0);
+  const todayKey = fmtKey(todayDate);
+
+  // Streak: consecutive days ending today with activity
   let streak = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
-    if (days[i].count > 0) streak++; else break;
+  for (let i = 0; ; i++) {
+    const d = new Date(todayDate); d.setDate(d.getDate() - i);
+    if ((activityMap.get(fmtKey(d)) ?? 0) > 0) streak++; else break;
   }
+  const activeDays = data.filter(d => (d.count ?? 0) > 0).length;
+  const total = data.reduce((s, d) => s + (d.count ?? 0), 0);
+
+  // Week days (Mon–Sun of current week)
+  const weekStart = new Date(todayDate);
+  const dow = todayDate.getDay(); // 0=Sun
+  weekStart.setDate(todayDate.getDate() - (dow === 0 ? 6 : dow - 1));
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d;
+  });
+  const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+
+  // Build calendar grid for a month (Monday-start)
+  function buildMonthGrid(monthDt) {
+    const y = monthDt.getFullYear(), m = monthDt.getMonth();
+    const first = new Date(y, m, 1);
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    let offset = first.getDay() - 1; // Mon=0 … Sun=6
+    if (offset < 0) offset = 6;
+    const cells = Array(offset).fill(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(y, m, d));
+    while (cells.length % 7) cells.push(null);
+    return cells;
+  }
+
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTHS_FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  // Shared day-circle renderer (plain function, not a component, to avoid remount on every render)
+  function renderCircle(dt, size, label) {
+    if (!dt) return <div style={{ width: size, height: size }} />;
+    const key = fmtKey(dt);
+    const active = isActive(key);
+    const isT = key === todayKey;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        {label !== undefined && (
+          <div style={{
+            fontSize: 9, fontWeight: 700, fontFamily: FONT,
+            color: "rgba(245,245,250,0.35)", textTransform: "uppercase",
+            letterSpacing: "0.05em", height: 11, lineHeight: "11px",
+          }}>
+            {label}
+          </div>
+        )}
+        <div style={{
+          width: size, height: size, borderRadius: "50%", boxSizing: "border-box",
+          background: active ? "#7C3AED" : "rgba(255,255,255,0.05)",
+          border: isT ? "2px solid #A78BFA" : "2px solid transparent",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: Math.max(9, Math.floor(size * 0.36)),
+          fontWeight: active ? 700 : 400,
+          color: active ? "#fff" : "rgba(245,245,250,0.4)",
+          fontFamily: FONT,
+          transition: "background 0.15s",
+        }}>
+          {dt.getDate()}
+        </div>
+      </div>
+    );
+  }
+
+  const navBtnStyle = {
+    background: "none", border: "none", color: "rgba(245,245,250,0.45)",
+    cursor: "pointer", fontSize: 18, padding: "2px 8px", lineHeight: 1,
+    borderRadius: 6, fontFamily: FONT,
+  };
 
   return (
     <div style={{
       background: "var(--s1, #14141F)",
       border: "1px solid var(--border, rgba(255,255,255,0.07))",
-      borderRadius: 14,
-      padding: "18px 20px",
-      marginBottom: 32,
+      borderRadius: 14, padding: "18px 20px", marginBottom: 32,
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
-            🔥 Study Streak
-          </div>
-          <div style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT, marginTop: 2 }}>
-            {streak} day{streak === 1 ? "" : "s"} · {total} activities · {activeDays} active days
-          </div>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
+          🔥 Study Streak
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
-          <span>Less</span>
-          {[0, 1, 3, 5, 7].map(c => {
-            const it = intensity(c);
-            return <div key={c} style={{ width: 10, height: 10, borderRadius: 2, background: it.bg }} />;
-          })}
-          <span>More</span>
+        <div style={{ display: "flex", gap: 3 }}>
+          {["week", "month", "year"].map(mode => (
+            <button key={mode} onClick={() => setViewMode(mode)} style={{
+              padding: "3px 10px", borderRadius: 8, cursor: "pointer",
+              border: "1px solid",
+              borderColor: viewMode === mode ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)",
+              background: viewMode === mode ? "rgba(167,139,250,0.1)" : "transparent",
+              color: viewMode === mode ? "#A78BFA" : "rgba(245,245,250,0.4)",
+              fontSize: 11, fontWeight: 600, fontFamily: FONT, transition: "all 0.15s",
+            }}>
+              {mode[0].toUpperCase() + mode.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="heatmap-scroll" style={{ display: "flex", gap: 3, overflowX: "auto" }}>
-        {weeks.map((wk, wi) => (
-          <div key={wi} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {wk.map((d, di) => {
-              if (!d) return <div key={di} style={{ width: 10, height: 10 }} />;
-              const it = intensity(d.count);
-              const isToday = d.date === todayKey;
-              const dateLabel = d.label.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+      {/* ── Week view ── */}
+      {viewMode === "week" && (
+        <div className="heatmap-fade-in">
+          <div style={{ display: "flex", justifyContent: "space-around", gap: 2 }}>
+            {weekDays.map((d, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                {renderCircle(d, 36, DAY_LETTERS[i])}
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 10 }}>
+            <button onClick={() => setViewMode("month")} style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(167,139,250,0.65)", fontSize: 11, fontFamily: FONT,
+              fontWeight: 600, padding: "4px 8px",
+            }}>
+              Show month ↓
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Month view ── */}
+      {viewMode === "month" && (
+        <div className="heatmap-fade-in">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <button style={navBtnStyle} onClick={() => setCurrentMonth(m => { const n = new Date(m); n.setMonth(m.getMonth() - 1); return n; })}>‹</button>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t1,#F5F5FA)", fontFamily: FONT }}>
+              {MONTHS_FULL[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </span>
+            <button style={navBtnStyle} onClick={() => setCurrentMonth(m => { const n = new Date(m); n.setMonth(m.getMonth() + 1); return n; })}>›</button>
+          </div>
+          {/* Day-of-week headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 3 }}>
+            {DAY_LETTERS.map((l, i) => (
+              <div key={i} style={{
+                textAlign: "center", fontSize: 9, fontWeight: 700,
+                color: "rgba(245,245,250,0.3)", fontFamily: FONT,
+                paddingBottom: 4, textTransform: "uppercase",
+              }}>{l}</div>
+            ))}
+          </div>
+          {/* Calendar grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 3 }}>
+            {buildMonthGrid(currentMonth).map((d, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "center" }}>
+                {d ? renderCircle(d, 28) : <div style={{ width: 28, height: 28 }} />}
+              </div>
+            ))}
+          </div>
+          {/* Sub-nav */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+            <button onClick={() => setViewMode("week")} style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(245,245,250,0.32)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+            }}>↑ Show less</button>
+            <button onClick={() => setViewMode("year")} style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(167,139,250,0.65)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+            }}>Show year ↓</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Year view ── */}
+      {viewMode === "year" && (
+        <div className="heatmap-fade-in">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <button style={navBtnStyle} onClick={() => setCurrentYear(y => y - 1)}>‹</button>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t1,#F5F5FA)", fontFamily: FONT }}>{currentYear}</span>
+            <button style={navBtnStyle} onClick={() => setCurrentYear(y => y + 1)}>›</button>
+          </div>
+          {/* 12 mini-month grids */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+            {MONTHS_SHORT.map((_, mi) => {
+              const monthDt = new Date(currentYear, mi, 1);
+              const cells = buildMonthGrid(monthDt);
               return (
-                <div
-                  key={di}
-                  title={`${d.count} activit${d.count === 1 ? "y" : "ies"} on ${dateLabel}`}
-                  style={{
-                    width: 10, height: 10, borderRadius: 2,
-                    background: it.bg,
-                    border: isToday ? "1px solid #C4B5FD" : "1px solid transparent",
-                    boxShadow: it.glow ? `0 0 6px rgba(167,139,250,${it.glow})` : "none",
-                    transition: "transform 0.12s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.6)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-                />
+                <div key={mi}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, fontFamily: FONT,
+                    color: "rgba(245,245,250,0.45)", textAlign: "center", marginBottom: 4,
+                  }}>
+                    {MONTHS_SHORT[mi]}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1.5 }}>
+                    {cells.map((d, di) => {
+                      if (!d) return <div key={di} style={{ aspectRatio: "1" }} />;
+                      const key = fmtKey(d);
+                      const active = isActive(key);
+                      const isT = key === todayKey;
+                      return (
+                        <div key={di} style={{
+                          aspectRatio: "1", borderRadius: "50%", boxSizing: "border-box",
+                          background: active ? "#7C3AED" : "rgba(255,255,255,0.05)",
+                          border: isT ? "1.5px solid #A78BFA" : "1.5px solid transparent",
+                        }} />
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <button onClick={() => setViewMode("month")} style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(245,245,250,0.32)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+            }}>↑ Show less</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Stats footer ── */}
+      <div style={{
+        display: "flex", gap: 20, marginTop: 14, paddingTop: 12,
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+      }}>
+        {[
+          { val: streak,     label: "day streak",  color: "#A78BFA" },
+          { val: activeDays, label: "active days",  color: "var(--t1,#F5F5FA)" },
+          { val: total,      label: "activities",   color: "var(--t1,#F5F5FA)" },
+        ].map(({ val, label, color }) => (
+          <div key={label}>
+            <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
+            <div style={{ fontSize: 10, color: "rgba(245,245,250,0.38)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>

@@ -150,6 +150,11 @@
 .dot-thinking:nth-child(2) { animation-delay: 0.15s; }
 .dot-thinking:nth-child(3) { animation-delay: 0.3s; }
 
+/* ── Activity heatmap views ──────────────────────────────────────── */
+.heatmap-fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
 /* Drag-to-reorder: handle sits in the gutter outside the card, hidden until
    the row is hovered. Listeners are attached to the handle (not the wrapper),
    so clicks on the card body still open it. */

@@ -70,10 +70,11 @@ const supabaseAuth = createClient(
 );
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+const stripTrailingSlash = (s) => (typeof s === "string" ? s.replace(/\/+$/, "") : s);
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
   "http://localhost:4173",
-  process.env.CLIENT_ORIGIN,           // https://scholr.dev
+  stripTrailingSlash(process.env.CLIENT_ORIGIN),  // https://scholr.dev
   "https://scholr.dev",
   "https://www.scholr.dev",
 ].filter(Boolean);
@@ -83,9 +84,14 @@ app.use(cors({
     // Allow non-browser requests (curl, Railway healthcheck, server-to-server)
     if (!origin) return cb(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    // Don't throw — that prevents downstream cors headers from being set and
+    // surfaces in browsers as the misleading "No 'Access-Control-Allow-Origin'"
+    // message. Log it and reject cleanly instead.
+    console.warn(`[cors] rejected origin: ${origin} (allowed: ${ALLOWED_ORIGINS.join(", ")})`);
+    cb(null, false);
   },
   credentials: true,
+  optionsSuccessStatus: 204,
 }));
 
 // ── Stripe webhook — raw body MUST be parsed before express.json() ────────────

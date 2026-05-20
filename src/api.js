@@ -137,6 +137,18 @@ export const api = {
     return res.json();
   },
 
+  async reorderClasses(classIds) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/reorder`, {
+      method: "PUT", headers, body: JSON.stringify({ classIds }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to reorder classes");
+    }
+    return res.json();
+  },
+
   async deleteClass(classId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/classes/${classId}`, {

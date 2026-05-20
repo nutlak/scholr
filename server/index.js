@@ -670,11 +670,56 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
 app.get("/api/classes", requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from("classes")
-    .select("id, title, color, created_at")
+    .select("id, title, color, created_at, sort_order")
     .eq("user_id", req.user.id)
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);
+});
+
+// PUT /api/classes/reorder — persist drag-to-reorder result
+// Body: { classIds: [uuid, uuid, ...] } in the desired order.
+// Each id's sort_order is set to its index in the array. Only the
+// authenticated user's classes are touched.
+app.put("/api/classes/reorder", requireAuth, async (req, res) => {
+  const { classIds } = req.body ?? {};
+  if (!Array.isArray(classIds) || classIds.length === 0) {
+    return res.status(400).json({ error: "classIds must be a non-empty array" });
+  }
+  if (classIds.some(id => typeof id !== "string")) {
+    return res.status(400).json({ error: "classIds must be strings" });
+  }
+  if (new Set(classIds).size !== classIds.length) {
+    return res.status(400).json({ error: "classIds must be unique" });
+  }
+
+  // Verify every id belongs to this user. Reject otherwise so a client can't
+  // bump someone else's class order by guessing IDs.
+  const { data: owned, error: ownedErr } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("user_id", req.user.id)
+    .in("id", classIds);
+  if (ownedErr) return res.status(500).json({ error: ownedErr.message });
+  if (!owned || owned.length !== classIds.length) {
+    return res.status(403).json({ error: "One or more classes not found or not owned by you" });
+  }
+
+  // Apply in parallel. Each update is scoped to (id, user_id) so a stray id
+  // can't escape the ownership check above even under a race.
+  const updates = await Promise.all(
+    classIds.map((id, index) =>
+      supabase
+        .from("classes")
+        .update({ sort_order: index })
+        .eq("id", id)
+        .eq("user_id", req.user.id)
+    )
+  );
+  const failed = updates.find(u => u.error);
+  if (failed) return res.status(500).json({ error: failed.error.message });
+  res.json({ ok: true });
 });
 
 // POST /api/classes — create a class

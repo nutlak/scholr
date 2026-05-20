@@ -5,6 +5,20 @@ import AuthModal from "./AuthModal.jsx";
 import LandingPage from "./LandingPage.jsx";
 import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import "./App.css";
 
 function timeAgo(iso) {
@@ -2645,6 +2659,52 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
   );
 }
 
+// Wraps ClassCard with dnd-kit sortable behavior. The drag listeners are
+// bound to the handle (not the wrapper) so clicking the card body still
+// opens it. While dragging: slight scale, drop shadow, lifted z-index.
+function SortableClassCard({ cls, dragDisabled, ...rest }) {
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging,
+  } = useSortable({ id: cls.id, disabled: dragDisabled });
+
+  // Compose the transform with a small scale while dragging.
+  const scaled = isDragging && transform
+    ? { ...transform, scaleX: 1.02, scaleY: 1.02 }
+    : transform;
+
+  const style = {
+    position: "relative",
+    transform: CSS.Transform.toString(scaled),
+    transition,
+    opacity: isDragging ? 0.9 : 1,
+    zIndex: isDragging ? 10 : "auto",
+    boxShadow: isDragging ? "0 14px 32px rgba(0,0,0,0.45)" : "none",
+    borderRadius: 12,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`sortable-class-row${isDragging ? " is-dragging" : ""}`}
+    >
+      {!dragDisabled && (
+        <button
+          type="button"
+          className="class-drag-handle"
+          aria-label="Drag to reorder class"
+          title="Drag to reorder"
+          {...attributes}
+          {...listeners}
+        >
+          ⠿
+        </button>
+      )}
+      <ClassCard cls={cls} {...rest} />
+    </div>
+  );
+}
+
 function ColorSwatchPicker({ value, onChange }) {
   return (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -3538,6 +3598,11 @@ export default function Scholr() {
   const [notifications, setNotifications] = useState([]);
   const [classes, setClasses] = useState([]);
   const [expandedClassId, setExpandedClassId] = useState(null);
+  // Require a 4px drag before activating so taps/clicks on the card body
+  // don't accidentally start drags from the handle press.
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+  );
   const [classUnitsCache, setClassUnitsCache] = useState({});
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [newUnitFor, setNewUnitFor] = useState(null);
@@ -3741,6 +3806,25 @@ export default function Scholr() {
       console.error("updateClassColor failed:", err);
       setClasses(prevClasses);
       setToast("Could not update color");
+      setTimeout(() => setToast(""), 2500);
+    }
+  }
+
+  async function handleReorderClassesDnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = classes.findIndex(c => c.id === active.id);
+    const newIndex = classes.findIndex(c => c.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const prev = classes;
+    const next = arrayMove(classes, oldIndex, newIndex);
+    setClasses(next);                          // optimistic
+    try {
+      await api.reorderClasses(next.map(c => c.id));
+    } catch (err) {
+      console.error("reorderClasses failed:", err);
+      setClasses(prev);                        // revert
+      setToast("Could not reorder classes");
       setTimeout(() => setToast(""), 2500);
     }
   }
@@ -4500,22 +4584,37 @@ export default function Scholr() {
                     cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
                   />
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 40 }}>
-                    {filteredClasses.map(cls => (
-                      <ClassCard
-                        key={cls.id}
-                        cls={cls}
-                        expanded={expandedClassId === cls.id}
-                        units={classUnitsCache[cls.id] ?? null}
-                        onToggle={() => handleToggleClass(cls.id)}
-                        onChangeColor={color => handleChangeClassColor(cls.id, color)}
-                        onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
-                        onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
-                        onDeleteClass={() => setDeleteClassTarget(cls)}
-                        onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
-                      />
-                    ))}
-                  </div>
+                  // Drag-to-reorder is enabled only when not searching, since the
+                  // SortableContext items would otherwise be a filtered subset and
+                  // a persisted order would be incomplete.
+                  <DndContext
+                    sensors={dndSensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleReorderClassesDnd}
+                  >
+                    <SortableContext
+                      items={filteredClasses.map(c => c.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 40 }}>
+                        {filteredClasses.map(cls => (
+                          <SortableClassCard
+                            key={cls.id}
+                            cls={cls}
+                            dragDisabled={!!search}
+                            expanded={expandedClassId === cls.id}
+                            units={classUnitsCache[cls.id] ?? null}
+                            onToggle={() => handleToggleClass(cls.id)}
+                            onChangeColor={color => handleChangeClassColor(cls.id, color)}
+                            onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
+                            onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
+                            onDeleteClass={() => setDeleteClassTarget(cls)}
+                            onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 )
 
               ) : filtered.length === 0 ? (

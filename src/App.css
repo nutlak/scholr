@@ -149,3 +149,51 @@
 }
 .dot-thinking:nth-child(2) { animation-delay: 0.15s; }
 .dot-thinking:nth-child(3) { animation-delay: 0.3s; }
+
+/* Drag-to-reorder: handle sits in the gutter outside the card, hidden until
+   the row is hovered. Listeners are attached to the handle (not the wrapper),
+   so clicks on the card body still open it. */
+.class-drag-handle {
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary, rgba(245, 245, 250, 0.4));
+  font-size: 16px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.18s ease, color 0.18s ease;
+  user-select: none;
+  touch-action: none; /* let dnd-kit own pointer events on touch */
+}
+.sortable-class-row:hover .class-drag-handle,
+.sortable-class-row.is-dragging .class-drag-handle,
+.class-drag-handle:focus-visible {
+  opacity: 1;
+}
+.class-drag-handle:hover {
+  color: var(--text-secondary, rgba(245, 245, 250, 0.65));
+}
+.class-drag-handle:active,
+.sortable-class-row.is-dragging .class-drag-handle {
+  cursor: grabbing;
+}
+/* Narrow screens: no gutter to spare, park the handle just inside the row.
+   The 3px accent bar means 24px left padding clears it without colliding. */
+@media (max-width: 640px) {
+  .class-drag-handle {
+    left: 4px;
+  }
+  .sortable-class-row {
+    padding-left: 24px;
+  }
+}

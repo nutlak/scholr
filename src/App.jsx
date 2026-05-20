@@ -128,9 +128,9 @@ function AvatarStack({ names }) {
       {names.length > 3 && (
         <div style={{
           marginLeft: -8, width: 24, height: 24, borderRadius: "50%",
-          background: "#1C1C2A", border: "2px solid #0B0B12",
+          background: "var(--s2)", border: "2px solid #0B0B12",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.6)", fontFamily: FONT,
+          fontSize: 10, fontWeight: 600, color: "var(--t2)", fontFamily: FONT,
         }}>+{names.length - 3}</div>
       )}
     </div>
@@ -184,13 +184,13 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
             position: "absolute", top: 12, right: 12, zIndex: 10,
             background: "none", border: "none", cursor: "pointer",
             padding: "4px 6px", fontSize: 16,
-            color: starred ? "#FBBF24" : "rgba(245,245,250,0.3)",
+            color: starred ? "#FBBF24" : "var(--t4)",
             opacity: starred ? 1 : hovered ? 1 : 0,
             transition: "color 0.18s, opacity 0.18s, transform 0.18s", lineHeight: 1,
             textShadow: starred ? "0 0 12px rgba(251,191,36,0.5)" : "none",
           }}
           onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#FBBF24"; e.currentTarget.style.transform = "scale(1.15)"; }}
-          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#FBBF24" : "rgba(245,245,250,0.3)"; e.currentTarget.style.transform = "scale(1)"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#FBBF24" : "var(--t4)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
           {starred ? "★" : "☆"}
         </button>
@@ -293,9 +293,9 @@ function MemberAvatarStack({ members }) {
       {overflow > 0 && (
         <div style={{
           marginLeft: -10, width: 28, height: 28, borderRadius: "50%",
-          background: "#1C1C2A", border: "2px solid #0B0B12",
+          background: "var(--s2)", border: "2px solid #0B0B12",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10.5, fontWeight: 600, color: "rgba(245,245,250,0.55)", fontFamily: FONT, zIndex: 0,
+          fontSize: 10.5, fontWeight: 600, color: "var(--t2)", fontFamily: FONT, zIndex: 0,
         }}>+{overflow}</div>
       )}
 
@@ -305,15 +305,15 @@ function MemberAvatarStack({ members }) {
           minWidth: 240, maxWidth: 320, maxHeight: 300, overflowY: "auto",
           background: "rgba(20,20,31,0.92)",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid var(--border-h)",
           borderRadius: 10, padding: 12,
           fontFamily: FONT, zIndex: 100,
-          boxShadow: "0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(167,139,250,0.08), 0 0 32px rgba(167,139,250,0.08)",
+          boxShadow: "0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px var(--acc-bg), 0 0 32px var(--acc-bg)",
           animation: "fadeIn 0.15s ease",
           display: "flex", flexDirection: "column", gap: 4,
         }}>
           <div style={{
-            fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.45)",
+            fontSize: 10, fontWeight: 600, color: "var(--t3)",
             letterSpacing: "0.08em", textTransform: "uppercase",
             padding: "2px 4px 8px",
           }}>
@@ -330,16 +330,16 @@ function MemberAvatarStack({ members }) {
                 <Avatar name={m.email} size={26} seed={m.email} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 13, fontWeight: 500, color: "#F5F5FA",
+                    fontSize: 13, fontWeight: 500, color: "var(--t1)",
                     letterSpacing: "-0.01em",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     display: "flex", alignItems: "center", gap: 6,
                   }}>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
-                    <span style={{ color: "rgba(245,245,250,0.3)", flexShrink: 0 }}>•</span>
+                    <span style={{ color: "var(--t4)", flexShrink: 0 }}>•</span>
                     <span style={{
                       fontSize: 11, fontWeight: 600,
-                      color: isOwner ? "#A78BFA" : "rgba(245,245,250,0.5)",
+                      color: isOwner ? "var(--acc)" : "var(--t3)",
                       letterSpacing: "-0.005em", flexShrink: 0,
                     }}>
                       {isOwner ? "Owner" : "Member"}
@@ -347,7 +347,7 @@ function MemberAvatarStack({ members }) {
                   </div>
                   {m.email && m.email !== label && (
                     <div style={{
-                      fontSize: 11, color: "rgba(245,245,250,0.4)", marginTop: 1,
+                      fontSize: 11, color: "var(--t3)", marginTop: 1,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>{m.email}</div>
                   )}
@@ -494,12 +494,12 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
   function toggleLearned() { setLearned(p => { const n = new Set(p); n.has(realIdx) ? n.delete(realIdx) : n.add(realIdx); return n; }); }
 
   const showCards = action === "flashcards" && flashcards && !generating;
-  const activeColor = action ? FORGE_BY_ID[action]?.color ?? "#A78BFA" : "#A78BFA";
+  const activeColor = action ? FORGE_BY_ID[action]?.color ?? "var(--acc)" : "var(--acc)";
 
   return (
     <div className="forge-panel" style={{
       width: "44%", display: "flex", flexDirection: "column",
-      borderLeft: "1px solid rgba(255,255,255,0.07)",
+      borderLeft: "1px solid var(--border)",
       background: "linear-gradient(180deg, rgba(20,20,31,0.4) 0%, rgba(11,11,18,0.1) 100%)",
       paddingLeft: 18, marginLeft: 14,
       height: "100%", minHeight: 0, flexShrink: 0,
@@ -508,14 +508,14 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         paddingBottom: 14, marginBottom: 14,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--border)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
             width: 22, height: 22, borderRadius: 6,
             background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, boxShadow: "0 2px 8px rgba(167,139,250,0.4)",
+            fontSize: 12, boxShadow: "0 2px 8px var(--acc-bg-h)",
           }}>⚒</div>
           <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
         </div>
@@ -524,37 +524,37 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             onClick={() => setShowSaved(v => !v)}
             className="btn-press"
             style={{
-              background: showSaved ? "rgba(167,139,250,0.12)" : "transparent",
-              border: `1px solid ${showSaved ? "rgba(167,139,250,0.35)" : "rgba(255,255,255,0.08)"}`,
+              background: showSaved ? "var(--acc-bg)" : "transparent",
+              border: `1px solid ${showSaved ? "color-mix(in srgb, var(--acc) 35%, transparent)" : "var(--border)"}`,
               borderRadius: 8, padding: "0 10px", height: 28, cursor: "pointer",
               fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
-              color: showSaved ? "#C4B5FD" : "rgba(245,245,250,0.55)",
+              color: showSaved ? "var(--acc-h)" : "var(--t2)",
               fontFamily: FONT,
               display: "flex", alignItems: "center", gap: 5,
             }}
-            onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}}
-            onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}}
+            onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}}
+            onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
           >
             SAVED
             {savedOutputs.length > 0 && (
               <span style={{
-                background: showSaved ? "rgba(167,139,250,0.25)" : "rgba(245,245,250,0.08)",
-                color: showSaved ? "#C4B5FD" : "rgba(245,245,250,0.55)",
+                background: showSaved ? "color-mix(in srgb, var(--acc) 25%, transparent)" : "var(--t4)",
+                color: showSaved ? "var(--acc-h)" : "var(--t2)",
                 borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 700,
                 letterSpacing: "0",
               }}>{savedOutputs.length}</span>
             )}
           </button>
           <button onClick={onClose} className="btn-press" style={{
-            background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent", border: "1px solid var(--border)",
             borderRadius: 8, cursor: "pointer",
-            color: "rgba(245,245,250,0.55)", fontSize: 14, lineHeight: 1,
+            color: "var(--t2)", fontSize: 14, lineHeight: 1,
             width: 28, height: 28,
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
           >✕</button>
         </div>
       </div>
@@ -562,7 +562,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
       {/* Saved outputs panel */}
       {showSaved && (
         <div style={{
-          background: "#14141F", border: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--s1)", border: "1px solid var(--border)",
           borderRadius: 12, padding: 6, marginBottom: 14,
           maxHeight: 200, overflowY: "auto",
           animation: "fadeIn 0.18s ease",
@@ -570,7 +570,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
         }}>
           {savedOutputs.length === 0 ? (
             <div style={{
-              fontSize: 12.5, color: "rgba(245,245,250,0.4)",
+              fontSize: 12.5, color: "var(--t3)",
               fontFamily: FONT, padding: "20px 12px", textAlign: "center",
             }}>
               No saved outputs yet. Generate something to start your library.
@@ -578,7 +578,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
           ) : savedOutputs.map(o => {
             const meta = FORGE_BY_ID[o.type];
             const icon = meta?.icon ?? "📄";
-            const color = meta?.color ?? "#A78BFA";
+            const color = meta?.color ?? "var(--acc)";
             return (
               <div key={o.id} className="forge-saved-item">
                 <div style={{
@@ -589,12 +589,12 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
                 }}>{icon}</div>
                 <div onClick={() => loadSaved(o)} style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 12.5, color: "#F5F5FA", fontFamily: FONT, fontWeight: 500,
+                    fontSize: 12.5, color: "var(--t1)", fontFamily: FONT, fontWeight: 500,
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                     letterSpacing: "-0.01em",
                   }}>{o.title}</div>
                   <div style={{
-                    fontSize: 10.5, color: "rgba(245,245,250,0.4)",
+                    fontSize: 10.5, color: "var(--t3)",
                     fontFamily: FONT, marginTop: 2,
                   }}>
                     {new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -635,11 +635,11 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
         disabled={generating}
         className="forge-topic-input"
         style={{
-          width: "100%", background: "#14141F",
-          border: "1px solid rgba(255,255,255,0.08)",
+          width: "100%", background: "var(--s1)",
+          border: "1px solid var(--border)",
           borderRadius: 10, padding: "0 14px",
           height: 40,
-          color: "#F5F5FA", fontSize: 13,
+          color: "var(--t1)", fontSize: 13,
           fontFamily: FONT,
           outline: "none", marginBottom: 12,
           boxSizing: "border-box",
@@ -656,20 +656,20 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             marginBottom: 10,
           }}>
             <div style={{
-              fontSize: 11, color: "rgba(245,245,250,0.5)", fontFamily: MONO,
-              padding: "3px 8px", background: "rgba(255,255,255,0.04)",
+              fontSize: 11, color: "var(--t3)", fontFamily: MONO,
+              padding: "3px 8px", background: "var(--s2)",
               borderRadius: 6, fontWeight: 600,
             }}>{cardIdx + 1} / {totalCards}</div>
             <div style={{
-              fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT,
+              fontSize: 11, color: "var(--t3)", fontFamily: FONT,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               flex: 1, textAlign: "center", margin: "0 12px",
             }}>{nb.title}</div>
             <div style={{
-              fontSize: 11, color: learned.size > 0 ? "#34D399" : "rgba(245,245,250,0.3)",
+              fontSize: 11, color: learned.size > 0 ? "#34D399" : "var(--t4)",
               fontFamily: MONO, flexShrink: 0,
               padding: "3px 8px",
-              background: learned.size > 0 ? "rgba(52,211,153,0.1)" : "rgba(255,255,255,0.04)",
+              background: learned.size > 0 ? "rgba(52,211,153,0.1)" : "var(--s2)",
               borderRadius: 6, fontWeight: 600,
             }}>{learned.size}/{totalCards}</div>
           </div>
@@ -679,38 +679,38 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               <div className="forge-face" style={{
                 position: "absolute", inset: 0,
                 background: "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1px solid var(--border-h)",
                 borderRadius: 14,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 padding: "28px 22px",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
               }}>
                 <div style={{
-                  fontSize: 15, color: "#F5F5FA", textAlign: "center", lineHeight: 1.6,
+                  fontSize: 15, color: "var(--t1)", textAlign: "center", lineHeight: 1.6,
                   fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.01em",
                 }}>{currentCard.question}</div>
                 <div style={{
                   position: "absolute", bottom: 12, fontSize: 10,
-                  color: "rgba(245,245,250,0.25)", fontFamily: FONT,
+                  color: "var(--t4)", fontFamily: FONT,
                   letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600,
                 }}>Click to flip</div>
               </div>
               <div className="forge-face forge-back" style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(180deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
-                border: "1px solid rgba(167,139,250,0.3)",
+                background: "linear-gradient(180deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
+                border: "1px solid color-mix(in srgb, var(--acc) 30%, transparent)",
                 borderRadius: 14,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 padding: "28px 22px",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.3), 0 0 24px rgba(167,139,250,0.15)",
               }}>
                 <div style={{
-                  fontSize: 14, color: "#C4B5FD", textAlign: "center", lineHeight: 1.65,
+                  fontSize: 14, color: "var(--acc-h)", textAlign: "center", lineHeight: 1.65,
                   fontFamily: FONT, letterSpacing: "-0.005em",
                 }}>{currentCard.answer}</div>
                 <div style={{
                   position: "absolute", bottom: 12, fontSize: 10,
-                  color: "rgba(167,139,250,0.4)", fontFamily: FONT,
+                  color: "var(--acc-bg-h)", fontFamily: FONT,
                   letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600,
                 }}>Click to flip back</div>
               </div>
@@ -719,35 +719,35 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 }}>
             <button onClick={goPrev} disabled={cardIdx === 0} className="btn-press" style={{
-              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 44,
-              color: cardIdx === 0 ? "rgba(245,245,250,0.2)" : "rgba(245,245,250,0.7)",
+              color: cardIdx === 0 ? "var(--t4)" : "var(--t2)",
               cursor: cardIdx === 0 ? "not-allowed" : "pointer", fontSize: 15,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>←</button>
             <button onClick={handleShuffle} title="Shuffle" className="btn-press" style={{
-              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 40,
-              color: "rgba(245,245,250,0.5)", cursor: "pointer", fontSize: 13,
+              color: "var(--t3)", cursor: "pointer", fontSize: 13,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.5)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--acc)"; e.currentTarget.style.borderColor = "color-mix(in srgb, var(--acc) 30%, transparent)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
             >⇄</button>
             <button onClick={toggleLearned} className="btn-press" style={{
-              background: learned.has(realIdx) ? "rgba(52,211,153,0.12)" : "#14141F",
-              border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.32)" : "rgba(255,255,255,0.08)"}`,
+              background: learned.has(realIdx) ? "rgba(52,211,153,0.12)" : "var(--s1)",
+              border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.32)" : "var(--border)"}`,
               borderRadius: 10, padding: "0 14px", height: 36,
-              color: learned.has(realIdx) ? "#34D399" : "rgba(245,245,250,0.55)",
+              color: learned.has(realIdx) ? "#34D399" : "var(--t2)",
               cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 600,
               whiteSpace: "nowrap", letterSpacing: "-0.005em",
             }}>
               {learned.has(realIdx) ? "✓ Learned" : "Mark learned"}
             </button>
             <button onClick={goNext} disabled={cardIdx === totalCards - 1} className="btn-press" style={{
-              background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 44,
-              color: cardIdx === totalCards - 1 ? "rgba(245,245,250,0.2)" : "rgba(245,245,250,0.7)",
+              color: cardIdx === totalCards - 1 ? "var(--t4)" : "var(--t2)",
               cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 15,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>→</button>
@@ -758,10 +758,10 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
           <div ref={contentRef} style={{
             flex: 1, overflowY: "auto", minHeight: 240,
             background: "#0F0F18",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: "1px solid var(--border)",
             borderRadius: 12,
             padding: "18px",
-            fontSize: 13.5, color: "rgba(245,245,250,0.78)", lineHeight: 1.7,
+            fontSize: 13.5, color: "var(--t1)", lineHeight: 1.7,
             fontFamily: FONT, whiteSpace: "pre-wrap",
             letterSpacing: "-0.005em",
           }}>
@@ -772,17 +772,17 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               }}>
                 <div style={{
                   width: 56, height: 56, borderRadius: 14,
-                  background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
+                  background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
                   border: "1px solid rgba(167,139,250,0.18)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 24,
                 }}>✨</div>
                 <div style={{
-                  fontSize: 14, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT,
+                  fontSize: 14, fontWeight: 600, color: "var(--t1)", fontFamily: FONT,
                   letterSpacing: "-0.015em",
                 }}>Ready to forge</div>
                 <div style={{
-                  fontSize: 12.5, color: "rgba(245,245,250,0.45)", lineHeight: 1.55,
+                  fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55,
                   textAlign: "center", maxWidth: 260,
                 }}>
                   Pick a type above to generate study content from your notes.
@@ -796,7 +796,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               }}>
                 <div className="forge-spinner" style={{ borderTopColor: activeColor, borderColor: `${activeColor}26` }} />
                 <span style={{
-                  fontSize: 12.5, color: "rgba(245,245,250,0.6)", fontFamily: FONT,
+                  fontSize: 12.5, color: "var(--t2)", fontFamily: FONT,
                   fontWeight: 500, letterSpacing: "-0.005em",
                 }}>
                   Forging your {FORGE_BY_ID[action]?.label.toLowerCase() ?? "output"}…
@@ -809,28 +809,28 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
           {content && !generating && (
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               <button onClick={handleCopy} className="btn-press" style={{
-                flex: 1, background: copied ? "rgba(52,211,153,0.1)" : "#14141F",
-                border: `1px solid ${copied ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.08)"}`,
+                flex: 1, background: copied ? "rgba(52,211,153,0.1)" : "var(--s1)",
+                border: `1px solid ${copied ? "rgba(52,211,153,0.3)" : "var(--border)"}`,
                 borderRadius: 10, height: 36,
-                color: copied ? "#34D399" : "rgba(245,245,250,0.65)",
+                color: copied ? "#34D399" : "var(--t2)",
                 fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 letterSpacing: "-0.005em",
               }}
-                onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}}
-                onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}}
+                onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}}
+                onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
               >{copied ? "✓ Copied" : "Copy"}</button>
               <button onClick={handleDownload} className="btn-press" style={{
-                flex: 1, background: "#14141F",
-                border: "1px solid rgba(255,255,255,0.08)",
+                flex: 1, background: "var(--s1)",
+                border: "1px solid var(--border)",
                 borderRadius: 10, height: 36,
-                color: "rgba(245,245,250,0.65)", fontSize: 12, fontWeight: 600,
+                color: "var(--t2)", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: FONT,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 letterSpacing: "-0.005em",
               }}
-                onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
               >Download</button>
             </div>
           )}
@@ -847,9 +847,9 @@ function renderMessageText(text, isOwn) {
     if (/^@[A-Za-z][A-Za-z0-9_]*$/.test(p)) {
       return (
         <span key={i} style={{
-          color: isOwn ? "#F5F5FA" : "#C4B5FD",
+          color: isOwn ? "var(--t1)" : "var(--acc-h)",
           fontWeight: 600,
-          background: isOwn ? "rgba(255,255,255,0.18)" : "rgba(167,139,250,0.16)",
+          background: isOwn ? "var(--border-h)" : "color-mix(in srgb, var(--acc) 16%, transparent)",
           padding: "0 4px", borderRadius: 4,
         }}>{p}</span>
       );
@@ -1097,7 +1097,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
         }}>
           <div style={{
             background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-            border: "1px solid rgba(255,255,255,0.09)",
+            border: "1px solid var(--border)",
             borderRadius: 18, width: "100%", maxWidth: 400,
             padding: "24px",
             boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(248,113,113,0.12)",
@@ -1109,11 +1109,11 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 20, color: "#F87171", marginBottom: 14,
             }}>🗑</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
               Delete this notebook?
             </div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.6)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.55 }}>
-              <span style={{ color: "#F5F5FA", fontWeight: 500 }}>{nb.title}</span> and all its notes will be permanently deleted.
+            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.55 }}>
+              <span style={{ color: "var(--t1)", fontWeight: 500 }}>{nb.title}</span> and all its notes will be permanently deleted.
             </div>
             {deleteError && (
               <div style={{
@@ -1128,14 +1128,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                 disabled={deleting}
                 className="btn-press"
                 style={{
-                  background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent", border: "1px solid var(--border-h)",
                   borderRadius: 10, padding: "0 16px", height: 36,
-                  color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                  color: "var(--t2)", fontSize: 13, fontWeight: 500,
                   cursor: "pointer", fontFamily: FONT,
                   opacity: deleting ? 0.5 : 1, letterSpacing: "-0.01em",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
               >Cancel</button>
               <button
                 onClick={handleDelete}
@@ -1263,14 +1263,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             title="Toggle The Forge"
             className="btn-press"
             style={{
-              background: showForge ? "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(167,139,250,0.06) 100%)" : "transparent",
-              border: `1px solid ${showForge ? "rgba(167,139,250,0.4)" : "var(--border-h, rgba(255,255,255,0.08))"}`,
+              background: showForge ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
+              border: `1px solid ${showForge ? "var(--acc-bg-h)" : "var(--border-h, rgba(255,255,255,0.08))"}`,
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showForge ? "#C4B5FD" : "var(--t2, rgba(245,245,250,0.65))",
+              color: showForge ? "var(--acc-h)" : "var(--t2, rgba(245,245,250,0.65))",
               display: "flex", alignItems: "center", gap: 6,
               letterSpacing: "-0.01em", flexShrink: 0,
-              boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px rgba(167,139,250,0.14)" : "none",
+              boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
             }}
             onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
             onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
@@ -1346,7 +1346,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                           background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 9, fontWeight: 700, color: "#fff",
-                          boxShadow: "0 2px 6px rgba(167,139,250,0.4)",
+                          boxShadow: "0 2px 6px var(--acc-bg-h)",
                         }}>D</div>
                       ) : senderTint && (
                         <div style={{
@@ -1359,7 +1359,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                       <div style={{
                         fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
                         textTransform: "uppercase",
-                        color: isAssistant ? "#C4B5FD" : senderTint?.hue ?? "rgba(245,245,250,0.5)",
+                        color: isAssistant ? "var(--acc-h)" : senderTint?.hue ?? "var(--t3)",
                         fontFamily: FONT,
                       }}>
                         {senderLabel}
@@ -1404,7 +1404,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                         disabled={explainingId !== null}
                         title="Explain differently"
                         style={{
-                          background: explainLevel === m.id ? "rgba(167,139,250,0.14)" : "transparent",
+                          background: explainLevel === m.id ? "var(--acc-bg-h)" : "transparent",
                           border: "1px solid var(--border, rgba(255,255,255,0.08))",
                           borderRadius: 8, padding: "0 10px", height: 26,
                           fontSize: 11, fontWeight: 600, fontFamily: FONT,
@@ -1429,7 +1429,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                                 border: "1px solid rgba(167,139,250,0.32)",
                                 borderRadius: 8, padding: "0 10px", height: 26,
                                 fontSize: 11, fontWeight: 600, fontFamily: FONT,
-                                color: "#C4B5FD", cursor: "pointer",
+                                color: "var(--acc-h)", cursor: "pointer",
                               }}
                             >{l.label}</button>
                           ))}
@@ -1451,23 +1451,23 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                     background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 9, fontWeight: 700, color: "#fff",
-                    boxShadow: "0 2px 6px rgba(167,139,250,0.4)",
+                    boxShadow: "0 2px 6px var(--acc-bg-h)",
                   }}>D</div>
                   <div style={{
                     fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
-                    textTransform: "uppercase", color: "#C4B5FD", fontFamily: FONT,
+                    textTransform: "uppercase", color: "var(--acc-h)", fontFamily: FONT,
                   }}>Derek</div>
                 </div>
                 <div style={{
                   background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid var(--border)",
                   borderRadius: 14, padding: "11px 14px",
                   display: "flex", gap: 6, alignItems: "center",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                   animation: "slideInLeft 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
                 }}>
                   <span style={{
-                    fontSize: 13, color: "rgba(245,245,250,0.6)", fontStyle: "italic",
+                    fontSize: 13, color: "var(--t2)", fontStyle: "italic",
                     fontFamily: FONT, marginRight: 4,
                   }}>Derek is thinking</span>
                   <span className="dot-thinking" />
@@ -1505,7 +1505,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                         padding: "6px 8px", borderRadius: 7, cursor: "pointer",
                         fontSize: 13, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--border)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <div style={{
@@ -1535,7 +1535,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                 outline: "none", transition: "all 0.18s",
                 letterSpacing: "-0.01em",
               }}
-              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+              onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
               onBlur={e => { e.target.style.borderColor = "var(--border, rgba(255,255,255,0.09))"; e.target.style.boxShadow = "none"; }}
             />
             <button
@@ -1545,14 +1545,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               style={{
                 background: query.trim() && !loading
                   ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
-                  : "#1C1C2A",
-                border: query.trim() && !loading ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  : "var(--s2)",
+                border: query.trim() && !loading ? "none" : "1px solid var(--border)",
                 borderRadius: 12,
                 width: 48, height: 48, fontSize: 18, fontWeight: 600,
                 color: "#fff",
                 cursor: loading || !query.trim() ? "not-allowed" : "pointer",
                 opacity: loading || !query.trim() ? 0.5 : 1,
-                boxShadow: query.trim() && !loading ? "0 4px 14px rgba(167,139,250,0.35)" : "none",
+                boxShadow: query.trim() && !loading ? "0 4px 14px color-mix(in srgb, var(--acc) 35%, transparent)" : "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.2s",
               }}
@@ -1720,7 +1720,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px",
-      background: "rgba(255,255,255,0.025)",
+      background: "var(--s1)",
       border: "1px solid var(--border, rgba(255,255,255,0.05))",
       borderRadius: 10,
       animation: "fadeIn 0.18s ease",
@@ -1780,10 +1780,10 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
             title={(reactionUsers?.[r.emoji] ?? []).join(", ")}
             style={{
               background: r.mine ? "rgba(167,139,250,0.18)" : "var(--s2, rgba(255,255,255,0.04))",
-              border: `1px solid ${r.mine ? "rgba(167,139,250,0.45)" : "var(--border, rgba(255,255,255,0.07))"}`,
+              border: `1px solid ${r.mine ? "color-mix(in srgb, var(--acc) 45%, transparent)" : "var(--border, rgba(255,255,255,0.07))"}`,
               borderRadius: 999, padding: "1px 8px", height: 22,
               fontSize: 12, fontFamily: FONT,
-              color: r.mine ? "#C4B5FD" : "var(--t2, rgba(245,245,250,0.7))",
+              color: r.mine ? "var(--acc-h)" : "var(--t2, rgba(245,245,250,0.7))",
               cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
             }}
           >
@@ -1822,7 +1822,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                       background: "transparent", border: "none", cursor: "pointer",
                       fontSize: 16, padding: "4px 6px", borderRadius: 6,
                     }}
-                    onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                    onMouseEnter={ev => { ev.currentTarget.style.background = "var(--border)"; }}
                     onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; }}
                   >{e}</button>
                 ))}
@@ -1971,7 +1971,7 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
       maxHeight: 320,
       display: "flex", flexDirection: "column", minHeight: 0,
       background: "linear-gradient(180deg, #14141F 0%, #181824 100%)",
-      border: "1px solid rgba(255,255,255,0.07)",
+      border: "1px solid var(--border)",
       borderRadius: 14,
       padding: "12px 14px 14px",
       boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
@@ -1989,7 +1989,7 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
             fontSize: 11, boxShadow: `0 2px 8px ${tint.hue}50`,
           }}>📝</div>
           <div style={{
-            fontSize: 13.5, fontWeight: 600, color: "#F5F5FA",
+            fontSize: 13.5, fontWeight: 600, color: "var(--t1)",
             fontFamily: FONT, letterSpacing: "0.3px",
           }}>
             Unit Notes {notes.length > 0 && (
@@ -2005,14 +2005,14 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
           onClick={onClose}
           title="Hide notes"
           style={{
-            background: "transparent", border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent", border: "1px solid var(--border)",
             borderRadius: 8, width: 26, height: 26, cursor: "pointer",
-            color: "rgba(245,245,250,0.55)", fontSize: 12, lineHeight: 1,
+            color: "var(--t2)", fontSize: 12, lineHeight: 1,
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
         >✕</button>
       </div>
 
@@ -2024,13 +2024,13 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
           maxLength={2000}
           style={{
             flex: 1, background: "#0F0F18",
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: "1px solid var(--border)",
             borderRadius: 10, padding: "0 12px", height: 38,
-            color: "#F5F5FA", fontSize: 13, fontFamily: FONT,
+            color: "var(--t1)", fontSize: 13, fontFamily: FONT,
             outline: "none", transition: "all 0.18s", letterSpacing: 0,
           }}
           onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.boxShadow = "none"; }}
+          onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
         />
         <button
           type="submit"
@@ -2039,8 +2039,8 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
           style={{
             background: draft.trim() && !posting
               ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`
-              : "#1C1C2A",
-            border: draft.trim() && !posting ? "none" : "1px solid rgba(255,255,255,0.06)",
+              : "var(--s2)",
+            border: draft.trim() && !posting ? "none" : "1px solid var(--border)",
             borderRadius: 10, padding: "0 14px", height: 38,
             color: "#fff", fontWeight: 600, fontSize: 13,
             cursor: draft.trim() && !posting ? "pointer" : "not-allowed",
@@ -2058,7 +2058,7 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
         {!loaded ? (
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
-            color: "rgba(245,245,250,0.4)", fontSize: 12.5, padding: "12px 4px",
+            color: "var(--t3)", fontSize: 12.5, padding: "12px 4px",
           }}>
             <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5, borderTopColor: tint.hue, borderColor: `${tint.hue}26` }} />
             Loading notes…
@@ -2066,8 +2066,8 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
         ) : notes.length === 0 ? (
           <div style={{
             padding: "16px 12px", textAlign: "center",
-            color: "rgba(245,245,250,0.4)", fontSize: 12.5,
-            border: "1px dashed rgba(255,255,255,0.07)", borderRadius: 10,
+            color: "var(--t3)", fontSize: 12.5,
+            border: "1px dashed var(--border)", borderRadius: 10,
             fontFamily: FONT,
           }}>
             No notes yet — be the first to share a thought with your group.
@@ -2110,12 +2110,12 @@ function PasswordResetModal({ onDone }) {
   }
 
   const inputBase = {
-    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    width: "100%", background: "var(--s1)", border: "1px solid var(--border)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "var(--t1)", fontSize: 14,
     fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
   };
   const label = {
-    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    fontSize: 11, color: "var(--t2)", fontFamily: FONT,
     letterSpacing: "0.04em", textTransform: "uppercase", display: "block",
     marginBottom: 7, fontWeight: 600,
   };
@@ -2128,16 +2128,16 @@ function PasswordResetModal({ onDone }) {
     }}>
       <div style={{
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
         animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
           Set a new password
         </div>
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", marginBottom: 22, fontFamily: FONT, lineHeight: 1.55 }}>
+        <div style={{ fontSize: 13, color: "var(--t2)", marginBottom: 22, fontFamily: FONT, lineHeight: 1.55 }}>
           Choose a strong password for your account.
         </div>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -2147,8 +2147,8 @@ function PasswordResetModal({ onDone }) {
               type="password" required autoFocus
               value={password} onChange={e => setPassword(e.target.value)}
               placeholder="Min 6 characters" style={inputBase}
-              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
+              onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
             />
           </div>
           <div>
@@ -2157,8 +2157,8 @@ function PasswordResetModal({ onDone }) {
               type="password" required
               value={confirm} onChange={e => setConfirm(e.target.value)}
               placeholder="Same password again" style={inputBase}
-              onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-              onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+              onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
+              onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
             />
           </div>
           {error && (
@@ -2173,7 +2173,7 @@ function PasswordResetModal({ onDone }) {
             fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer",
             fontFamily: FONT, opacity: loading ? 0.65 : 1, marginTop: 4,
             transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
-            boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+            boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px var(--acc-bg-h)",
             letterSpacing: "-0.01em",
           }}>
             {loading ? "Saving…" : "Update password"}
@@ -2223,17 +2223,17 @@ function DeleteAccountModal({ onClose, onConfirm }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 20, marginBottom: 14, color: "#F87171",
         }}>⚠</div>
-        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete your account?
         </div>
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.6 }}>
           All notebooks, notes, and data will be <span style={{ color: "#F87171", fontWeight: 500 }}>permanently deleted</span>. This cannot be undone.
         </div>
 
         <form onSubmit={handleConfirm} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={{
-              fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+              fontSize: 11, color: "var(--t2)", fontFamily: FONT,
               letterSpacing: "0.04em", textTransform: "uppercase",
               display: "block", marginBottom: 7, fontWeight: 600,
             }}>
@@ -2247,10 +2247,10 @@ function DeleteAccountModal({ onClose, onConfirm }) {
               autoFocus
               spellCheck={false}
               style={{
-                width: "100%", background: "#14141F",
-                border: `1px solid ${confirmed ? "rgba(248,113,113,0.45)" : "rgba(255,255,255,0.09)"}`,
+                width: "100%", background: "var(--s1)",
+                border: `1px solid ${confirmed ? "rgba(248,113,113,0.45)" : "var(--border)"}`,
                 borderRadius: 10, padding: "0 14px", height: 42,
-                color: confirmed ? "#F87171" : "#F5F5FA",
+                color: confirmed ? "#F87171" : "var(--t1)",
                 fontSize: 14, fontFamily: MONO,
                 outline: "none", transition: "all 0.18s",
                 letterSpacing: "0.08em",
@@ -2274,24 +2274,24 @@ function DeleteAccountModal({ onClose, onConfirm }) {
               disabled={loading}
               className="btn-press"
               style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent", border: "1px solid var(--border-h)",
                 borderRadius: 10, padding: "0 16px", height: 36,
-                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                color: "var(--t2)", fontSize: 13, fontWeight: 500,
                 cursor: "pointer", fontFamily: FONT, opacity: loading ? 0.5 : 1,
                 letterSpacing: "-0.01em",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
             >Cancel</button>
             <button
               type="submit"
               disabled={!confirmed || loading}
               className="btn-press"
               style={{
-                background: confirmed ? "linear-gradient(135deg, #F87171 0%, #EF4444 100%)" : "#1C1C2A",
-                border: confirmed ? "none" : "1px solid rgba(255,255,255,0.06)",
+                background: confirmed ? "linear-gradient(135deg, #F87171 0%, #EF4444 100%)" : "var(--s2)",
+                border: confirmed ? "none" : "1px solid var(--border)",
                 borderRadius: 10, padding: "0 18px", height: 36,
-                color: confirmed ? "#fff" : "rgba(245,245,250,0.25)",
+                color: confirmed ? "#fff" : "var(--t4)",
                 fontWeight: 600, fontSize: 13,
                 cursor: confirmed && !loading ? "pointer" : "not-allowed",
                 fontFamily: FONT,
@@ -2316,15 +2316,15 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "0 14px", height: 48,
-        background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        background: hovered ? "var(--s2)" : "transparent",
+        borderBottom: "1px solid var(--s2)",
         cursor: "pointer", transition: "background 0.15s",
         position: "relative",
       }}
     >
       <div style={{
         width: 4, height: 24, borderRadius: 2,
-        background: hovered ? color : "rgba(255,255,255,0.1)",
+        background: hovered ? color : "var(--border-h)",
         transition: "background 0.18s",
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -2356,7 +2356,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
       )}
       <div style={{
         fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT,
-        flexShrink: 0, padding: "2px 8px", background: "rgba(255,255,255,0.04)",
+        flexShrink: 0, padding: "2px 8px", background: "var(--s2)",
         borderRadius: 6, fontWeight: 500,
       }}>
         {unit.notes} {unit.notes === 1 ? "note" : "notes"}
@@ -2406,10 +2406,10 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 20, marginBottom: 14, color: "#F87171",
         }}>🗑</div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete "{cls.title}"?
         </div>
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.6)", fontFamily: FONT, lineHeight: 1.55, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, marginBottom: 20 }}>
           All units and notes inside will be permanently deleted.
         </div>
         {error && (
@@ -2424,13 +2424,13 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
             type="button" onClick={onClose}
             className="btn-press"
             style={{
-              background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+              background: "transparent", border: "1px solid var(--border-h)",
               borderRadius: 10, padding: "0 16px", height: 36,
-              color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+              color: "var(--t2)", fontSize: 13, fontWeight: 500,
               cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
           >Cancel</button>
           <button
             type="button" onClick={handleConfirm} disabled={loading}
@@ -2485,7 +2485,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
         background: expanded || hovered
           ? `linear-gradient(180deg, ${t.hue} 0%, ${t.deep} 100%)`
-          : "rgba(255,255,255,0.06)",
+          : "var(--border)",
         transition: "background 0.2s",
       }} />
 
@@ -2531,7 +2531,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               title="Change color"
               style={{
                 width: 22, height: 22, borderRadius: 7, padding: 0,
-                border: "1.5px solid rgba(255,255,255,0.15)",
+                border: "1.5px solid var(--border-h)",
                 background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
                 cursor: "pointer",
                 opacity: hovered || pickerOpen ? 1 : 0.6,
@@ -2557,18 +2557,18 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
                     right: pickerPos.right,
                     background: "rgba(20,20,31,0.96)",
                     backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--border-h)",
                     borderRadius: 12, padding: 12,
                     zIndex: 60,
                     maxHeight: 300,
                     overflowY: "auto",
                     overflowX: "hidden",
-                    boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.1)",
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
                     animation: "fadeIn 0.15s ease",
                   }}
                 >
                   <div style={{
-                    fontSize: 10, fontWeight: 600, color: "rgba(245,245,250,0.5)",
+                    fontSize: 10, fontWeight: 600, color: "var(--t3)",
                     letterSpacing: "0.5px", textTransform: "uppercase",
                     marginBottom: 10, padding: "0 2px",
                   }}>Class Color</div>
@@ -2589,18 +2589,18 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
             style={{
               background: "none", border: "none", cursor: "pointer",
               padding: "4px 6px", fontSize: 13, lineHeight: 1,
-              color: "rgba(245,245,250,0.3)",
+              color: "var(--t4)",
               opacity: hovered ? 1 : 0,
               transition: "opacity 0.18s, color 0.18s", flexShrink: 0,
               borderRadius: 6,
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
-            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "rgba(245,245,250,0.3)"; e.currentTarget.style.background = "transparent"; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--t4)"; e.currentTarget.style.background = "transparent"; }}
           >✕</button>
         )}
 
         <div style={{
-          fontSize: 11, color: expanded ? t.hue : "rgba(245,245,250,0.4)",
+          fontSize: 11, color: expanded ? t.hue : "var(--t3)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
         }}>▶</div>
@@ -2608,22 +2608,22 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
 
       {expanded && (
         <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid var(--border)",
           animation: "fadeIn 0.2s ease",
         }}>
           {units === null ? (
-            <div style={{ padding: "16px 18px", fontSize: 12.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ padding: "16px 18px", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
               <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
               Loading units…
             </div>
           ) : units.length === 0 ? (
             <div style={{
               padding: "20px 18px",
-              fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT,
+              fontSize: 12.5, color: "var(--t3)", fontFamily: FONT,
               textAlign: "center",
             }}>
               <div style={{ marginBottom: 6 }}>No units yet</div>
-              <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.3)" }}>Create your first unit below to start studying</div>
+              <div style={{ fontSize: 11.5, color: "var(--t4)" }}>Create your first unit below to start studying</div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -2638,7 +2638,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               ))}
             </div>
           )}
-          <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ padding: "10px 14px", borderTop: "1px solid var(--s2)" }}>
             <button
               onClick={onNewUnit}
               className="btn-press"
@@ -2757,12 +2757,12 @@ function NewClassModal({ onClose, onCreate }) {
   }
 
   const inp = {
-    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    width: "100%", background: "var(--s1)", border: "1px solid var(--border)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "var(--t1)", fontSize: 14,
     fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
   };
   const lbl = {
-    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    fontSize: 11, color: "var(--t2)", fontFamily: FONT,
     letterSpacing: "0.5px", textTransform: "uppercase",
     display: "block", marginBottom: 9, fontWeight: 600,
   };
@@ -2776,7 +2776,7 @@ function NewClassModal({ onClose, onCreate }) {
       <div style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
         boxShadow: `0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px ${tint.hue}22`,
@@ -2790,8 +2790,8 @@ function NewClassModal({ onClose, onCreate }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 19, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "0.3px" }}>New Class</div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.6 }}>A class holds your units and notes for one course</div>
+            <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "0.3px" }}>New Class</div>
+            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.6 }}>A class holds your units and notes for one course</div>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
@@ -2801,7 +2801,7 @@ function NewClassModal({ onClose, onCreate }) {
                 placeholder="e.g. AP World History" maxLength={80}
                 style={inp}
                 onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
-                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+                onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
             <div>
@@ -2811,13 +2811,13 @@ function NewClassModal({ onClose, onCreate }) {
             {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
               <button type="button" onClick={onClose} className="btn-press" style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent", border: "1px solid var(--border-h)",
                 borderRadius: 10, padding: "0 16px", height: 38,
-                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                color: "var(--t2)", fontSize: 13, fontWeight: 500,
                 cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
               >Cancel</button>
               <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
                 background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
@@ -2855,12 +2855,12 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
   }
 
   const inp = {
-    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA", fontSize: 14,
+    width: "100%", background: "var(--s1)", border: "1px solid var(--border)",
+    borderRadius: 10, padding: "0 14px", height: 42, color: "var(--t1)", fontSize: 14,
     fontFamily: FONT, outline: "none", transition: "all 0.18s", letterSpacing: "-0.01em",
   };
   const lbl = {
-    fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+    fontSize: 11, color: "var(--t2)", fontFamily: FONT,
     letterSpacing: "0.04em", textTransform: "uppercase", display: "block",
     marginBottom: 7, fontWeight: 600,
   };
@@ -2874,10 +2874,10 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
       <div style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{
@@ -2888,36 +2888,36 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>
-              Adding to <span style={{ color: "#A78BFA", fontWeight: 500 }}>{classTitle}</span>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
+            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55 }}>
+              Adding to <span style={{ color: "var(--acc)", fontWeight: 500 }}>{classTitle}</span>
             </div>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={lbl}>Unit name *</label>
               <input ref={inputRef} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Unit 5 — Revolutions" maxLength={80} style={inp}
-                onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+                onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
+                onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
             <div>
               <label style={lbl}>Topic / description</label>
               <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Industrial Revolution, causes and effects" maxLength={120} style={inp}
-                onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
-                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
+                onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
+                onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
             {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
               <button type="button" onClick={onClose} className="btn-press" style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent", border: "1px solid var(--border-h)",
                 borderRadius: 10, padding: "0 16px", height: 38,
-                color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                color: "var(--t2)", fontSize: 13, fontWeight: 500,
                 cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
               >Cancel</button>
               <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
                 background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
@@ -2925,7 +2925,7 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
                 color: "#fff", fontWeight: 600, fontSize: 13,
                 cursor: loading || !title.trim() ? "not-allowed" : "pointer",
                 fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
-                boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px var(--acc-bg-h)",
                 letterSpacing: "-0.01em",
               }}>{loading ? "Creating…" : "Create Unit"}</button>
             </div>
@@ -2968,10 +2968,10 @@ function InviteModal({ notebookId, onClose }) {
       <div style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{
@@ -2982,8 +2982,8 @@ function InviteModal({ notebookId, onClose }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>Invite a collaborator</div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55 }}>They'll get an email with a link to join this unit</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>Invite a collaborator</div>
+            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55 }}>They'll get an email with a link to join this unit</div>
           </div>
 
           {status === "success" ? (
@@ -3010,28 +3010,28 @@ function InviteModal({ notebookId, onClose }) {
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 autoFocus
                 style={{
-                  width: "100%", background: "#14141F",
-                  border: `1px solid ${error ? "rgba(248,113,113,0.45)" : "rgba(255,255,255,0.09)"}`,
-                  borderRadius: 10, padding: "0 14px", height: 42, color: "#F5F5FA",
+                  width: "100%", background: "var(--s1)",
+                  border: `1px solid ${error ? "rgba(248,113,113,0.45)" : "var(--border)"}`,
+                  borderRadius: 10, padding: "0 14px", height: 42, color: "var(--t1)",
                   fontSize: 14, fontFamily: FONT,
                   outline: "none", marginBottom: 10,
                   transition: "all 0.18s", letterSpacing: "-0.01em",
                 }}
-                onFocus={e => { if (!error) { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}}
-                onBlur={e => { if (!error) { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}}
+                onFocus={e => { if (!error) { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}}
+                onBlur={e => { if (!error) { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}}
               />
               {error && (
                 <div style={{ fontSize: 12.5, color: "#F87171", fontFamily: FONT, marginBottom: 10 }}>{error}</div>
               )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button onClick={onClose} className="btn-press" style={{
-                  background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent", border: "1px solid var(--border-h)",
                   borderRadius: 10, padding: "0 16px", height: 38,
-                  color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                  color: "var(--t2)", fontSize: 13, fontWeight: 500,
                   cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
                 >Cancel</button>
                 <button
                   onClick={handleSend}
@@ -3043,7 +3043,7 @@ function InviteModal({ notebookId, onClose }) {
                     padding: "0 20px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
                     cursor: status === "sending" ? "not-allowed" : "pointer",
                     fontFamily: FONT, opacity: status === "sending" ? 0.65 : 1,
-                    boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                    boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px var(--acc-bg-h)",
                     letterSpacing: "-0.01em",
                   }}
                 >{status === "sending" ? "Sending…" : "Send Invite"}</button>
@@ -3060,9 +3060,9 @@ function InviteLanding({ inviteInfo, onSignIn }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0B0B12",
+      background: "var(--bg)",
       backgroundImage: `
-        radial-gradient(circle at 20% 0%, rgba(167,139,250,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 20% 0%, var(--acc-bg) 0%, transparent 50%),
         radial-gradient(circle at 80% 100%, rgba(96,165,250,0.08) 0%, transparent 50%)
       `,
       display: "flex", flexDirection: "column",
@@ -3074,28 +3074,28 @@ function InviteLanding({ inviteInfo, onSignIn }) {
       }}>
         <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
         <div style={{
-          fontSize: 26, fontWeight: 700, color: "#F5F5FA", letterSpacing: "-0.03em",
+          fontSize: 26, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em",
         }}>
-          schol<span style={{ color: "#A78BFA" }}>r</span>
+          schol<span style={{ color: "var(--acc)" }}>r</span>
         </div>
       </div>
-      <div style={{ fontSize: 15, color: "rgba(245,245,250,0.65)", textAlign: "center" }}>
+      <div style={{ fontSize: 15, color: "var(--t2)", textAlign: "center" }}>
         You've been invited to join a unit
       </div>
       {inviteInfo ? (
         <div style={{
           background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-          border: "1px solid rgba(255,255,255,0.09)",
+          border: "1px solid var(--border)",
           borderRadius: 14, padding: "18px 24px", textAlign: "center", maxWidth: 380,
-          boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(167,139,250,0.1)",
+          boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px var(--acc-bg)",
         }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.015em" }}>{inviteInfo.notebook_title}</div>
-          {inviteInfo.class_title && <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.5)" }}>in {inviteInfo.class_title}</div>}
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 4, letterSpacing: "-0.015em" }}>{inviteInfo.notebook_title}</div>
+          {inviteInfo.class_title && <div style={{ fontSize: 12.5, color: "var(--t3)" }}>in {inviteInfo.class_title}</div>}
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)" }}>Loading invite info…</div>
+        <div style={{ fontSize: 13, color: "var(--t3)" }}>Loading invite info…</div>
       )}
-      <div style={{ fontSize: 13, color: "rgba(245,245,250,0.5)", textAlign: "center" }}>Sign in or create an account to join</div>
+      <div style={{ fontSize: 13, color: "var(--t3)", textAlign: "center" }}>Sign in or create an account to join</div>
       <button
         onClick={onSignIn}
         style={{
@@ -3104,7 +3104,7 @@ function InviteLanding({ inviteInfo, onSignIn }) {
           padding: "0 24px", height: 44, color: "#fff", fontWeight: 600,
           fontSize: 14, cursor: "pointer", fontFamily: FONT,
           transition: "transform 0.15s, box-shadow 0.2s",
-          boxShadow: "0 8px 24px rgba(167,139,250,0.4), 0 0 0 1px rgba(167,139,250,0.45)",
+          boxShadow: "0 8px 24px var(--acc-bg-h), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",
           letterSpacing: "-0.01em",
         }}
         onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; }}
@@ -3174,7 +3174,7 @@ function ActivityHeatmap({ data }) {
         {label !== undefined && (
           <div style={{
             fontSize: 9, fontWeight: 700, fontFamily: FONT,
-            color: "rgba(245,245,250,0.35)", textTransform: "uppercase",
+            color: "var(--t3)", textTransform: "uppercase",
             letterSpacing: "0.05em", height: 11, lineHeight: "11px",
           }}>
             {label}
@@ -3182,12 +3182,12 @@ function ActivityHeatmap({ data }) {
         )}
         <div style={{
           width: size, height: size, borderRadius: "50%", boxSizing: "border-box",
-          background: active ? "#7C3AED" : "rgba(255,255,255,0.05)",
-          border: isT ? "2px solid #A78BFA" : "2px solid transparent",
+          background: active ? "var(--acc-d)" : "var(--s2)",
+          border: isT ? "2px solid var(--acc)" : "2px solid transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: Math.max(9, Math.floor(size * 0.36)),
           fontWeight: active ? 700 : 400,
-          color: active ? "#fff" : "rgba(245,245,250,0.4)",
+          color: active ? "#fff" : "var(--t3)",
           fontFamily: FONT,
           transition: "background 0.15s",
         }}>
@@ -3198,7 +3198,7 @@ function ActivityHeatmap({ data }) {
   }
 
   const navBtnStyle = {
-    background: "none", border: "none", color: "rgba(245,245,250,0.45)",
+    background: "none", border: "none", color: "var(--t3)",
     cursor: "pointer", fontSize: 18, padding: "2px 8px", lineHeight: 1,
     borderRadius: 6, fontFamily: FONT,
   };
@@ -3219,9 +3219,9 @@ function ActivityHeatmap({ data }) {
             <button key={mode} onClick={() => setViewMode(mode)} style={{
               padding: "3px 10px", borderRadius: 8, cursor: "pointer",
               border: "1px solid",
-              borderColor: viewMode === mode ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.07)",
-              background: viewMode === mode ? "rgba(167,139,250,0.1)" : "transparent",
-              color: viewMode === mode ? "#A78BFA" : "rgba(245,245,250,0.4)",
+              borderColor: viewMode === mode ? "color-mix(in srgb, var(--acc) 45%, transparent)" : "var(--border)",
+              background: viewMode === mode ? "var(--acc-bg)" : "transparent",
+              color: viewMode === mode ? "var(--acc)" : "var(--t3)",
               fontSize: 11, fontWeight: 600, fontFamily: FONT, transition: "all 0.15s",
             }}>
               {mode[0].toUpperCase() + mode.slice(1)}
@@ -3243,7 +3243,7 @@ function ActivityHeatmap({ data }) {
           <div style={{ textAlign: "center", marginTop: 10 }}>
             <button onClick={() => setViewMode("month")} style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(167,139,250,0.65)", fontSize: 11, fontFamily: FONT,
+              color: "var(--acc)", fontSize: 11, fontFamily: FONT,
               fontWeight: 600, padding: "4px 8px",
             }}>
               Show month ↓
@@ -3267,7 +3267,7 @@ function ActivityHeatmap({ data }) {
             {DAY_LETTERS.map((l, i) => (
               <div key={i} style={{
                 textAlign: "center", fontSize: 9, fontWeight: 700,
-                color: "rgba(245,245,250,0.3)", fontFamily: FONT,
+                color: "var(--t4)", fontFamily: FONT,
                 paddingBottom: 4, textTransform: "uppercase",
               }}>{l}</div>
             ))}
@@ -3284,11 +3284,11 @@ function ActivityHeatmap({ data }) {
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
             <button onClick={() => setViewMode("week")} style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(245,245,250,0.32)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+              color: "var(--t4)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
             }}>↑ Show less</button>
             <button onClick={() => setViewMode("year")} style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(167,139,250,0.65)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+              color: "var(--acc)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
             }}>Show year ↓</button>
           </div>
         </div>
@@ -3311,7 +3311,7 @@ function ActivityHeatmap({ data }) {
                 <div key={mi}>
                   <div style={{
                     fontSize: 10, fontWeight: 700, fontFamily: FONT,
-                    color: "rgba(245,245,250,0.45)", textAlign: "center", marginBottom: 4,
+                    color: "var(--t3)", textAlign: "center", marginBottom: 4,
                   }}>
                     {MONTHS_SHORT[mi]}
                   </div>
@@ -3324,8 +3324,8 @@ function ActivityHeatmap({ data }) {
                       return (
                         <div key={di} style={{
                           aspectRatio: "1", borderRadius: "50%", boxSizing: "border-box",
-                          background: active ? "#7C3AED" : "rgba(255,255,255,0.05)",
-                          border: isT ? "1.5px solid #A78BFA" : "1.5px solid transparent",
+                          background: active ? "var(--acc-d)" : "var(--s2)",
+                          border: isT ? "1.5px solid var(--acc)" : "1.5px solid transparent",
                         }} />
                       );
                     })}
@@ -3337,7 +3337,7 @@ function ActivityHeatmap({ data }) {
           <div style={{ marginTop: 10 }}>
             <button onClick={() => setViewMode("month")} style={{
               background: "none", border: "none", cursor: "pointer",
-              color: "rgba(245,245,250,0.32)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
+              color: "var(--t4)", fontSize: 11, fontFamily: FONT, fontWeight: 600, padding: "4px 0",
             }}>↑ Show less</button>
           </div>
         </div>
@@ -3346,16 +3346,16 @@ function ActivityHeatmap({ data }) {
       {/* ── Stats footer ── */}
       <div style={{
         display: "flex", gap: 20, marginTop: 14, paddingTop: 12,
-        borderTop: "1px solid rgba(255,255,255,0.05)",
+        borderTop: "1px solid var(--border)",
       }}>
         {[
-          { val: streak,     label: "day streak",  color: "#A78BFA" },
+          { val: streak,     label: "day streak",  color: "var(--acc)" },
           { val: activeDays, label: "active days",  color: "var(--t1,#F5F5FA)" },
           { val: total,      label: "activities",   color: "var(--t1,#F5F5FA)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
             <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
-            <div style={{ fontSize: 10, color: "rgba(245,245,250,0.38)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
+            <div style={{ fontSize: 10, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>
@@ -3384,8 +3384,8 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
         📅 Upcoming Deadlines
         {upcoming.length > 0 && (
           <span style={{
-            fontSize: 10.5, fontWeight: 700, color: "#A78BFA",
-            background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
+            fontSize: 10.5, fontWeight: 700, color: "var(--acc)",
+            background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
             padding: "1px 7px", borderRadius: 999,
           }}>{upcoming.length}</span>
         )}
@@ -3393,7 +3393,7 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
       {upcoming.length === 0 ? (
         <div style={{
           padding: "14px 16px",
-          background: "rgba(255,255,255,0.015)", border: "1px dashed var(--border, rgba(255,255,255,0.06))",
+          background: "var(--s1)", border: "1px dashed var(--border, rgba(255,255,255,0.06))",
           borderRadius: 10, color: "var(--t3, rgba(245,245,250,0.45))", fontSize: 12.5, fontFamily: FONT,
         }}>
           No deadlines in the next 7 days. Set a due date on a unit to see it here.
@@ -3486,7 +3486,7 @@ function StatusPill({ status, onChange, size = "sm", compact = false }) {
                   padding: "8px 10px", borderRadius: 7, cursor: "pointer",
                   fontSize: 12.5, color: m.color, fontFamily: FONT, fontWeight: 500,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--s2)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
                 <span>{m.label}</span>
@@ -3657,7 +3657,7 @@ function UpgradeModal({ limitType, onClose }) {
         border: "1px solid rgba(167,139,250,0.28)",
         borderRadius: 20, padding: "32px 28px",
         maxWidth: 400, width: "100%",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.12)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
         animation: "slideInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
         fontFamily: FONT,
       }}>
@@ -3665,7 +3665,7 @@ function UpgradeModal({ limitType, onClose }) {
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>{context.icon}</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.025em", marginBottom: 6 }}>
-            Upgrade to scholr <span style={{ color: "#A78BFA" }}>Pro</span>
+            Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
           </div>
           <div style={{ fontSize: 13.5, color: "var(--t2, rgba(245,245,250,0.65))", lineHeight: 1.5 }}>
             {context.detail}
@@ -3674,12 +3674,12 @@ function UpgradeModal({ limitType, onClose }) {
 
         {/* Price */}
         <div style={{
-          background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(167,139,250,0.04))",
+          background: "linear-gradient(135deg, var(--acc-bg), rgba(167,139,250,0.04))",
           border: "1px solid rgba(167,139,250,0.22)",
           borderRadius: 12, padding: "14px 18px", marginBottom: 20,
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
         }}>
-          <span style={{ fontSize: 32, fontWeight: 700, color: "#A78BFA", letterSpacing: "-0.03em" }}>$8.49</span>
+          <span style={{ fontSize: 32, fontWeight: 700, color: "var(--acc)", letterSpacing: "-0.03em" }}>$8.49</span>
           <span style={{ fontSize: 13, color: "var(--t3, rgba(245,245,250,0.45))", fontWeight: 500 }}>/month</span>
         </div>
 
@@ -3705,7 +3705,7 @@ function UpgradeModal({ limitType, onClose }) {
           disabled={loading}
           style={{
             width: "100%", height: 46, marginBottom: 10,
-            background: loading ? "rgba(167,139,250,0.4)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+            background: loading ? "var(--acc-bg-h)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
             border: "none", borderRadius: 12,
             color: "#fff", fontWeight: 700, fontSize: 15,
             fontFamily: FONT, cursor: loading ? "wait" : "pointer",
@@ -3769,7 +3769,7 @@ export default function Scholr() {
   });
   const [accentColor, setAccentColor] = useState(() => {
     try { return localStorage.getItem("scholr-accent") ?? "#A78BFA"; }
-    catch { return "#A78BFA"; }
+    catch { return "var(--acc)"; }
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -4311,9 +4311,9 @@ export default function Scholr() {
                   onClick={() => setUpgradeModal({ limitType: "upgrade" })}
                   style={{
                     width: "100%", height: 30,
-                    background: "linear-gradient(135deg, rgba(167,139,250,0.18), rgba(167,139,250,0.08))",
-                    border: "1px solid rgba(167,139,250,0.25)",
-                    borderRadius: 7, color: "#A78BFA",
+                    background: "linear-gradient(135deg, rgba(167,139,250,0.18), var(--acc-bg))",
+                    border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
+                    borderRadius: 7, color: "var(--acc)",
                     fontSize: 11.5, fontWeight: 600, fontFamily: FONT,
                     cursor: "pointer", letterSpacing: "-0.01em",
                     transition: "all 0.15s",
@@ -4335,7 +4335,7 @@ export default function Scholr() {
                 backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
                 border: "1px solid var(--border-h, rgba(255,255,255,0.12))",
                 borderRadius: 12, padding: "12px",
-                boxShadow: "0 -16px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(167,139,250,0.06)",
+                boxShadow: "0 -16px 40px rgba(0,0,0,0.3), 0 0 0 1px var(--acc-bg)",
                 animation: "slideInUp 0.15s ease",
                 zIndex: 100,
               }}>
@@ -4420,15 +4420,15 @@ export default function Scholr() {
             <div
               onClick={() => setProfileOpen(v => !v)}
               style={{
-                background: profileOpen ? "var(--border, rgba(255,255,255,0.05))" : "rgba(255,255,255,0.025)",
-                border: `1px solid ${profileOpen ? "var(--border-h, rgba(255,255,255,0.12))" : "rgba(255,255,255,0.05)"}`,
+                background: profileOpen ? "var(--border, rgba(255,255,255,0.05))" : "var(--s1)",
+                border: `1px solid ${profileOpen ? "var(--border-h, rgba(255,255,255,0.12))" : "var(--border)"}`,
                 borderRadius: 10, padding: "10px",
                 display: "flex", alignItems: "center", gap: 10,
                 cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
                 userSelect: "none",
               }}
-              onMouseEnter={e => { if (!profileOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.1))"; }}}
-              onMouseLeave={e => { if (!profileOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}}
+              onMouseEnter={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--s2)"; e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.1))"; }}}
+              onMouseLeave={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--s1)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
             >
               <Avatar name={displayName} size={32} seed={user?.email ?? displayName} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -4517,12 +4517,12 @@ export default function Scholr() {
               </div>
               <div style={{
                 background: subscription.tier === "pro"
-                  ? "linear-gradient(180deg, rgba(167,139,250,0.08) 0%, var(--s1, #14141F) 100%)"
+                  ? "linear-gradient(180deg, var(--acc-bg) 0%, var(--s1, #14141F) 100%)"
                   : "var(--s1, #14141F)",
                 border: `1px solid ${subscription.tier === "pro" ? "rgba(167,139,250,0.28)" : "var(--border, rgba(255,255,255,0.07))"}`,
                 borderRadius: 14, padding: "20px 22px", marginBottom: 32,
                 boxShadow: subscription.tier === "pro"
-                  ? "0 12px 30px rgba(167,139,250,0.12), 0 0 0 1px rgba(167,139,250,0.12)"
+                  ? "0 12px 30px var(--acc-bg), 0 0 0 1px var(--acc-bg)"
                   : "var(--sh-card, 0 1px 3px rgba(0,0,0,0.2))",
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -4530,7 +4530,7 @@ export default function Scholr() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <div style={{
                         fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: subscription.tier === "pro" ? "#A78BFA" : "var(--t3, rgba(245,245,250,0.5))",
+                        color: subscription.tier === "pro" ? "var(--acc)" : "var(--t3, rgba(245,245,250,0.5))",
                         fontFamily: FONT,
                       }}>
                         Current plan
@@ -4541,7 +4541,7 @@ export default function Scholr() {
                           color: "#fff", fontFamily: FONT,
                           background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                           padding: "2px 8px", borderRadius: 999,
-                          boxShadow: "0 2px 8px rgba(167,139,250,0.4)",
+                          boxShadow: "0 2px 8px var(--acc-bg-h)",
                         }}>
                           Active
                         </span>
@@ -4553,7 +4553,7 @@ export default function Scholr() {
                       fontFamily: FONT, letterSpacing: "-0.02em", marginBottom: 4,
                     }}>
                       {subscription.tier === "pro" ? (
-                        <>scholr <span style={{ color: "#A78BFA" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t2, rgba(245,245,250,0.65))" }}>$8.49/month</span></>
+                        <>scholr <span style={{ color: "var(--acc)" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t2, rgba(245,245,250,0.65))" }}>$8.49/month</span></>
                       ) : "scholr Free"}
                     </div>
                     {subscription.tier === "pro" && subscription.currentPeriodEnd && (
@@ -4574,9 +4574,9 @@ export default function Scholr() {
                       className="btn-press"
                       style={{
                         background: "transparent",
-                        border: "1px solid rgba(167,139,250,0.45)",
+                        border: "1px solid color-mix(in srgb, var(--acc) 45%, transparent)",
                         borderRadius: 10, padding: "0 16px", height: 38,
-                        color: "#A78BFA",
+                        color: "var(--acc)",
                         fontSize: 13, fontWeight: 600,
                         cursor: portalLoading ? "wait" : "pointer",
                         fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
@@ -4584,8 +4584,8 @@ export default function Scholr() {
                         opacity: portalLoading ? 0.7 : 1,
                         transition: "all 0.18s",
                       }}
-                      onMouseEnter={e => { if (!portalLoading) { e.currentTarget.style.background = "rgba(167,139,250,0.1)"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.7)"; }}}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(167,139,250,0.45)"; }}
+                      onMouseEnter={e => { if (!portalLoading) { e.currentTarget.style.background = "var(--acc-bg)"; e.currentTarget.style.borderColor = "color-mix(in srgb, var(--acc) 70%, transparent)"; }}}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "color-mix(in srgb, var(--acc) 45%, transparent)"; }}
                     >
                       {portalLoading ? "Opening…" : "Manage subscription"}
                     </button>
@@ -4657,7 +4657,7 @@ export default function Scholr() {
                           <span>{g.text}</span>
                           <span style={{
                             fontSize: 26,
-                            filter: "drop-shadow(0 0 12px rgba(167,139,250,0.35))",
+                            filter: "drop-shadow(0 0 12px color-mix(in srgb, var(--acc) 35%, transparent))",
                           }}>{g.emoji}</span>
                         </>
                       );
@@ -4681,7 +4681,7 @@ export default function Scholr() {
                       border: "none", borderRadius: 10, padding: "0 18px", height: 40,
                       color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
                       fontFamily: FONT, flexShrink: 0,
-                      boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px rgba(167,139,250,0.45)",
+                      boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",
                       letterSpacing: "-0.01em",
                       display: "flex", alignItems: "center", gap: 6,
                     }}
@@ -4693,7 +4693,7 @@ export default function Scholr() {
               <div style={{ position: "relative", marginBottom: 28 }}>
                 <span style={{
                   position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                  fontSize: 14, color: "rgba(245,245,250,0.35)", pointerEvents: "none",
+                  fontSize: 14, color: "var(--t3)", pointerEvents: "none",
                 }}>🔍</span>
                 <input
                   value={search}
@@ -4784,7 +4784,7 @@ export default function Scholr() {
               ) : (
                 <>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.4)",
+                    fontSize: 11, fontWeight: 600, color: "var(--t3)",
                     fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
                   }}>
                     {viewLabel}
@@ -4823,15 +4823,15 @@ export default function Scholr() {
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{
-                        fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.5)",
+                        fontSize: 11, fontWeight: 600, color: "var(--t3)",
                         fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
                       }}>
                         Recent activity
                       </div>
                       {notifications.length > 0 && (
                         <span style={{
-                          fontSize: 10.5, fontWeight: 700, color: "#A78BFA",
-                          background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)",
+                          fontSize: 10.5, fontWeight: 700, color: "var(--acc)",
+                          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
                           padding: "1px 7px", borderRadius: 999,
                         }}>{notifications.length}</span>
                       )}
@@ -4844,12 +4844,12 @@ export default function Scholr() {
                         }}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          fontSize: 12, color: "rgba(245,245,250,0.45)", fontFamily: FONT,
+                          fontSize: 12, color: "var(--t3)", fontFamily: FONT,
                           padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
                           fontWeight: 500,
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; e.currentTarget.style.background = "rgba(167,139,250,0.08)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = "rgba(245,245,250,0.45)"; e.currentTarget.style.background = "transparent"; }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "var(--acc)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.background = "transparent"; }}
                       >
                         Clear all
                       </button>
@@ -4858,19 +4858,19 @@ export default function Scholr() {
                   {notifications.length === 0 ? (
                     <div style={{
                       padding: "20px 16px", display: "flex", alignItems: "center", gap: 12,
-                      background: "rgba(255,255,255,0.015)", border: "1px dashed rgba(255,255,255,0.06)",
+                      background: "var(--s1)", border: "1px dashed var(--border)",
                       borderRadius: 12,
                     }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: 8,
-                        background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.16)",
+                        background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 16%, transparent)",
                         display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
                       }}>✨</div>
                       <div>
-                        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.7)", fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.005em" }}>
+                        <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.005em" }}>
                           You're all caught up!
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
+                        <div style={{ fontSize: 12, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>
                           New activity from your study groups will appear here.
                         </div>
                       </div>
@@ -4880,28 +4880,28 @@ export default function Scholr() {
                       {notifications.map(n => (
                         <div key={n.id} className="lift-card" style={{
                           display: "flex", alignItems: "center", gap: 14,
-                          background: "#14141F", border: "1px solid rgba(255,255,255,0.06)",
+                          background: "var(--s1)", border: "1px solid var(--border)",
                           borderRadius: 10, padding: "12px 14px",
                         }}>
                           <div style={{
                             width: 8, height: 8, borderRadius: "50%",
-                            background: "#A78BFA",
+                            background: "var(--acc)",
                             boxShadow: "0 0 8px rgba(167,139,250,0.5)",
                             flexShrink: 0,
                           }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.82)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em" }}>
+                            <div style={{ fontSize: 13, color: "var(--t1)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em" }}>
                               {n.activities?.description ?? n.activities?.action}
                             </div>
                             {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
+                              <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>
                                 in {n.activities.notebooks.title}
                               </div>
                             )}
                           </div>
                           <div style={{
-                            fontSize: 11, color: "rgba(245,245,250,0.35)", fontFamily: FONT, flexShrink: 0,
-                            padding: "2px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 6,
+                            fontSize: 11, color: "var(--t3)", fontFamily: FONT, flexShrink: 0,
+                            padding: "2px 8px", background: "var(--s2)", borderRadius: 6,
                           }}>
                             {timeAgo(n.created_at)}
                           </div>
@@ -4928,16 +4928,16 @@ function EmptyState({ icon, title, body, cta }) {
     }}>
       <div style={{
         width: 72, height: 72, borderRadius: 18,
-        background: "linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(167,139,250,0.04) 100%)",
+        background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
         border: "1px solid rgba(167,139,250,0.2)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 32, marginBottom: 6,
-        boxShadow: "0 0 32px rgba(167,139,250,0.12)",
+        boxShadow: "0 0 32px var(--acc-bg)",
       }}>{icon}</div>
-      <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+      <div style={{ fontSize: 17, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, letterSpacing: "-0.02em" }}>
         {title}
       </div>
-      <div style={{ fontSize: 14, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>
+      <div style={{ fontSize: 14, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>
         {body}
       </div>
       {cta && (
@@ -4950,7 +4950,7 @@ function EmptyState({ icon, title, body, cta }) {
             border: "none", borderRadius: 10, padding: "0 20px", height: 40,
             color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
             fontFamily: FONT,
-            boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px rgba(167,139,250,0.45)",
+            boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",
             letterSpacing: "-0.01em",
           }}
         >{cta.label}</button>

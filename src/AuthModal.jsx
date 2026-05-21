@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
+import { Mail, Lock } from "lucide-react";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -280,9 +281,9 @@ export default function AuthModal({ onAuth }) {
             background: "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.06))",
             border: "1px solid rgba(167,139,250,0.3)",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontSize: 26, marginBottom: 12,
+            color: "#A78BFA", marginBottom: 12,
           }}>
-            {otpFlow === "signup" ? "📬" : "🔐"}
+            {otpFlow === "signup" ? <Mail size={26} strokeWidth={1.75} /> : <Lock size={26} strokeWidth={1.75} />}
           </div>
           <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
             {otpFlow === "signup" ? "Verify your email" : "Check your email"}

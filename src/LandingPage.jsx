@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { BookOpen, MessageCircle, Users, Star, Bell, Lock, Check } from "lucide-react";
 
 const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
@@ -33,12 +34,12 @@ function useFadeIn(delay = 0) {
 }
 
 const FEATURES = [
-  { icon: "📚", title: "Upload anything",  tint: "#60A5FA", body: "PDFs, slides, Word docs, plain text — Derek reads every word so you don't have to retype anything." },
-  { icon: "💬", title: "Ask Derek",         tint: "#A78BFA", body: "Your personal AI tutor, trained on your actual notes. Definitions, practice questions, summaries — just ask." },
-  { icon: "👥", title: "Study together",    tint: "#F472B6", body: "Share a unit with your group. Everyone sees the same notes, the same chat, the same answers." },
-  { icon: "⭐", title: "Star what matters", tint: "#FBBF24", body: "Pin important units to find them in one tap. Cram week just got a lot less stressful." },
-  { icon: "🔔", title: "Stay in sync",      tint: "#34D399", body: "Get notified when a classmate adds new notes. You're always studying the latest material." },
-  { icon: "🔒", title: "Private by default", tint: "#06B6D4", body: "Your notebooks are yours. Invite-only — no public links, no surprises, no scrapers." },
+  { Icon: BookOpen,      title: "Upload anything",  tint: "#60A5FA", body: "PDFs, slides, Word docs, plain text — Derek reads every word so you don't have to retype anything." },
+  { Icon: MessageCircle, title: "Ask Derek",         tint: "#A78BFA", body: "Your personal AI tutor, trained on your actual notes. Definitions, practice questions, summaries — just ask." },
+  { Icon: Users,         title: "Study together",    tint: "#F472B6", body: "Share a unit with your group. Everyone sees the same notes, the same chat, the same answers." },
+  { Icon: Star,          title: "Star what matters", tint: "#FBBF24", body: "Pin important units to find them in one tap. Cram week just got a lot less stressful." },
+  { Icon: Bell,          title: "Stay in sync",      tint: "#34D399", body: "Get notified when a classmate adds new notes. You're always studying the latest material." },
+  { Icon: Lock,          title: "Private by default", tint: "#06B6D4", body: "Your notebooks are yours. Invite-only — no public links, no surprises, no scrapers." },
 ];
 
 const STEPS = [
@@ -48,7 +49,7 @@ const STEPS = [
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
 ];
 
-function FeatureCard({ icon, title, body, tint, idx }) {
+function FeatureCard({ Icon, title, body, tint, idx }) {
   const [ref, visible] = useFadeIn(idx * 60);
   const [hovered, setHovered] = useState(false);
   return (
@@ -83,10 +84,10 @@ function FeatureCard({ icon, title, body, tint, idx }) {
         background: `linear-gradient(135deg, ${tint}22, ${tint}0A)`,
         border: `1px solid ${tint}33`,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 20, marginBottom: 18,
+        color: tint, marginBottom: 18,
         transition: "transform 0.25s ease",
         transform: hovered ? "scale(1.06)" : "scale(1)",
-      }}>{icon}</div>
+      }}><Icon size={22} strokeWidth={1.75} /></div>
       <div style={{
         position: "relative",
         fontSize: 16, fontWeight: 600, color: "#F5F5FA",
@@ -214,8 +215,8 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
               flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
               background: `${accent}22`, border: `1px solid ${accent}44`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: accent, fontSize: 11, fontWeight: 700, marginTop: 1,
-            }}>✓</span>
+              color: accent, marginTop: 1,
+            }}><Check size={11} strokeWidth={2.5} /></span>
             <span>{f}</span>
           </li>
         ))}

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { api } from "./api.js";
+import { CheckCircle, File, Folder } from "lucide-react";
 
 const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
@@ -127,9 +128,9 @@ export default function UploadNotesModal({ notebookId, accentColor, onClose, onU
                 background: "linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.06) 100%)",
                 border: "1.5px solid rgba(52,211,153,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26, color: "#34D399",
+                color: "#34D399",
                 boxShadow: "0 0 24px rgba(52,211,153,0.2)",
-              }}>✓</div>
+              }}><CheckCircle size={28} strokeWidth={1.75} /></div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#34D399", fontFamily: FONT, letterSpacing: "-0.015em" }}>
                 Note added!
               </div>
@@ -217,7 +218,7 @@ export default function UploadNotesModal({ notebookId, accentColor, onClose, onU
                       e.currentTarget.style.background = file ? "rgba(167,139,250,0.05)" : "rgba(255,255,255,0.015)";
                     }}
                   >
-                    <div style={{ fontSize: 30 }}>{file ? "📄" : "📁"}</div>
+                    <div style={{ color: file ? "#A78BFA" : "rgba(245,245,250,0.55)", display: "inline-flex" }}>{file ? <File size={30} strokeWidth={1.5} /> : <Folder size={30} strokeWidth={1.5} />}</div>
                     {file ? (
                       <>
                         <div style={{ fontSize: 14, color: "#F5F5FA", fontWeight: 600, fontFamily: FONT, textAlign: "center", wordBreak: "break-all", letterSpacing: "-0.01em" }}>

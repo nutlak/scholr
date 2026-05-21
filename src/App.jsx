@@ -19,6 +19,14 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  Flame, Calendar, Star, Bell, CheckCircle, Plus, Search, FileText, Paperclip,
+  Hammer, MessageCircle, Users, Settings, LayoutDashboard, Trash2, ArrowLeft,
+  ChevronRight, Sparkles, BarChart2, Target, Lightbulb, BookOpen, HelpCircle,
+  Layers, ClipboardList, Sun, Moon, LogOut, Palette, AlertTriangle, Link as LinkIcon,
+  Upload, Save, Pencil, Check, X, Menu, Notebook, Zap, Rocket, Smile, RefreshCw,
+  Coffee, Folder, File, ArrowUp,
+} from "lucide-react";
 import "./App.css";
 
 function timeAgo(iso) {
@@ -173,7 +181,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
           onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--c-quest)"; e.currentTarget.style.transform = "scale(1.15)"; }}
           onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "var(--c-quest)" : "var(--t4)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
-          {starred ? "★" : "☆"}
+          <Star size={15} strokeWidth={1.75} fill={starred ? "currentColor" : "none"} />
         </button>
       )}
 
@@ -343,10 +351,10 @@ function MemberAvatarStack({ members }) {
 }
 
 const FORGE_ACTIONS = [
-  { id: "study_guide", label: "Study Guide", icon: "📖", color: "#34D399", desc: "Comprehensive review" },
-  { id: "questions",   label: "Questions",   icon: "❓", color: "#FBBF24", desc: "Practice questions"  },
-  { id: "flashcards",  label: "Flashcards",  icon: "🃏", color: "#F472B6", desc: "Quick recall cards"  },
-  { id: "summary",     label: "Summary",     icon: "📝", color: "#60A5FA", desc: "Concise overview"    },
+  { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "#34D399", desc: "Comprehensive review" },
+  { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "#FBBF24", desc: "Practice questions"  },
+  { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "#F472B6", desc: "Quick recall cards"  },
+  { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "#60A5FA", desc: "Concise overview"    },
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
@@ -496,8 +504,8 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             width: 22, height: 22, borderRadius: 6,
             background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, boxShadow: "0 2px 8px var(--acc-bg-h)",
-          }}>⚒</div>
+            color: "#fff", boxShadow: "0 2px 8px var(--acc-bg-h)",
+          }}><Hammer size={13} strokeWidth={2} /></div>
           <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -529,14 +537,14 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
           <button onClick={onClose} className="btn-press" style={{
             background: "transparent", border: "1px solid var(--border)",
             borderRadius: 8, cursor: "pointer",
-            color: "var(--t2)", fontSize: 14, lineHeight: 1,
+            color: "var(--t2)",
             width: 28, height: 28,
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-          >✕</button>
+          ><X size={14} strokeWidth={1.75} /></button>
         </div>
       </div>
 
@@ -558,7 +566,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             </div>
           ) : savedOutputs.map(o => {
             const meta = FORGE_BY_ID[o.type];
-            const icon = meta?.icon ?? "📄";
+            const Icon = meta?.Icon ?? File;
             const color = meta?.color ?? "var(--acc)";
             return (
               <div key={o.id} className="forge-saved-item">
@@ -566,8 +574,8 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
                   width: 30, height: 30, borderRadius: 8,
                   background: `${color}18`, border: `1px solid ${color}30`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, flexShrink: 0,
-                }}>{icon}</div>
+                  color, flexShrink: 0,
+                }}><Icon size={15} strokeWidth={1.75} /></div>
                 <div onClick={() => loadSaved(o)} style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 12.5, color: "var(--t1)", fontFamily: FONT, fontWeight: 500,
@@ -581,7 +589,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
                     {new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </div>
                 </div>
-                <button className="forge-del" onClick={e => { e.stopPropagation(); handleDeleteSaved(o.id); }}>✕</button>
+                <button className="forge-del" onClick={e => { e.stopPropagation(); handleDeleteSaved(o.id); }} aria-label="Delete"><X size={12} strokeWidth={2} /></button>
               </div>
             );
           })}
@@ -703,9 +711,9 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 44,
               color: cardIdx === 0 ? "var(--t4)" : "var(--t2)",
-              cursor: cardIdx === 0 ? "not-allowed" : "pointer", fontSize: 15,
+              cursor: cardIdx === 0 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-            }}>←</button>
+            }}><ArrowLeft size={15} strokeWidth={1.75} /></button>
             <button onClick={handleShuffle} title="Shuffle" className="btn-press" style={{
               background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 40,
@@ -714,7 +722,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--acc)"; e.currentTarget.style.borderColor = "color-mix(in srgb, var(--acc) 30%, transparent)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-            >⇄</button>
+            ><RefreshCw size={14} strokeWidth={1.75} /></button>
             <button onClick={toggleLearned} className="btn-press" style={{
               background: learned.has(realIdx) ? "rgba(52,211,153,0.12)" : "var(--s1)",
               border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.32)" : "var(--border)"}`,
@@ -723,15 +731,15 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 600,
               whiteSpace: "nowrap", letterSpacing: "-0.005em",
             }}>
-              {learned.has(realIdx) ? "✓ Learned" : "Mark learned"}
+              {learned.has(realIdx) ? <><Check size={13} strokeWidth={2} /> Learned</> : "Mark learned"}
             </button>
             <button onClick={goNext} disabled={cardIdx === totalCards - 1} className="btn-press" style={{
               background: "var(--s1)", border: "1px solid var(--border)",
               borderRadius: 10, height: 36, width: 44,
               color: cardIdx === totalCards - 1 ? "var(--t4)" : "var(--t2)",
-              cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer", fontSize: 15,
+              cursor: cardIdx === totalCards - 1 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-            }}>→</button>
+            }}><ChevronRight size={16} strokeWidth={1.75} /></button>
           </div>
         </div>
       ) : (
@@ -756,8 +764,8 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
                   background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
                   border: "1px solid rgba(167,139,250,0.18)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 24,
-                }}>✨</div>
+                  color: "var(--accent)",
+                }}><Sparkles size={24} strokeWidth={1.5} /></div>
                 <div style={{
                   fontSize: 14, fontWeight: 600, color: "var(--t1)", fontFamily: FONT,
                   letterSpacing: "-0.015em",
@@ -800,7 +808,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
               }}
                 onMouseEnter={e => { if (!copied) { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}}
                 onMouseLeave={e => { if (!copied) { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
-              >{copied ? "✓ Copied" : "Copy"}</button>
+              >{copied ? <><Check size={13} strokeWidth={2} /> Copied</> : "Copy"}</button>
               <button onClick={handleDownload} className="btn-press" style={{
                 flex: 1, background: "var(--s1)",
                 border: "1px solid var(--border)",
@@ -855,7 +863,7 @@ function SourcesPanel({ sources }) {
           cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 4,
         }}
-      >📎 {sources.length} source{sources.length === 1 ? "" : "s"} {open ? "▾" : "▸"}</button>
+      ><Paperclip size={11} strokeWidth={1.75} /> {sources.length} source{sources.length === 1 ? "" : "s"} <ChevronRight size={11} strokeWidth={2} style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} /></button>
       {open && (
         <div style={{
           marginTop: 6, padding: "8px 10px",
@@ -933,7 +941,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
   function handleNoteUploaded(note) {
     setMessages(m => [...m, {
       role: "assistant",
-      text: `📎 "${note.title}" was added to this notebook. I'll include it in future answers.`,
+      text: `"${note.title}" was added to this notebook. I'll include it in future answers.`,
     }]);
   }
 
@@ -958,7 +966,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       const list = notes.map(n => `• ${n.title}`).join("\n");
       setMessages(m => [...m, {
         role: "assistant",
-        text: `📚 ${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
+        text: `${notes.length} note${notes.length !== 1 ? "s" : ""} in this notebook:\n${list}\n\nAsk me anything about them!`,
       }]);
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1088,8 +1096,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               width: 44, height: 44, borderRadius: 12,
               background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20, color: "#F87171", marginBottom: 14,
-            }}>🗑</div>
+              color: "var(--danger)", marginBottom: 14,
+            }}><Trash2 size={20} strokeWidth={1.75} /></div>
             <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
               Delete this notebook?
             </div>
@@ -1205,9 +1213,9 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 14, flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
-          >🗑</button>
+          ><Trash2 size={14} strokeWidth={1.75} /></button>
 
           {/* Status + DueDate mobile-only compact variants */}
           {onSetStatus && (
@@ -1237,7 +1245,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             }}
             onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
             onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
-          >📝 <span className="nb-action-text">Notes</span></button>
+          ><FileText size={14} strokeWidth={1.75} /> <span className="nb-action-text">Notes</span></button>
 
           <button
             onClick={() => { if (isMobile) { setMobilePanelView('forge'); setShowForge(true); } else setShowForge(f => !f); }}
@@ -1255,7 +1263,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             }}
             onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
             onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
-          >⚒ <span className="nb-action-text">Forge</span></button>
+          ><Hammer size={14} strokeWidth={1.75} /> <span className="nb-action-text">Forge</span></button>
 
           <button
             onClick={() => setShowUpload(true)}
@@ -1268,7 +1276,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
-          >📎 <span className="nb-action-text">Upload</span></button>
+          ><Paperclip size={14} strokeWidth={1.75} /> <span className="nb-action-text">Upload</span></button>
 
           <button
             onClick={() => setShowInvite(true)}
@@ -1394,7 +1402,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                           opacity: explainingId !== null ? 0.5 : 1,
                           display: "flex", alignItems: "center", gap: 4,
                         }}
-                      >🔄 {explainingId === m.id ? "Re-explaining…" : "Explain differently"}</button>
+                      ><RefreshCw size={11} strokeWidth={1.75} /> {explainingId === m.id ? "Re-explaining…" : "Explain differently"}</button>
                       {explainLevel === m.id && (
                         <>
                           {[
@@ -1734,9 +1742,9 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
               transition: "color 0.15s, background 0.15s",
               borderRadius: 6, height: 24, flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "var(--t4, rgba(245,245,250,0.3))"; e.currentTarget.style.background = "transparent"; }}
-          >✕</button>
+          ><X size={12} strokeWidth={1.75} /></button>
         )}
       </div>
 
@@ -1782,8 +1790,9 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
               borderRadius: 999, padding: "1px 8px", height: 22,
               fontSize: 12, fontFamily: FONT,
               color: "var(--t3, rgba(245,245,250,0.5))", cursor: "pointer",
+              display: "inline-flex", alignItems: "center", gap: 4,
             }}
-          >+ 😊</button>
+          ><Plus size={12} strokeWidth={2} /><Smile size={12} strokeWidth={1.75} /></button>
           {pickerOpen && (
             <>
               <div onClick={() => setPickerOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
@@ -1818,9 +1827,10 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
             fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.5))",
             fontFamily: FONT, padding: "1px 4px", fontWeight: 600,
             marginLeft: 4,
+            display: "inline-flex", alignItems: "center", gap: 4,
           }}
         >
-          💬 {(note.comment_count ?? 0) > 0 ? `${note.comment_count} comment${note.comment_count === 1 ? "" : "s"}` : "Comment"}
+          <MessageCircle size={12} strokeWidth={1.75} /> {(note.comment_count ?? 0) > 0 ? `${note.comment_count} comment${note.comment_count === 1 ? "" : "s"}` : "Comment"}
         </button>
       </div>
 
@@ -1866,9 +1876,9 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                           background: "none", border: "none", cursor: "pointer",
                           fontSize: 11, color: "var(--t4)", padding: "0 4px", borderRadius: 4,
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "#F87171"; }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; }}
                         onMouseLeave={e => { e.currentTarget.style.color = "var(--t4)"; }}
-                      >✕</button>
+                      ><X size={11} strokeWidth={2} /></button>
                     )}
                   </div>
                 );
@@ -1967,8 +1977,8 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
             width: 22, height: 22, borderRadius: 6,
             background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, boxShadow: `0 2px 8px ${tint.hue}50`,
-          }}>📝</div>
+            color: "#fff", boxShadow: `0 2px 8px ${tint.hue}50`,
+          }}><FileText size={13} strokeWidth={2} /></div>
           <div style={{
             fontSize: 13.5, fontWeight: 600, color: "var(--t1)",
             fontFamily: FONT, letterSpacing: "0.3px",
@@ -1988,13 +1998,13 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
           style={{
             background: "transparent", border: "1px solid var(--border)",
             borderRadius: 8, width: 26, height: 26, cursor: "pointer",
-            color: "var(--t2)", fontSize: 12, lineHeight: 1,
+            color: "var(--t2)",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
           onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-        >✕</button>
+        ><X size={13} strokeWidth={1.75} /></button>
       </div>
 
       <form onSubmit={add} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -2202,8 +2212,8 @@ function DeleteAccountModal({ onClose, onConfirm }) {
           width: 44, height: 44, borderRadius: 12,
           background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20, marginBottom: 14, color: "#F87171",
-        }}>⚠</div>
+          marginBottom: 14, color: "var(--danger)",
+        }}><AlertTriangle size={20} strokeWidth={1.75} /></div>
         <div style={{ fontSize: 17, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete your account?
         </div>
@@ -2385,8 +2395,8 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
           width: 44, height: 44, borderRadius: 12,
           background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20, marginBottom: 14, color: "#F87171",
-        }}>🗑</div>
+          marginBottom: 14, color: "var(--danger)",
+        }}><Trash2 size={20} strokeWidth={1.75} /></div>
         <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em" }}>
           Delete "{cls.title}"?
         </div>
@@ -2449,31 +2459,32 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
 
   return (
     <div style={{ position: "relative" }}>
-      {/* Row header */}
+      {/* Card header */}
       <div
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
           display: "flex", alignItems: "center", gap: 12,
-          padding: "14px 6px",
-          background: hovered ? "var(--bg-surface-1)" : "transparent",
-          borderBottom: "1px solid var(--border-subtle)",
+          padding: "16px 20px",
+          background: "var(--bg-surface-1)",
+          border: `1px solid ${hovered ? "var(--accent)" : "var(--border-subtle)"}`,
+          borderRadius: 10,
           cursor: "pointer",
-          transition: "background 0.15s",
-          borderRadius: hovered ? 6 : 0,
+          transition: "border-color 200ms ease, transform 200ms ease",
+          transform: hovered ? "translateY(-1px)" : "translateY(0)",
         }}
       >
         {/* Color dot */}
         <div style={{
-          width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+          width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
           background: t.hue,
         }} />
 
         {/* Class name */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 14.5, fontWeight: 500, color: "var(--text-primary)",
+            fontSize: 15, fontWeight: 600, color: "var(--text-primary)",
             fontFamily: FONT, letterSpacing: "-0.01em",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
@@ -2482,7 +2493,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         </div>
 
         {/* Unit count */}
-        <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, flexShrink: 0 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, flexShrink: 0 }}>
           {units === null ? "" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
         </div>
 
@@ -2542,20 +2553,21 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-          >✕</button>
+          ><X size={13} strokeWidth={2} /></button>
         )}
 
         {/* Chevron */}
         <div style={{
-          fontSize: 10, color: expanded ? t.hue : "var(--text-tertiary)",
+          color: expanded ? t.hue : "var(--text-tertiary)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
-        }}>▶</div>
+          display: "inline-flex",
+        }}><ChevronRight size={16} strokeWidth={1.75} /></div>
       </div>
 
       {/* Expanded units */}
       {expanded && (
-        <div style={{ animation: "fadeIn 0.2s ease", paddingLeft: 22, borderBottom: "1px solid var(--border-subtle)" }}>
+        <div style={{ animation: "fadeIn 0.2s ease", paddingLeft: 22, paddingTop: 4 }}>
           {units === null ? (
             <div style={{ padding: "12px 0", fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
               <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
@@ -2935,9 +2947,9 @@ function InviteModal({ notebookId, onClose }) {
                 background: "linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.06) 100%)",
                 border: "1.5px solid rgba(52,211,153,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26, color: "#34D399",
+                color: "var(--success)",
                 boxShadow: "0 0 24px rgba(52,211,153,0.2)",
-              }}>✓</div>
+              }}><CheckCircle size={28} strokeWidth={1.75} /></div>
               <div style={{ fontSize: 15, color: "#34D399", fontFamily: FONT, fontWeight: 600, letterSpacing: "-0.015em" }}>
                 Invite sent to {sentTo}!
               </div>
@@ -3439,7 +3451,7 @@ function StatusPill({ status, onChange, size = "sm", compact = false }) {
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
                 <span>{m.label}</span>
-                {status === key && <span>✓</span>}
+                {status === key && <Check size={13} strokeWidth={2} />}
               </div>
             ))}
           </div>
@@ -3474,7 +3486,8 @@ function DueDateButton({ dueDate, onChange, compact = false }) {
           display: "flex", alignItems: "center", gap: compact ? 0 : 6,
         }}
       >
-        📅{!compact && ` ${dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}`}
+        <Calendar size={13} strokeWidth={1.75} />
+        {!compact && <span>{dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}</span>}
       </button>
       {open && (
         <>
@@ -3539,18 +3552,18 @@ function getDisplayName(user) {
 function getGreeting(name) {
   const h = new Date().getHours();
   const first = name.split(" ")[0];
-  if (h >= 6 && h < 12)  return { text: `Good morning, ${first}`,   emoji: "☕"  };
-  if (h >= 12 && h < 17) return { text: `Good afternoon, ${first}`, emoji: "☀️" };
-  if (h >= 17 && h < 21) return { text: `Good evening, ${first}`,   emoji: "🌙" };
-  return { text: `Burning the midnight oil, ${first}`, emoji: "🦉" };
+  if (h >= 6 && h < 12)  return { text: `Good morning, ${first}` };
+  if (h >= 12 && h < 17) return { text: `Good afternoon, ${first}` };
+  if (h >= 17 && h < 21) return { text: `Good evening, ${first}` };
+  return { text: `Burning the midnight oil, ${first}` };
 }
 
 const NAV = [
-  { id: "dashboard", label: "Dashboard",  icon: "⊞" },
-  { id: "my-notes",  label: "My Notes",   icon: "📓" },
-  { id: "shared",    label: "Shared",     icon: "👥" },
-  { id: "starred",   label: "Starred",    icon: "★"  },
-  { id: "settings",  label: "Settings",   icon: "⚙"  },
+  { id: "dashboard", label: "Dashboard",  Icon: LayoutDashboard },
+  { id: "my-notes",  label: "My Notes",   Icon: Notebook },
+  { id: "shared",    label: "Shared",     Icon: Users },
+  { id: "starred",   label: "Starred",    Icon: Star },
+  { id: "settings",  label: "Settings",   Icon: Settings },
 ];
 
 // ── UpgradeModal ─────────────────────────────────────────────────────────────
@@ -3559,27 +3572,27 @@ function UpgradeModal({ limitType, onClose }) {
 
   const context = {
     message_limit_reached: {
-      icon: "💬",
+      Icon: MessageCircle,
       headline: "Message limit reached",
       detail: "You've used all 30 messages this month on the free plan.",
     },
     forge_limit_reached: {
-      icon: "⚡",
+      Icon: Zap,
       headline: "Forge limit reached",
       detail: "You've used all 3 Forge outputs this month on the free plan.",
     },
     class_limit_reached: {
-      icon: "📚",
+      Icon: BookOpen,
       headline: "Class limit reached",
       detail: "Free accounts are limited to 3 classes.",
     },
     notebook_limit_reached: {
-      icon: "📒",
+      Icon: Notebook,
       headline: "Storage limit reached",
       detail: "Free accounts are limited to 15 notes. Upgrade for unlimited storage.",
     },
   }[limitType] ?? {
-    icon: "🚀",
+    Icon: Rocket,
     headline: "Upgrade to Pro",
     detail: "Unlock the full scholr experience.",
   };
@@ -3612,7 +3625,9 @@ function UpgradeModal({ limitType, onClose }) {
       }}>
         {/* Icon + headline */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>{context.icon}</div>
+          <div style={{ marginBottom: 10, color: "var(--acc)", display: "inline-flex" }}>
+            <context.Icon size={36} strokeWidth={1.5} />
+          </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.025em", marginBottom: 6 }}>
             Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
           </div>
@@ -3642,7 +3657,7 @@ function UpgradeModal({ limitType, onClose }) {
             "Priority support",
           ].map(f => (
             <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-              <span style={{ color: "#34D399", fontSize: 14, flexShrink: 0, marginTop: 1 }}>✓</span>
+              <span style={{ color: "var(--success)", flexShrink: 0, marginTop: 1, display: "inline-flex" }}><Check size={14} strokeWidth={2} /></span>
               <span style={{ fontSize: 13.5, color: "var(--t1, #F5F5FA)", lineHeight: 1.4 }}>{f}</span>
             </div>
           ))}
@@ -3819,7 +3834,7 @@ export default function Scholr() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("upgraded") === "true") {
       window.history.replaceState({}, "", "/app");
-      setToast("Welcome to scholr Pro! 🎉");
+      setToast("Welcome to scholr Pro!");
       setTimeout(() => setToast(""), 4000);
     }
   }, [user, authReady]);
@@ -4067,8 +4082,8 @@ export default function Scholr() {
             width: 18, height: 18, borderRadius: "50%",
             background: "rgba(52,211,153,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11,
-          }}>✓</span>
+            color: "var(--success)",
+          }}><Check size={12} strokeWidth={2.5} /></span>
           {toast}
         </div>
       )}
@@ -4134,16 +4149,16 @@ export default function Scholr() {
               style={{
                 marginLeft: "auto",
                 background: "transparent",
-                border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                border: "1px solid var(--border-default)",
                 borderRadius: 8, width: 28, height: 28, cursor: "pointer",
-                color: "var(--t2, rgba(245,245,250,0.65))", fontSize: 14,
+                color: "var(--text-secondary)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}
-            >✕</button>
+            ><X size={14} strokeWidth={1.75} /></button>
           </div>
 
           {/* Nav */}
-          {NAV.map(({ id, label, icon }) => {
+          {NAV.map(({ id, label, Icon }) => {
             const active = activeView === id;
             return (
               <div
@@ -4154,30 +4169,32 @@ export default function Scholr() {
                   padding: "0 12px", height: 36, borderRadius: 8,
                   display: "flex", alignItems: "center", gap: 10,
                   background: active
-                    ? "linear-gradient(90deg, var(--acc-bg, rgba(167,139,250,0.14)) 0%, transparent 100%)"
+                    ? "linear-gradient(90deg, var(--acc-bg) 0%, transparent 100%)"
                     : "transparent",
-                  color: active ? "var(--acc-h, #C4B5FD)" : "var(--t2, rgba(245,245,250,0.6))",
+                  color: active ? "var(--acc-h)" : "var(--text-secondary)",
                   fontSize: 13.5, fontWeight: active ? 600 : 500,
                   cursor: "pointer", transition: "all 0.18s",
                   userSelect: "none",
                   letterSpacing: "-0.01em",
                   marginBottom: 1,
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--s2, rgba(255,255,255,0.04))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.6))"; }}}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
               >
                 {active && (
                   <div style={{
                     position: "absolute", left: 0, top: 8, bottom: 8, width: 3,
-                    background: "linear-gradient(180deg, var(--acc, #A78BFA) 0%, var(--acc-d, #7C3AED) 100%)",
+                    background: "linear-gradient(180deg, var(--acc) 0%, var(--acc-d) 100%)",
                     borderRadius: 2,
-                    boxShadow: "0 0 8px var(--acc-glow, rgba(167,139,250,0.5))",
+                    boxShadow: "0 0 8px var(--acc-glow)",
                   }} />
                 )}
                 <span style={{
-                  fontSize: 14, opacity: active ? 1 : 0.7,
-                  width: 18, textAlign: "center",
-                }}>{icon}</span>
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: 18, opacity: active ? 1 : 0.85,
+                }}>
+                  <Icon size={16} strokeWidth={1.75} />
+                </span>
                 {label}
               </div>
             );
@@ -4196,8 +4213,8 @@ export default function Scholr() {
                 {/* Messages */}
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
-                      💬 Messages
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <MessageCircle size={12} strokeWidth={1.75} /> Messages
                     </span>
                     <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
                       {subscription.messagesUsed}/{subscription.messagesLimit}
@@ -4217,8 +4234,8 @@ export default function Scholr() {
                 {/* Forge */}
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
-                      ⚡ Forge
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <Hammer size={12} strokeWidth={1.75} /> Forge
                     </span>
                     <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
                       {subscription.forgeUsed}/{subscription.forgeLimit}
@@ -4238,8 +4255,8 @@ export default function Scholr() {
                 {/* Notes / storage */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
-                      📒 Notes
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <Notebook size={12} strokeWidth={1.75} /> Notes
                     </span>
                     <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
                       {subscription.notebooksUsed}/{subscription.notebooksLimit}
@@ -4268,7 +4285,9 @@ export default function Scholr() {
                     transition: "all 0.15s",
                   }}
                 >
-                  ✦ Upgrade to Pro
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                    <Sparkles size={13} strokeWidth={1.75} /> Upgrade to Pro
+                  </span>
                 </button>
               </div>
             </div>
@@ -4296,7 +4315,9 @@ export default function Scholr() {
                 <div style={{ height: 1, background: "var(--border, rgba(255,255,255,0.07))", marginBottom: 10 }} />
                 {/* Accent Color */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.45))", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>🎨 Accent Color</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <Palette size={12} strokeWidth={1.75} /> Accent Color
+                  </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {ACCENT_PRESETS.map(p => (
                       <button
@@ -4323,8 +4344,8 @@ export default function Scholr() {
                   <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.45))", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Theme</div>
                   <div style={{ display: "flex", gap: 6 }}>
                     {[
-                      { value: "dark", label: "🌙 Dark" },
-                      { value: "light", label: "☀️ Light" },
+                      { value: "dark", label: "Dark", Icon: Moon },
+                      { value: "light", label: "Light", Icon: Sun },
                     ].map(opt => (
                       <button
                         key={opt.value}
@@ -4332,20 +4353,19 @@ export default function Scholr() {
                         style={{
                           flex: 1, padding: "6px 8px", borderRadius: 7, cursor: "pointer",
                           fontFamily: FONT, fontSize: 12, fontWeight: 500,
-                          background: theme === opt.value
-                            ? "var(--acc-bg, rgba(167,139,250,0.12))"
-                            : "transparent",
+                          background: theme === opt.value ? "var(--acc-bg)" : "transparent",
                           border: theme === opt.value
-                            ? "1px solid var(--acc, #A78BFA)"
-                            : "1px solid var(--border, rgba(255,255,255,0.07))",
-                          color: theme === opt.value
-                            ? "var(--acc, #A78BFA)"
-                            : "var(--t2, rgba(245,245,250,0.6))",
+                            ? "1px solid var(--accent)"
+                            : "1px solid var(--border-default)",
+                          color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
                           transition: "all 0.15s",
+                          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                         }}
-                        onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
-                        onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.6))"; }}}
-                      >{opt.label}</button>
+                        onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
+                        onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
+                      >
+                        <opt.Icon size={13} strokeWidth={1.75} /> {opt.label}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -4363,7 +4383,9 @@ export default function Scholr() {
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                >🚪 Sign out</button>
+                >
+                  <LogOut size={13} strokeWidth={1.75} /> Sign out
+                </button>
               </div>
             )}
             <div
@@ -4384,7 +4406,9 @@ export default function Scholr() {
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{displayName}</div>
                 <div style={{ fontSize: 10.5, color: "var(--t3, rgba(245,245,250,0.42))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
               </div>
-              <div style={{ fontSize: 10, color: "var(--t3, rgba(245,245,250,0.42))", flexShrink: 0 }}>{profileOpen ? "▲" : "▼"}</div>
+              <div style={{ color: "var(--text-tertiary)", flexShrink: 0, display: "inline-flex" }}>
+                <ChevronRight size={12} strokeWidth={2} style={{ transform: profileOpen ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.15s" }} />
+              </div>
             </div>
           </div>
           </div>{/* end padding wrapper */}
@@ -4406,7 +4430,7 @@ export default function Scholr() {
               fontSize: 20, color: "#fff", cursor: "pointer",
               boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
             }}
-          >☰</button>
+          ><Menu size={20} strokeWidth={1.75} /></button>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
               <NotebookView
@@ -4599,18 +4623,7 @@ export default function Scholr() {
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     animation: "fadeIn 0.35s ease",
                   }}>
-                    {activeView === "dashboard" ? (() => {
-                      const g = getGreeting(displayName);
-                      return (
-                        <>
-                          <span>{g.text}</span>
-                          <span style={{
-                            fontSize: 26,
-                            filter: "drop-shadow(0 0 12px color-mix(in srgb, var(--acc) 35%, transparent))",
-                          }}>{g.emoji}</span>
-                        </>
-                      );
-                    })() : viewLabel}
+                    {activeView === "dashboard" ? getGreeting(displayName).text : viewLabel}
                   </div>
                   <div style={{
                     fontSize: 13.5, color: "var(--t3, rgba(245,245,250,0.5))",
@@ -4642,8 +4655,9 @@ export default function Scholr() {
               <div style={{ position: "relative", marginBottom: 28 }}>
                 <span style={{
                   position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                  fontSize: 14, color: "var(--t3)", pointerEvents: "none",
-                }}>🔍</span>
+                  color: "var(--text-tertiary)", pointerEvents: "none",
+                  display: "inline-flex", alignItems: "center",
+                }}><Search size={15} strokeWidth={1.75} /></span>
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -4673,7 +4687,7 @@ export default function Scholr() {
               {activeView === "dashboard" ? (
                 filteredClasses.length === 0 ? (
                   <EmptyState
-                    icon={search ? "🔎" : "📚"}
+                    icon={search ? <Search size={32} strokeWidth={1.5} /> : <BookOpen size={32} strokeWidth={1.5} />}
                     title={search ? "No classes match" : "Welcome to Scholr"}
                     body={search
                       ? "Try a different search term."
@@ -4699,7 +4713,7 @@ export default function Scholr() {
                       items={filteredClasses.map(c => c.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 40 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 40 }}>
                         {filteredClasses.map(cls => (
                           <SortableClassCard
                             key={cls.id}
@@ -4723,7 +4737,12 @@ export default function Scholr() {
 
               ) : filtered.length === 0 ? (
                 <EmptyState
-                  icon={search ? "🔎" : activeView === "starred" ? "⭐" : activeView === "shared" ? "👥" : "📓"}
+                  icon={
+                    search ? <Search size={32} strokeWidth={1.5} />
+                    : activeView === "starred" ? <Star size={32} strokeWidth={1.5} />
+                    : activeView === "shared" ? <Users size={32} strokeWidth={1.5} />
+                    : <Notebook size={32} strokeWidth={1.5} />
+                  }
                   title={
                     search ? "No notebooks match"
                     : activeView === "starred" ? "No starred notebooks"
@@ -4732,7 +4751,7 @@ export default function Scholr() {
                   }
                   body={
                     search ? "Try a different search term."
-                    : activeView === "starred" ? "Tap the ★ on any notebook to add it here."
+                    : activeView === "starred" ? "Tap the star on any notebook to add it here."
                     : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
                     : "Notebooks you create will appear in this view."
                   }
@@ -4865,10 +4884,10 @@ function EmptyState({ icon, title, body, cta }) {
     }}>
       <div style={{
         width: 72, height: 72, borderRadius: 18,
-        background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
-        border: "1px solid rgba(167,139,250,0.2)",
+        background: "linear-gradient(135deg, var(--acc-bg) 0%, color-mix(in srgb, var(--accent) 4%, transparent) 100%)",
+        border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 32, marginBottom: 6,
+        marginBottom: 6, color: "var(--accent)",
         boxShadow: "0 0 32px var(--acc-bg)",
       }}>{icon}</div>
       <div style={{ fontSize: 17, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, letterSpacing: "-0.02em" }}>

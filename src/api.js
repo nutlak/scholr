@@ -444,6 +444,19 @@ export const api = {
     return res.json(); // [{ date, count }]
   },
 
+  // ── Track daily visit (idempotent per (user, date)) ─────────────────
+  // Pass today's local YYYY-MM-DD so the server records the user's calendar
+  // day, not the server's UTC day. Fire-and-forget on the client; safe to
+  // call multiple times (server no-ops if a row already exists).
+  async trackVisit(dateLabel) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/track-visit`, {
+      method: "POST", headers, body: JSON.stringify({ dateLabel }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { tracked: true }
+  },
+
   // ── Reactions ───────────────────────────────────────────────────────
   async addReaction(unitNoteId, emoji) {
     const headers = await authHeaders();

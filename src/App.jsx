@@ -29,6 +29,10 @@ import {
 } from "lucide-react";
 import "./App.css";
 
+// Module-scoped guard: only ever call /track-visit once per page load,
+// even if the auth effect re-runs (e.g. on sign-in after landing-page view).
+let _visitTrackedThisSession = false;
+
 function timeAgo(iso) {
   const secs = Math.floor((Date.now() - new Date(iso)) / 1000);
   if (secs < 60) return "just now";
@@ -3090,7 +3094,6 @@ function ActivityHeatmap({ data }) {
     if ((activityMap.get(fmtKey(d)) ?? 0) > 0) streak++; else break;
   }
   const activeDays = data.filter(d => (d.count ?? 0) > 0).length;
-  const total = data.reduce((s, d) => s + (d.count ?? 0), 0);
 
   // Week days (Mon–Sun of current week)
   const weekStart = new Date(todayDate);
@@ -3302,13 +3305,12 @@ function ActivityHeatmap({ data }) {
         borderTop: "1px solid var(--border)",
       }}>
         {[
-          { val: streak,     label: "day streak",  color: "var(--acc)" },
-          { val: activeDays, label: "active days",  color: "var(--text-primary)" },
-          { val: total,      label: "activities",   color: "var(--text-primary)" },
+          { val: streak,     label: streak === 1 ? "day streak" : "day streak", color: "var(--acc)" },
+          { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
             <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
-            <div style={{ fontSize: 10, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
+            <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>
@@ -3827,8 +3829,22 @@ export default function Scholr() {
       .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
     api.getNotifications().then(setNotifications).catch(console.error);
-    api.getActivityHeatmap().then(setHeatmap).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
+
+    // Mark today as an "active" day for the streak. Fire-and-forget; we still
+    // refresh the heatmap *after* this resolves so today shows immediately.
+    // Module-scoped flag prevents duplicate calls on auth state churn.
+    if (!_visitTrackedThisSession) {
+      _visitTrackedThisSession = true;
+      const dateLabel = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+      api.trackVisit(dateLabel)
+        .catch(err => { console.warn("trackVisit failed:", err.message); })
+        .finally(() => {
+          api.getActivityHeatmap().then(setHeatmap).catch(console.error);
+        });
+    } else {
+      api.getActivityHeatmap().then(setHeatmap).catch(console.error);
+    }
 
     // Handle ?upgraded=true from Stripe success redirect
     const params = new URLSearchParams(window.location.search);

@@ -1478,6 +1478,41 @@ async function logUserActivity(userId) {
   }
 }
 
+// ── Daily visit tracking ──────────────────────────────────────────────────
+// POST /api/user/track-visit — marks today as "active" for the user if not already.
+// Body: { dateLabel: "YYYY-MM-DD" } — client-local date (avoids server-tz drift).
+// Idempotent: if a row already exists for (user_id, dateLabel), no-op.
+app.post("/api/user/track-visit", requireAuth, async (req, res) => {
+  const raw = req.body?.dateLabel;
+  // Validate YYYY-MM-DD strictly — bail if missing/malformed to avoid bad data.
+  const dateLabel = typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw)
+    ? raw
+    : new Date().toISOString().slice(0, 10);
+  try {
+    const { data: existing } = await supabase
+      .from("daily_activity")
+      .select("id")
+      .eq("user_id", req.user.id)
+      .eq("date", dateLabel)
+      .maybeSingle();
+    if (!existing) {
+      const { error } = await supabase
+        .from("daily_activity")
+        .insert({ user_id: req.user.id, date: dateLabel, activity_count: 1 });
+      if (error) {
+        // Race condition (unique constraint hit) — treat as already-tracked, not an error.
+        if (!/duplicate key|unique/i.test(error.message)) {
+          return res.status(500).json({ error: error.message });
+        }
+      }
+    }
+    res.json({ tracked: true });
+  } catch (err) {
+    console.error("track-visit error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Activity heatmap ──────────────────────────────────────────────────────
 // GET /api/user/activity-heatmap — last 365 days of activity for current user
 app.get("/api/user/activity-heatmap", requireAuth, async (req, res) => {

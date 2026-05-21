@@ -148,8 +148,8 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       className="lift-card"
       style={{
         position: "relative",
-        background: hovered ? `var(--s2)` : `var(--s1)`,
-        border: `1px solid ${hovered ? "var(--acc)" : "var(--border)"}`,
+        background: hovered ? "var(--bg-surface-2)" : "var(--bg-surface-1)",
+        border: `1px solid ${hovered ? "var(--accent)" : "var(--border-default)"}`,
         borderRadius: 8,
         padding: "16px 16px 14px",
         cursor: "pointer",
@@ -166,13 +166,12 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
             position: "absolute", top: 12, right: 12, zIndex: 10,
             background: "none", border: "none", cursor: "pointer",
             padding: "4px 6px", fontSize: 16,
-            color: starred ? "#FBBF24" : "var(--t4)",
+            color: starred ? "var(--c-quest)" : "var(--t4)",
             opacity: starred ? 1 : hovered ? 1 : 0,
             transition: "color 0.18s, opacity 0.18s, transform 0.18s", lineHeight: 1,
-            textShadow: starred ? "0 0 12px rgba(251,191,36,0.5)" : "none",
           }}
-          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#FBBF24"; e.currentTarget.style.transform = "scale(1.15)"; }}
-          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "#FBBF24" : "var(--t4)"; e.currentTarget.style.transform = "scale(1)"; }}
+          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--c-quest)"; e.currentTarget.style.transform = "scale(1.15)"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = starred ? "var(--c-quest)" : "var(--t4)"; e.currentTarget.style.transform = "scale(1)"; }}
         >
           {starred ? "★" : "☆"}
         </button>
@@ -193,11 +192,11 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
             </span>
           )}
         </div>
-        <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.4))", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
       </div>
       <div style={{
         position: "relative",
-        fontSize: 16, fontWeight: 600, color: "var(--t1, #F5F5FA)",
+        fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
         fontFamily: FONT, marginBottom: 4, lineHeight: 1.3, letterSpacing: "-0.018em",
       }}>
         {nb.title}
@@ -205,7 +204,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       {nb.topic && (
         <div style={{
           position: "relative",
-          fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.55))", fontFamily: FONT,
+          fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT,
           marginBottom: 14, lineHeight: 1.45,
         }}>
           {nb.topic}
@@ -215,7 +214,7 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <AvatarStack names={nb.contributors} />
-          <span style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.4))", fontFamily: FONT }}>
+          <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
             {nb.contributors.length} {nb.contributors.length === 1 ? "member" : "members"}
           </span>
         </div>
@@ -2298,20 +2297,20 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "0 14px", height: 48,
-        background: hovered ? "var(--s1)" : "transparent",
-        borderBottom: "1px solid var(--border)",
+        background: hovered ? "var(--bg-surface-1)" : "transparent",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer", transition: "background 0.15s",
         position: "relative",
       }}
     >
       <div style={{
         width: 4, height: 24, borderRadius: 2,
-        background: hovered ? color : "var(--border-h)",
+        background: hovered ? color : "var(--border-default)",
         transition: "background 0.18s",
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 13.5, fontWeight: 500, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
+          fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           letterSpacing: "-0.01em",
           display: "flex", alignItems: "center", gap: 8,
@@ -2328,7 +2327,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
           )}
         </div>
         {unit.topic && (
-          <div style={{ fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.48))", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
         )}
       </div>
       {onStatusChange && (
@@ -2337,8 +2336,8 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
         </span>
       )}
       <div style={{
-        fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT,
-        flexShrink: 0, padding: "2px 8px", background: "var(--s2)",
+        fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
+        flexShrink: 0, padding: "2px 8px", background: "var(--bg-surface-2)",
         borderRadius: 6, fontWeight: 500,
       }}>
         {unit.notes} {unit.notes === 1 ? "note" : "notes"}
@@ -2458,8 +2457,8 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         style={{
           display: "flex", alignItems: "center", gap: 12,
           padding: "14px 6px",
-          background: hovered ? "var(--s1)" : "transparent",
-          borderBottom: "1px solid var(--border)",
+          background: hovered ? "var(--bg-surface-1)" : "transparent",
+          borderBottom: "1px solid var(--border-subtle)",
           cursor: "pointer",
           transition: "background 0.15s",
           borderRadius: hovered ? 6 : 0,
@@ -2474,7 +2473,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         {/* Class name */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 14.5, fontWeight: 500, color: "var(--t1)",
+            fontSize: 14.5, fontWeight: 500, color: "var(--text-primary)",
             fontFamily: FONT, letterSpacing: "-0.01em",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
@@ -2483,7 +2482,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         </div>
 
         {/* Unit count */}
-        <div style={{ fontSize: 12, color: "var(--t3)", fontFamily: FONT, flexShrink: 0 }}>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, flexShrink: 0 }}>
           {units === null ? "" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
         </div>
 
@@ -2512,15 +2511,15 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
                   onClick={e => e.stopPropagation()}
                   style={{
                     position: "fixed", top: pickerPos.top, right: pickerPos.right,
-                    background: "var(--s1)",
+                    background: "var(--bg-surface-1)",
                     backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-                    border: "1px solid var(--border-h)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 12, padding: 12, zIndex: 60,
-                    boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+                    boxShadow: "var(--sh-modal)",
                     animation: "fadeIn 0.15s ease",
                   }}
                 >
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 10, padding: "0 2px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 10, padding: "0 2px" }}>
                     Class Color
                   </div>
                   <ColorSwatchPicker value={cls.color} onChange={hue => { onChangeColor(hue); setPickerOpen(false); }} />
@@ -2537,18 +2536,18 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
             title="Delete class"
             style={{
               background: "none", border: "none", cursor: "pointer",
-              padding: "4px 6px", fontSize: 13, lineHeight: 1, color: "var(--t4)",
+              padding: "4px 6px", fontSize: 13, lineHeight: 1, color: "var(--text-tertiary)",
               opacity: hovered ? 1 : 0,
               transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 6,
             }}
-            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
-            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--t4)"; e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
           >✕</button>
         )}
 
         {/* Chevron */}
         <div style={{
-          fontSize: 10, color: expanded ? t.hue : "var(--t3)",
+          fontSize: 10, color: expanded ? t.hue : "var(--text-tertiary)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
         }}>▶</div>
@@ -2556,14 +2555,14 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
 
       {/* Expanded units */}
       {expanded && (
-        <div style={{ animation: "fadeIn 0.2s ease", paddingLeft: 22, borderBottom: "1px solid var(--border)" }}>
+        <div style={{ animation: "fadeIn 0.2s ease", paddingLeft: 22, borderBottom: "1px solid var(--border-subtle)" }}>
           {units === null ? (
-            <div style={{ padding: "12px 0", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ padding: "12px 0", fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
               <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
               Loading units…
             </div>
           ) : units.length === 0 ? (
-            <div style={{ padding: "16px 0", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT }}>
+            <div style={{ padding: "16px 0", fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
               <div>No units yet</div>
               <div style={{ fontSize: 11.5, color: "var(--t4)", marginTop: 2 }}>Create your first unit below to start studying</div>
             </div>
@@ -2622,7 +2621,7 @@ function SortableClassCard({ cls, dragDisabled, ...rest }) {
     zIndex: isDragging ? 10 : "auto",
     boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
     borderRadius: isDragging ? 6 : 0,
-    background: isDragging ? "var(--s1)" : "transparent",
+    background: isDragging ? "var(--bg-surface-1)" : "transparent",
   };
 
   return (
@@ -3151,7 +3150,7 @@ function ActivityHeatmap({ data }) {
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{
-          fontSize: 11, fontWeight: 600, color: "var(--t3)", fontFamily: FONT,
+          fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT,
           letterSpacing: "0.08em", textTransform: "uppercase",
         }}>
           Study Streak
@@ -3317,8 +3316,8 @@ function DeadlineRow({ nb, cls, onOpen }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "11px 6px",
-        background: hov ? "var(--s1)" : "transparent",
-        borderBottom: "1px solid var(--border)",
+        background: hov ? "var(--bg-surface-1)" : "transparent",
+        borderBottom: "1px solid var(--border-subtle)",
         borderRadius: hov ? 6 : 0,
         cursor: "pointer", transition: "background 0.15s",
       }}
@@ -3326,12 +3325,12 @@ function DeadlineRow({ nb, cls, onOpen }) {
       <div style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: t.hue }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 13.5, fontWeight: 500, color: "var(--t1)", fontFamily: FONT,
+          fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           letterSpacing: "-0.01em",
         }}>
           {nb.title}
-          {cls?.title ? <span style={{ fontWeight: 400, color: "var(--t3)" }}> · {cls.title}</span> : null}
+          {cls?.title ? <span style={{ fontWeight: 400, color: "var(--text-tertiary)" }}> · {cls.title}</span> : null}
         </div>
       </div>
       <div style={{
@@ -3359,21 +3358,21 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{
-        fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.5))",
+        fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
         fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
         marginBottom: 10, display: "flex", alignItems: "center", gap: 8,
       }}>
-        📅 Upcoming Deadlines
+        Upcoming Deadlines
         {upcoming.length > 0 && (
           <span style={{
-            fontSize: 10.5, fontWeight: 700, color: "var(--acc)",
-            background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
+            fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
+            background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
             padding: "1px 7px", borderRadius: 999,
           }}>{upcoming.length}</span>
         )}
       </div>
       {upcoming.length === 0 ? (
-        <div style={{ padding: "8px 0 12px", color: "var(--t4)", fontSize: 12.5, fontFamily: FONT }}>
+        <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
           No deadlines in the next 7 days.
         </div>
       ) : (
@@ -4687,7 +4686,7 @@ export default function Scholr() {
                   // a persisted order would be incomplete.
                   <>
                     <div style={{
-                      fontSize: 11, fontWeight: 600, color: "var(--t3)",
+                      fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                       fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
                       marginBottom: 6,
                     }}>Classes</div>
@@ -4776,19 +4775,19 @@ export default function Scholr() {
                   <div style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     marginBottom: 14, paddingTop: 20,
-                    borderTop: "1px solid var(--border, rgba(255,255,255,0.06))",
+                    borderTop: "1px solid var(--border-subtle)",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{
-                        fontSize: 11, fontWeight: 600, color: "var(--t3)",
+                        fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                         fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
                       }}>
-                        Recent activity
+                        Recent Activity
                       </div>
                       {notifications.length > 0 && (
                         <span style={{
-                          fontSize: 10.5, fontWeight: 700, color: "var(--acc)",
-                          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
+                          fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
+                          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
                           padding: "1px 7px", borderRadius: 999,
                         }}>{notifications.length}</span>
                       )}
@@ -4801,19 +4800,19 @@ export default function Scholr() {
                         }}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
-                          fontSize: 12, color: "var(--t3)", fontFamily: FONT,
+                          fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
                           padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
                           fontWeight: 500,
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "var(--acc)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = "var(--t3)"; e.currentTarget.style.background = "transparent"; }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
                       >
                         Clear all
                       </button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <div style={{ padding: "8px 0 12px", color: "var(--t4)", fontSize: 12.5, fontFamily: FONT }}>
+                    <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
                       You're all caught up. New activity from study groups will appear here.
                     </div>
                   ) : (
@@ -4822,24 +4821,24 @@ export default function Scholr() {
                         <div key={n.id} style={{
                           display: "flex", alignItems: "center", gap: 14,
                           padding: "11px 6px",
-                          borderBottom: "1px solid var(--border)",
+                          borderBottom: "1px solid var(--border-subtle)",
                         }}>
                           <div style={{
                             width: 6, height: 6, borderRadius: "50%",
-                            background: "var(--acc)", flexShrink: 0,
+                            background: "var(--accent)", flexShrink: 0,
                           }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: "var(--t1)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {n.activities?.description ?? n.activities?.action}
                             </div>
                             {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT, marginTop: 1 }}>
+                              <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 1 }}>
                                 in {n.activities.notebooks.title}
                               </div>
                             )}
                           </div>
                           <div style={{
-                            fontSize: 11, color: "var(--t3)", fontFamily: FONT, flexShrink: 0,
+                            fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, flexShrink: 0,
                           }}>
                             {timeAgo(n.created_at)}
                           </div>

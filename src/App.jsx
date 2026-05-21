@@ -506,7 +506,7 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#fff", boxShadow: "0 2px 8px var(--acc-bg-h)",
           }}><Hammer size={13} strokeWidth={2} /></div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
@@ -856,10 +856,10 @@ function SourcesPanel({ sources }) {
         onClick={() => setOpen(o => !o)}
         style={{
           background: "transparent",
-          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+          border: "1px solid var(--border-default)",
           borderRadius: 8, padding: "0 10px", height: 24,
           fontSize: 11, fontWeight: 600, fontFamily: FONT,
-          color: "var(--t3, rgba(245,245,250,0.5))",
+          color: "var(--text-tertiary)",
           cursor: "pointer",
           display: "inline-flex", alignItems: "center", gap: 4,
         }}
@@ -867,13 +867,13 @@ function SourcesPanel({ sources }) {
       {open && (
         <div style={{
           marginTop: 6, padding: "8px 10px",
-          background: "var(--s2, #1C1C2A)",
-          border: "1px solid var(--border, rgba(255,255,255,0.07))",
+          background: "var(--bg-surface-2)",
+          border: "1px solid var(--border-default)",
           borderRadius: 8, maxWidth: 360,
         }}>
           {sources.map((s, i) => (
             <div key={i} style={{
-              fontSize: 11.5, color: "var(--t2, rgba(245,245,250,0.7))",
+              fontSize: 11.5, color: "var(--text-secondary)",
               fontFamily: FONT, padding: "2px 0",
             }}>• {s}</div>
           ))}
@@ -1148,18 +1148,18 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       {/* Header */}
       <div className="nb-header" style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
-        paddingBottom: 14, borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+        paddingBottom: 14, borderBottom: "1px solid var(--border-default)",
       }}>
         {/* Back — always Row 1 */}
         <button onClick={onBack} className="btn-press" style={{
-          background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
-          color: "var(--t2, rgba(245,245,250,0.65))",
+          background: "transparent", border: "1px solid var(--border-strong)",
+          color: "var(--text-secondary)",
           borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
           fontFamily: FONT, fontSize: 13, fontWeight: 500,
           letterSpacing: "-0.01em", flexShrink: 0,
         }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--border-default)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
         >← Back</button>
 
         {/* Title + (desktop) status + due date */}
@@ -1171,13 +1171,13 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
           }} />
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontSize: 15, fontWeight: 600, color: "var(--t1, #F5F5FA)",
+              fontSize: 15, fontWeight: 600, color: "var(--text-primary)",
               fontFamily: FONT, letterSpacing: "-0.018em",
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>{nb.title}</div>
             {nb.topic && (
               <div style={{
-                fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.5))",
+                fontSize: 11.5, color: "var(--text-tertiary)",
                 fontFamily: FONT, marginTop: 1,
               }}>{nb.topic}</div>
             )}
@@ -1235,16 +1235,16 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             className="btn-press"
             style={{
               background: showNotes ? `linear-gradient(135deg, ${t.hue}28 0%, ${t.hue}10 100%)` : "transparent",
-              border: `1px solid ${showNotes ? `${t.hue}55` : "var(--border-h, rgba(255,255,255,0.08))"}`,
+              border: `1px solid ${showNotes ? `${t.hue}55` : "var(--border-strong)"}`,
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showNotes ? t.hue : "var(--t2, rgba(245,245,250,0.65))",
+              color: showNotes ? t.hue : "var(--text-secondary)",
               display: "flex", alignItems: "center", gap: 6,
               letterSpacing: "-0.01em", flexShrink: 0,
               boxShadow: showNotes ? `0 0 0 1px ${t.hue}22, 0 4px 14px ${t.hue}22` : "none",
             }}
-            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
-            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
+            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
+            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
           ><FileText size={14} strokeWidth={1.75} /> <span className="nb-action-text">Notes</span></button>
 
           <button
@@ -1253,29 +1253,29 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             className="btn-press"
             style={{
               background: showForge ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
-              border: `1px solid ${showForge ? "var(--acc-bg-h)" : "var(--border-h, rgba(255,255,255,0.08))"}`,
+              border: `1px solid ${showForge ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showForge ? "var(--acc-h)" : "var(--t2, rgba(245,245,250,0.65))",
+              color: showForge ? "var(--acc-h)" : "var(--text-secondary)",
               display: "flex", alignItems: "center", gap: 6,
               letterSpacing: "-0.01em", flexShrink: 0,
               boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
             }}
-            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; }}}
-            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; }}}
+            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
+            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
           ><Hammer size={14} strokeWidth={1.75} /> <span className="nb-action-text">Forge</span></button>
 
           <button
             onClick={() => setShowUpload(true)}
             className="btn-press"
             style={{
-              background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+              background: "transparent", border: "1px solid var(--border-strong)",
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "var(--t2, rgba(245,245,250,0.65))", letterSpacing: "-0.01em", flexShrink: 0,
+              color: "var(--text-secondary)", letterSpacing: "-0.01em", flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--border-default)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
           ><Paperclip size={14} strokeWidth={1.75} /> <span className="nb-action-text">Upload</span></button>
 
           <button
@@ -1283,13 +1283,13 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             title="Invite collaborators"
             className="btn-press"
             style={{
-              background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+              background: "transparent", border: "1px solid var(--border-strong)",
               borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
               fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "var(--t2, rgba(245,245,250,0.65))", letterSpacing: "-0.01em", flexShrink: 0,
+              color: "var(--text-secondary)", letterSpacing: "-0.01em", flexShrink: 0,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.18))"; e.currentTarget.style.color = "var(--t1, #F5F5FA)"; e.currentTarget.style.background = "var(--border, rgba(255,255,255,0.04))"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.08))"; e.currentTarget.style.color = "var(--t2, rgba(245,245,250,0.65))"; e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--border-default)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
           >+ <span className="nb-action-text">Invite</span></button>
 
           {/* Avatar — desktop: in actions (right-most); mobile: shown in Row 1 via nb-mobile-only above */}
@@ -1361,14 +1361,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
                         ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
-                        : "linear-gradient(180deg, var(--s1, #14141F) 0%, var(--s2, #1C1C2A) 100%)",
-                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--t1, #F5F5FA)",
+                        : "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--text-primary)",
                     borderRadius: 14,
                     padding: "11px 14px",
                     fontSize: 14, lineHeight: 1.6,
                     fontFamily: FONT,
                     border: !isOwn
-                      ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border, rgba(255,255,255,0.08))"}`
+                      ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border-default)"}`
                       : "none",
                     boxShadow: isOwn
                       ? "0 4px 14px rgba(167,139,250,0.28)"
@@ -1394,10 +1394,10 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                         title="Explain differently"
                         style={{
                           background: explainLevel === m.id ? "var(--acc-bg-h)" : "transparent",
-                          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                          border: "1px solid var(--border-default)",
                           borderRadius: 8, padding: "0 10px", height: 26,
                           fontSize: 11, fontWeight: 600, fontFamily: FONT,
-                          color: "var(--t2, rgba(245,245,250,0.65))",
+                          color: "var(--text-secondary)",
                           cursor: explainingId !== null ? "not-allowed" : "pointer",
                           opacity: explainingId !== null ? 0.5 : 1,
                           display: "flex", alignItems: "center", gap: 4,
@@ -1414,7 +1414,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                               key={l.id}
                               onClick={() => doExplainDifferently(m.id, l.id)}
                               style={{
-                                background: "var(--s2, #1C1C2A)",
+                                background: "var(--bg-surface-2)",
                                 border: "1px solid rgba(167,139,250,0.32)",
                                 borderRadius: 8, padding: "0 10px", height: 26,
                                 fontSize: 11, fontWeight: 600, fontFamily: FONT,
@@ -1473,8 +1473,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             {mentionOpen && mentionCandidates.length > 0 && (
               <div style={{
                 position: "absolute", bottom: "calc(100% + 6px)", left: 0,
-                background: "var(--s2, #1C1C2A)",
-                border: "1px solid var(--border, rgba(255,255,255,0.1))",
+                background: "var(--bg-surface-2)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 10, padding: 4, zIndex: 50,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
                 minWidth: 200,
@@ -1492,7 +1492,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
                       style={{
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "6px 8px", borderRadius: 7, cursor: "pointer",
-                        fontSize: 13, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
+                        fontSize: 13, color: "var(--text-primary)", fontFamily: FONT,
                       }}
                       onMouseEnter={e => { e.currentTarget.style.background = "var(--border)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
@@ -1517,15 +1517,15 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               placeholder={`Ask anything about ${nb.title}… (use @ to mention)`}
               disabled={loading}
               style={{
-                flex: 1, background: "var(--s1, #14141F)",
-                border: "1px solid var(--border, rgba(255,255,255,0.09))",
+                flex: 1, background: "var(--bg-surface-1)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 12, padding: "0 16px", height: 48,
-                color: "var(--t1, #F5F5FA)", fontSize: 14, fontFamily: FONT,
+                color: "var(--text-primary)", fontSize: 14, fontFamily: FONT,
                 outline: "none", transition: "all 0.18s",
                 letterSpacing: "-0.01em",
               }}
               onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
-              onBlur={e => { e.target.style.borderColor = "var(--border, rgba(255,255,255,0.09))"; e.target.style.boxShadow = "none"; }}
+              onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
             />
             <button
               onClick={ask}
@@ -1576,14 +1576,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
         }}>
           <div style={{
             display: "flex", alignItems: "center", padding: "10px 16px", flexShrink: 0,
-            borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+            borderBottom: "1px solid var(--border-default)",
           }}>
             <button
               onClick={() => { setMobilePanelView('chat'); setShowForge(false); }}
               style={{
-                background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+                background: "transparent", border: "1px solid var(--border-strong)",
                 borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--t2, rgba(245,245,250,0.65))", cursor: "pointer",
+                color: "var(--text-secondary)", cursor: "pointer",
                 fontFamily: FONT, fontSize: 13,
               }}
             >← Chat</button>
@@ -1603,14 +1603,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
         }}>
           <div style={{
             display: "flex", alignItems: "center", padding: "10px 16px 12px", flexShrink: 0,
-            borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+            borderBottom: "1px solid var(--border-default)",
           }}>
             <button
               onClick={() => { setMobilePanelView('chat'); setShowNotes(false); }}
               style={{
-                background: "transparent", border: "1px solid var(--border-h, rgba(255,255,255,0.08))",
+                background: "transparent", border: "1px solid var(--border-strong)",
                 borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--t2, rgba(245,245,250,0.65))", cursor: "pointer",
+                color: "var(--text-secondary)", cursor: "pointer",
                 fontFamily: FONT, fontSize: 13,
               }}
             >← Chat</button>
@@ -1710,7 +1710,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
     <div style={{
       display: "flex", flexDirection: "column", gap: 8, padding: "10px 12px",
       background: "var(--s1)",
-      border: "1px solid var(--border, rgba(255,255,255,0.05))",
+      border: "1px solid var(--border-default)",
       borderRadius: 10,
       animation: "fadeIn 0.18s ease",
     }}>
@@ -1718,7 +1718,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
         <Avatar name={note.email ?? author} size={26} seed={note.email ?? author} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT }}>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>
               {mine ? "You" : author}
             </span>
             <span style={{ fontSize: 10.5, color: "var(--t4, rgba(245,245,250,0.35))", fontFamily: MONO }}>
@@ -1726,7 +1726,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
             </span>
           </div>
           <div style={{
-            fontSize: 13, color: "var(--t2, rgba(245,245,250,0.85))",
+            fontSize: 13, color: "var(--text-secondary)",
             fontFamily: FONT, lineHeight: 1.6, whiteSpace: "pre-wrap",
             wordBreak: "break-word",
           }}>{note.content}</div>
@@ -1768,11 +1768,11 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
             }}
             title={(reactionUsers?.[r.emoji] ?? []).join(", ")}
             style={{
-              background: r.mine ? "rgba(167,139,250,0.18)" : "var(--s2, rgba(255,255,255,0.04))",
-              border: `1px solid ${r.mine ? "color-mix(in srgb, var(--acc) 45%, transparent)" : "var(--border, rgba(255,255,255,0.07))"}`,
+              background: r.mine ? "rgba(167,139,250,0.18)" : "var(--bg-surface-2)",
+              border: `1px solid ${r.mine ? "color-mix(in srgb, var(--acc) 45%, transparent)" : "var(--border-default)"}`,
               borderRadius: 999, padding: "1px 8px", height: 22,
               fontSize: 12, fontFamily: FONT,
-              color: r.mine ? "var(--acc-h)" : "var(--t2, rgba(245,245,250,0.7))",
+              color: r.mine ? "var(--acc-h)" : "var(--text-secondary)",
               cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
             }}
           >
@@ -1786,10 +1786,10 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
             title="Add reaction"
             style={{
               background: "transparent",
-              border: "1px dashed var(--border, rgba(255,255,255,0.12))",
+              border: "1px dashed var(--border-default)",
               borderRadius: 999, padding: "1px 8px", height: 22,
               fontSize: 12, fontFamily: FONT,
-              color: "var(--t3, rgba(245,245,250,0.5))", cursor: "pointer",
+              color: "var(--text-tertiary)", cursor: "pointer",
               display: "inline-flex", alignItems: "center", gap: 4,
             }}
           ><Plus size={12} strokeWidth={2} /><Smile size={12} strokeWidth={1.75} /></button>
@@ -1798,8 +1798,8 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
               <div onClick={() => setPickerOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
               <div onClick={e => e.stopPropagation()} style={{
                 position: "absolute", top: "calc(100% + 4px)", left: 0,
-                background: "var(--s2, #1C1C2A)",
-                border: "1px solid var(--border, rgba(255,255,255,0.12))",
+                background: "var(--bg-surface-2)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 10, padding: 6, zIndex: 110,
                 display: "flex", gap: 4,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
@@ -1824,7 +1824,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
           onClick={() => commentsOpen ? setCommentsOpen(false) : loadComments()}
           style={{
             background: "transparent", border: "none", cursor: "pointer",
-            fontSize: 11.5, color: "var(--t3, rgba(245,245,250,0.5))",
+            fontSize: 11.5, color: "var(--text-tertiary)",
             fontFamily: FONT, padding: "1px 4px", fontWeight: 600,
             marginLeft: 4,
             display: "inline-flex", alignItems: "center", gap: 4,
@@ -1838,7 +1838,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
         <div style={{
           marginLeft: 36, padding: "8px 10px",
           background: "var(--bg, rgba(0,0,0,0.15))",
-          border: "1px solid var(--border, rgba(255,255,255,0.05))",
+          border: "1px solid var(--border-default)",
           borderRadius: 8,
         }}>
           {!commentsLoaded ? (
@@ -1851,7 +1851,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                 return (
                   <div key={c.id} style={{
                     display: "flex", gap: 8, padding: "6px 0",
-                    borderBottom: "1px solid var(--border, rgba(255,255,255,0.04))",
+                    borderBottom: "1px solid var(--border-default)",
                   }}>
                     <Avatar name={c.email ?? cAuthor} size={20} seed={c.email ?? cAuthor} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1890,10 +1890,10 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                   placeholder="Add a comment…"
                   maxLength={2000}
                   style={{
-                    flex: 1, background: "var(--s1, #0F0F18)",
-                    border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                    flex: 1, background: "var(--bg-surface-1)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 7, padding: "0 10px", height: 30,
-                    color: "var(--t1, #F5F5FA)", fontSize: 12, fontFamily: FONT,
+                    color: "var(--text-primary)", fontSize: 12, fontFamily: FONT,
                     outline: "none",
                   }}
                 />
@@ -1903,7 +1903,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                   style={{
                     background: commentDraft.trim() && !postingComment
                       ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`
-                      : "var(--s2, #1C1C2A)",
+                      : "var(--bg-surface-2)",
                     border: "none", borderRadius: 7, padding: "0 10px", height: 30,
                     color: "#fff", fontSize: 11.5, fontWeight: 600,
                     cursor: commentDraft.trim() && !postingComment ? "pointer" : "not-allowed",
@@ -3210,7 +3210,7 @@ function ActivityHeatmap({ data }) {
         <div className="heatmap-fade-in">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <button style={navBtnStyle} onClick={() => setCurrentMonth(m => { const n = new Date(m); n.setMonth(m.getMonth() - 1); return n; })}>‹</button>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t1,#F5F5FA)", fontFamily: FONT }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", fontFamily: FONT }}>
               {MONTHS_FULL[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </span>
             <button style={navBtnStyle} onClick={() => setCurrentMonth(m => { const n = new Date(m); n.setMonth(m.getMonth() + 1); return n; })}>›</button>
@@ -3252,7 +3252,7 @@ function ActivityHeatmap({ data }) {
         <div className="heatmap-fade-in">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <button style={navBtnStyle} onClick={() => setCurrentYear(y => y - 1)}>‹</button>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--t1,#F5F5FA)", fontFamily: FONT }}>{currentYear}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", fontFamily: FONT }}>{currentYear}</span>
             <button style={navBtnStyle} onClick={() => setCurrentYear(y => y + 1)}>›</button>
           </div>
           {/* 12 mini-month grids */}
@@ -3303,8 +3303,8 @@ function ActivityHeatmap({ data }) {
       }}>
         {[
           { val: streak,     label: "day streak",  color: "var(--acc)" },
-          { val: activeDays, label: "active days",  color: "var(--t1,#F5F5FA)" },
-          { val: total,      label: "activities",   color: "var(--t1,#F5F5FA)" },
+          { val: activeDays, label: "active days",  color: "var(--text-primary)" },
+          { val: total,      label: "activities",   color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
             <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
@@ -3432,8 +3432,8 @@ function StatusPill({ status, onChange, size = "sm", compact = false }) {
           <div onClick={e => { e.stopPropagation(); setOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
           <div onClick={e => e.stopPropagation()} style={{
             position: "absolute", top: "calc(100% + 6px)", left: 0,
-            background: "var(--s2, #1C1C2A)",
-            border: "1px solid var(--border, rgba(255,255,255,0.1))",
+            background: "var(--bg-surface-2)",
+            border: "1px solid var(--border-default)",
             borderRadius: 10, padding: 4, zIndex: 110,
             boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
             minWidth: 140,
@@ -3479,10 +3479,10 @@ function DueDateButton({ dueDate, onChange, compact = false }) {
         title={compact ? (dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date") : "Edit due date"}
         style={{
           background: tone ? `${tone.color}1A` : "transparent",
-          border: `1px solid ${tone ? `${tone.color}55` : "var(--border, rgba(255,255,255,0.08))"}`,
+          border: `1px solid ${tone ? `${tone.color}55` : "var(--border-default)"}`,
           borderRadius: 8, padding: compact ? "0 8px" : "0 10px", height: 30, cursor: "pointer",
           fontSize: 12, fontWeight: 600, fontFamily: FONT,
-          color: tone ? tone.color : "var(--t3, rgba(245,245,250,0.5))",
+          color: tone ? tone.color : "var(--text-tertiary)",
           display: "flex", alignItems: "center", gap: compact ? 0 : 6,
         }}
       >
@@ -3494,8 +3494,8 @@ function DueDateButton({ dueDate, onChange, compact = false }) {
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
           <div onClick={e => e.stopPropagation()} style={{
             position: "absolute", top: "calc(100% + 6px)", left: 0,
-            background: "var(--s2, #1C1C2A)",
-            border: "1px solid var(--border, rgba(255,255,255,0.12))",
+            background: "var(--bg-surface-2)",
+            border: "1px solid var(--border-default)",
             borderRadius: 10, padding: 12, zIndex: 110,
             boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
             minWidth: 240,
@@ -3509,9 +3509,9 @@ function DueDateButton({ dueDate, onChange, compact = false }) {
               onChange={e => setDraft(e.target.value)}
               style={{
                 width: "100%", background: "var(--bg, #0F0F18)",
-                border: "1px solid var(--border, rgba(255,255,255,0.08))",
+                border: "1px solid var(--border-default)",
                 borderRadius: 8, padding: "0 10px", height: 36,
-                color: "var(--t1, #F5F5FA)", fontSize: 13, fontFamily: FONT,
+                color: "var(--text-primary)", fontSize: 13, fontFamily: FONT,
                 outline: "none", colorScheme: "dark",
               }}
             />
@@ -3615,7 +3615,7 @@ function UpgradeModal({ limitType, onClose }) {
       padding: 16, animation: "fadeIn 0.18s ease",
     }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{
-        background: "var(--s1, #14141F)",
+        background: "var(--bg-surface-1)",
         border: "1px solid rgba(167,139,250,0.28)",
         borderRadius: 20, padding: "32px 28px",
         maxWidth: 400, width: "100%",
@@ -3628,10 +3628,10 @@ function UpgradeModal({ limitType, onClose }) {
           <div style={{ marginBottom: 10, color: "var(--acc)", display: "inline-flex" }}>
             <context.Icon size={36} strokeWidth={1.5} />
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.025em", marginBottom: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.025em", marginBottom: 6 }}>
             Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
           </div>
-          <div style={{ fontSize: 13.5, color: "var(--t2, rgba(245,245,250,0.65))", lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>
             {context.detail}
           </div>
         </div>
@@ -3644,7 +3644,7 @@ function UpgradeModal({ limitType, onClose }) {
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
         }}>
           <span style={{ fontSize: 32, fontWeight: 700, color: "var(--acc)", letterSpacing: "-0.03em" }}>$8.49</span>
-          <span style={{ fontSize: 13, color: "var(--t3, rgba(245,245,250,0.45))", fontWeight: 500 }}>/month</span>
+          <span style={{ fontSize: 13, color: "var(--text-tertiary)", fontWeight: 500 }}>/month</span>
         </div>
 
         {/* Features */}
@@ -3658,7 +3658,7 @@ function UpgradeModal({ limitType, onClose }) {
           ].map(f => (
             <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
               <span style={{ color: "var(--success)", flexShrink: 0, marginTop: 1, display: "inline-flex" }}><Check size={14} strokeWidth={2} /></span>
-              <span style={{ fontSize: 13.5, color: "var(--t1, #F5F5FA)", lineHeight: 1.4 }}>{f}</span>
+              <span style={{ fontSize: 13.5, color: "var(--text-primary)", lineHeight: 1.4 }}>{f}</span>
             </div>
           ))}
         </div>
@@ -3683,8 +3683,8 @@ function UpgradeModal({ limitType, onClose }) {
           onClick={onClose}
           style={{
             width: "100%", height: 40, background: "transparent",
-            border: "1px solid var(--border, rgba(255,255,255,0.08))",
-            borderRadius: 12, color: "var(--t3, rgba(245,245,250,0.45))",
+            border: "1px solid var(--border-default)",
+            borderRadius: 12, color: "var(--text-tertiary)",
             fontSize: 13, fontFamily: FONT, cursor: "pointer",
             transition: "all 0.15s",
           }}
@@ -4106,7 +4106,7 @@ export default function Scholr() {
       {/* App shell */}
       <div className={sidebarOpen ? "" : "mobile-hide-sidebar"} style={{
         height: "100vh", overflow: "hidden",
-        background: "var(--bg, #0B0B12)",
+        background: "var(--bg-base)",
         display: user ? "flex" : "none", fontFamily: FONT,
       }}>
         {sidebarOpen && (
@@ -4115,10 +4115,8 @@ export default function Scholr() {
         {/* Sidebar */}
         <div className="sidebar" style={{
           width: 240,
-          background: theme === "light"
-            ? "var(--bg, #F5F5F5)"
-            : "linear-gradient(180deg, #0B0B12 0%, #0F0F18 100%)",
-          borderRight: "1px solid var(--border, rgba(255,255,255,0.06))",
+          background: "var(--bg-base)",
+          borderRight: "1px solid var(--border-subtle)",
           display: "flex", flexDirection: "column",
           flexShrink: 0, overflow: "hidden",
           position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 200,
@@ -4137,10 +4135,10 @@ export default function Scholr() {
             <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
             <div style={{
               fontSize: 19, fontWeight: 700,
-              color: "var(--t1, #F5F5FA)", letterSpacing: "-0.03em",
+              color: "var(--text-primary)", letterSpacing: "-0.03em",
               fontFamily: FONT,
             }}>
-              schol<span style={{ color: "var(--acc, #A78BFA)" }}>r</span>
+              schol<span style={{ color: "var(--accent)" }}>r</span>
             </div>
             <button
               className="mobile-only"
@@ -4168,12 +4166,10 @@ export default function Scholr() {
                   position: "relative",
                   padding: "0 12px", height: 36, borderRadius: 8,
                   display: "flex", alignItems: "center", gap: 10,
-                  background: active
-                    ? "linear-gradient(90deg, var(--acc-bg) 0%, transparent 100%)"
-                    : "transparent",
-                  color: active ? "var(--acc-h)" : "var(--text-secondary)",
+                  background: active ? "var(--accent-soft)" : "transparent",
+                  color: active ? "var(--accent)" : "var(--text-secondary)",
                   fontSize: 13.5, fontWeight: active ? 600 : 500,
-                  cursor: "pointer", transition: "all 0.18s",
+                  cursor: "pointer", transition: "background 150ms ease, color 150ms ease",
                   userSelect: "none",
                   letterSpacing: "-0.01em",
                   marginBottom: 1,
@@ -4181,14 +4177,6 @@ export default function Scholr() {
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
               >
-                {active && (
-                  <div style={{
-                    position: "absolute", left: 0, top: 8, bottom: 8, width: 3,
-                    background: "linear-gradient(180deg, var(--acc) 0%, var(--acc-d) 100%)",
-                    borderRadius: 2,
-                    boxShadow: "0 0 8px var(--acc-glow)",
-                  }} />
-                )}
                 <span style={{
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
                   width: 18, opacity: active ? 1 : 0.85,
@@ -4206,8 +4194,8 @@ export default function Scholr() {
           {subscription.tier === "free" && (
             <div style={{ padding: "0 12px 10px", flexShrink: 0 }}>
               <div style={{
-                background: "var(--s2, #1C1C2A)",
-                border: "1px solid var(--border, rgba(255,255,255,0.07))",
+                background: "var(--bg-surface-2)",
+                border: "1px solid var(--border-subtle)",
                 borderRadius: 10, padding: "10px 12px",
               }}>
                 {/* Messages */}
@@ -4216,11 +4204,11 @@ export default function Scholr() {
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <MessageCircle size={12} strokeWidth={1.75} /> Messages
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
                       {subscription.messagesUsed}/{subscription.messagesLimit}
                     </span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--bg-surface-3)", overflow: "hidden" }}>
                     <div style={{
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
@@ -4237,11 +4225,11 @@ export default function Scholr() {
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <Hammer size={12} strokeWidth={1.75} /> Forge
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
                       {subscription.forgeUsed}/{subscription.forgeLimit}
                     </span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--bg-surface-3)", overflow: "hidden" }}>
                     <div style={{
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
@@ -4258,11 +4246,11 @@ export default function Scholr() {
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <Notebook size={12} strokeWidth={1.75} /> Notes
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT }}>
+                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
                       {subscription.notebooksUsed}/{subscription.notebooksLimit}
                     </span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: "var(--s3, #252537)", overflow: "hidden" }}>
+                  <div style={{ height: 4, borderRadius: 2, background: "var(--bg-surface-3)", overflow: "hidden" }}>
                     <div style={{
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.notebooksUsed / subscription.notebooksLimit) * 100))}%`,
@@ -4299,20 +4287,19 @@ export default function Scholr() {
             {profileOpen && (
               <div style={{
                 position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0,
-                background: "var(--s1, #14141F)",
-                backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-                border: "1px solid var(--border-h, rgba(255,255,255,0.12))",
+                background: "var(--bg-surface-1)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 12, padding: "12px",
-                boxShadow: "0 -16px 40px rgba(0,0,0,0.3), 0 0 0 1px var(--acc-bg)",
+                boxShadow: "var(--sh-modal)",
                 animation: "slideInUp 0.15s ease",
                 zIndex: 100,
               }}>
                 {/* Header */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
-                  <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
                 </div>
-                <div style={{ height: 1, background: "var(--border, rgba(255,255,255,0.07))", marginBottom: 10 }} />
+                <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 10 }} />
                 {/* Accent Color */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -4327,7 +4314,7 @@ export default function Scholr() {
                         style={{
                           width: 22, height: 22, borderRadius: 6, padding: 0, cursor: "pointer",
                           background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
-                          border: accentColor === p.color ? `2px solid var(--t1, #F5F5FA)` : "2px solid transparent",
+                          border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
                           outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
                           outlineOffset: "1px",
                           transition: "transform 0.12s",
@@ -4341,7 +4328,7 @@ export default function Scholr() {
                 </div>
                 {/* Theme toggle */}
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.45))", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Theme</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Theme</div>
                   <div style={{ display: "flex", gap: 6 }}>
                     {[
                       { value: "dark", label: "Dark", Icon: Moon },
@@ -4369,13 +4356,13 @@ export default function Scholr() {
                     ))}
                   </div>
                 </div>
-                <div style={{ height: 1, background: "var(--border, rgba(255,255,255,0.07))", marginBottom: 8 }} />
+                <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 8 }} />
                 {/* Sign out */}
                 <button
                   onClick={() => { setProfileOpen(false); handleLogout(); }}
                   style={{
                     width: "100%", background: "transparent", border: "none",
-                    borderRadius: 7, padding: "6px 8px", color: "#F87171",
+                    borderRadius: 7, padding: "6px 8px", color: "var(--danger)",
                     fontSize: 12.5, fontWeight: 500, cursor: "pointer",
                     fontFamily: FONT, textAlign: "left",
                     display: "flex", alignItems: "center", gap: 7,
@@ -4391,20 +4378,20 @@ export default function Scholr() {
             <div
               onClick={() => setProfileOpen(v => !v)}
               style={{
-                background: profileOpen ? "var(--border, rgba(255,255,255,0.05))" : "var(--s1)",
-                border: `1px solid ${profileOpen ? "var(--border-h, rgba(255,255,255,0.12))" : "var(--border)"}`,
+                background: profileOpen ? "var(--bg-surface-2)" : "var(--bg-surface-1)",
+                border: `1px solid ${profileOpen ? "var(--border-default)" : "var(--border-subtle)"}`,
                 borderRadius: 10, padding: "10px",
                 display: "flex", alignItems: "center", gap: 10,
                 cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
                 userSelect: "none",
               }}
-              onMouseEnter={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--s2)"; e.currentTarget.style.borderColor = "var(--border-h, rgba(255,255,255,0.1))"; }}}
-              onMouseLeave={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--s1)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
+              onMouseEnter={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.borderColor = "var(--border-default)"; }}}
+              onMouseLeave={e => { if (!profileOpen) { e.currentTarget.style.background = "var(--bg-surface-1)"; e.currentTarget.style.borderColor = "var(--border-subtle)"; }}}
             >
               <Avatar name={displayName} size={32} seed={user?.email ?? displayName} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{displayName}</div>
-                <div style={{ fontSize: 10.5, color: "var(--t3, rgba(245,245,250,0.42))", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{displayName}</div>
+                <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
               </div>
               <div style={{ color: "var(--text-tertiary)", flexShrink: 0, display: "inline-flex" }}>
                 <ChevronRight size={12} strokeWidth={2} style={{ transform: profileOpen ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.15s" }} />
@@ -4423,12 +4410,12 @@ export default function Scholr() {
             style={{
               display: "none",
               position: "fixed", bottom: 80, left: 16, zIndex: 50,
-              background: "var(--acc, #A78BFA)",
+              background: "var(--accent)",
               border: "none",
               borderRadius: "50%", width: 44, height: 44,
               alignItems: "center", justifyContent: "center",
-              fontSize: 20, color: "#fff", cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              color: "#fff", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             }}
           ><Menu size={20} strokeWidth={1.75} /></button>
           {activeNb ? (
@@ -4458,84 +4445,67 @@ export default function Scholr() {
             </div>
 
           ) : activeView === "settings" ? (
-            <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 520 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.03em", marginBottom: 4 }}>
+            <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 560 }}>
+              <div style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.025em", marginBottom: 32 }}>
                 Settings
               </div>
-              <div style={{ fontSize: 14, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, marginBottom: 32 }}>
-                Manage your account preferences
-              </div>
 
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Account
               </div>
               <div style={{
-                background: "var(--s1, #14141F)",
-                border: "1px solid var(--border, rgba(255,255,255,0.07))",
-                borderRadius: 14, padding: "18px 20px", marginBottom: 32,
-                boxShadow: "var(--sh-card, 0 1px 3px rgba(0,0,0,0.2))",
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "14px 0", marginBottom: 32,
+                borderBottom: "1px solid var(--border-subtle)",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <Avatar name={displayName} size={42} seed={user?.email ?? displayName} />
-                  <div>
-                    <div style={{ fontSize: 11, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
-                    <div style={{ fontSize: 14, color: "var(--t1, #F5F5FA)", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
-                  </div>
+                <Avatar name={displayName} size={42} seed={user?.email ?? displayName} />
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
+                  <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
                 </div>
               </div>
 
               {/* ── Subscription ──────────────────────────────────────────── */}
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3, rgba(245,245,250,0.42))", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Subscription
               </div>
               <div style={{
-                background: subscription.tier === "pro"
-                  ? "linear-gradient(180deg, var(--acc-bg) 0%, var(--s1, #14141F) 100%)"
-                  : "var(--s1, #14141F)",
-                border: `1px solid ${subscription.tier === "pro" ? "rgba(167,139,250,0.28)" : "var(--border, rgba(255,255,255,0.07))"}`,
-                borderRadius: 14, padding: "20px 22px", marginBottom: 32,
-                boxShadow: subscription.tier === "pro"
-                  ? "0 12px 30px var(--acc-bg), 0 0 0 1px var(--acc-bg)"
-                  : "var(--sh-card, 0 1px 3px rgba(0,0,0,0.2))",
+                background: subscription.tier === "pro" ? "var(--accent-soft)" : "transparent",
+                borderRadius: subscription.tier === "pro" ? 10 : 0,
+                padding: subscription.tier === "pro" ? "16px 18px" : "14px 0",
+                marginBottom: 32,
+                borderBottom: subscription.tier === "pro" ? "none" : "1px solid var(--border-subtle)",
               }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                   <div style={{ flex: "1 1 220px", minWidth: 200 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <div style={{
-                        fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: subscription.tier === "pro" ? "var(--acc)" : "var(--t3, rgba(245,245,250,0.5))",
-                        fontFamily: FONT,
-                      }}>
-                        Current plan
-                      </div>
                       {subscription.tier === "pro" && (
                         <span style={{
                           fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                           color: "#fff", fontFamily: FONT,
                           background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                           padding: "2px 8px", borderRadius: 999,
-                          boxShadow: "0 2px 8px var(--acc-bg-h)",
                         }}>
                           Active
                         </span>
                       )}
                     </div>
                     <div style={{
-                      fontSize: 18, fontWeight: 700,
-                      color: "var(--t1, #F5F5FA)",
+                      fontSize: 17, fontWeight: 600,
+                      color: "var(--text-primary)",
                       fontFamily: FONT, letterSpacing: "-0.02em", marginBottom: 4,
                     }}>
                       {subscription.tier === "pro" ? (
-                        <>scholr <span style={{ color: "var(--acc)" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t2, rgba(245,245,250,0.65))" }}>$8.49/month</span></>
+                        <>scholr <span style={{ color: "var(--accent)" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>$8.49/month</span></>
                       ) : "scholr Free"}
                     </div>
                     {subscription.tier === "pro" && subscription.currentPeriodEnd && (
-                      <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
                         Next billing on {new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                       </div>
                     )}
                     {subscription.tier !== "pro" && (
-                      <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
                         Upgrade for unlimited messages, Forge, classes, and storage.
                       </div>
                     )}
@@ -4590,14 +4560,14 @@ export default function Scholr() {
                 Danger zone
               </div>
               <div style={{
-                background: "var(--s1, #14141F)",
+                background: "var(--bg-surface-1)",
                 border: "1px solid rgba(248,113,113,0.2)",
                 borderRadius: 14, padding: "18px 20px",
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
               }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
-                  <div style={{ fontSize: 12.5, color: "var(--t2, rgba(245,245,250,0.6))", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
                 </div>
                 <button onClick={() => setShowDeleteAccount(true)}>Delete account</button>
               </div>
@@ -4610,23 +4580,22 @@ export default function Scholr() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--acc, #A78BFA)",
+                    fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                     fontFamily: FONT, marginBottom: 4,
-                    letterSpacing: "0.1em", textTransform: "uppercase",
+                    letterSpacing: "0.08em", textTransform: "uppercase",
                   }}>
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 30, fontWeight: 600, color: "var(--t1, #F5F5FA)",
-                    fontFamily: FONT, letterSpacing: "0.3px", lineHeight: 1.15,
-                    textShadow: "0 0 24px rgba(167,139,250,0.18)",
+                    fontSize: 30, fontWeight: 600, color: "var(--text-primary)",
+                    fontFamily: FONT, letterSpacing: "-0.025em", lineHeight: 1.15,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     animation: "fadeIn 0.35s ease",
                   }}>
                     {activeView === "dashboard" ? getGreeting(displayName).text : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 13.5, color: "var(--t3, rgba(245,245,250,0.5))",
+                    fontSize: 13.5, color: "var(--text-tertiary)",
                     fontFamily: FONT, marginTop: 6,
                   }}>
                     {activeView === "dashboard"
@@ -4663,14 +4632,14 @@ export default function Scholr() {
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search notebooks…"
                   style={{
-                    width: "100%", background: "var(--s1, #14141F)",
-                    border: "1px solid var(--border, rgba(255,255,255,0.07))",
+                    width: "100%", background: "var(--bg-surface-1)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10, padding: "0 14px 0 38px", height: 40,
-                    color: "var(--t1, #F5F5FA)", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                    color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
                     transition: "all 0.18s", letterSpacing: "-0.01em",
                   }}
-                  onFocus={e => { e.target.style.borderColor = "var(--acc, #A78BFA)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg, rgba(167,139,250,0.14))"; }}
-                  onBlur={e => { e.target.style.borderColor = "var(--border, rgba(255,255,255,0.07))"; e.target.style.boxShadow = "none"; }}
+                  onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 2px var(--accent-soft)"; }}
+                  onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
                 />
               </div>
 

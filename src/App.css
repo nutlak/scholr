@@ -202,3 +202,179 @@
     padding-left: 24px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE UX PASS  ( < 768px only — desktop untouched )
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Prevent horizontal overflow & enable momentum scrolling everywhere */
+  html, body { overflow-x: hidden; }
+  body { -webkit-overflow-scrolling: touch; }
+  * { -webkit-overflow-scrolling: touch; }
+  /* iOS bounce containment for fixed-bottom UI */
+  body { overscroll-behavior-y: contain; }
+
+  /* Drag handles hidden on touch — drag isn't a great mobile interaction */
+  .class-drag-handle { display: none !important; }
+  .sortable-class-row { padding-left: 0; }
+
+  /* Hide the old floating hamburger; bottom tab bar replaces it */
+  .mobile-menu-btn { display: none !important; }
+  /* Hide desktop sidebar entirely on mobile (tab bar replaces it) */
+  .sidebar { display: none !important; }
+  .sidebar-backdrop { display: none !important; }
+  /* Main pane: tight padding + room for the bottom tab bar + FAB */
+  .main-pane {
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom)) !important;
+    margin-left: 0 !important;
+  }
+  /* Mobile-only / desktop-only utility (extends existing) */
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: flex !important; }
+
+  /* ── Bottom tab bar ──────────────────────────────────────────── */
+  .mobile-tab-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 300;
+    display: flex; align-items: stretch; justify-content: space-around;
+    background: var(--bg-surface-1);
+    border-top: 1px solid var(--border-subtle);
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(64px + env(safe-area-inset-bottom));
+  }
+  .mobile-tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; padding: 8px 4px;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-tertiary);
+    font-family: var(--font);
+    font-size: 11px; font-weight: 500;
+    transition: color 150ms ease, transform 100ms ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+  }
+  .mobile-tab.active { color: var(--accent); font-weight: 600; }
+  .mobile-tab:active { transform: scale(0.94); }
+
+  /* ── Floating action button (new class) ──────────────────────── */
+  .mobile-fab {
+    position: fixed; right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 290;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent),
+                0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 120ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-fab:active { transform: scale(0.94); }
+
+  /* ── Mobile header: avatar trigger in top-right ──────────────── */
+  .mobile-header-avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: transparent; border: none; cursor: pointer;
+    padding: 0; flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-header-avatar:active { transform: scale(0.94); }
+
+  /* ── Bottom-sheet treatment for any modal that opts in ───────── */
+  .mobile-sheet-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .mobile-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 18px 18px 0 0 !important;
+    margin: 0 !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+    overflow-y: auto;
+    animation: slideUpSheet 0.26s cubic-bezier(0.32,0.72,0.32,1) !important;
+  }
+  .mobile-sheet::before {
+    content: "";
+    display: block; margin: 8px auto 12px;
+    width: 36px; height: 4px; border-radius: 999px;
+    background: var(--border-strong);
+  }
+  /* Modal buttons stack on mobile */
+  .mobile-sheet .mobile-stack-btns {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  .mobile-sheet .mobile-stack-btns > button {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  /* ── Typography mobile scale ─────────────────────────────────── */
+  /* Inputs must be 16px to prevent iOS zoom on focus */
+  input, textarea, select { font-size: 16px !important; }
+  /* Body text floor */
+  body { font-size: 15px; }
+  /* Reset the global 13px shrink from older media query */
+  :root { font-size: 14px; }
+
+  /* ── Touch targets ───────────────────────────────────────────── */
+  button { min-height: 44px; }
+  a, [role="button"] { min-height: 44px; }
+
+  /* ── Replace hover with :active on touch devices ─────────────── */
+  /* (Only applies when there's no hover capability) */
+  .lift-card:active { transform: scale(0.98); }
+
+  /* ── Class cards: bigger tap targets ─────────────────────────── */
+  .class-card-row {
+    min-height: 64px;
+    padding: 16px !important;
+  }
+
+  /* ── Forge / Notes panels: full screen on mobile ─────────────── */
+  .forge-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 250 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)) !important;
+    margin: 0 !important;
+    border-left: none !important;
+    background: var(--bg-base) !important;
+    overflow-y: auto;
+  }
+  .notes-section {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 250 !important;
+    max-height: none !important;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)) !important;
+    border-radius: 0 !important;
+    background: var(--bg-base) !important;
+    overflow-y: auto;
+  }
+
+  /* ── Activity heatmap: fit 7 day circles snugly ──────────────── */
+  .heatmap-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Above mobile: keep .mobile-only hidden  */
+@media (min-width: 768px) {
+  .mobile-only { display: none !important; }
+}
+
+/* Bottom-sheet slide-up animation */
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

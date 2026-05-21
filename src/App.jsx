@@ -2378,17 +2378,17 @@ function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
   }
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+    <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
       position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
-      <div style={{
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+      <div className="mobile-sheet" style={{
+        background: "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
         border: "1px solid rgba(248,113,113,0.18)",
         borderRadius: 18, width: "100%", maxWidth: 400,
         padding: "24px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(248,113,113,0.12)",
+        boxShadow: "var(--sh-modal)",
         animation: "fadeIn 0.2s ease",
       }}>
         <div style={{
@@ -2722,18 +2722,18 @@ function NewClassModal({ onClose, onCreate }) {
   };
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+    <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
       position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
-      <div style={{
+      <div className="mobile-sheet" style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid var(--border)",
+        background: "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+        border: "1px solid var(--border-default)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: `0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px ${tint.hue}22`,
+        boxShadow: `var(--sh-modal), 0 0 0 1px ${tint.hue}22`,
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{
@@ -3608,13 +3608,13 @@ function UpgradeModal({ limitType, onClose }) {
   }
 
   return (
-    <div style={{
+    <div className="mobile-sheet-overlay" style={{
       position: "fixed", inset: 0, zIndex: 3000,
       background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 16, animation: "fadeIn 0.18s ease",
     }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{
+      <div className="mobile-sheet" style={{
         background: "var(--bg-surface-1)",
         border: "1px solid rgba(167,139,250,0.28)",
         borderRadius: 20, padding: "32px 28px",
@@ -4591,7 +4591,7 @@ export default function Scholr() {
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 30, fontWeight: 600, color: "var(--text-primary)",
+                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 600, color: "var(--text-primary)",
                     fontFamily: FONT, letterSpacing: "-0.025em", lineHeight: 1.15,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     animation: "fadeIn 0.35s ease",
@@ -4610,7 +4610,7 @@ export default function Scholr() {
                 {activeView === "dashboard" && (
                   <button
                     onClick={() => setShowNewClassModal(true)}
-                    className="btn-press"
+                    className="btn-press desktop-only"
                     style={{
                       background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
                       border: "none", borderRadius: 10, padding: "0 18px", height: 40,
@@ -4622,6 +4622,14 @@ export default function Scholr() {
                     }}
                   >+ New Class</button>
                 )}
+                {/* Mobile-only profile avatar trigger (opens existing dropdown) */}
+                <button
+                  className="mobile-header-avatar mobile-only"
+                  onClick={() => setProfileOpen(v => !v)}
+                  aria-label="Open profile menu"
+                >
+                  <Avatar name={displayName} size={36} seed={user?.email ?? displayName} />
+                </button>
               </div>
 
               {/* Search */}
@@ -4843,6 +4851,152 @@ export default function Scholr() {
             </div>
           )}
         </div>
+
+        {/* ── Mobile profile sheet (mobile-only) ── */}
+        {profileOpen && (
+          <div
+            className="mobile-only"
+            onClick={e => { if (e.target === e.currentTarget) setProfileOpen(false); }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 320,
+              background: "rgba(0,0,0,0.45)",
+              display: "flex", alignItems: "flex-end", justifyContent: "stretch",
+              animation: "fadeIn 0.18s ease",
+            }}
+          >
+            <div style={{
+              width: "100%",
+              background: "var(--bg-surface-1)",
+              borderRadius: "18px 18px 0 0",
+              padding: `16px 20px calc(24px + env(safe-area-inset-bottom))`,
+              animation: "slideUpSheet 0.26s cubic-bezier(0.32,0.72,0.32,1)",
+            }}>
+              <div style={{
+                width: 36, height: 4, borderRadius: 999,
+                background: "var(--border-strong)", margin: "0 auto 14px",
+              }} />
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <Avatar name={displayName} size={44} seed={user?.email ?? displayName} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 14 }} />
+              {/* Theme toggle */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Theme</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[
+                    { value: "dark", label: "Dark", Icon: Moon },
+                    { value: "light", label: "Light", Icon: Sun },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTheme(opt.value)}
+                      style={{
+                        flex: 1, padding: "0 12px", height: 48, borderRadius: 10, cursor: "pointer",
+                        fontFamily: FONT, fontSize: 14, fontWeight: 500,
+                        background: theme === opt.value ? "var(--accent-soft)" : "transparent",
+                        border: `1px solid ${theme === opt.value ? "var(--accent)" : "var(--border-default)"}`,
+                        color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      }}
+                    >
+                      <opt.Icon size={16} strokeWidth={1.75} /> {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Accent Color */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Palette size={13} strokeWidth={1.75} /> Accent
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {ACCENT_PRESETS.map(p => (
+                    <button
+                      key={p.color}
+                      onClick={() => setAccentColor(p.color)}
+                      title={p.name}
+                      style={{
+                        width: 32, height: 32, borderRadius: 8, padding: 0, cursor: "pointer",
+                        background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
+                        border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
+                        outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
+                        outlineOffset: "1px", flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Settings link */}
+              <button
+                onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
+                style={{
+                  width: "100%", height: 48, borderRadius: 10, cursor: "pointer",
+                  background: "transparent", border: "1px solid var(--border-default)",
+                  color: "var(--text-primary)", fontSize: 14, fontWeight: 500, fontFamily: FONT,
+                  display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
+                  marginBottom: 8,
+                }}
+              >
+                <Settings size={16} strokeWidth={1.75} /> Settings
+              </button>
+              {/* Sign out */}
+              <button
+                onClick={() => { setProfileOpen(false); handleLogout(); }}
+                style={{
+                  width: "100%", height: 48, borderRadius: 10, cursor: "pointer",
+                  background: "transparent", border: "1px solid color-mix(in srgb, var(--danger) 30%, transparent)",
+                  color: "var(--danger)", fontSize: 14, fontWeight: 500, fontFamily: FONT,
+                  display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
+                }}
+              >
+                <LogOut size={16} strokeWidth={1.75} /> Sign out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Mobile bottom tab bar (mobile-only, hidden on desktop via CSS) ── */}
+        {user && !activeNb && (
+          <nav className="mobile-tab-bar mobile-only" aria-label="Primary">
+            {[
+              { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+              { id: "my-notes",  label: "Notes",     Icon: FileText },
+              { id: "shared",    label: "Shared",    Icon: Users },
+              { id: "starred",   label: "Starred",   Icon: Star },
+            ].map(({ id, label, Icon }) => {
+              const active = activeView === id;
+              return (
+                <button
+                  key={id}
+                  className={`mobile-tab ${active ? "active" : ""}`}
+                  onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={label}
+                >
+                  <Icon size={22} strokeWidth={active ? 2 : 1.75} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
+        {/* ── Mobile FAB: New Class (dashboard only) ── */}
+        {user && !activeNb && activeView === "dashboard" && (
+          <button
+            className="mobile-fab mobile-only"
+            onClick={() => setShowNewClassModal(true)}
+            aria-label="New class"
+            title="New class"
+          >
+            <Plus size={26} strokeWidth={2} />
+          </button>
+        )}
       </div>
     </>
   );

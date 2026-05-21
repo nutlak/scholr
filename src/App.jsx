@@ -3095,22 +3095,21 @@ function ActivityHeatmap({ data }) {
   }
   const activeDays = data.filter(d => (d.count ?? 0) > 0).length;
 
-  // Week days (Mon–Sun of current week)
+  // Week days (Sun–Sat of current week). getDay() returns 0 for Sunday.
   const weekStart = new Date(todayDate);
-  const dow = todayDate.getDay(); // 0=Sun
-  weekStart.setDate(todayDate.getDate() - (dow === 0 ? 6 : dow - 1));
+  weekStart.setDate(todayDate.getDate() - todayDate.getDay());
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d;
   });
-  const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+  const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
-  // Build calendar grid for a month (Monday-start)
+  // Build calendar grid for a month (Sunday-start). first.getDay() gives
+  // 0…6 where 0 is Sunday — exactly the offset we need for empty leading cells.
   function buildMonthGrid(monthDt) {
     const y = monthDt.getFullYear(), m = monthDt.getMonth();
     const first = new Date(y, m, 1);
     const daysInMonth = new Date(y, m + 1, 0).getDate();
-    let offset = first.getDay() - 1; // Mon=0 … Sun=6
-    if (offset < 0) offset = 6;
+    const offset = first.getDay(); // Sun=0 … Sat=6
     const cells = Array(offset).fill(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(y, m, d));
     while (cells.length % 7) cells.push(null);

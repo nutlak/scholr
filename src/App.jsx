@@ -4132,7 +4132,11 @@ export default function Scholr() {
             display: "flex", alignItems: "center", gap: 8,
             marginBottom: 22, paddingLeft: 8,
           }}>
-            <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+            <img
+              src={theme === "light" ? "/scholr-logo-white.png" : "/scholr-logo-final.png"}
+              alt="scholr"
+              style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+            />
             <div style={{
               fontSize: 19, fontWeight: 700,
               color: "var(--text-primary)", letterSpacing: "-0.03em",

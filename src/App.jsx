@@ -148,33 +148,15 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
       className="lift-card"
       style={{
         position: "relative",
-        background: hovered
-          ? `var(--s2, #1C1C2A)`
-          : `var(--s1, #14141F)`,
-        border: `1px solid ${hovered ? "var(--border-h, rgba(255,255,255,0.14))" : "var(--border, rgba(255,255,255,0.07))"}`,
-        borderRadius: 14,
-        padding: "18px 18px 16px",
+        background: hovered ? `var(--s2)` : `var(--s1)`,
+        border: `1px solid ${hovered ? "var(--acc)" : "var(--border)"}`,
+        borderRadius: 8,
+        padding: "16px 16px 14px",
         cursor: "pointer",
-        boxShadow: hovered
-          ? `0 14px 32px rgba(0,0,0,0.4), 0 0 0 1px ${t.hue}22`
-          : "0 2px 8px rgba(0,0,0,0.25)",
         overflow: "hidden",
+        transition: "background 0.18s ease, border-color 0.18s ease",
       }}
     >
-      {/* Color tab + glow */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 3,
-        background: `linear-gradient(90deg, ${t.hue} 0%, ${t.deep} 100%)`,
-        opacity: hovered ? 1 : 0.6,
-        transition: "opacity 0.2s ease",
-      }} />
-      <div style={{
-        position: "absolute", top: -40, right: -40, width: 140, height: 140,
-        background: `radial-gradient(circle, ${t.hue}18 0%, transparent 70%)`,
-        opacity: hovered ? 1 : 0.45,
-        transition: "opacity 0.25s",
-        pointerEvents: "none",
-      }} />
 
       {onToggleStar && (
         <button
@@ -2316,8 +2298,8 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "0 14px", height: 48,
-        background: hovered ? "var(--s2)" : "transparent",
-        borderBottom: "1px solid var(--s2)",
+        background: hovered ? "var(--s1)" : "transparent",
+        borderBottom: "1px solid var(--border)",
         cursor: "pointer", transition: "background 0.15s",
         position: "relative",
       }}
@@ -2467,62 +2449,45 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
   }
 
   return (
-    <div style={{
-      position: "relative",
-      background: expanded
-        ? "var(--s2, #1C1C2A)"
-        : hovered ? "var(--s2, #1C1C2A)" : "var(--s1, #14141F)",
-      border: `1px solid ${expanded || hovered ? "var(--border-h, rgba(255,255,255,0.12))" : "var(--border, rgba(255,255,255,0.07))"}`,
-      borderRadius: 12,
-      overflow: "hidden",
-      transition: "all 0.18s ease",
-      boxShadow: expanded
-        ? `0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px ${t.hue}18`
-        : "0 1px 3px rgba(0,0,0,0.2)",
-    }}>
-      {/* Left accent bar */}
-      <div style={{
-        position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
-        background: expanded || hovered
-          ? `linear-gradient(180deg, ${t.hue} 0%, ${t.deep} 100%)`
-          : "var(--border)",
-        transition: "background 0.2s",
-      }} />
-
+    <div style={{ position: "relative" }}>
+      {/* Row header */}
       <div
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          padding: "0 14px 0 16px", height: 52, cursor: "pointer",
           display: "flex", alignItems: "center", gap: 12,
+          padding: "14px 6px",
+          background: hovered ? "var(--s1)" : "transparent",
+          borderBottom: "1px solid var(--border)",
+          cursor: "pointer",
+          transition: "background 0.15s",
+          borderRadius: hovered ? 6 : 0,
         }}
       >
+        {/* Color dot */}
         <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: `linear-gradient(135deg, ${t.hue}22, ${t.deep}11)`,
-          border: `1px solid ${t.hue}30`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 14, color: t.hue, fontWeight: 700, fontFamily: FONT,
-          flexShrink: 0, letterSpacing: "-0.02em",
-        }}>
-          {(cls.title?.[0] ?? "?").toUpperCase()}
-        </div>
+          width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+          background: t.hue,
+        }} />
 
+        {/* Class name */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.015em" }}>
+          <div style={{
+            fontSize: 14.5, fontWeight: 500, color: "var(--t1)",
+            fontFamily: FONT, letterSpacing: "-0.01em",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
             {cls.title}
           </div>
         </div>
 
-        <div style={{
-          fontSize: 11, color: "var(--t3, rgba(245,245,250,0.45))", fontFamily: FONT,
-          flexShrink: 0, padding: "3px 9px", background: "var(--border, rgba(255,255,255,0.04))",
-          borderRadius: 999, fontWeight: 500,
-        }}>
-          {units === null ? "…" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
+        {/* Unit count */}
+        <div style={{ fontSize: 12, color: "var(--t3)", fontFamily: FONT, flexShrink: 0 }}>
+          {units === null ? "" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
         </div>
 
+        {/* Color picker swatch */}
         {onChangeColor && (
           <div style={{ flexShrink: 0 }}>
             <button
@@ -2530,100 +2495,77 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               onClick={openPicker}
               title="Change color"
               style={{
-                width: 22, height: 22, borderRadius: 7, padding: 0,
+                width: 16, height: 16, borderRadius: 4, padding: 0,
                 border: "1.5px solid var(--border-h)",
                 background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
                 cursor: "pointer",
-                opacity: hovered || pickerOpen ? 1 : 0.6,
-                transition: "opacity 0.18s, transform 0.15s, box-shadow 0.18s",
-                boxShadow: pickerOpen
-                  ? `0 0 0 3px ${t.hue}33, 0 4px 12px ${t.hue}55`
-                  : `0 1px 4px ${t.hue}40`,
+                opacity: hovered || pickerOpen ? 1 : 0,
+                transition: "opacity 0.18s, transform 0.15s",
               }}
-              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.transform = "scale(1.1)"; }}
+              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.transform = "scale(1.15)"; }}
               onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.transform = "scale(1)"; }}
             />
             {pickerOpen && (
               <>
-                <div
-                  onClick={e => { e.stopPropagation(); setPickerOpen(false); }}
-                  style={{ position: "fixed", inset: 0, zIndex: 50 }}
-                />
+                <div onClick={e => { e.stopPropagation(); setPickerOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 50 }} />
                 <div
                   onClick={e => e.stopPropagation()}
                   style={{
-                    position: "fixed",
-                    top: pickerPos.top,
-                    right: pickerPos.right,
-                    background: "rgba(20,20,31,0.96)",
+                    position: "fixed", top: pickerPos.top, right: pickerPos.right,
+                    background: "var(--s1)",
                     backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
                     border: "1px solid var(--border-h)",
-                    borderRadius: 12, padding: 12,
-                    zIndex: 60,
-                    maxHeight: 300,
-                    overflowY: "auto",
-                    overflowX: "hidden",
-                    boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
+                    borderRadius: 12, padding: 12, zIndex: 60,
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
                     animation: "fadeIn 0.15s ease",
                   }}
                 >
-                  <div style={{
-                    fontSize: 10, fontWeight: 600, color: "var(--t3)",
-                    letterSpacing: "0.5px", textTransform: "uppercase",
-                    marginBottom: 10, padding: "0 2px",
-                  }}>Class Color</div>
-                  <ColorSwatchPicker
-                    value={cls.color}
-                    onChange={hue => { onChangeColor(hue); setPickerOpen(false); }}
-                  />
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 10, padding: "0 2px" }}>
+                    Class Color
+                  </div>
+                  <ColorSwatchPicker value={cls.color} onChange={hue => { onChangeColor(hue); setPickerOpen(false); }} />
                 </div>
               </>
             )}
           </div>
         )}
 
+        {/* Delete */}
         {onDeleteClass && (
           <button
             onClick={e => { e.stopPropagation(); onDeleteClass(); }}
             title="Delete class"
             style={{
               background: "none", border: "none", cursor: "pointer",
-              padding: "4px 6px", fontSize: 13, lineHeight: 1,
-              color: "var(--t4)",
+              padding: "4px 6px", fontSize: 13, lineHeight: 1, color: "var(--t4)",
               opacity: hovered ? 1 : 0,
-              transition: "opacity 0.18s, color 0.18s", flexShrink: 0,
-              borderRadius: 6,
+              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 6,
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "#F87171"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--t4)"; e.currentTarget.style.background = "transparent"; }}
           >✕</button>
         )}
 
+        {/* Chevron */}
         <div style={{
-          fontSize: 11, color: expanded ? t.hue : "var(--t3)",
+          fontSize: 10, color: expanded ? t.hue : "var(--t3)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
         }}>▶</div>
       </div>
 
+      {/* Expanded units */}
       {expanded && (
-        <div style={{
-          borderTop: "1px solid var(--border)",
-          animation: "fadeIn 0.2s ease",
-        }}>
+        <div style={{ animation: "fadeIn 0.2s ease", paddingLeft: 22, borderBottom: "1px solid var(--border)" }}>
           {units === null ? (
-            <div style={{ padding: "16px 18px", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ padding: "12px 0", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
               <div className="forge-spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
               Loading units…
             </div>
           ) : units.length === 0 ? (
-            <div style={{
-              padding: "20px 18px",
-              fontSize: 12.5, color: "var(--t3)", fontFamily: FONT,
-              textAlign: "center",
-            }}>
-              <div style={{ marginBottom: 6 }}>No units yet</div>
-              <div style={{ fontSize: 11.5, color: "var(--t4)" }}>Create your first unit below to start studying</div>
+            <div style={{ padding: "16px 0", fontSize: 12.5, color: "var(--t3)", fontFamily: FONT }}>
+              <div>No units yet</div>
+              <div style={{ fontSize: 11.5, color: "var(--t4)", marginTop: 2 }}>Create your first unit below to start studying</div>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -2638,19 +2580,19 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               ))}
             </div>
           )}
-          <div style={{ padding: "10px 14px", borderTop: "1px solid var(--s2)" }}>
+          <div style={{ padding: "10px 0" }}>
             <button
               onClick={onNewUnit}
               className="btn-press"
               style={{
-                width: "100%", background: "transparent",
-                border: `1px dashed ${t.hue}30`, borderRadius: 10,
-                padding: "10px", color: t.hue, fontSize: 12.5, fontWeight: 600,
+                background: "transparent",
+                border: `1px dashed ${t.hue}55`,
+                borderRadius: 8, padding: "7px 14px",
+                color: t.hue, fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
-                letterSpacing: "-0.005em",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}30`; e.currentTarget.style.background = "transparent"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}55`; e.currentTarget.style.background = "transparent"; }}
             >+ New Unit</button>
           </div>
         </div>
@@ -2676,10 +2618,11 @@ function SortableClassCard({ cls, dragDisabled, ...rest }) {
     position: "relative",
     transform: CSS.Transform.toString(scaled),
     transition,
-    opacity: isDragging ? 0.9 : 1,
+    opacity: isDragging ? 0.85 : 1,
     zIndex: isDragging ? 10 : "auto",
-    boxShadow: isDragging ? "0 14px 32px rgba(0,0,0,0.45)" : "none",
-    borderRadius: 12,
+    boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
+    borderRadius: isDragging ? 6 : 0,
+    background: isDragging ? "var(--s1)" : "transparent",
   };
 
   return (
@@ -3204,15 +3147,14 @@ function ActivityHeatmap({ data }) {
   };
 
   return (
-    <div style={{
-      background: "var(--s1, #14141F)",
-      border: "1px solid var(--border, rgba(255,255,255,0.07))",
-      borderRadius: 14, padding: "18px 20px", marginBottom: 32,
-    }}>
+    <div style={{ marginBottom: 32 }}>
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1, #F5F5FA)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
-          🔥 Study Streak
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, color: "var(--t3)", fontFamily: FONT,
+          letterSpacing: "0.08em", textTransform: "uppercase",
+        }}>
+          Study Streak
         </div>
         <div style={{ display: "flex", gap: 3 }}>
           {["week", "month", "year"].map(mode => (
@@ -3363,6 +3305,46 @@ function ActivityHeatmap({ data }) {
   );
 }
 
+function DeadlineRow({ nb, cls, onOpen }) {
+  const [hov, setHov] = useState(false);
+  const t = classTint(cls?.color ?? nb.color);
+  const tone = dueDateTone(nb.due_date);
+  return (
+    <div
+      onClick={() => onOpen(nb, cls?.color)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "11px 6px",
+        background: hov ? "var(--s1)" : "transparent",
+        borderBottom: "1px solid var(--border)",
+        borderRadius: hov ? 6 : 0,
+        cursor: "pointer", transition: "background 0.15s",
+      }}
+    >
+      <div style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: t.hue }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 13.5, fontWeight: 500, color: "var(--t1)", fontFamily: FONT,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          letterSpacing: "-0.01em",
+        }}>
+          {nb.title}
+          {cls?.title ? <span style={{ fontWeight: 400, color: "var(--t3)" }}> · {cls.title}</span> : null}
+        </div>
+      </div>
+      <div style={{
+        fontSize: 11, fontWeight: 600, color: tone.color, fontFamily: FONT,
+        background: `${tone.color}1A`, border: `1px solid ${tone.color}55`,
+        padding: "1px 7px", borderRadius: 999, flexShrink: 0,
+      }}>
+        Due {formatDueDate(nb.due_date)}
+      </div>
+    </div>
+  );
+}
+
 function UpcomingDeadlines({ notebooks, classes, onOpen }) {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const in7 = new Date(now); in7.setDate(in7.getDate() + 7);
@@ -3391,47 +3373,15 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
         )}
       </div>
       {upcoming.length === 0 ? (
-        <div style={{
-          padding: "14px 16px",
-          background: "var(--s1)", border: "1px dashed var(--border, rgba(255,255,255,0.06))",
-          borderRadius: 10, color: "var(--t3, rgba(245,245,250,0.45))", fontSize: 12.5, fontFamily: FONT,
-        }}>
-          No deadlines in the next 7 days. Set a due date on a unit to see it here.
+        <div style={{ padding: "8px 0 12px", color: "var(--t4)", fontSize: 12.5, fontFamily: FONT }}>
+          No deadlines in the next 7 days.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           {upcoming.map(nb => {
             const cls = classes.find(c => c.id === nb.class_id);
-            const t = classTint(cls?.color ?? nb.color);
-            const tone = dueDateTone(nb.due_date);
             return (
-              <div
-                key={nb.id}
-                onClick={() => onOpen(nb, cls?.color)}
-                className="lift-card"
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "10px 14px",
-                  background: "var(--s1, #14141F)",
-                  border: "1px solid var(--border, rgba(255,255,255,0.06))",
-                  borderRadius: 10, cursor: "pointer",
-                }}
-              >
-                <div style={{
-                  width: 6, height: 32, borderRadius: 3,
-                  background: `linear-gradient(180deg, ${t.hue}, ${t.deep})`,
-                  flexShrink: 0,
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 13.5, fontWeight: 600, color: "var(--t1, #F5F5FA)", fontFamily: FONT,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>{nb.title}{cls?.title ? <span style={{ fontWeight: 400, color: "var(--t3)" }}> · {cls.title}</span> : null}</div>
-                  <div style={{ fontSize: 11.5, color: tone.color, fontFamily: FONT, marginTop: 2, fontWeight: 600 }}>
-                    Due {formatDueDate(nb.due_date)}
-                  </div>
-                </div>
-              </div>
+              <DeadlineRow key={nb.id} nb={nb} cls={cls} onOpen={onOpen} />
             );
           })}
         </div>
@@ -4735,6 +4685,12 @@ export default function Scholr() {
                   // Drag-to-reorder is enabled only when not searching, since the
                   // SortableContext items would otherwise be a filtered subset and
                   // a persisted order would be incomplete.
+                  <>
+                    <div style={{
+                      fontSize: 11, fontWeight: 600, color: "var(--t3)",
+                      fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
+                      marginBottom: 6,
+                    }}>Classes</div>
                   <DndContext
                     sensors={dndSensors}
                     collisionDetection={closestCenter}
@@ -4744,7 +4700,7 @@ export default function Scholr() {
                       items={filteredClasses.map(c => c.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 40 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 40 }}>
                         {filteredClasses.map(cls => (
                           <SortableClassCard
                             key={cls.id}
@@ -4763,6 +4719,7 @@ export default function Scholr() {
                       </div>
                     </SortableContext>
                   </DndContext>
+                  </>
                 )
 
               ) : filtered.length === 0 ? (
@@ -4856,52 +4813,33 @@ export default function Scholr() {
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <div style={{
-                      padding: "20px 16px", display: "flex", alignItems: "center", gap: 12,
-                      background: "var(--s1)", border: "1px dashed var(--border)",
-                      borderRadius: 12,
-                    }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 8,
-                        background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--acc) 16%, transparent)",
-                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                      }}>✨</div>
-                      <div>
-                        <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, fontWeight: 500, letterSpacing: "-0.005em" }}>
-                          You're all caught up!
-                        </div>
-                        <div style={{ fontSize: 12, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>
-                          New activity from your study groups will appear here.
-                        </div>
-                      </div>
+                    <div style={{ padding: "8px 0 12px", color: "var(--t4)", fontSize: 12.5, fontFamily: FONT }}>
+                      You're all caught up. New activity from study groups will appear here.
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
                       {notifications.map(n => (
-                        <div key={n.id} className="lift-card" style={{
+                        <div key={n.id} style={{
                           display: "flex", alignItems: "center", gap: 14,
-                          background: "var(--s1)", border: "1px solid var(--border)",
-                          borderRadius: 10, padding: "12px 14px",
+                          padding: "11px 6px",
+                          borderBottom: "1px solid var(--border)",
                         }}>
                           <div style={{
-                            width: 8, height: 8, borderRadius: "50%",
-                            background: "var(--acc)",
-                            boxShadow: "0 0 8px rgba(167,139,250,0.5)",
-                            flexShrink: 0,
+                            width: 6, height: 6, borderRadius: "50%",
+                            background: "var(--acc)", flexShrink: 0,
                           }} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: "var(--t1)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em" }}>
+                            <div style={{ fontSize: 13, color: "var(--t1)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {n.activities?.description ?? n.activities?.action}
                             </div>
                             {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT, marginTop: 2 }}>
+                              <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT, marginTop: 1 }}>
                                 in {n.activities.notebooks.title}
                               </div>
                             )}
                           </div>
                           <div style={{
                             fontSize: 11, color: "var(--t3)", fontFamily: FONT, flexShrink: 0,
-                            padding: "2px 8px", background: "var(--s2)", borderRadius: 6,
                           }}>
                             {timeAgo(n.created_at)}
                           </div>

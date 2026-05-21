@@ -4318,73 +4318,33 @@ export default function Scholr() {
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</div>
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
                 </div>
-                <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 10 }} />
-                {/* Accent Color */}
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <Palette size={12} strokeWidth={1.75} /> Accent Color
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {ACCENT_PRESETS.map(p => (
-                      <button
-                        key={p.color}
-                        onClick={() => setAccentColor(p.color)}
-                        title={p.name}
-                        style={{
-                          width: 22, height: 22, borderRadius: 6, padding: 0, cursor: "pointer",
-                          background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
-                          border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
-                          outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
-                          outlineOffset: "1px",
-                          transition: "transform 0.12s",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.18)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                {/* Theme toggle */}
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Theme</div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {[
-                      { value: "dark", label: "Dark", Icon: Moon },
-                      { value: "light", label: "Light", Icon: Sun },
-                    ].map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setTheme(opt.value)}
-                        style={{
-                          flex: 1, padding: "6px 8px", borderRadius: 7, cursor: "pointer",
-                          fontFamily: FONT, fontSize: 12, fontWeight: 500,
-                          background: theme === opt.value ? "var(--acc-bg)" : "transparent",
-                          border: theme === opt.value
-                            ? "1px solid var(--accent)"
-                            : "1px solid var(--border-default)",
-                          color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
-                          transition: "all 0.15s",
-                          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-                        }}
-                        onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-                        onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-                      >
-                        <opt.Icon size={13} strokeWidth={1.75} /> {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 8 }} />
+                <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 6 }} />
+                {/* Settings link */}
+                <button
+                  onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
+                  style={{
+                    width: "100%", background: "transparent", border: "none",
+                    borderRadius: 7, padding: "8px 8px", color: "var(--text-primary)",
+                    fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+                    fontFamily: FONT, textAlign: "left",
+                    display: "flex", alignItems: "center", gap: 8,
+                    transition: "background 0.15s",
+                    marginBottom: 2,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-surface-2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <Settings size={13} strokeWidth={1.75} /> Settings
+                </button>
                 {/* Sign out */}
                 <button
                   onClick={() => { setProfileOpen(false); handleLogout(); }}
                   style={{
                     width: "100%", background: "transparent", border: "none",
-                    borderRadius: 7, padding: "6px 8px", color: "var(--danger)",
+                    borderRadius: 7, padding: "8px 8px", color: "var(--danger)",
                     fontSize: 12.5, fontWeight: 500, cursor: "pointer",
                     fontFamily: FONT, textAlign: "left",
-                    display: "flex", alignItems: "center", gap: 7,
+                    display: "flex", alignItems: "center", gap: 8,
                     transition: "background 0.15s",
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
@@ -4571,6 +4531,91 @@ export default function Scholr() {
                       Upgrade to Pro
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* ── Appearance ────────────────────────────────────────────── */}
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+                Appearance
+              </div>
+
+              {/* Theme row */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 16, flexWrap: "wrap",
+                padding: "14px 0",
+                borderBottom: "1px solid var(--border-subtle)",
+              }}>
+                <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
+                    Theme
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
+                    {theme === "light" ? "Light mode" : "Dark mode"}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  {[
+                    { value: "dark", label: "Dark", Icon: Moon },
+                    { value: "light", label: "Light", Icon: Sun },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTheme(opt.value)}
+                      style={{
+                        minHeight: 44, padding: "0 14px", borderRadius: 10, cursor: "pointer",
+                        fontFamily: FONT, fontSize: 13, fontWeight: 500,
+                        background: theme === opt.value ? "var(--accent-soft)" : "transparent",
+                        border: `1px solid ${theme === opt.value ? "var(--accent)" : "var(--border-default)"}`,
+                        color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
+                      }}
+                      onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
+                      onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
+                    >
+                      <opt.Icon size={15} strokeWidth={1.75} /> {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accent color row */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: 16, flexWrap: "wrap",
+                padding: "14px 0",
+                borderBottom: "1px solid var(--border-subtle)",
+                marginBottom: 32,
+              }}>
+                <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
+                    Accent color
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
+                    {ACCENT_PRESETS.find(p => p.color === accentColor)?.name ?? "Custom"}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flexShrink: 0 }}>
+                  {ACCENT_PRESETS.map(p => (
+                    <button
+                      key={p.color}
+                      onClick={() => setAccentColor(p.color)}
+                      title={p.name}
+                      aria-label={`${p.name} accent`}
+                      style={{
+                        width: 32, height: 32, minWidth: 32, borderRadius: 8, padding: 0, cursor: "pointer",
+                        background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
+                        border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
+                        outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
+                        outlineOffset: "1px",
+                        transition: "transform 120ms ease",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -4899,53 +4944,6 @@ export default function Scholr() {
                 </div>
               </div>
               <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 14 }} />
-              {/* Theme toggle */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Theme</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[
-                    { value: "dark", label: "Dark", Icon: Moon },
-                    { value: "light", label: "Light", Icon: Sun },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTheme(opt.value)}
-                      style={{
-                        flex: 1, padding: "0 12px", height: 48, borderRadius: 10, cursor: "pointer",
-                        fontFamily: FONT, fontSize: 14, fontWeight: 500,
-                        background: theme === opt.value ? "var(--accent-soft)" : "transparent",
-                        border: `1px solid ${theme === opt.value ? "var(--accent)" : "var(--border-default)"}`,
-                        color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
-                        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      }}
-                    >
-                      <opt.Icon size={16} strokeWidth={1.75} /> {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* Accent Color */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <Palette size={13} strokeWidth={1.75} /> Accent
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {ACCENT_PRESETS.map(p => (
-                    <button
-                      key={p.color}
-                      onClick={() => setAccentColor(p.color)}
-                      title={p.name}
-                      style={{
-                        width: 32, height: 32, borderRadius: 8, padding: 0, cursor: "pointer",
-                        background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
-                        border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
-                        outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
-                        outlineOffset: "1px", flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
               {/* Settings link */}
               <button
                 onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}

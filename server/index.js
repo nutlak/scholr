@@ -7,6 +7,7 @@ import cors from "cors";
 import multer from "multer";
 import { randomBytes } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail } from "./email.js";
@@ -1477,6 +1478,287 @@ async function logUserActivity(userId) {
     console.error("logUserActivity error:", err.message);
   }
 }
+
+// ── Podcast Mode — AI two-host audio overviews (Pro-gated) ────────────────
+// Two-stage pipeline:
+//   1) Claude writes a two-host dialogue script from the notebook's notes.
+//   2) OpenAI tts-1 voices each line; segments are concatenated as MP3 bytes
+//      and uploaded to the 'scholr' storage bucket. No ffmpeg dependency —
+//      tts-1 returns MPEG audio that concatenates acceptably for playback.
+//
+// The generate endpoint responds with the row id IMMEDIATELY and runs the
+// pipeline in the background; the client polls GET /api/podcasts/:id for status.
+
+const PODCAST_LENGTH_TARGETS = {
+  quick:    { words: 600,  label: "~3 min" },
+  standard: { words: 1500, label: "~8 min" },
+  deep:     { words: 3000, label: "~15 min" },
+};
+const PODCAST_FORMATS = ["casual", "examcram", "eli5", "debate"];
+const PODCAST_VOICES = { alex: "onyx", sam: "nova" }; // OpenAI tts-1 voices
+const PODCAST_TTS_MODEL = "tts-1";
+const PODCAST_TTS_CHAR_CAP = 4000; // OpenAI per-request cap; we chunk if needed
+
+function formatGuidance(format) {
+  switch (format) {
+    case "examcram":
+      return "Format: exam cram. Focus relentlessly on testable facts, definitions, and likely exam questions. Keep exchanges punchy. Alex and Sam should quiz each other.";
+    case "eli5":
+      return "Format: ELI5. Use simple language, everyday analogies, and short sentences. Assume the listener is brand new to the subject. Avoid jargon — when a technical term appears, define it immediately in plain English.";
+    case "debate":
+      return "Format: friendly debate. Alex takes one perspective or framing; Sam pushes back with a contrasting angle. They challenge each other's reasoning, concede good points, and reach a more nuanced understanding by the end. Stay accurate to the notes — don't invent disagreements that aren't grounded in the material.";
+    case "casual":
+    default:
+      return "Format: casual chat. Alex and Sam are two friends having a relaxed, curious conversation. Natural reactions ('oh wait', 'huh, that's interesting'), occasional light humor, comfortable pace.";
+  }
+}
+
+async function generatePodcastScript({ claudeKey, model, nbTitle, nbTopic, notesContext, lengthPreset, formatPreset, focusTopic }) {
+  const target = PODCAST_LENGTH_TARGETS[lengthPreset] ?? PODCAST_LENGTH_TARGETS.standard;
+  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const focusLine = focusTopic
+    ? `\n\nFOCUS: The episode must center on this specific topic: "${focusTopic}". Touch other material only as it supports this focus.`
+    : "";
+  const systemPrompt = `You are a podcast scriptwriter. Write a two-host audio dialogue based on the study notes below. The hosts are Alex (host A) and Sam (host B) — two thoughtful, curious co-hosts.
+
+Hard requirements:
+- Natural conversational back-and-forth, NOT a lecture. They explain ideas to each other, ask questions, give examples, and react.
+- Lines alternate roughly evenly between the two hosts; neither monologues for too long.
+- Stay GROUNDED in the provided notes. Don't fabricate facts that aren't in the source material. If notes are thin on a point, the hosts can acknowledge that.
+- Target length: about ${target.words} words total across all lines.
+- Open with a brief hook (one or two lines), close with a brief sign-off.
+${formatGuidance(formatPreset)}${focusLine}
+
+OUTPUT FORMAT — RETURN STRICT JSON ONLY, no markdown, no commentary:
+{
+  "title": "<a short, punchy episode title, max ~60 chars>",
+  "lines": [
+    {"speaker": "alex", "text": "..."},
+    {"speaker": "sam", "text": "..."}
+  ]
+}
+
+NOTEBOOK: "${nbTitle}" (topic: "${nbTopic ?? "general"}")
+
+NOTES:
+${notesContext || "(no notes uploaded yet — keep the episode short and let the hosts acknowledge there isn't much source material)"}
+`;
+  const msg = await anthropic.messages.create({
+    model,
+    max_tokens: 8000,
+    system: systemPrompt,
+    messages: [{ role: "user", content: "Write the script now. Output ONLY the JSON object." }],
+  });
+  const raw = msg.content.find(b => b.type === "text")?.text ?? "";
+  // Tolerate fenced code blocks even though we asked for raw JSON.
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    throw new Error(`Script JSON parse failed: ${e.message}`);
+  }
+  if (!parsed || !Array.isArray(parsed.lines) || parsed.lines.length === 0) {
+    throw new Error("Script JSON missing required fields");
+  }
+  const lines = parsed.lines
+    .map(l => ({
+      speaker: l.speaker === "sam" ? "sam" : "alex",
+      text: typeof l.text === "string" ? l.text.trim() : "",
+    }))
+    .filter(l => l.text);
+  const title = (typeof parsed.title === "string" && parsed.title.trim())
+    ? parsed.title.trim().slice(0, 120)
+    : `${nbTitle} — Episode`;
+  return { title, lines };
+}
+
+async function ttsLineToBuffer(openai, text, voice) {
+  // OpenAI tts-1 char-cap protection: split on sentence/phrase boundaries
+  // and concat the resulting MP3 buffers. The boundary split keeps audio
+  // intelligible (no cuts mid-word).
+  if (text.length <= PODCAST_TTS_CHAR_CAP) {
+    const r = await openai.audio.speech.create({
+      model: PODCAST_TTS_MODEL,
+      voice,
+      input: text,
+      response_format: "mp3",
+    });
+    return Buffer.from(await r.arrayBuffer());
+  }
+  const parts = [];
+  let buf = "";
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if ((buf + " " + sentence).trim().length > PODCAST_TTS_CHAR_CAP) {
+      if (buf) parts.push(buf.trim());
+      buf = sentence;
+    } else {
+      buf = (buf ? buf + " " : "") + sentence;
+    }
+  }
+  if (buf.trim()) parts.push(buf.trim());
+  const segs = [];
+  for (const p of parts) {
+    const r = await openai.audio.speech.create({
+      model: PODCAST_TTS_MODEL, voice, input: p, response_format: "mp3",
+    });
+    segs.push(Buffer.from(await r.arrayBuffer()));
+  }
+  return Buffer.concat(segs);
+}
+
+// Runs the full Claude→TTS→Supabase pipeline. Updates the podcasts row with
+// status='ready' (with audio_url + transcript) or status='failed' (with msg).
+// Caller MUST have inserted a row with status='generating' first.
+async function runPodcastPipeline(podcastId, { notebookId, userId, lengthPreset, formatPreset, focusTopic }) {
+  const claudeKey = process.env.CLAUDE_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  try {
+    if (!claudeKey) throw new Error("Claude key not configured");
+    if (!openaiKey) throw new Error("OpenAI key not configured");
+
+    // Gather notebook context exactly like Derek does.
+    const { data: notes } = await supabase
+      .from("notes")
+      .select("title, content, created_at")
+      .eq("notebook_id", notebookId)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    const { data: nb } = await supabase
+      .from("notebooks")
+      .select("title, topic")
+      .eq("id", notebookId)
+      .single();
+    const notesContext = (notes ?? [])
+      .map(n => `Note: ${n.title || "Untitled"}\n${n.content || "[file attachment — no extracted text]"}`)
+      .join("\n\n---\n\n");
+
+    const tier = await getUserTier(userId);
+    const model = getModel(tier);
+
+    // Stage 1: script
+    const { title, lines } = await generatePodcastScript({
+      claudeKey, model,
+      nbTitle: nb?.title ?? "Notebook",
+      nbTopic: nb?.topic,
+      notesContext,
+      lengthPreset, formatPreset, focusTopic,
+    });
+
+    // Persist script + final title immediately so the UI can show transcript
+    // even if the audio half fails.
+    await supabase.from("podcasts").update({
+      title, transcript: lines,
+    }).eq("id", podcastId);
+
+    // Stage 2: TTS — sequential to keep memory + rate-limits sane.
+    const openai = new OpenAI({ apiKey: openaiKey });
+    const segments = [];
+    for (const line of lines) {
+      const voice = PODCAST_VOICES[line.speaker] ?? PODCAST_VOICES.alex;
+      const buf = await ttsLineToBuffer(openai, line.text, voice);
+      segments.push(buf);
+    }
+    const audioBuffer = Buffer.concat(segments);
+
+    // Stage 3: upload
+    const path = `podcasts/${podcastId}.mp3`;
+    const { error: upErr } = await supabase.storage
+      .from("scholr")
+      .upload(path, audioBuffer, { contentType: "audio/mpeg", upsert: true });
+    if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
+    const { data: urlData } = supabase.storage.from("scholr").getPublicUrl(path);
+
+    // Duration estimate: 150 wpm is a reasonable mid-range TTS pace.
+    const wordCount = lines.reduce((s, l) => s + l.text.split(/\s+/).length, 0);
+    const duration_seconds = Math.max(1, Math.round((wordCount / 150) * 60));
+
+    await supabase.from("podcasts").update({
+      status: "ready",
+      audio_url: urlData.publicUrl,
+      duration_seconds,
+    }).eq("id", podcastId);
+  } catch (err) {
+    console.error(`[podcast ${podcastId}] pipeline error:`, err);
+    await supabase.from("podcasts").update({
+      status: "failed",
+      error_message: (err.message || "Generation failed").slice(0, 500),
+    }).eq("id", podcastId);
+  }
+}
+
+// POST /api/notebooks/:id/podcast/generate — Pro-only.
+// Responds with { podcastId } immediately; client polls GET /api/podcasts/:id.
+app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, async (req, res) => {
+  const tier = await getUserTier(req.user.id);
+  if (tier !== "pro") {
+    return res.status(403).json({ error: "pro_required", message: "Podcast Mode is a Pro feature." });
+  }
+  const lengthPreset = PODCAST_LENGTH_TARGETS[req.body?.lengthPreset] ? req.body.lengthPreset : "standard";
+  const formatPreset = PODCAST_FORMATS.includes(req.body?.formatPreset) ? req.body.formatPreset : "casual";
+  const focusRaw = typeof req.body?.focusTopic === "string" ? req.body.focusTopic.trim() : "";
+  const focusTopic = focusRaw ? focusRaw.slice(0, 200) : null;
+
+  // Insert generating row up-front so client immediately has an id to poll.
+  const { data: row, error } = await supabase
+    .from("podcasts")
+    .insert({
+      notebook_id: req.params.id,
+      created_by: req.user.id,
+      title: "Generating episode…",
+      length_preset: lengthPreset,
+      format_preset: formatPreset,
+      focus_topic: focusTopic,
+      status: "generating",
+    })
+    .select("id")
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Fire-and-forget the pipeline. Not awaited — we must not hold the
+  // response while TTS runs (minutes). The pipeline updates the row itself.
+  setImmediate(() => {
+    runPodcastPipeline(row.id, {
+      notebookId: req.params.id,
+      userId: req.user.id,
+      lengthPreset, formatPreset, focusTopic,
+    }).catch(err => console.error("podcast pipeline crashed:", err));
+  });
+
+  res.json({ podcastId: row.id });
+});
+
+// GET /api/notebooks/:id/podcasts — list episodes for this notebook (members only).
+app.get("/api/notebooks/:id/podcasts", requireAuth, requireMember, async (req, res) => {
+  const { data, error } = await supabase
+    .from("podcasts")
+    .select("id, title, audio_url, duration_seconds, status, length_preset, format_preset, focus_topic, created_at, created_by")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
+// GET /api/podcasts/:podcastId — single episode (for polling status + reading transcript).
+// Membership-checked via the notebook FK.
+app.get("/api/podcasts/:podcastId", requireAuth, async (req, res) => {
+  const { data: pod, error } = await supabase
+    .from("podcasts")
+    .select("id, notebook_id, title, audio_url, duration_seconds, status, length_preset, format_preset, focus_topic, transcript, error_message, created_at, created_by")
+    .eq("id", req.params.podcastId)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  if (!pod) return res.status(404).json({ error: "Podcast not found" });
+  // Must be a member of the notebook.
+  const { data: member } = await supabase
+    .from("notebook_members")
+    .select("user_id")
+    .eq("notebook_id", pod.notebook_id)
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (!member) return res.status(403).json({ error: "Not a member of this notebook" });
+  res.json(pod);
+});
 
 // ── Daily visit tracking ──────────────────────────────────────────────────
 // POST /api/user/track-visit — marks today as "active" for the user if not already.

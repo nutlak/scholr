@@ -590,4 +590,40 @@ export const api = {
     const { url } = await res.json();
     window.location.href = url;
   },
+
+  // ── Podcast Mode ─────────────────────────────────────────────────────
+  // Kicks off generation. Server responds immediately with { podcastId };
+  // poll getPodcast(id) every few seconds until status flips to ready/failed.
+  async generatePodcast(notebookId, opts) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/podcast/generate`, {
+      method: "POST", headers,
+      body: JSON.stringify({
+        lengthPreset: opts?.lengthPreset ?? "standard",
+        formatPreset: opts?.formatPreset ?? "casual",
+        focusTopic: opts?.focusTopic ?? null,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error(data.message ?? data.error ?? "Failed to start podcast");
+      err.code = data.error;
+      throw err;
+    }
+    return res.json(); // { podcastId }
+  },
+
+  async getPodcasts(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/podcasts`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async getPodcast(podcastId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/podcasts/${podcastId}`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };

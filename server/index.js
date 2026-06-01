@@ -2063,6 +2063,134 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, a
   }
 });
 
+// ── Feynman Mode ──────────────────────────────────────────────────────────────
+// Compose a clean, secret-free error string from an AI SDK error (status/code/
+// message only — never the API key). Mirrors how the podcast route surfaces
+// failures so the client gets something actionable without leaking anything.
+function aiErrorDetail(err, provider = "Claude") {
+  const parts = [provider];
+  if (err?.status) parts.push(String(err.status));
+  const code = err?.error?.error?.type || err?.error?.type || err?.code;
+  if (code) parts.push(`(${code})`);
+  const msg = err?.error?.error?.message || err?.message || "request failed";
+  return `${parts.join(" ")}: ${msg}`.slice(0, 280);
+}
+
+// Coerce the model's JSON into a strict, safe shape so the UI never renders junk.
+function validateFeynmanResult(p) {
+  const clampScore = (n) => {
+    const x = Math.round(Number(n));
+    return Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : 0;
+  };
+  const strArr = (v) => Array.isArray(v)
+    ? v.filter(x => typeof x === "string" && x.trim()).map(x => x.trim().slice(0, 180)).slice(0, 5)
+    : [];
+  const str = (v, fb = "") => (typeof v === "string" && v.trim()) ? v.trim().slice(0, 400) : fb;
+  return {
+    score: clampScore(p?.score),
+    verdict: str(p?.verdict, "Graded."),
+    nailed: strArr(p?.nailed),
+    gaps: strArr(p?.gaps),
+    misconceptions: strArr(p?.misconceptions),
+    followup: str(p?.followup, ""),
+  };
+}
+
+// POST /api/feynman — grade a plain-language explanation via the Feynman
+// technique. Tier-gated for model quality (Haiku free / Sonnet pro) and metered
+// against the shared monthly message allowance, exactly like Derek chat.
+app.post("/api/feynman", requireAuth, async (req, res) => {
+  const claudeKey = process.env.CLAUDE_API_KEY;
+  if (!claudeKey) {
+    return res.status(500).json({ error: "CLAUDE_API_KEY is not set in the server environment." });
+  }
+
+  const concept = typeof req.body?.concept === "string" ? req.body.concept.trim() : "";
+  const explanation = typeof req.body?.explanation === "string" ? req.body.explanation.trim() : "";
+  if (concept.length < 2) {
+    return res.status(400).json({ error: "concept_required", message: "Tell us which concept you're explaining." });
+  }
+  if (explanation.length < 20) {
+    return res.status(400).json({ error: "explanation_too_short", message: "Add a little more detail before grading." });
+  }
+
+  // Meter against the monthly message allowance (free: 30/mo; pro: unlimited).
+  const usage = await checkUsageLimit(req.user.id, "message");
+  if (!usage.allowed) {
+    return res.status(403).json({
+      error: "message_limit",
+      message: "You've reached your monthly AI limit. Upgrade to Pro for unlimited.",
+    });
+  }
+
+  const tier = await getUserTier(req.user.id);
+  const model = getModel(tier);
+
+  const system = `You are an expert tutor grading a student's understanding using the Feynman technique. The student explained a concept in their own words. Evaluate ONLY what they actually wrote — reward genuine understanding; penalize vagueness, jargon-dumping, and circular definitions. Respond with ONLY a valid JSON object — no markdown, no backticks, no preamble.`;
+
+  const prompt = `CONCEPT: "${concept.slice(0, 200)}"
+
+STUDENT'S EXPLANATION:
+"""
+${explanation.slice(0, 6000)}
+"""
+
+Return ONLY this JSON shape:
+{
+  "score": <integer 0-100, how well they demonstrate true understanding>,
+  "verdict": "<one punchy sentence summarizing their grasp>",
+  "nailed": ["<short point they explained well>"],
+  "gaps": ["<important thing they missed or were too vague on>"],
+  "misconceptions": ["<anything factually wrong; empty array if none>"],
+  "followup": "<one specific question that would deepen or test their understanding>"
+}
+Keep each array item under 18 words. Use 2-4 items per array where applicable (misconceptions may be empty).`;
+
+  const anthropic = new Anthropic({ apiKey: claudeKey });
+  try {
+    const message = await anthropic.messages.create({
+      model,
+      max_tokens: 1024,
+      system,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = (message.content ?? [])
+      .filter(b => b.type === "text")
+      .map(b => b.text)
+      .join("\n")
+      .replace(/```json|```/g, "")
+      .trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // Tolerate stray prose around the JSON object.
+      const s = text.indexOf("{"), e = text.lastIndexOf("}");
+      if (s >= 0 && e > s) parsed = JSON.parse(text.slice(s, e + 1));
+      else throw new Error("Model did not return valid JSON");
+    }
+
+    const result = validateFeynmanResult(parsed);
+
+    // Record usage fire-and-forget (don't block the response).
+    incrementUsage(req.user.id, "message").catch(err => console.error("feynman usage increment error:", err));
+
+    res.json(result);
+  } catch (err) {
+    if (err?.status === 401) {
+      return res.status(502).json({ error: "grade_failed", message: "Claude rejected the request — check the server key." });
+    }
+    console.error("[feynman] grade error:", err);
+    res.status(502).json({
+      error: "grade_failed",
+      message: "Couldn't grade that explanation. Please try again.",
+      detail: aiErrorDetail(err, "Claude"),
+    });
+  }
+});
+
 // ── OTP helpers ──────────────────────────────────────────────────────────────
 
 function generateOtp() {

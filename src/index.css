@@ -297,3 +297,49 @@ input, textarea, select { font-family: var(--font); }
   .mobile-only { display: none !important; }
   .mobile-menu-btn { display: none !important; }
 }
+
+/* ── Accessible nav tooltips ──────────────────────────────────────────
+   Used by header action buttons (Notes / Forge / Podcast / Feynman /
+   Upload / Invite). aria-label carries the name for screen readers on
+   every breakpoint; the visual tooltip is desktop-only (hover is a
+   pointer affordance) and never affects layout. */
+.has-tip { position: relative; }
+@media (min-width: 769px) {
+  .has-tip[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-3px);
+    padding: 5px 9px;
+    background: var(--bg-surface-2);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    box-shadow: var(--sh-card);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 60;
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+  .has-tip[data-tooltip]:hover::after,
+  .has-tip[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Feynman Mode field focus ring ───────────────────────────────────── */
+.fm-field {
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.fm-field:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-bg);
+}
+.fm-field::placeholder { color: var(--t3); }

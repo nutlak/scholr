@@ -626,4 +626,21 @@ export const api = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+
+  // Feynman Mode — grade a plain-language explanation of a concept.
+  // Returns { score, verdict, nailed[], gaps[], misconceptions[], followup }.
+  async feynman({ concept, explanation }) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/feynman`, {
+      method: "POST", headers,
+      body: JSON.stringify({ concept, explanation }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error(data.message ?? data.error ?? "Failed to grade your explanation.");
+      err.code = data.error;
+      throw err;
+    }
+    return res.json();
+  },
 };

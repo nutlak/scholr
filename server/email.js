@@ -86,7 +86,6 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
 </body>
 </html>`,
     });
-    console.log("Resend response:", JSON.stringify(result));
     if (result.error) throw new Error(`Resend error: ${result.error.message}`);
   } catch (err) {
     console.error("Resend error:", err);

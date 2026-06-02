@@ -27,6 +27,7 @@ import {
   Upload, Save, Pencil, Check, X, Menu, Notebook, Zap, Rocket, Smile, RefreshCw,
   Coffee, Folder, File, ArrowUp, Headphones, Play, Pause, Download, Share2,
   Brain, XCircle, ArrowRight, RotateCcw,
+  Maximize2, Minimize2,
 } from "lucide-react";
 import "./App.css";
 
@@ -363,6 +364,78 @@ const FORGE_ACTIONS = [
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
+// ── Scholr 2.0 study-tool registry ────────────────────────────────────────────
+// One source of truth for the notebook study tools. The header bar maps over
+// this to render its buttons, and ToolModal looks up title/subtitle/icon by id.
+// Adding a future tool (e.g. standalone flashcards) is a single entry here.
+const NB_TOOLS = [
+  { id: "notes",   text: "Notes",   label: "Unit notes",   title: "Unit Notes",    Icon: FileText,   subtitle: "Shared notes for everyone in this notebook" },
+  { id: "forge",   text: "Forge",   label: "The Forge",    title: "The Forge",     Icon: Hammer,     subtitle: "Generate study guides, quizzes & flashcards from your notes" },
+  { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, subtitle: "A two-host AI audio overview of your notes" },
+  { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      subtitle: "Explain a concept in your words — Claude grades your understanding" },
+];
+const NB_TOOL_META = Object.fromEntries(NB_TOOLS.map(x => [x.id, x]));
+
+// ── ToolModal — Scholr 2.0 universal study-tool shell ─────────────────────────
+// EVERY study tool (Notes, Forge, Podcast, Feynman, future flashcards) renders
+// inside this one spacious, dismissible shell so they all feel identical.
+// Desktop: a centered modal with an Expand toggle. Mobile / split-screen: a
+// full-screen sheet with safe-area padding (pure CSS, correct at any width).
+// Dismiss with ✕, click-outside, or Esc; background scroll locks while open.
+function ToolModal({ open, onClose, title, subtitle, Icon, children }) {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="tool-modal-backdrop" onMouseDown={onClose}>
+      <div
+        className={`tool-modal-card${wide ? " is-wide" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <header className="tool-modal-header">
+          <div className="tool-modal-titlewrap">
+            {Icon && <span className="tool-modal-icon"><Icon size={16} strokeWidth={2} /></span>}
+            <div style={{ minWidth: 0 }}>
+              <div className="tool-modal-title">{title}</div>
+              {subtitle && <div className="tool-modal-subtitle">{subtitle}</div>}
+            </div>
+          </div>
+          <div className="tool-modal-controls">
+            <button
+              type="button"
+              className="tool-modal-iconbtn tool-modal-expand has-tip"
+              onClick={() => setWide((w) => !w)}
+              aria-label={wide ? "Collapse panel" : "Expand panel"}
+              data-tooltip={wide ? "Collapse" : "Expand"}
+            >{wide ? <Minimize2 size={16} strokeWidth={1.9} /> : <Maximize2 size={16} strokeWidth={1.9} />}</button>
+            <button
+              type="button"
+              className="tool-modal-iconbtn has-tip"
+              onClick={onClose}
+              aria-label="Close"
+              data-tooltip="Close (Esc)"
+            ><X size={17} strokeWidth={1.9} /></button>
+          </div>
+        </header>
+        <div className="tool-modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 // ── FeynmanPanel ──────────────────────────────────────────────────────────────
 // Active-recall tool: the user explains a concept in plain words and Claude
 // grades genuine understanding. Mirrors TheForge/PodcastPanel layout so it
@@ -435,7 +508,7 @@ function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
   );
 }
 
-function FeynmanPanel({ nb, onClose, onToast, onUpgradeNeeded }) {
+function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
   const [concept, setConcept] = useState(nb?.topic || nb?.title || "");
   const [explanation, setExplanation] = useState("");
   const [loading, setLoading] = useState(false);
@@ -469,39 +542,11 @@ function FeynmanPanel({ nb, onClose, onToast, onUpgradeNeeded }) {
   function reset() { setResult(null); setError(""); setExplanation(""); }
 
   return (
-    <div className="forge-panel" style={{
-      width: 380, padding: "18px 20px 24px", marginLeft: 10,
-      background: "var(--bg-surface-1)", borderLeft: "1px solid var(--border-subtle)",
-      display: "flex", flexDirection: "column", animation: "fadeIn 0.18s ease", overflowY: "auto",
-    }}>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingBottom: 14, marginBottom: 14, borderBottom: "1px solid var(--border-subtle)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-          }}><Brain size={13} strokeWidth={2} /></div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>Feynman Mode</span>
-        </div>
-        <button onClick={onClose} className="btn-press" aria-label="Close" style={{
-          background: "transparent", border: "1px solid var(--border-subtle)",
-          borderRadius: 8, cursor: "pointer", color: "var(--text-secondary)",
-          width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-        }}><X size={14} strokeWidth={1.75} /></button>
-      </div>
-
-      <p style={{ fontSize: 12.5, color: "var(--text-tertiary)", marginTop: -4, marginBottom: 16, lineHeight: 1.5 }}>
-        Explain it like you teach it. Claude finds the cracks in your understanding.
-      </p>
-
+    <div className="tool-content feynman-content">
       {/* Input card */}
       <div style={{
         background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
-        borderRadius: 14, padding: 16,
+        borderRadius: 14, padding: 18,
       }}>
         <label style={fmLabel}>Concept</label>
         <input
@@ -827,7 +872,7 @@ function PodcastPlayer({ podcast, onShare }) {
   );
 }
 
-function PodcastPanel({ nb, onClose, onToast, onUpgradeNeeded }) {
+function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
   const [tier, setTier] = useState("free");
   const [tierLoaded, setTierLoaded] = useState(false);
   const [lengthPreset, setLengthPreset] = useState("standard");
@@ -908,39 +953,7 @@ function PodcastPanel({ nb, onClose, onToast, onUpgradeNeeded }) {
   const isLocked = tierLoaded && tier !== "pro";
 
   return (
-    <div className="forge-panel" style={{
-      width: 380, padding: "18px 20px 20px", marginLeft: 10,
-      background: "var(--bg-surface-1)",
-      borderLeft: "1px solid var(--border-subtle)",
-      display: "flex", flexDirection: "column",
-      animation: "fadeIn 0.18s ease",
-      overflowY: "auto",
-    }}>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingBottom: 14, marginBottom: 14,
-        borderBottom: "1px solid var(--border-subtle)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff",
-          }}><Headphones size={13} strokeWidth={2} /></div>
-          <span style={{
-            fontSize: 14, fontWeight: 600, color: "var(--text-primary)",
-            fontFamily: FONT, letterSpacing: "-0.01em",
-          }}>Podcast</span>
-        </div>
-        <button onClick={onClose} className="btn-press" style={{
-          background: "transparent", border: "1px solid var(--border-subtle)",
-          borderRadius: 8, cursor: "pointer", color: "var(--text-secondary)",
-          width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-        }}><X size={14} strokeWidth={1.75} /></button>
-      </div>
-
+    <div className="tool-content">
       {/* Upgrade gate for free users */}
       {isLocked && (
         <div style={{
@@ -1163,7 +1176,7 @@ function PodcastPanel({ nb, onClose, onToast, onUpgradeNeeded }) {
   );
 }
 
-function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
+function TheForge({ nb, onToast, onUpgradeNeeded }) {
   const [action, setAction]         = useState(null);
   const [topic, setTopic]           = useState("");
   const [content, setContent]       = useState("");
@@ -1291,66 +1304,34 @@ function TheForge({ nb, onClose, onToast, onUpgradeNeeded }) {
   const activeColor = action ? FORGE_BY_ID[action]?.color ?? "var(--acc)" : "var(--acc)";
 
   return (
-    <div className="forge-panel" style={{
-      width: "44%", display: "flex", flexDirection: "column",
-      borderLeft: "1px solid var(--border)",
-      background: "linear-gradient(180deg, rgba(20,20,31,0.4) 0%, rgba(11,11,18,0.1) 100%)",
-      paddingLeft: 18, marginLeft: 14,
-      height: "100%", minHeight: 0, flexShrink: 0,
-    }}>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        paddingBottom: 14, marginBottom: 14,
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", boxShadow: "0 2px 8px var(--acc-bg-h)",
-          }}><Hammer size={13} strokeWidth={2} /></div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>The Forge</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button
-            onClick={() => setShowSaved(v => !v)}
-            className="btn-press"
-            style={{
-              background: showSaved ? "var(--acc-bg)" : "transparent",
-              border: `1px solid ${showSaved ? "color-mix(in srgb, var(--acc) 35%, transparent)" : "var(--border)"}`,
-              borderRadius: 8, padding: "0 10px", height: 28, cursor: "pointer",
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
-              color: showSaved ? "var(--acc-h)" : "var(--t2)",
-              fontFamily: FONT,
-              display: "flex", alignItems: "center", gap: 5,
-            }}
-            onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}}
-            onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
-          >
-            SAVED
-            {savedOutputs.length > 0 && (
-              <span style={{
-                background: showSaved ? "color-mix(in srgb, var(--acc) 25%, transparent)" : "var(--t4)",
-                color: showSaved ? "var(--acc-h)" : "var(--t2)",
-                borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0",
-              }}>{savedOutputs.length}</span>
-            )}
-          </button>
-          <button onClick={onClose} className="btn-press" style={{
-            background: "transparent", border: "1px solid var(--border)",
-            borderRadius: 8, cursor: "pointer",
-            color: "var(--t2)",
-            width: 28, height: 28,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s",
+    <div className="tool-content">
+      {/* Saved-library toggle (relocated from the old panel header) */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+        <button
+          onClick={() => setShowSaved(v => !v)}
+          className="btn-press"
+          style={{
+            background: showSaved ? "var(--acc-bg)" : "transparent",
+            border: `1px solid ${showSaved ? "color-mix(in srgb, var(--acc) 35%, transparent)" : "var(--border)"}`,
+            borderRadius: 9, padding: "0 12px", height: 32, cursor: "pointer",
+            fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
+            color: showSaved ? "var(--acc-h)" : "var(--t2)",
+            fontFamily: FONT,
+            display: "flex", alignItems: "center", gap: 5,
           }}
-            onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-          ><X size={14} strokeWidth={1.75} /></button>
-        </div>
+          onMouseEnter={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}}
+          onMouseLeave={e => { if (!showSaved) { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}}
+        >
+          SAVED
+          {savedOutputs.length > 0 && (
+            <span style={{
+              background: showSaved ? "color-mix(in srgb, var(--acc) 25%, transparent)" : "var(--t4)",
+              color: showSaved ? "var(--acc-h)" : "var(--t2)",
+              borderRadius: 999, padding: "1px 6px", fontSize: 10, fontWeight: 700,
+              letterSpacing: "0",
+            }}>{savedOutputs.length}</span>
+          )}
+        </button>
       </div>
 
       {/* Saved outputs panel */}
@@ -1699,12 +1680,10 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [members, setMembers]       = useState([]);
-  const [showForge, setShowForge]   = useState(false);
-  const [showNotes, setShowNotes]   = useState(false);
-  const [showPodcast, setShowPodcast] = useState(false);
-  const [showFeynman, setShowFeynman] = useState(false);
-  const [mobilePanelView, setMobilePanelView] = useState('chat'); // 'chat' | 'forge' | 'notes' | 'podcast' | 'feynman'
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  // Scholr 2.0 — one source of truth for which study tool is open (it renders
+  // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
+  // tangle; responsive behavior is now handled purely in CSS.
+  const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman'
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [explainLevel, setExplainLevel] = useState(null); // { messageId } showing submenu
@@ -2037,81 +2016,31 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             </span>
           )}
 
-          <button
-            onClick={() => { if (isMobile) { setMobilePanelView('notes'); setShowNotes(true); } else setShowNotes(v => !v); }}
-            aria-label="Unit notes"
-            data-tooltip="Unit notes"
-            className="btn-press has-tip"
-            style={{
-              background: showNotes ? `linear-gradient(135deg, ${t.hue}28 0%, ${t.hue}10 100%)` : "transparent",
-              border: `1px solid ${showNotes ? `${t.hue}55` : "var(--border-strong)"}`,
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showNotes ? t.hue : "var(--text-secondary)",
-              display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em", flexShrink: 0,
-              boxShadow: showNotes ? `0 0 0 1px ${t.hue}22, 0 4px 14px ${t.hue}22` : "none",
-            }}
-            onMouseEnter={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-            onMouseLeave={e => { if (!showNotes) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-          ><FileText size={14} strokeWidth={1.75} /> <span className="nb-action-text">Notes</span></button>
+          <span className="nb-actions-divider nb-desktop-only" />
 
-          <button
-            onClick={() => { if (isMobile) { setMobilePanelView('forge'); setShowForge(true); } else setShowForge(f => !f); }}
-            aria-label="The Forge"
-            data-tooltip="The Forge"
-            className="btn-press has-tip"
-            style={{
-              background: showForge ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
-              border: `1px solid ${showForge ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showForge ? "var(--acc-h)" : "var(--text-secondary)",
-              display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em", flexShrink: 0,
-              boxShadow: showForge ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
-            }}
-            onMouseEnter={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-            onMouseLeave={e => { if (!showForge) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-          ><Hammer size={14} strokeWidth={1.75} /> <span className="nb-action-text">Forge</span></button>
+          {/* Primary study tools — all open in the shared spacious ToolModal */}
+          {NB_TOOLS.map(({ id, text, label, Icon }) => {
+            const active = activeTool === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveTool(active ? null : id)}
+                aria-label={label}
+                data-tooltip={label}
+                className="btn-press has-tip nb-tool-btn"
+                style={{
+                  background: active ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 18%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
+                  border: `1px solid ${active ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
+                  color: active ? "var(--acc-h)" : "var(--text-secondary)",
+                  boxShadow: active ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--border-strong)"; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-strong)"; } }}
+              ><Icon size={15} strokeWidth={1.85} /> <span className="nb-action-text">{text}</span></button>
+            );
+          })}
 
-          <button
-            onClick={() => { if (isMobile) { setMobilePanelView('podcast'); setShowPodcast(true); } else setShowPodcast(p => !p); }}
-            aria-label="Podcast Mode"
-            data-tooltip="Podcast Mode"
-            className="btn-press has-tip"
-            style={{
-              background: showPodcast ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
-              border: `1px solid ${showPodcast ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showPodcast ? "var(--acc-h)" : "var(--text-secondary)",
-              display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em", flexShrink: 0,
-              boxShadow: showPodcast ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
-            }}
-            onMouseEnter={e => { if (!showPodcast) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-            onMouseLeave={e => { if (!showPodcast) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-          ><Headphones size={14} strokeWidth={1.75} /> <span className="nb-action-text">Podcast</span></button>
-
-          <button
-            onClick={() => { if (isMobile) { setMobilePanelView('feynman'); setShowFeynman(true); } else setShowFeynman(p => !p); }}
-            aria-label="Feynman Mode"
-            data-tooltip="Feynman Mode"
-            className="btn-press has-tip"
-            style={{
-              background: showFeynman ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
-              border: `1px solid ${showFeynman ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 600,
-              color: showFeynman ? "var(--acc-h)" : "var(--text-secondary)",
-              display: "flex", alignItems: "center", gap: 6,
-              letterSpacing: "-0.01em", flexShrink: 0,
-              boxShadow: showFeynman ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
-            }}
-            onMouseEnter={e => { if (!showFeynman) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-            onMouseLeave={e => { if (!showFeynman) { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-          ><Brain size={14} strokeWidth={1.75} /> <span className="nb-action-text">Feynman</span></button>
+          <span className="nb-actions-divider nb-desktop-only" />
 
           <button
             onClick={() => setShowUpload(true)}
@@ -2401,142 +2330,31 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
             </button>
           </div>
 
-          {/* Unit notes panel (collapsible, sits under the chat input — desktop only) */}
-          {showNotes && !isMobile && (
-            <UnitNotes
-              notebookId={nb.id}
-              currentUserId={currentUserId}
-              tint={t}
-              onClose={() => setShowNotes(false)}
-            />
-          )}
         </div>
-
-        {/* Forge panel — desktop only; mobile uses full-screen overlay below */}
-        {showForge && !isMobile && (
-          <TheForge nb={nb} onClose={() => setShowForge(false)} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-        )}
-        {/* Podcast panel — desktop only; mobile uses full-screen overlay below */}
-        {showPodcast && !isMobile && (
-          <PodcastPanel nb={nb} onClose={() => setShowPodcast(false)} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-        )}
-        {/* Feynman panel — desktop only; mobile uses full-screen overlay below */}
-        {showFeynman && !isMobile && (
-          <FeynmanPanel nb={nb} onClose={() => setShowFeynman(false)} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-        )}
       </div>
 
-      {/* Mobile full-screen Forge overlay */}
-      {isMobile && mobilePanelView === 'forge' && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 5,
-          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
-          animation: "fadeIn 0.2s ease",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", padding: "10px 16px", flexShrink: 0,
-            borderBottom: "1px solid var(--border-default)",
-          }}>
-            <button
-              onClick={() => { setMobilePanelView('chat'); setShowForge(false); }}
-              style={{
-                background: "transparent", border: "1px solid var(--border-strong)",
-                borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--text-secondary)", cursor: "pointer",
-                fontFamily: FONT, fontSize: 13,
-              }}
-            >← Chat</button>
-          </div>
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <TheForge nb={nb} onClose={() => { setMobilePanelView('chat'); setShowForge(false); }} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile full-screen Podcast overlay */}
-      {isMobile && mobilePanelView === 'podcast' && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 5,
-          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
-          animation: "fadeIn 0.2s ease",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", padding: "10px 16px", flexShrink: 0,
-            borderBottom: "1px solid var(--border-default)",
-          }}>
-            <button
-              onClick={() => { setMobilePanelView('chat'); setShowPodcast(false); }}
-              style={{
-                background: "transparent", border: "1px solid var(--border-strong)",
-                borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--text-secondary)", cursor: "pointer",
-                fontFamily: FONT, fontSize: 13,
-              }}
-            >← Chat</button>
-          </div>
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <PodcastPanel nb={nb} onClose={() => { setMobilePanelView('chat'); setShowPodcast(false); }} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile full-screen Feynman overlay */}
-      {isMobile && mobilePanelView === 'feynman' && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 5,
-          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
-          animation: "fadeIn 0.2s ease",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", padding: "10px 16px", flexShrink: 0,
-            borderBottom: "1px solid var(--border-default)",
-          }}>
-            <button
-              onClick={() => { setMobilePanelView('chat'); setShowFeynman(false); }}
-              style={{
-                background: "transparent", border: "1px solid var(--border-strong)",
-                borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--text-secondary)", cursor: "pointer",
-                fontFamily: FONT, fontSize: 13,
-              }}
-            >← Chat</button>
-          </div>
-          <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <FeynmanPanel nb={nb} onClose={() => { setMobilePanelView('chat'); setShowFeynman(false); }} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-          </div>
-        </div>
-      )}
-
-      {/* Mobile full-screen Notes overlay */}
-      {isMobile && mobilePanelView === 'notes' && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 5,
-          background: "var(--bg, #0B0B12)", display: "flex", flexDirection: "column",
-          animation: "fadeIn 0.2s ease",
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", padding: "10px 16px 12px", flexShrink: 0,
-            borderBottom: "1px solid var(--border-default)",
-          }}>
-            <button
-              onClick={() => { setMobilePanelView('chat'); setShowNotes(false); }}
-              style={{
-                background: "transparent", border: "1px solid var(--border-strong)",
-                borderRadius: 10, padding: "0 14px", height: 36,
-                color: "var(--text-secondary)", cursor: "pointer",
-                fontFamily: FONT, fontSize: 13,
-              }}
-            >← Chat</button>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-            <UnitNotes
-              notebookId={nb.id}
-              currentUserId={currentUserId}
-              tint={t}
-              onClose={() => { setMobilePanelView('chat'); setShowNotes(false); }}
-            />
-          </div>
-        </div>
+      {/* Scholr 2.0 — every study tool opens in one spacious, dismissible shell */}
+      {activeTool && (
+        <ToolModal
+          open
+          onClose={() => setActiveTool(null)}
+          title={NB_TOOL_META[activeTool].title}
+          subtitle={NB_TOOL_META[activeTool].subtitle}
+          Icon={NB_TOOL_META[activeTool].Icon}
+        >
+          {activeTool === "notes" && (
+            <UnitNotes notebookId={nb.id} currentUserId={currentUserId} tint={t} />
+          )}
+          {activeTool === "forge" && (
+            <TheForge nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          )}
+          {activeTool === "podcast" && (
+            <PodcastPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          )}
+          {activeTool === "feynman" && (
+            <FeynmanPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          )}
+        </ToolModal>
       )}
     </div>
   );
@@ -2833,7 +2651,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
   );
 }
 
-function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
+function UnitNotes({ notebookId, currentUserId, tint }) {
   const [notes, setNotes]     = useState([]);
   const [draft, setDraft]     = useState("");
   const [posting, setPosting] = useState(false);
@@ -2870,57 +2688,15 @@ function UnitNotes({ notebookId, currentUserId, tint, onClose }) {
   }
 
   return (
-    <div className="notes-section" style={{
-      marginTop: 14,
-      maxHeight: 320,
-      display: "flex", flexDirection: "column", minHeight: 0,
-      background: "linear-gradient(180deg, #14141F 0%, #181824 100%)",
-      border: "1px solid var(--border)",
-      borderRadius: 14,
-      padding: "12px 14px 14px",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-      animation: "fadeIn 0.2s ease",
-    }}>
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 10,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", boxShadow: `0 2px 8px ${tint.hue}50`,
-          }}><FileText size={13} strokeWidth={2} /></div>
-          <div style={{
-            fontSize: 13.5, fontWeight: 600, color: "var(--t1)",
-            fontFamily: FONT, letterSpacing: "0.3px",
-          }}>
-            Unit Notes {notes.length > 0 && (
-              <span style={{
-                fontSize: 11, fontWeight: 600, color: tint.hue,
-                background: `${tint.hue}18`, border: `1px solid ${tint.hue}30`,
-                padding: "1px 7px", borderRadius: 999, marginLeft: 6,
-              }}>{notes.length}</span>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          title="Hide notes"
-          style={{
-            background: "transparent", border: "1px solid var(--border)",
-            borderRadius: 8, width: 26, height: 26, cursor: "pointer",
-            color: "var(--t2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--t1)"; e.currentTarget.style.borderColor = "var(--border-h)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--t2)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-        ><X size={13} strokeWidth={1.75} /></button>
-      </div>
+    <div className="tool-content" style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+      {notes.length > 0 && (
+        <div style={{
+          fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
+          letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10,
+        }}>{notes.length} note{notes.length === 1 ? "" : "s"}</div>
+      )}
 
-      <form onSubmit={add} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+      <form onSubmit={add} style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <input
           value={draft}
           onChange={e => setDraft(e.target.value)}

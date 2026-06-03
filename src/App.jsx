@@ -4059,7 +4059,7 @@ function ActivityHeatmap({ data }) {
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
-            <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}
@@ -4380,7 +4380,7 @@ function UpgradeModal({ limitType, onClose }) {
           <div style={{ marginBottom: 10, color: "var(--acc)", display: "inline-flex" }}>
             <context.Icon size={36} strokeWidth={1.5} />
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.025em", marginBottom: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 6 }}>
             Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
           </div>
           <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>

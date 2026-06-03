@@ -534,7 +534,7 @@ export default function LandingPage({ onSignIn }) {
           {/* Headline — single line at widescreen */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 72px)",
-            fontWeight: 700, lineHeight: 1.05,
+            fontWeight: 600, lineHeight: 1.05,
             fontFamily: FONT, letterSpacing: "-0.035em",
             marginBottom: 22,
             maxWidth: "100%",
@@ -823,7 +823,7 @@ export default function LandingPage({ onSignIn }) {
           <div style={{ position: "relative" }}>
             <h2 style={{
               fontSize: "clamp(32px, 5vw, 48px)",
-              fontWeight: 700, lineHeight: 1.05,
+              fontWeight: 600, lineHeight: 1.05,
               fontFamily: FONT, color: "#F5F5FA",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>

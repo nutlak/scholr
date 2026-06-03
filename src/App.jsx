@@ -5362,7 +5362,9 @@ export default function Scholr() {
                 </div>
               </div>
 
-              {/* Delete account — temporarily disabled
+              {/* Delete account — self-service deletion (satisfies the deletion
+                  right + the Privacy Policy/ToS promise that users can delete
+                  their account from settings). Backed by DELETE /api/auth/delete-account. */}
               <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(248,113,113,0.75)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Danger zone
               </div>
@@ -5370,15 +5372,28 @@ export default function Scholr() {
                 background: "var(--bg-surface-1)",
                 border: "1px solid rgba(248,113,113,0.2)",
                 borderRadius: 14, padding: "18px 20px",
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
               }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, marginBottom: 3, letterSpacing: "-0.01em" }}>Delete my account</div>
-                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>This action cannot be undone.</div>
+                  <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>Permanently deletes your account, notebooks, notes, and data. This action cannot be undone.</div>
                 </div>
-                <button onClick={() => setShowDeleteAccount(true)}>Delete account</button>
+                <button
+                  onClick={() => setShowDeleteAccount(true)}
+                  className="btn-press"
+                  style={{
+                    flexShrink: 0,
+                    background: "transparent",
+                    border: "1px solid rgba(248,113,113,0.4)",
+                    color: "var(--danger)",
+                    borderRadius: 10, padding: "0 16px", height: 40,
+                    fontFamily: FONT, fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                    transition: "background 140ms ease, border-color 140ms ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.10)"; e.currentTarget.style.borderColor = "var(--danger)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.4)"; }}
+                >Delete account</button>
               </div>
-              */}
             </div>
 
           ) : (

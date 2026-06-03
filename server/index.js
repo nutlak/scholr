@@ -2457,6 +2457,15 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
           { onConflict: "user_id" },
         ).catch(() => {});
       }
+      // Append-only consent log — preserves a durable history of each acceptance
+      // (and the versions accepted) across future policy updates. Non-fatal if
+      // the table isn't present yet (migration 022 not run).
+      await supabase.from("terms_acceptances").insert({
+        user_id: created.user.id,
+        terms_version: TERMS_VERSION,
+        privacy_version: PRIVACY_VERSION,
+        accepted_at: acceptedAt,
+      });
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -2517,8 +2526,9 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
     await supabase.from("subscriptions").delete().eq("user_id", userId);
     console.log("[delete-account] deleted subscriptions");
 
-    // 1b. Delete profile / consent record
+    // 1b. Delete profile / consent records
     await supabase.from("profiles").delete().eq("user_id", userId);
+    await supabase.from("terms_acceptances").delete().eq("user_id", userId);
 
     // 2. Delete usage (FK to auth.users, no CASCADE)
     await supabase.from("usage").delete().eq("user_id", userId);

@@ -124,6 +124,8 @@ Effective date: June 2, 2026
 
 Last updated: June 2, 2026
 
+Policy version: 2026-06-02
+
 Scholr ("Scholr," "we," "us," or "our") operates the website at scholr.dev and
 related study tools (the "Service"). This Privacy Policy explains what
 information we collect, how we use it, who we share it with, and the choices you
@@ -163,6 +165,13 @@ enforce usage limits; and improve and develop the Service. We do not sell your
 personal information, and we do not use your User Content to train our own
 models.
 
+Legal bases for processing (where the GDPR or similar laws apply): we process
+your personal data to perform our contract with you and provide the Service you
+request; for our legitimate interests in operating, securing, and improving the
+Service and preventing abuse (balanced against your rights); to comply with our
+legal obligations (such as tax and record-keeping); and, where we rely on it, on
+the basis of your consent, which you may withdraw at any time.
+
 ## 4. AI processing of your content
 Scholr's study features (such as the AI chat assistant, content generation,
 audio "podcast" generation, and explanation grading) work by sending the
@@ -177,6 +186,13 @@ inaccurate — see our Terms of Service for the full AI disclaimer. Please do no
 upload information you are not comfortable transmitting to these third-party
 processors.
 
+Automated processing. Scholr's AI features (chat answers, generated study
+materials, audio overviews, and Feynman Mode "grades") are educational study
+aids — not authoritative evaluations or legally significant decisions. They do
+not determine your grades, academic standing, admissions, or eligibility, and we
+do not use them to make decisions that produce legal or similarly significant
+effects about you. Always verify AI output independently.
+
 ## 5. How we share information
 We share information only as described here: with service providers /
 subprocessors who help us run Scholr, including Supabase (database, file
@@ -187,23 +203,35 @@ other users, when you choose to share a notebook or invite collaborators, in
 which case content in the shared notebook is visible to the people you share it
 with; for legal and safety reasons, if required by law or to protect the rights,
 safety, or property of Scholr, our users, or others; and in business transfers,
-if Scholr is involved in a merger, acquisition, or sale of assets.
+if Scholr is involved in a merger, acquisition, or sale of assets. We may add,
+replace, or remove service providers that perform similar functions to those
+listed above; we keep this section reasonably current, and any new provider
+remains subject to this Policy. When you share a notebook or invite
+collaborators, the people you share with may view, download, copy, screenshot,
+or otherwise retain that content, and we cannot control or delete copies they
+keep outside the Service.
 
 ## 6. Data retention and deletion
-We keep your information for as long as your account is active or as needed to
-provide the Service. You can delete your account at any time from your account
-settings or by contacting us at support@scholr.dev. When you delete your
-account, we delete or de-identify your personal information and User Content
-within a reasonable period, except where we must retain certain records (for
-example, for legal, tax, or fraud-prevention reasons) or where information
-exists in routine backups, which are deleted on a rolling basis.
+We keep your account information and User Content for as long as your account is
+active. You can delete your account at any time from your account settings (under
+Settings) or by contacting us at support@scholr.dev. When you delete your
+account, we delete your personal information and User Content within
+approximately 30 days, except: (a) information in routine, encrypted backups,
+which is overwritten on a rolling basis (generally within 30–90 days); (b)
+billing and transaction records, which we and our payment processor retain as
+required by tax and accounting law (generally up to 7 years); and (c) limited
+records we must keep for legal, security, or fraud-prevention purposes, retained
+only as long as necessary for those purposes.
 
 ## 7. Cookies and similar technologies
-We currently use only cookies that are necessary to operate the Service, such as
-keeping you signed in. We do not currently use advertising or third-party
-analytics cookies. If this changes, we will update this Policy and provide any
-notice or controls required by law. You can control cookies through your browser
-settings, but disabling necessary cookies may break parts of the Service.
+We use only strictly necessary cookies and similar technologies (including
+browser local storage) to operate the Service — for example, to keep you signed
+in. We do not use advertising or third-party analytics cookies, and we do not
+use your personal information for targeted or cross-context behavioral
+advertising. If this changes, we will update this Policy and provide any notice
+or controls required by law. You can control cookies through your browser
+settings, but disabling strictly necessary storage may break parts of the
+Service.
 
 ## 8. Security
 We take reasonable measures to protect your information, including encryption in
@@ -219,6 +247,15 @@ port your personal information, or to object to or restrict certain processing.
 To exercise these rights, contact us at support@scholr.dev. We will respond as
 required by applicable law. You will not be discriminated against for exercising
 these rights.
+
+California residents. If you are a California resident, you have the right to
+know what personal information we collect and how we use and disclose it, to
+access and delete it, to correct inaccurate information, and to opt out of the
+"sale" or "sharing" of personal information. We do not sell your personal
+information and do not share it for cross-context behavioral advertising. To
+exercise these rights, email support@scholr.dev; we will verify your request as
+required by law, you may use an authorized agent, and we will not discriminate
+against you for exercising your rights.
 
 ## 10. International users
 Scholr is operated from the United States. If you access the Service from
@@ -241,11 +278,19 @@ Effective date: June 2, 2026
 
 Last updated: June 2, 2026
 
+Terms version: 2026-06-02
+
 These Terms of Service ("Terms") are a binding agreement between you and Scholr
 ("Scholr," "we," "us," or "our") governing your use of the website at scholr.dev
 and related study tools (the "Service"). By creating an account or using the
 Service, you agree to these Terms and to our Privacy Policy. If you do not agree,
 do not use the Service.
+
+Scholr is an independent educational technology platform and is not affiliated
+with, endorsed by, or sponsored by any school, university, school district,
+testing or admissions organization, or other educational institution unless
+expressly stated. When you create an account, we record your acceptance of these
+Terms and the Privacy Policy, including the versions accepted and the date.
 
 ## 1. Eligibility and minors
 You must be at least 13 years old to use Scholr. If you are between 13 and 18 (or
@@ -265,7 +310,11 @@ Scholr provides AI-assisted study tools, including features that generate text,
 audio, summaries, explanations, practice material, and feedback based on content
 you provide. The Service is provided for personal, educational use only. We may
 add, change, or remove features at any time. We may also set usage limits (for
-example, limits on AI requests per plan tier) and modify those limits.
+example, limits on AI requests per plan tier) and modify those limits. We may
+also suspend, discontinue, restrict, or modify the Service or any feature, in
+whole or in part, at any time, with or without notice, and we will not be liable
+to you for doing so; we will use reasonable efforts to give notice of material
+discontinuations where practical.
 
 ## 4. AI features and disclaimer
 Please read this section carefully. Scholr's features use artificial
@@ -275,7 +324,9 @@ professional advice of any kind (including academic, medical, legal, financial,
 or career advice); and is provided for educational support only. You are
 responsible for reviewing and verifying any information the Service generates
 before relying on it. Scholr is not responsible for academic outcomes, grades,
-test results, or any decisions you make based on AI output. AI features are a
+test results, admissions or eligibility decisions, or any decisions you make
+based on AI output, and we do not guarantee any particular grade, score, or
+academic or admissions result. AI features are a
 study aid, not a substitute for your own learning, judgment, or verification.
 
 ## 5. User Content
@@ -289,6 +340,14 @@ your User Content. You represent that you have the rights to upload and use it,
 and that doing so does not violate any law or third-party rights (including
 copyright). You must not upload content you do not have the right to use.
 
+AI-generated outputs. To the extent Scholr holds any rights in the outputs the
+Service generates specifically for you (such as answers, summaries, practice
+materials, or audio overviews), Scholr assigns those rights to you, subject to
+your compliance with these Terms. You are responsible for how you use AI outputs,
+which are provided subject to the disclaimer in Section 4. Because AI outputs are
+generated from patterns in data, comparable outputs may be produced for other
+users, and we make no claim of exclusivity in non-original outputs.
+
 ## 6. Acceptable use
 You agree not to: use the Service for any unlawful purpose or to upload unlawful
 content; upload or share content you do not have the right to upload, including
@@ -300,7 +359,11 @@ where such restriction is prohibited by law; resell, sublicense, or commercially
 exploit the Service without our permission; use the Service to harass, abuse, or
 harm others; or attempt to manipulate or abuse AI features to generate harmful,
 infringing, or prohibited content, or to circumvent usage limits. We may remove
-content or suspend or terminate access for violations.
+content or suspend or terminate access for violations. You also agree not to use
+the Service in violation of applicable export-control, sanctions, or trade laws;
+you represent that you are not located in, and will not use the Service on behalf
+of anyone in, a region subject to comprehensive sanctions, and that you are not
+on any government restricted-party or denied-party list.
 
 ## 7. Subscriptions, billing, and refunds
 Scholr offers a free tier and one or more paid subscription tiers ("Pro").
@@ -366,13 +429,20 @@ regard to its conflict-of-laws rules. You agree that the state and federal
 courts located in North Carolina will have exclusive jurisdiction over any
 disputes arising from these Terms or the Service.
 
-## 15. Changes to these Terms
+## 15. Force majeure
+We are not liable for any delay or failure to perform caused by events beyond our
+reasonable control, including acts of God, natural disasters, war, terrorism,
+civil unrest, labor disputes, government actions, power or network failures, and
+outages or failures of third-party hosting, infrastructure, payment, email, or AI
+providers on which the Service depends.
+
+## 16. Changes to these Terms
 We may update these Terms from time to time. If we make material changes, we
 will update the "Last updated" date and, where appropriate, notify you. Your
 continued use of the Service after changes take effect means you accept the
 updated Terms.
 
-## 16. Contact
+## 17. Contact
 Questions about these Terms? Email support@scholr.dev.`,
 
   copyright: `# Copyright / DMCA Policy
@@ -380,6 +450,8 @@ Questions about these Terms? Email support@scholr.dev.`,
 Effective date: June 2, 2026
 
 Last updated: June 2, 2026
+
+Policy version: 2026-06-02
 
 Scholr ("we," "us," or "our") respects the intellectual property rights of
 others and expects users of scholr.dev and our study tools (the "Service") to do
@@ -400,7 +472,11 @@ reasonably sufficient to let us locate it (for example, a description and URL);
 by the copyright owner, its agent, or the law; and (6) a statement, made under
 penalty of perjury, that the information in your notice is accurate and that you
 are the copyright owner or authorized to act on the owner's behalf. We may
-remove or disable access to content that is the subject of a valid notice.
+remove or disable access to content that is the subject of a valid notice. Upon
+receiving a notice, we may, in our discretion, review and investigate the claim,
+remove or disable access to the material, notify the user who posted it, and take
+other action we consider appropriate. Submitting a notice does not guarantee any
+particular outcome.
 
 ## Counter-notice
 If you believe your content was removed or disabled by mistake or
@@ -414,9 +490,33 @@ jurisdiction of the appropriate court and will accept service of process from
 the party who filed the original notice. We may restore the removed content as
 permitted by applicable law.
 
+Misrepresentations. Under 17 U.S.C. § 512(f), any person who knowingly
+materially misrepresents that material is infringing, or that material was
+removed or disabled by mistake or misidentification, may be liable for damages.
+Do not submit knowingly false notices or counter-notices.
+
+Records. We may preserve and retain copies of notices, counter-notices, the
+material at issue, and related investigation records for legal, compliance, and
+enforcement purposes, and may share them as required by law (for example, with
+the party who submitted the corresponding notice).
+
 ## Repeat infringers
-We will, in appropriate circumstances, suspend or terminate the accounts of
-users who are repeat infringers.
+We will, in appropriate circumstances and at our discretion, disable access to
+content and suspend or terminate the accounts of users who are repeat infringers
+— including users who are the subject of more than one valid or unrebutted
+infringement notice, or who repeatedly upload material they do not have the right
+to use. Termination may occur without prior notice.
+
+## Designated copyright agent
+Send copyright notices and counter-notices to our designated agent:
+
+Scholr — Copyright Agent
+Email: support@scholr.dev
+
+## Other intellectual property
+This policy addresses copyright claims under the DMCA. For other
+intellectual-property concerns (such as trademark) or other complaints about
+content, email support@scholr.dev.
 
 ## Contact
 For copyright matters, email support@scholr.dev.`,

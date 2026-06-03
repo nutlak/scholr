@@ -672,6 +672,14 @@ function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
             </div>
           </div>
 
+          {/* AI disclaimer on results — Feynman grades understanding, not academic fact */}
+          <div style={{
+            fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
+            textAlign: "center", lineHeight: 1.4, padding: "0 4px",
+          }}>
+            AI feedback — not a final grade. Review independently for accuracy.
+          </div>
+
           <FeynmanSection title="What you nailed" items={result.nailed} Icon={CheckCircle} color="var(--success)" delay={0.05} />
           <FeynmanSection title="Gaps to close" items={result.gaps} Icon={AlertTriangle} color="var(--warning)" delay={0.1} />
           <FeynmanSection title="Watch out — misconceptions" items={result.misconceptions} Icon={XCircle} color="var(--danger)" delay={0.15} />
@@ -2296,6 +2304,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               </div>
             )}
             <div ref={bottomRef} />
+          </div>
+
+          {/* AI disclaimer — Derek is a study aid, not an authoritative source */}
+          <div style={{
+            fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
+            marginBottom: 8, textAlign: "center", lineHeight: 1.4,
+          }}>
+            Derek is AI — responses may be inaccurate. Verify important information independently.
           </div>
 
           {/* Input row */}

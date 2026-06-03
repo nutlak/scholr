@@ -2522,6 +2522,57 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   try {
     console.log(`[delete-account] starting for user=${userId}`);
 
+    // 0. Delete owned notebooks + all their dependent content + Storage files.
+    //    Policy: if this user is the OWNER of a shared notebook, the notebook is
+    //    deleted entirely and all collaborators lose access (disclosed in Privacy §6).
+    //    Notebooks where this user is only a non-owner collaborator are left intact.
+    //    CASCADE relationships that fire on notebook DELETE:
+    //      notes (notebook_id CASCADE), messages (notebook_id CASCADE),
+    //      notebook_members (notebook_id CASCADE), forge_outputs (notebook_id CASCADE),
+    //      unit_notes (notebook_id CASCADE), note_reactions/comments (unit_note/note CASCADE),
+    //      podcasts (notebook_id CASCADE), activities (loosely keyed), starred_notebooks.
+
+    const { data: ownedMemberships } = await supabase
+      .from("notebook_members")
+      .select("notebook_id")
+      .eq("user_id", userId)
+      .eq("role", "owner");
+    const ownedNotebookIds = (ownedMemberships ?? []).map(m => m.notebook_id);
+
+    if (ownedNotebookIds.length > 0) {
+      // Collect Storage paths BEFORE deleting rows (cascade would remove path refs).
+      const [{ data: noteFiles }, { data: podcastFiles }] = await Promise.all([
+        supabase.from("notes").select("file_url").in("notebook_id", ownedNotebookIds).not("file_url", "is", null),
+        supabase.from("podcasts").select("audio_url").in("notebook_id", ownedNotebookIds).not("audio_url", "is", null),
+      ]);
+
+      // Extract storage-bucket-relative path from a full Supabase public URL.
+      // URL shape: https://*.supabase.co/storage/v1/object/public/scholr/{path}[?download=…]
+      const extractPath = (url) => {
+        if (!url) return null;
+        const marker = "/object/public/scholr/";
+        const idx = url.indexOf(marker);
+        if (idx === -1) return null;
+        return decodeURIComponent(url.slice(idx + marker.length).split("?")[0]);
+      };
+
+      const storagePaths = [
+        ...(noteFiles ?? []).map(f => extractPath(f.file_url)),
+        ...(podcastFiles ?? []).map(f => extractPath(f.audio_url)),
+      ].filter(Boolean);
+
+      // Delete Storage objects in batches of 100 (API limit).
+      for (let i = 0; i < storagePaths.length; i += 100) {
+        const { error: storErr } = await supabase.storage.from("scholr").remove(storagePaths.slice(i, i + 100));
+        if (storErr) console.error(`[delete-account] storage remove batch ${i}:`, storErr.message);
+      }
+
+      // Delete owned notebooks; CASCADE handles notes, messages, members, etc.
+      const { error: nbErr } = await supabase.from("notebooks").delete().in("id", ownedNotebookIds);
+      if (nbErr) console.error("[delete-account] notebook delete error:", nbErr.message);
+    }
+    console.log(`[delete-account] owned notebooks + storage: ${ownedNotebookIds.length} notebook(s)`);
+
     // 1. Delete subscriptions first (FK to auth.users, no CASCADE)
     await supabase.from("subscriptions").delete().eq("user_id", userId);
     console.log("[delete-account] deleted subscriptions");

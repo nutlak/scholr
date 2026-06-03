@@ -643,4 +643,27 @@ export const api = {
     }
     return res.json();
   },
+
+  // Terms gate — has the user accepted the current Terms/Privacy? (existing-user wall)
+  async getTermsStatus() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/terms-status`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { accepted: boolean }
+  },
+
+  async acceptTerms() {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/accept-terms`, {
+      method: "POST", headers,
+      body: JSON.stringify({ termsAccepted: true }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const err = new Error(data.message ?? data.error ?? "Failed to record acceptance.");
+      err.code = data.error;
+      throw err;
+    }
+    return res.json();
+  },
 };

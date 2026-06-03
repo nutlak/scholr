@@ -113,6 +113,38 @@ const OTP_MAX_VERIFY_FAILS = 5;
 const TERMS_VERSION = "2026-06-02";
 const PRIVACY_VERSION = "2026-06-02";
 
+// Records a consent acceptance for a user: writes the latest snapshot to
+// profiles AND appends to the immutable terms_acceptances log. Shared by the
+// signup flow and the existing-user "terms wall" so both behave identically.
+// Resilient: the profiles write falls back to a timestamp-only shape if the
+// version columns aren't present (migration 021 not run), and the log insert is
+// non-fatal if that table is absent (migration 022 not run).
+async function recordConsent(userId) {
+  if (!userId) return;
+  const acceptedAt = new Date().toISOString();
+  const { error: profErr } = await supabase.from("profiles").upsert(
+    {
+      user_id: userId,
+      terms_accepted_at: acceptedAt,
+      terms_version: TERMS_VERSION,
+      privacy_version: PRIVACY_VERSION,
+    },
+    { onConflict: "user_id" },
+  );
+  if (profErr) {
+    await supabase.from("profiles").upsert(
+      { user_id: userId, terms_accepted_at: acceptedAt },
+      { onConflict: "user_id" },
+    ).catch(() => {});
+  }
+  await supabase.from("terms_acceptances").insert({
+    user_id: userId,
+    terms_version: TERMS_VERSION,
+    privacy_version: PRIVACY_VERSION,
+    accepted_at: acceptedAt,
+  });
+}
+
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
@@ -2436,36 +2468,9 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
       return res.status(500).json({ error: createErr.message });
     }
 
-    // Record consent (13+ and Terms/Privacy acceptance) with a timestamp + the
-    // accepted policy versions. Falls back to the timestamp-only shape if the
-    // version columns aren't present yet (migration 021 not run) so consent is
-    // never silently dropped.
+    // Record consent (13+, Terms + Privacy) — latest snapshot + append-only log.
     if (created?.user?.id) {
-      const acceptedAt = new Date().toISOString();
-      const { error: profErr } = await supabase.from("profiles").upsert(
-        {
-          user_id: created.user.id,
-          terms_accepted_at: acceptedAt,
-          terms_version: TERMS_VERSION,
-          privacy_version: PRIVACY_VERSION,
-        },
-        { onConflict: "user_id" },
-      );
-      if (profErr) {
-        await supabase.from("profiles").upsert(
-          { user_id: created.user.id, terms_accepted_at: acceptedAt },
-          { onConflict: "user_id" },
-        ).catch(() => {});
-      }
-      // Append-only consent log — preserves a durable history of each acceptance
-      // (and the versions accepted) across future policy updates. Non-fatal if
-      // the table isn't present yet (migration 022 not run).
-      await supabase.from("terms_acceptances").insert({
-        user_id: created.user.id,
-        terms_version: TERMS_VERSION,
-        privacy_version: PRIVACY_VERSION,
-        accepted_at: acceptedAt,
-      });
+      await recordConsent(created.user.id);
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -2630,6 +2635,28 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
 });
 
 // ── Subscription endpoints ────────────────────────────────────────────────────
+
+// GET /api/user/terms-status — has the caller accepted the current terms?
+// Used by the in-app "terms wall" to gate existing users who predate the
+// signup age-gate (no profiles row → not accepted).
+app.get("/api/user/terms-status", requireAuth, async (req, res) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("terms_accepted_at")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  res.json({ accepted: !!data?.terms_accepted_at });
+});
+
+// POST /api/user/accept-terms — record consent for an existing logged-in user
+// (the terms wall). Same write path as signup via recordConsent().
+app.post("/api/user/accept-terms", requireAuth, async (req, res) => {
+  if (req.body?.termsAccepted !== true) {
+    return res.status(400).json({ error: "terms_required", message: "You must accept the Terms of Service and Privacy Policy to continue." });
+  }
+  await recordConsent(req.user.id);
+  res.json({ ok: true });
+});
 
 // GET /api/user/subscription — current tier + usage stats
 app.get("/api/user/subscription", requireAuth, async (req, res) => {

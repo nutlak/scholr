@@ -15,8 +15,9 @@ const linkStyle = { color: "var(--accent)", fontWeight: 600, textDecoration: "no
 
 const h1Style = {
   fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400,
-  fontSize: "clamp(34px, 6vw, 46px)",
-  color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1.1,
+  /* Softer: smaller top-end + tight letter-spacing reads elegant, not aggressive */
+  fontSize: "clamp(28px, 4.5vw, 38px)",
+  color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2,
   margin: "0 0 20px",
 };
 const h2Style = {
@@ -538,7 +539,8 @@ export default function LegalPage({ page }) {
           }}
         >
           <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover" }} />
-          schol<span style={{ color: "var(--accent)" }}>r</span>
+          {/* One span = one flex item → gap:8 doesn't split "schol" from "r" */}
+          <span style={{ letterSpacing: "-0.03em" }}>schol<span style={{ color: "var(--accent)" }}>r</span></span>
         </a>
         <article>{renderDoc(body)}</article>
         <LegalFooter />

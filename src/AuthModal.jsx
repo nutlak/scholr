@@ -5,7 +5,7 @@ import { Mail, Lock } from "lucide-react";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
-const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 const inputStyle = {
   width: "100%",
@@ -77,6 +77,7 @@ export default function AuthModal({ onAuth }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  const [agreed, setAgreed]       = useState(false);
 
   const [pendingEmail,    setPendingEmail]    = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
@@ -99,7 +100,7 @@ export default function AuthModal({ onAuth }) {
   }, [resendCooldown]);
 
   function switchTab(t) {
-    setTab(t); setScreen(null); setError(""); setOtp("");
+    setTab(t); setScreen(null); setError(""); setOtp(""); setAgreed(false);
   }
   function goBackToTab() {
     setScreen(null); setError(""); setOtp("");
@@ -166,6 +167,7 @@ export default function AuthModal({ onAuth }) {
       if (otpFlow === "signup") {
         body.password = pendingPassword;
         body.fullName = pendingName;
+        body.termsAccepted = agreed;
       }
       const data = await apiPost("/api/auth/verify-otp", body);
 
@@ -499,12 +501,29 @@ export default function AuthModal({ onAuth }) {
           )}
         </div>
 
+        {tab === "signup" && (
+          <label style={{ display: "flex", gap: 9, alignItems: "flex-start", cursor: "pointer", fontFamily: FONT }}>
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+              style={{ marginTop: 2, width: 16, height: 16, accentColor: "#A78BFA", cursor: "pointer", flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 12, color: "rgba(245,245,250,0.6)", lineHeight: 1.5 }}>
+              I am at least 13 years old (or the minimum age required in my jurisdiction) and agree to Scholr's{" "}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "#A78BFA", fontWeight: 600 }}>Terms of Service</a>{" "}
+              and{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#A78BFA", fontWeight: 600 }}>Privacy Policy</a>
+            </span>
+          </label>
+        )}
+
         {error && <div style={errorBox}>{error}</div>}
 
         <button
           type="submit"
-          disabled={loading}
-          style={{ ...btnPrimary, opacity: loading ? 0.65 : 1, marginTop: 4 }}
+          disabled={loading || (tab === "signup" && !agreed)}
+          style={{ ...btnPrimary, opacity: (loading || (tab === "signup" && !agreed)) ? 0.55 : 1, marginTop: 4 }}
         >
           {loading
             ? "Please wait…"

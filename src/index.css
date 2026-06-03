@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
 
 /* ── Light theme override — warm off-white layered palette ────────── */
 html[data-theme="light"] {
@@ -37,6 +37,15 @@ html[data-theme="light"] {
   --border-strong:  rgba(0,0,0,0.14);
   --accent:         #7C3AED;
   --accent-soft:    rgba(124,58,237,0.08);
+  /* Premium reskin additions — light */
+  --glow-accent: rgba(124,58,237,0.16);
+  --glow-soft:   rgba(124,58,237,0.06);
+  --card-bg:     #FFFFFF;
+  --card-border: rgba(0,0,0,0.08);
+  --card-glow:   rgba(124,58,237,0.08);
+  --ring:        rgba(124,58,237,0.35);
+  --pill-bg:     rgba(0,0,0,0.035);
+  --pill-border: rgba(0,0,0,0.08);
 }
 html[data-theme="light"] body {
   background: var(--bg);
@@ -50,17 +59,18 @@ html[data-theme="light"] code {
 }
 
 :root {
-  --font: "Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
-  /* Surfaces — warm dark with hint of indigo */
-  --bg:        #0B0B12;
-  --s1:        #14141F;
-  --s2:        #1C1C2A;
-  --s3:        #252537;
+  /* Surfaces — near-black with a hint of indigo (premium reskin) */
+  --bg:        #08080C;
+  --s1:        #101019;
+  --s2:        #16161F;
+  --s3:        #1F1F2B;
 
   /* Borders */
-  --border:    rgba(255,255,255,0.07);
+  --border:    rgba(255,255,255,0.06);
   --border-h:  rgba(255,255,255,0.14);
   --border-f:  rgba(167,139,250,0.4);
 
@@ -115,6 +125,17 @@ html[data-theme="light"] code {
   --border-strong:  rgba(255,255,255,0.14);
   --accent:         var(--acc);
   --accent-soft:    rgba(124,58,237,0.15);
+
+  /* Premium reskin additions — dark */
+  --glow-accent: rgba(167,139,250,0.30);
+  --glow-soft:   rgba(167,139,250,0.12);
+  --card-bg:     rgba(255,255,255,0.025);
+  --card-border: rgba(255,255,255,0.08);
+  --card-glow:   rgba(167,139,250,0.12);
+  --ring:        rgba(167,139,250,0.45);
+  --pill-bg:     rgba(255,255,255,0.04);
+  --pill-border: rgba(255,255,255,0.10);
+  --r-2xl:       22px;
 
   font: 14px/1.6 var(--font);
   letter-spacing: 0;
@@ -557,4 +578,109 @@ input, textarea, select { font-family: var(--font); }
     padding: 18px max(16px, env(safe-area-inset-right))
              calc(20px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Premium reskin — shared component classes (site + app), 100% token-driven
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Italic-serif accent — the signature move. Site headlines + app titles/empty
+   states only; NEVER on buttons or form fields. */
+.accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Section pill — tiny icon + uppercase tracked label in a rounded chip */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+.pill svg { color: var(--accent); flex-shrink: 0; }
+
+/* Themed card — soft border, layered surface, subtle edge glow on hover */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
+}
+.card:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--card-border));
+  box-shadow: 0 14px 40px rgba(0,0,0,0.30), 0 0 0 1px var(--card-glow);
+}
+
+/* Buttons (marketing scale; the app keeps its own compact inline buttons) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font); font-weight: 600; font-size: 14px;
+  letter-spacing: -0.01em; line-height: 1;
+  padding: 0 18px; height: 44px; border-radius: 12px;
+  cursor: pointer; border: 1px solid transparent;
+  transition: transform 140ms ease, box-shadow 200ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-d) 100%);
+  box-shadow: 0 6px 20px var(--acc-bg-h), 0 0 0 1px rgba(167,139,250,0.30);
+}
+.btn-primary:hover { box-shadow: 0 8px 28px var(--glow-accent), 0 0 0 1px rgba(167,139,250,0.45); }
+.btn-ghost {
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border-color: var(--border-strong);
+}
+.btn-ghost:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Inputs */
+.field {
+  width: 100%;
+  font-family: var(--font); font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 0 14px; height: 44px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--acc-bg-h); }
+.field::placeholder { color: var(--text-tertiary); }
+textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: vertical; }
+
+/* Radial glow backdrop utility */
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+  background: radial-gradient(circle, var(--glow-accent) 0%, transparent 70%);
+  z-index: 0;
+}
+
+/* Motion — restrained fade/rise reveal */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal { animation: riseIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; }
 }

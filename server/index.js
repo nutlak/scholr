@@ -109,6 +109,10 @@ const podcastLimiter = rateLimit({
 const otpFailures = new Map(); // emailLower -> consecutive failed attempts
 const OTP_MAX_VERIFY_FAILS = 5;
 
+// Current policy versions recorded on signup (match the legal pages' dates).
+const TERMS_VERSION = "2026-06-02";
+const PRIVACY_VERSION = "2026-06-02";
+
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
@@ -2414,8 +2418,11 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
 
   if (type === "signup") {
     if (!password) return res.status(400).json({ error: "password is required" });
+    if (req.body?.termsAccepted !== true) {
+      return res.status(400).json({ error: "You must be at least 13 and accept the Terms of Service and Privacy Policy to create an account." });
+    }
 
-    const { error: createErr } = await supabase.auth.admin.createUser({
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -2427,6 +2434,29 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
         return res.status(400).json({ error: "An account with this email already exists. Please log in." });
       }
       return res.status(500).json({ error: createErr.message });
+    }
+
+    // Record consent (13+ and Terms/Privacy acceptance) with a timestamp + the
+    // accepted policy versions. Falls back to the timestamp-only shape if the
+    // version columns aren't present yet (migration 021 not run) so consent is
+    // never silently dropped.
+    if (created?.user?.id) {
+      const acceptedAt = new Date().toISOString();
+      const { error: profErr } = await supabase.from("profiles").upsert(
+        {
+          user_id: created.user.id,
+          terms_accepted_at: acceptedAt,
+          terms_version: TERMS_VERSION,
+          privacy_version: PRIVACY_VERSION,
+        },
+        { onConflict: "user_id" },
+      );
+      if (profErr) {
+        await supabase.from("profiles").upsert(
+          { user_id: created.user.id, terms_accepted_at: acceptedAt },
+          { onConflict: "user_id" },
+        ).catch(() => {});
+      }
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -2486,6 +2516,9 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
     // 1. Delete subscriptions first (FK to auth.users, no CASCADE)
     await supabase.from("subscriptions").delete().eq("user_id", userId);
     console.log("[delete-account] deleted subscriptions");
+
+    // 1b. Delete profile / consent record
+    await supabase.from("profiles").delete().eq("user_id", userId);
 
     // 2. Delete usage (FK to auth.users, no CASCADE)
     await supabase.from("usage").delete().eq("user_id", userId);

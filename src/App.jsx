@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
 import LandingPage from "./LandingPage.jsx";
+import LegalPage, { LegalFooter } from "./LegalPages.jsx";
 import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
 import {
@@ -78,7 +79,8 @@ const STATUS_META = {
   need_help:   { label: "Need Help",   color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.32)" },
 };
 
-const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
 // Warm tint palette for class/member color accents (deterministic by id/name)
@@ -4769,6 +4771,12 @@ export default function Scholr() {
 
   const viewLabel = NAV.find(n => n.id === activeView)?.label ?? "Dashboard";
 
+  // Public legal routes — render standalone regardless of auth (no router).
+  const legalPage = { "/privacy": "privacy", "/terms": "terms", "/copyright": "copyright" }[
+    typeof window !== "undefined" ? window.location.pathname : ""
+  ];
+  if (legalPage) return <LegalPage page={legalPage} />;
+
   return (
     <>
       {pendingInviteToken && authReady && !user && (
@@ -4941,6 +4949,8 @@ export default function Scholr() {
           })}
 
           </div>{/* end scrollable nav section */}
+
+          <LegalFooter compact />
 
           {/* Usage indicator — free users only */}
           {subscription.tier === "free" && (
@@ -5763,7 +5773,7 @@ function EmptyState({ icon, title, body, cta }) {
         marginBottom: 6, color: "var(--accent)",
         boxShadow: "0 0 32px var(--acc-bg)",
       }}>{icon}</div>
-      <div style={{ fontSize: 17, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+      <div style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, fontSize: 26, color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1.15 }}>
         {title}
       </div>
       <div style={{ fontSize: 14, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>

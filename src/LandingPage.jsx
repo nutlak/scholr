@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, MessageCircle, Users, Star, Bell, Lock, Check } from "lucide-react";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from "lucide-react";
 
-const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -34,12 +35,12 @@ function useFadeIn(delay = 0) {
 }
 
 const FEATURES = [
-  { Icon: BookOpen,      title: "Upload anything",  tint: "#60A5FA", body: "PDFs, slides, Word docs, plain text — Derek reads every word so you don't have to retype anything." },
-  { Icon: MessageCircle, title: "Ask Derek",         tint: "#A78BFA", body: "Your personal AI tutor, trained on your actual notes. Definitions, practice questions, summaries — just ask." },
-  { Icon: Users,         title: "Study together",    tint: "#F472B6", body: "Share a unit with your group. Everyone sees the same notes, the same chat, the same answers." },
-  { Icon: Star,          title: "Star what matters", tint: "#FBBF24", body: "Pin important units to find them in one tap. Cram week just got a lot less stressful." },
-  { Icon: Bell,          title: "Stay in sync",      tint: "#34D399", body: "Get notified when a classmate adds new notes. You're always studying the latest material." },
-  { Icon: Lock,          title: "Private by default", tint: "#06B6D4", body: "Your notebooks are yours. Invite-only — no public links, no surprises, no scrapers." },
+  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Definitions, practice questions, summaries — just ask." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "#34D399", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
+  { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, flashcards, and summaries in a single click." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and review on the walk to class or the bus home." },
+  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group. Everyone shares the same notes, the same chat, and the same AI answers in real time." },
+  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "PDFs, slides, docs, images, plain text — Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
@@ -277,6 +278,74 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
   );
 }
 
+const TESTIMONIALS = [
+  { quote: "I stopped re-reading 40 pages the night before. I just ask Derek and he pulls the exact thing from my lecture slides.", name: "Maya R.", role: "Pre-med · UNC" },
+  { quote: "Feynman Mode is brutal in the best way. It caught that I didn't actually get osmosis — I just thought I did.", name: "Jordan T.", role: "AP Bio · 11th grade" },
+  { quote: "We share one notebook for the whole study group. Forge spits out a practice quiz and we all grind it before the midterm.", name: "Priya S.", role: "CS major · Georgia Tech" },
+];
+
+const FAQS = [
+  { q: "Is Scholr free?", a: "Yes — the Free plan is free forever: 30 AI messages and 3 Forge outputs a month, up to 3 classes and 15 notes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
+  { q: "What can I upload?", a: "PDFs, lecture slides, Word docs, images, and plain text. Scholr extracts the text so Derek can read and reference your actual material." },
+  { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you really understand it — what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
+  { q: "Is my data private?", a: "Your notebooks are invite-only — no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
+  { q: "Can I study with my class?", a: "Yes. Invite classmates to a shared notebook and everyone sees the same notes, chat, and AI answers in real time." },
+  { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
+];
+
+function TestimonialCard({ quote, name, role, idx }) {
+  const [ref, visible] = useFadeIn(idx * 60);
+  return (
+    <div ref={ref} style={{
+      background: "var(--card-bg)", border: "1px solid var(--card-border)",
+      borderRadius: 16, padding: 24,
+      display: "flex", flexDirection: "column", gap: 16,
+      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
+      transition: "opacity 0.4s ease, transform 0.4s ease",
+    }}>
+      <div style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, fontFamily: FONT }}>"{quote}"</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: "auto" }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: "50%",
+          background: "linear-gradient(135deg, var(--acc), var(--acc-d))",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "#fff", fontWeight: 700, fontSize: 14, fontFamily: FONT, flexShrink: 0,
+        }}>{name[0]}</div>
+        <div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>{name}</div>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>{role}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FAQItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+          background: "transparent", border: "none", cursor: "pointer",
+          padding: "20px 4px", textAlign: "left", fontFamily: FONT,
+          fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
+        }}
+      >
+        <span>{q}</span>
+        <span style={{
+          flexShrink: 0, color: "var(--accent)", fontSize: 24, lineHeight: 1,
+          transition: "transform 0.2s ease", transform: open ? "rotate(45deg)" : "none",
+        }}>+</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 4px 20px", fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, fontFamily: FONT, maxWidth: 640 }}>{a}</div>
+      )}
+    </div>
+  );
+}
+
 export default function LandingPage({ onSignIn }) {
   const scrolled = useScrolled();
   const [heroVisible, setHeroVisible] = useState(false);
@@ -473,10 +542,11 @@ export default function LandingPage({ onSignIn }) {
           }}>
             <span style={{ color: "#F5F5FA" }}>Study smarter.</span>{" "}
             <span style={{
-              background: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 40%, #8B5CF6 100%)",
+              fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, letterSpacing: "0",
+              background: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 45%, #8B5CF6 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
-            }}>Study together.</span>
+            }}>Actually understand it.</span>
           </h1>
 
           {/* Subtext */}
@@ -693,6 +763,50 @@ export default function LandingPage({ onSignIn }) {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section style={{
+        position: "relative", zIndex: 1,
+        padding: "96px 24px",
+        borderTop: "1px solid var(--border-subtle)",
+      }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <SectionHeader
+            pill="Loved by students"
+            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#FBBF24" }}>before the exam</span></>}
+            sub="Real study workflows, minus the busywork."
+            accent="#FBBF24"
+          />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16, marginTop: 56,
+          }}>
+            {TESTIMONIALS.map((t, i) => (
+              <TestimonialCard key={t.name} {...t} idx={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{
+        position: "relative", zIndex: 1,
+        padding: "96px 24px",
+        borderTop: "1px solid var(--border-subtle)",
+      }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <SectionHeader
+            pill="FAQ"
+            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#60A5FA" }}>answered</span></>}
+            sub="Everything you need to know before you start."
+            accent="#60A5FA"
+          />
+          <div style={{ marginTop: 48 }}>
+            {FAQS.map(f => (<FAQItem key={f.q} {...f} />))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section style={{
         position: "relative", zIndex: 1,
@@ -713,7 +827,7 @@ export default function LandingPage({ onSignIn }) {
               fontFamily: FONT, color: "#F5F5FA",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>
-              Ready to study smarter?
+              Ready to <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#C4B5FD" }}>study smarter?</span>
             </h2>
             <p style={{
               fontSize: 17, color: "rgba(245,245,250,0.65)", lineHeight: 1.6,
@@ -745,6 +859,12 @@ export default function LandingPage({ onSignIn }) {
         }}>
           <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover" }} />
           <span style={{ fontWeight: 700, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", fontSize: 12.5, fontFamily: FONT }}>
+          <a href="/privacy" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Privacy</a>
+          <a href="/terms" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Terms</a>
+          <a href="/copyright" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Copyright</a>
+          <a href="mailto:support@scholr.dev" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Contact: support@scholr.dev</a>
         </div>
         <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
           © {new Date().getFullYear()} Scholr · Built for students, by students

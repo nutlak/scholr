@@ -3783,9 +3783,9 @@ function InviteLanding({ inviteInfo, onSignIn }) {
       }}>
         <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
         <div style={{
-          fontSize: 26, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em",
+          fontSize: 26, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.03em",
         }}>
-          schol<span style={{ color: "var(--acc)" }}>r</span>
+          <span>schol<span style={{ color: "var(--acc)" }}>r</span></span>
         </div>
       </div>
       <div style={{ fontSize: 15, color: "var(--t2)", textAlign: "center" }}>
@@ -4910,11 +4910,12 @@ export default function Scholr() {
               style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
             />
             <div style={{
-              fontSize: 19, fontWeight: 700,
+              fontSize: 19, fontWeight: 600,
               color: "var(--text-primary)", letterSpacing: "-0.03em",
               fontFamily: FONT,
             }}>
-              schol<span style={{ color: "var(--accent)" }}>r</span>
+              {/* outer span = one inline box → letter-spacing holds across the color split */}
+              <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>
             </div>
             <button
               className="mobile-only"
@@ -5425,7 +5426,7 @@ export default function Scholr() {
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 600, color: "var(--text-primary)",
+                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 500, color: "var(--text-primary)",
                     fontFamily: FONT, letterSpacing: "-0.025em", lineHeight: 1.15,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     animation: "fadeIn 0.35s ease",

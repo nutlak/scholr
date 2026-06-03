@@ -182,7 +182,7 @@ h1, h2, h3 {
   font-family: var(--font);
   font-weight: 500;
   color: var(--t1);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.02em; /* em scales with font-size; opens large headings elegantly */
   line-height: 1.2;
 }
 p { margin: 0; line-height: 1.6; }

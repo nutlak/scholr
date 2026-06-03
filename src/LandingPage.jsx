@@ -485,7 +485,7 @@ export default function LandingPage({ onSignIn }) {
           display: "flex", alignItems: "center", gap: 8,
         }}>
           <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
-          <span style={{ fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <span style={{ fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
@@ -858,7 +858,7 @@ export default function LandingPage({ onSignIn }) {
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
           <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover" }} />
-          <span style={{ fontWeight: 700, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <span style={{ fontWeight: 600, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", fontSize: 12.5, fontFamily: FONT }}>
           <a href="/privacy" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Privacy</a>

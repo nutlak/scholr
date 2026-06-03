@@ -243,10 +243,10 @@ export default function AuthModal({ onAuth }) {
           }}>
             <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover", marginBottom: 12 }} />
             <div style={{
-              fontFamily: FONT, fontSize: 22, fontWeight: 700,
+              fontFamily: FONT, fontSize: 22, fontWeight: 600,
               color: "#F5F5FA", letterSpacing: "-0.03em",
             }}>
-              schol<span style={{ color: "#A78BFA" }}>r</span>
+              <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
             </div>
           </div>
           <div style={{

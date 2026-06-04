@@ -6,6 +6,7 @@ import { Mail, Lock } from "lucide-react";
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
 
 const inputStyle = {
   width: "100%",
@@ -287,7 +288,7 @@ export default function AuthModal({ onAuth }) {
           }}>
             {otpFlow === "signup" ? <Mail size={26} strokeWidth={1.75} /> : <Lock size={26} strokeWidth={1.75} />}
           </div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
             {otpFlow === "signup" ? "Verify your email" : "Check your email"}
           </div>
           <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.6 }}>
@@ -337,7 +338,7 @@ export default function AuthModal({ onAuth }) {
   if (screen === "reset-password") {
     return shell(
       <>
-        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Set a new password
         </div>
         <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
@@ -392,7 +393,7 @@ export default function AuthModal({ onAuth }) {
           onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.5)"}
         >← Back to login</button>
 
-        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Reset your password
         </div>
         <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>

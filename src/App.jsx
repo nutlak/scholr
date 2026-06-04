@@ -81,6 +81,7 @@ const STATUS_META = {
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
+const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
 // Warm tint palette for class/member color accents (deterministic by id/name)
@@ -2880,7 +2881,7 @@ function PasswordResetModal({ onDone }) {
         boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
         animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.02em" }}>
           Set a new password
         </div>
         <div style={{ fontSize: 13, color: "var(--t2)", marginBottom: 22, fontFamily: FONT, lineHeight: 1.55 }}>
@@ -3499,7 +3500,7 @@ function NewClassModal({ onClose, onCreate }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "0.3px" }}>New Class</div>
+            <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.01em" }}>New Class</div>
             <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.6 }}>A class holds your units and notes for one course</div>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -3597,7 +3598,7 @@ function NewUnitModal({ classTitle, onClose, onCreate }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
             <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55 }}>
               Adding to <span style={{ color: "var(--acc)", fontWeight: 500 }}>{classTitle}</span>
             </div>
@@ -3691,7 +3692,7 @@ function InviteModal({ notebookId, onClose }) {
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>Invite a collaborator</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.02em" }}>Invite a collaborator</div>
             <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55 }}>They'll get an email with a link to join this unit</div>
           </div>
 
@@ -4380,7 +4381,7 @@ function UpgradeModal({ limitType, onClose }) {
           <div style={{ marginBottom: 10, color: "var(--acc)", display: "inline-flex" }}>
             <context.Icon size={36} strokeWidth={1.5} />
           </div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 6 }}>
+          <div style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, letterSpacing: "-0.01em", marginBottom: 6 }}>
             Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
           </div>
           <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>
@@ -4492,7 +4493,7 @@ function TermsWall({ onAccepted }) {
           color: "#fff", marginBottom: 16,
         }}><FileText size={18} strokeWidth={2} /></div>
 
-        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 8 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, letterSpacing: "-0.02em", marginBottom: 8 }}>
           We've updated our Terms &amp; Privacy Policy
         </div>
         <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 20 }}>
@@ -5533,8 +5534,8 @@ export default function Scholr() {
                     {activeView === "dashboard" ? "Dashboard" : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 500, color: "var(--text-primary)",
-                    fontFamily: FONT, letterSpacing: "-0.025em", lineHeight: 1.15,
+                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 700, color: "var(--text-primary)",
+                    fontFamily: FONT_HEADING, letterSpacing: "-0.01em", lineHeight: 1.15,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     animation: "fadeIn 0.35s ease",
                   }}>

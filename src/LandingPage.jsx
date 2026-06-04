@@ -3,6 +3,7 @@ import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
+const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -266,7 +267,7 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
       </div>
       <h2 style={{
         fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600,
-        fontFamily: FONT, color: "#F5F5FA",
+        fontFamily: FONT_HEADING, color: "#F5F5FA",
         letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14,
         maxWidth: 640, margin: "0 auto 14px",
       }}>{title}</h2>
@@ -534,8 +535,8 @@ export default function LandingPage({ onSignIn }) {
           {/* Headline — single line at widescreen */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 72px)",
-            fontWeight: 600, lineHeight: 1.05,
-            fontFamily: FONT, letterSpacing: "-0.035em",
+            fontWeight: 700, lineHeight: 1.05,
+            fontFamily: FONT_HEADING, letterSpacing: "-0.025em",
             marginBottom: 22,
             maxWidth: "100%",
             whiteSpace: "normal",
@@ -823,8 +824,8 @@ export default function LandingPage({ onSignIn }) {
           <div style={{ position: "relative" }}>
             <h2 style={{
               fontSize: "clamp(32px, 5vw, 48px)",
-              fontWeight: 600, lineHeight: 1.05,
-              fontFamily: FONT, color: "#F5F5FA",
+              fontWeight: 700, lineHeight: 1.05,
+              fontFamily: FONT_HEADING, color: "#F5F5FA",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>
               Ready to <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#C4B5FD" }}>study smarter?</span>

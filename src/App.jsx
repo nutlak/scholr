@@ -79,7 +79,7 @@ const STATUS_META = {
   need_help:   { label: "Need Help",   color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.32)" },
 };
 
-const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;

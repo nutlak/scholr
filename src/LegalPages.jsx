@@ -7,7 +7,7 @@
 // and the support email — the link text is the phrase itself, so wording is
 // unchanged. Uses theme tokens (var(--…)) only.
 
-const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const SUPPORT_EMAIL = "support@scholr.dev";
 

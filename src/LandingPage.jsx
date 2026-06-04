@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from "lucide-react";
 
-const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
 

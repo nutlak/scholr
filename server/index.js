@@ -2523,114 +2523,128 @@ app.post("/api/auth/sign-out", requireAuth, async (req, res) => {
 // DELETE /api/auth/delete-account — permanently delete the calling user's account
 app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
   const userId = req.user.id;
+  console.log(`[delete-account] starting for user=${userId}`);
+
+  // Resilient step runner: one failing cleanup step must never abort the whole
+  // deletion. Logs BOTH thrown errors and Supabase-returned { error } objects
+  // (supabase-js resolves with { error } instead of throwing), then proceeds.
+  const step = async (label, fn) => {
+    try {
+      const result = await fn();
+      if (result?.error) console.error(`[delete-account] ${label} error:`, result.error.message ?? result.error);
+    } catch (e) {
+      console.error(`[delete-account] ${label} threw:`, e?.message ?? e);
+    }
+  };
+
+  // Extract a bucket-relative path from a full Supabase public URL.
+  // URL shape: https://*.supabase.co/storage/v1/object/public/scholr/{path}[?download=…]
+  const extractPath = (url) => {
+    if (!url) return null;
+    const marker = "/object/public/scholr/";
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return decodeURIComponent(url.slice(idx + marker.length).split("?")[0]);
+  };
+
+  // Remove a list of Storage paths from the "scholr" bucket in batches of 100.
+  const removeStoragePaths = async (paths) => {
+    const clean = (paths ?? []).filter(Boolean);
+    for (let i = 0; i < clean.length; i += 100) {
+      await step(`storage remove batch ${i}`, () =>
+        supabase.storage.from("scholr").remove(clean.slice(i, i + 100)));
+    }
+  };
 
   try {
-    console.log(`[delete-account] starting for user=${userId}`);
-
-    // 0. Delete owned notebooks + all their dependent content + Storage files.
-    //    Policy: if this user is the OWNER of a shared notebook, the notebook is
-    //    deleted entirely and all collaborators lose access (disclosed in Privacy §6).
-    //    Notebooks where this user is only a non-owner collaborator are left intact.
-    //    CASCADE relationships that fire on notebook DELETE:
-    //      notes (notebook_id CASCADE), messages (notebook_id CASCADE),
-    //      notebook_members (notebook_id CASCADE), forge_outputs (notebook_id CASCADE),
-    //      unit_notes (notebook_id CASCADE), note_reactions/comments (unit_note/note CASCADE),
-    //      podcasts (notebook_id CASCADE), activities (loosely keyed), starred_notebooks.
-
-    const { data: ownedMemberships } = await supabase
-      .from("notebook_members")
-      .select("notebook_id")
-      .eq("user_id", userId)
-      .eq("role", "owner");
-    const ownedNotebookIds = (ownedMemberships ?? []).map(m => m.notebook_id);
+    // 0. Delete notebooks OWNED by this user + their Storage files. Postgres
+    //    CASCADE on notebook_id removes notes/messages/members/forge_outputs/
+    //    unit_notes/reactions/comments/podcasts that live in those notebooks.
+    //    (Collaborator-only notebooks owned by others are left intact.)
+    let ownedNotebookIds = [];
+    await step("query owned notebooks", async () => {
+      const { data, error } = await supabase
+        .from("notebook_members").select("notebook_id")
+        .eq("user_id", userId).eq("role", "owner");
+      if (!error) ownedNotebookIds = (data ?? []).map(m => m.notebook_id);
+      return { error };
+    });
 
     if (ownedNotebookIds.length > 0) {
-      // Collect Storage paths BEFORE deleting rows (cascade would remove path refs).
       const [{ data: noteFiles }, { data: podcastFiles }] = await Promise.all([
         supabase.from("notes").select("file_url").in("notebook_id", ownedNotebookIds).not("file_url", "is", null),
         supabase.from("podcasts").select("audio_url").in("notebook_id", ownedNotebookIds).not("audio_url", "is", null),
       ]);
-
-      // Extract storage-bucket-relative path from a full Supabase public URL.
-      // URL shape: https://*.supabase.co/storage/v1/object/public/scholr/{path}[?download=…]
-      const extractPath = (url) => {
-        if (!url) return null;
-        const marker = "/object/public/scholr/";
-        const idx = url.indexOf(marker);
-        if (idx === -1) return null;
-        return decodeURIComponent(url.slice(idx + marker.length).split("?")[0]);
-      };
-
-      const storagePaths = [
+      await removeStoragePaths([
         ...(noteFiles ?? []).map(f => extractPath(f.file_url)),
         ...(podcastFiles ?? []).map(f => extractPath(f.audio_url)),
-      ].filter(Boolean);
-
-      // Delete Storage objects in batches of 100 (API limit).
-      for (let i = 0; i < storagePaths.length; i += 100) {
-        const { error: storErr } = await supabase.storage.from("scholr").remove(storagePaths.slice(i, i + 100));
-        if (storErr) console.error(`[delete-account] storage remove batch ${i}:`, storErr.message);
-      }
-
-      // Delete owned notebooks; CASCADE handles notes, messages, members, etc.
-      const { error: nbErr } = await supabase.from("notebooks").delete().in("id", ownedNotebookIds);
-      if (nbErr) console.error("[delete-account] notebook delete error:", nbErr.message);
+      ]);
+      await step("delete owned notebooks", () =>
+        supabase.from("notebooks").delete().in("id", ownedNotebookIds));
     }
-    console.log(`[delete-account] owned notebooks + storage: ${ownedNotebookIds.length} notebook(s)`);
+    console.log(`[delete-account] owned notebooks processed: ${ownedNotebookIds.length}`);
 
-    // 1. Delete subscriptions first (FK to auth.users, no CASCADE)
-    await supabase.from("subscriptions").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted subscriptions");
+    // 0b. ROOT-CAUSE FIX. podcasts.created_by REFERENCES auth.users(id) WITHOUT
+    //     ON DELETE CASCADE (migration 019). Podcasts the user created in a
+    //     notebook they DON'T own are not covered by the owned-notebook cascade
+    //     above, so they linger and make admin.deleteUser fail with a foreign-key
+    //     violation. Remove every podcast authored by this user (+ its audio file)
+    //     before deleting the auth user.
+    await step("collect + remove user podcast audio", async () => {
+      const { data, error } = await supabase
+        .from("podcasts").select("id, audio_url").eq("created_by", userId);
+      if (!error) {
+        await removeStoragePaths((data ?? []).map(p =>
+          extractPath(p.audio_url) ?? `podcasts/${p.id}.mp3`));
+      }
+      return { error };
+    });
+    await step("delete user podcasts", () =>
+      supabase.from("podcasts").delete().eq("created_by", userId));
 
-    // 1b. Delete profile / consent records
-    await supabase.from("profiles").delete().eq("user_id", userId);
-    await supabase.from("terms_acceptances").delete().eq("user_id", userId);
+    // 0c. Remove this user's authored content that may live in notebooks owned by
+    //     OTHERS (their author columns can be non-cascade FKs to auth.users too).
+    //     Also fulfils the "deleting your account removes your content" disclosure.
+    await step("delete user note_reactions", () => supabase.from("note_reactions").delete().eq("user_id", userId));
+    await step("delete user note_comments",  () => supabase.from("note_comments").delete().eq("user_id", userId));
+    await step("delete user unit_notes",      () => supabase.from("unit_notes").delete().eq("user_id", userId));
+    await step("delete user forge_outputs",   () => supabase.from("forge_outputs").delete().eq("user_id", userId));
+    await step("delete user-uploaded notes",  () => supabase.from("notes").delete().eq("uploader_id", userId));
 
-    // 2. Delete usage (FK to auth.users, no CASCADE)
-    await supabase.from("usage").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted usage");
+    // 1–11. Clear the remaining direct references to auth.users. Each is
+    //     independent — a failure (e.g. a table that doesn't exist yet because a
+    //     migration is pending) is logged and skipped, never aborting the delete.
+    await step("delete subscriptions",     () => supabase.from("subscriptions").delete().eq("user_id", userId));
+    await step("delete profiles",          () => supabase.from("profiles").delete().eq("user_id", userId));
+    await step("delete terms_acceptances", () => supabase.from("terms_acceptances").delete().eq("user_id", userId));
+    await step("delete usage",             () => supabase.from("usage").delete().eq("user_id", userId));
+    await step("delete notifications",      () => supabase.from("notifications").delete().eq("user_id", userId));
+    await step("delete activities",         () => supabase.from("activities").delete().eq("user_id", userId));
+    await step("delete messages",           () => supabase.from("messages").delete().eq("created_by", userId));
+    await step("delete invites",            () => supabase.from("invites").delete().eq("created_by", userId));
+    await step("delete starred_notebooks",  () => supabase.from("starred_notebooks").delete().eq("user_id", userId));
+    await step("delete notebook_members",   () => supabase.from("notebook_members").delete().eq("user_id", userId));
+    await step("delete daily_activity",      () => supabase.from("daily_activity").delete().eq("user_id", userId));
 
-    // 3. Delete notifications (references activities + user_id)
-    await supabase.from("notifications").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted notifications");
-
-    // 4. Delete activities (FK to auth.users, no CASCADE)
-    await supabase.from("activities").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted activities");
-
-    // 5. Delete messages (FK to auth.users, no CASCADE)
-    await supabase.from("messages").delete().eq("created_by", userId);
-    console.log("[delete-account] deleted messages");
-
-    // 6. Delete invites (FK to auth.users, no CASCADE)
-    await supabase.from("invites").delete().eq("created_by", userId);
-    console.log("[delete-account] deleted invites");
-
-    // 7. Delete starred notebooks (CASCADE, but cascade is unreliable via GoTrue)
-    await supabase.from("starred_notebooks").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted starred_notebooks");
-
-    // 8. Delete notebook membership rows (CASCADE, but clean explicitly)
-    await supabase.from("notebook_members").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted notebook_members");
-
-    // 9. Delete daily_activity (FK to auth.users)
-    await supabase.from("daily_activity").delete().eq("user_id", userId);
-    console.log("[delete-account] deleted daily_activity");
-
-    // 10. Now safe to delete the auth user — Postgres CASCADE handles the rest
+    // 12. Finally delete the auth user. This ALWAYS runs as long as the caller is
+    //     authenticated, even if some cleanup steps above logged failures.
     console.log("[delete-account] calling admin.deleteUser");
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
       console.error("[delete-account] admin.deleteUser failed:", error.message, JSON.stringify(error));
-      return res.status(500).json({ error: "Failed to delete account. Please try again." });
+      // TEMP DEBUG: Railway logs aren't reachable via CLI, so surface the real
+      // cause to diagnose any remaining non-cascade FK. `detail` carries a
+      // Postgres/GoTrue error string (table/column names only — never secrets).
+      // Revert to the bare generic message once confirmed working in production.
+      return res.status(500).json({ error: "Failed to delete account. Please try again.", detail: error.message });
     }
 
     console.log(`[delete-account] success for user=${userId}`);
     res.status(204).end();
   } catch (err) {
     console.error("[delete-account] Unexpected error:", err);
-    res.status(500).json({ error: "Failed to delete account. Please try again." });
+    // TEMP DEBUG (see above) — revert `detail` after the fix is confirmed.
+    res.status(500).json({ error: "Failed to delete account. Please try again.", detail: err?.message ?? String(err) });
   }
 });
 

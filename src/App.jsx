@@ -4861,10 +4861,7 @@ export default function Scholr() {
     await api.deleteAccount();    // cleans DB rows + deletes auth user
     localStorage.clear();
     await api.signOut();          // notifies server + clears local Supabase session
-    setUser(null); setNotebooks([]); setOwnedNotebooks([]); setSharedNotebooks([]);
-    setStarredNotebooks([]); setStarredIds(new Set()); setNotifications([]);
-    setClasses([]); setClassUnitsCache({});
-    setActiveNb(null); setActiveView("dashboard");
+    window.location.href = "/";  // hard-navigate to landing; clears all React state
   }
 
   async function handleLogout() {

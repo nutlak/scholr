@@ -9,10 +9,17 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-// Must exactly match a verified sender domain in your Resend account
+// Must exactly match a verified sender domain in your Resend account.
+// The "from" stays a noreply sender on the verified domain so delivery
+// never breaks; replies are routed to the live support inbox via replyTo.
 function getFrom() {
   return process.env.RESEND_FROM ?? "scholr <noreply@scholr.dev>";
 }
+
+// Live, monitored support inbox (forwards to the real mailbox). Set as the
+// reply-to on every transactional email so user replies reach a human, and
+// matches the contact address shown across the app + legal docs.
+const SUPPORT_EMAIL = "support@scholr.dev";
 
 export async function sendOtpEmail(to, code, type) {
   const isSignup = type === "signup";
@@ -20,6 +27,7 @@ export async function sendOtpEmail(to, code, type) {
   const { error } = await getResend().emails.send({
     from: getFrom(),
     to,
+    replyTo: SUPPORT_EMAIL,
     subject: isSignup ? "Verify your scholr account" : "Reset your scholr password",
     html: `<!DOCTYPE html>
 <html>
@@ -61,6 +69,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
     const result = await getResend().emails.send({
       from: getFrom(),
       to,
+      replyTo: SUPPORT_EMAIL,
       subject: `You've been invited to join ${notebookTitle} on scholr`,
       html: `<!DOCTYPE html>
 <html>

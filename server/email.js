@@ -101,3 +101,92 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
     throw err;
   }
 }
+
+// ── Onboarding email sequence (welcome / day-3 Feynman / day-7 invite) ─────────
+function appUrl() {
+  const o = process.env.CLIENT_ORIGIN;
+  return o && !o.startsWith("http://localhost") ? o : "https://scholr.dev";
+}
+// Where the unsubscribe link points. Set PUBLIC_API_URL to the Railway backend
+// URL so one-click unsubscribe resolves; falls back to the app origin otherwise.
+function unsubBase() {
+  return process.env.PUBLIC_API_URL || appUrl();
+}
+
+function emailShell(innerHtml, userId) {
+  const unsub = userId
+    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}" style="color:#5b5b6b;text-decoration:underline;">Unsubscribe</a>`
+    : "";
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');</style>
+</head>
+<body style="margin:0;padding:40px 20px;background:#08080C;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <div style="max-width:480px;margin:0 auto;">
+    <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#A78BFA;">r</span></div>
+    ${innerHtml}
+    <p style="font-size:12px;color:#404060;line-height:1.6;margin:28px 0 0;border-top:1px solid #1c1c28;padding-top:16px;">
+      You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#8b8b9b;">support@scholr.dev</a>.<br>${unsub}
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
+const H = `font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:#F5F5FA;font-weight:700;`;
+const P = `font-size:15px;color:#C0C0D8;line-height:1.7;margin:0 0 16px;`;
+function ctaButton(label, href) {
+  return `<a href="${href}" style="display:inline-block;background:#A78BFA;color:#0A0A0F;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
+}
+
+const ONBOARDING_TEMPLATES = {
+  welcome: (name) => ({
+    subject: "Welcome to Scholr 🎓",
+    html: `
+      <h1 style="${H}font-size:26px;margin:0 0 14px;">Hey ${name || "there"}, you're in.</h1>
+      <p style="${P}">Scholr turns your class notes into a shared AI tutor. Here's the 10-second version:</p>
+      <p style="${P}">
+        📤 <strong style="color:#E8E8F0;">Upload notes</strong> — drop a PDF, image, or paste text<br>
+        💬 <strong style="color:#E8E8F0;">Ask Derek</strong> — your AI tutor that actually knows your material<br>
+        🎯 <strong style="color:#E8E8F0;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
+      </p>
+      ${ctaButton("Open Scholr →", appUrl())}
+      <p style="font-size:13px;color:#808098;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>
+    `,
+  }),
+  feynman: () => ({
+    subject: "The study trick your teacher didn't teach you",
+    html: `
+      <h1 style="${H}font-size:24px;margin:0 0 14px;">Most students re-read notes. The best students explain them.</h1>
+      <p style="${P}">It's called the Feynman technique: if you can explain a concept in plain words, you actually understand it. If you stumble, you've found exactly what to review.</p>
+      <p style="${P}">Scholr's <strong style="color:#E8E8F0;">Feynman Mode</strong> grades your explanation in real time — it tells you what you nailed, where the gaps are, and asks a follow-up to push you further.</p>
+      ${ctaButton("Try Feynman Mode →", appUrl())}
+    `,
+  }),
+  invite_friend: () => ({
+    subject: "Studying alone is hard. Studying together isn't.",
+    html: `
+      <h1 style="${H}font-size:24px;margin:0 0 14px;">You've been on Scholr for a week.</h1>
+      <p style="${P}">Here's what we've noticed: the students who get the most out of Scholr study with friends. Shared notebooks, shared notes, same exam.</p>
+      <p style="${P}">Invite your study group — everyone's notes in one place, and Derek answers from all of it.</p>
+      ${ctaButton("Invite your study group →", appUrl())}
+    `,
+  }),
+};
+
+// Send one onboarding email. type ∈ {welcome, feynman, invite_friend}.
+export async function sendOnboardingEmail(type, to, name, userId) {
+  const make = ONBOARDING_TEMPLATES[type];
+  if (!make) throw new Error(`Unknown onboarding email type: ${type}`);
+  const { subject, html } = make(name);
+  const { error } = await getResend().emails.send({
+    from: getFrom(),
+    to,
+    replyTo: SUPPORT_EMAIL,
+    subject,
+    html: emailShell(html, userId),
+  });
+  if (error) throw new Error(`Resend error: ${error.message}`);
+}

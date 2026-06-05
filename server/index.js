@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendOtpEmail, sendInviteEmail } from "./email.js";
+import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail } from "./email.js";
 import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
@@ -2473,6 +2473,22 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
       await recordConsent(created.user.id);
     }
 
+    // Onboarding email sequence: welcome now, Feynman in 3 days, invite in 7.
+    // All best-effort — a Resend hiccup or a not-yet-run migration must never
+    // block signup.
+    if (created?.user?.id) {
+      const uid = created.user.id;
+      const name = fullName?.trim()?.split(" ")[0] || "";
+      sendOnboardingEmail("welcome", email, name, uid).catch(e => console.error("[onboarding welcome]", e.message));
+      try {
+        const now = Date.now();
+        await supabase.from("pending_emails").insert([
+          { user_id: uid, email, email_type: "feynman",       send_at: new Date(now + 3 * 86400000).toISOString() },
+          { user_id: uid, email, email_type: "invite_friend", send_at: new Date(now + 7 * 86400000).toISOString() },
+        ]);
+      } catch (e) { console.error("[onboarding enqueue]", e.message); }
+    }
+
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
     return res.json({ ok: true });
   }
@@ -2768,9 +2784,88 @@ app.post("/api/create-portal-session", requireAuth, async (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
+// ── Public aggregate stats (landing-page social proof) — cached 5 min ─────────
+let statsCache = { data: null, at: 0 };
+app.get("/api/stats/public", async (req, res) => {
+  try {
+    if (statsCache.data && Date.now() - statsCache.at < 5 * 60 * 1000) {
+      return res.json(statsCache.data);
+    }
+    const [usersRes, nbRes, notesRes] = await Promise.all([
+      supabase.auth.admin.listUsers({ page: 1, perPage: 1 }),
+      supabase.from("notebooks").select("*", { count: "exact", head: true }),
+      supabase.from("notes").select("*", { count: "exact", head: true }),
+    ]);
+    const data = {
+      userCount:     usersRes?.data?.total ?? usersRes?.data?.users?.length ?? 0,
+      notebookCount: nbRes.count ?? 0,
+      noteCount:     notesRes.count ?? 0,
+    };
+    statsCache = { data, at: Date.now() };
+    res.json(data);
+  } catch (err) {
+    console.error("[stats/public]", err.message);
+    res.json({ userCount: 0, notebookCount: 0, noteCount: 0, fallback: true });
+  }
+});
+
+// ── Email unsubscribe — GET confirm page (scanner-safe), POST sets the flag ────
+const unsubPage = (body) => `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:-apple-system,sans-serif;background:#08080C;color:#E8E8F0;text-align:center;padding:60px 20px;"><div style="font-size:24px;font-weight:800;margin-bottom:12px;">schol<span style="color:#A78BFA;">r</span></div>${body}</body></html>`;
+app.get("/api/email/unsubscribe", (req, res) => {
+  const u = encodeURIComponent(String(req.query.u || ""));
+  res.set("Content-Type", "text/html").send(unsubPage(
+    `<p style="color:#A0A0B8;">Unsubscribe from Scholr onboarding emails?</p>
+     <form method="POST" action="/api/email/unsubscribe?u=${u}">
+       <button type="submit" style="background:#A78BFA;color:#0A0A0F;border:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;">Unsubscribe</button>
+     </form>`));
+});
+app.post("/api/email/unsubscribe", async (req, res) => {
+  const u = String(req.query?.u || req.body?.u || "");
+  if (!u) return res.status(400).send(unsubPage("<p>Missing user.</p>"));
+  try {
+    await supabase.from("profiles").upsert({ user_id: u, email_unsubscribed: true }, { onConflict: "user_id" });
+  } catch (e) { console.error("[unsubscribe]", e.message); }
+  res.set("Content-Type", "text/html").send(unsubPage(`<p style="color:#A0A0B8;">You're unsubscribed. You won't get onboarding emails anymore.</p>`));
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Scholr API running on http://localhost:${PORT}`);
   console.log(`CORS allowed origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log(`CLIENT_ORIGIN env: ${process.env.CLIENT_ORIGIN ?? "(not set — using fallback)"}`);
 });
+
+// ── Onboarding email worker: send due pending emails (hourly) ─────────────────
+// Backward-compatible: if migration 024 hasn't run, the query errors and is
+// logged, never crashing the server.
+async function processPendingEmails() {
+  try {
+    const { data: due, error } = await supabase
+      .from("pending_emails")
+      .select("id, user_id, email, email_type")
+      .eq("sent", false)
+      .lte("send_at", new Date().toISOString())
+      .limit(100);
+    if (error) { console.error("[pending_emails]", error.message); return; }
+    if (!due?.length) return;
+
+    const userIds = [...new Set(due.map(d => d.user_id))];
+    const { data: profs } = await supabase
+      .from("profiles").select("user_id, email_unsubscribed").in("user_id", userIds);
+    const unsubscribed = new Set((profs || []).filter(p => p.email_unsubscribed).map(p => p.user_id));
+
+    for (const row of due) {
+      try {
+        if (!unsubscribed.has(row.user_id)) {
+          await sendOnboardingEmail(row.email_type, row.email, "", row.user_id);
+        }
+        await supabase.from("pending_emails")
+          .update({ sent: true, sent_at: new Date().toISOString() })
+          .eq("id", row.id);
+      } catch (e) { console.error(`[pending_emails send ${row.id}]`, e.message); }
+    }
+    console.log(`[pending_emails] processed ${due.length}`);
+  } catch (e) { console.error("[pending_emails worker]", e.message); }
+}
+setInterval(processPendingEmails, 60 * 60 * 1000); // hourly
+setTimeout(processPendingEmails, 30 * 1000);        // once shortly after boot

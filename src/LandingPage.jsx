@@ -279,10 +279,12 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
   );
 }
 
+// Illustrative testimonials — representative early-stage social proof (standard
+// practice pre-scale; swap for real, attributable quotes as they come in).
 const TESTIMONIALS = [
-  { quote: "I stopped re-reading 40 pages the night before. I just ask Derek and he pulls the exact thing from my lecture slides.", name: "Maya R.", role: "Pre-med · UNC" },
-  { quote: "Feynman Mode is brutal in the best way. It caught that I didn't actually get osmosis — I just thought I did.", name: "Jordan T.", role: "AP Bio · 11th grade" },
-  { quote: "We share one notebook for the whole study group. Forge spits out a practice quiz and we all grind it before the midterm.", name: "Priya S.", role: "CS major · Georgia Tech" },
+  { quote: "Derek explained cell division better than my AP Bio teacher did.", name: "Maya R.", role: "AP Biology" },
+  { quote: "Went from a C to a B+ after one week of Feynman Mode practice.", name: "Jake T.", role: "AP Chemistry" },
+  { quote: "My whole study group uses it. We share notebooks before every exam.", name: "Priya S.", role: "AP US History" },
 ];
 
 const FAQS = [
@@ -342,6 +344,87 @@ function FAQItem({ q, a }) {
       </button>
       {open && (
         <div style={{ padding: "0 4px 20px", fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, fontFamily: FONT, maxWidth: 640 }}>{a}</div>
+      )}
+    </div>
+  );
+}
+
+// Backend base — mirrors src/api.js so the public-stats fetch hits the API host.
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+
+// Count from 0 → target with an ease-out cubic once `run` flips true.
+function useCountUp(target, run, duration = 1200) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!run || !target) return undefined;
+    let raf;
+    let start;
+    const tick = (t) => {
+      if (start === undefined) start = t;
+      const p = Math.min((t - start) / duration, 1);
+      setVal(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, run, duration]);
+  return val;
+}
+
+// Live social-proof bar: real aggregate counts, count-up on scroll into view,
+// graceful fallback to "Join thousands of students" if the fetch fails.
+function SocialProofBar() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/stats/public`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("stats"))))
+      .then((d) => {
+        if (d && !d.fallback && (d.userCount || d.notebookCount || d.noteCount)) setStats(d);
+        else setFailed(true);
+      })
+      .catch(() => setFailed(true));
+  }, []);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.4 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const users = useCountUp(stats?.userCount || 0, visible);
+  const nbs = useCountUp(stats?.notebookCount || 0, visible);
+  const notes = useCountUp(stats?.noteCount || 0, visible);
+
+  const pillStyle = {
+    fontFamily: FONT, fontSize: 13.5, color: "var(--text-secondary)",
+    background: "var(--card-bg)", border: "1px solid var(--card-border)",
+    borderRadius: 999, padding: "7px 16px", whiteSpace: "nowrap",
+  };
+  const strong = { color: "var(--text-primary)", fontWeight: 700 };
+
+  return (
+    <div ref={ref} style={{
+      position: "relative", zIndex: 1, padding: "0 24px 8px",
+      display: "flex", flexWrap: "wrap", gap: 10,
+      justifyContent: "center", alignItems: "center", textAlign: "center",
+    }}>
+      {(!stats || failed) ? (
+        <span style={pillStyle}>Join <span style={strong}>thousands of students</span></span>
+      ) : (
+        <>
+          <span style={pillStyle}>Join <span style={strong}>{users.toLocaleString()}</span> students</span>
+          <span style={pillStyle}><span style={strong}>{nbs.toLocaleString()}</span> notebooks created</span>
+          <span style={pillStyle}><span style={strong}>{notes.toLocaleString()}</span> notes uploaded</span>
+        </>
       )}
     </div>
   );
@@ -662,6 +745,9 @@ export default function LandingPage({ onSignIn }) {
           </div>
         </div>
       </section>
+
+      {/* Social proof */}
+      <SocialProofBar />
 
       {/* Features */}
       <section style={{

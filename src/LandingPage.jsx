@@ -547,7 +547,7 @@ export default function LandingPage({ onSignIn }) {
               background: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 45%, #8B5CF6 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
-            }}>Actually understand it.</span>
+            }}>Study together.</span>
           </h1>
 
           {/* Subtext */}

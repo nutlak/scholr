@@ -6,6 +6,7 @@ import LandingPage from "./LandingPage.jsx";
 import LegalPage, { LegalFooter } from "./LegalPages.jsx";
 import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
+import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import {
   DndContext,
   closestCenter,
@@ -4546,6 +4547,10 @@ export default function Scholr() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [termsGate, setTermsGate] = useState(null); // null = unknown, "ok" = accepted, "needed" = must accept
+  const [onboarding, setOnboarding] = useState("ok"); // "ok" | "needed" (first-login wizard)
+  const [profile, setProfile] = useState(null);       // profile flags: streak, milestones, referral
+  const [streakBannerDismissed, setStreakBannerDismissed] = useState(false);
+  const [milestoneModal, setMilestoneModal] = useState(null); // { day } | null
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
@@ -4671,7 +4676,15 @@ export default function Scholr() {
       .then(s => setTermsGate(s?.accepted ? "ok" : "needed"))
       .catch(() => setTermsGate("ok"));
 
-    api.listNotebooks(name).then(setNotebooks).catch(console.error);
+    // Notebooks + profile together → decide whether to show the onboarding wizard
+    // (first login: no notebooks AND onboarding not yet completed).
+    Promise.all([api.listNotebooks(name), api.getProfile()])
+      .then(([nbs, prof]) => {
+        setNotebooks(nbs);
+        setProfile(prof);
+        setOnboarding(prof && !prof.onboarding_completed && nbs.length === 0 ? "needed" : "ok");
+      })
+      .catch(console.error);
     api.listOwnedNotebooks(name).then(setOwnedNotebooks).catch(console.error);
     api.listSharedNotebooks(name).then(setSharedNotebooks).catch(console.error);
     api.getStarredNotebooks(name)
@@ -4898,6 +4911,19 @@ export default function Scholr() {
       {/* Terms wall — authed app only; never on landing/legal (those return earlier) */}
       {user && authReady && termsGate === "needed" && (
         <TermsWall onAccepted={() => setTermsGate("ok")} />
+      )}
+
+      {/* First-login onboarding wizard — only after terms are accepted */}
+      {user && authReady && termsGate === "ok" && onboarding === "needed" && (
+        <OnboardingWizard
+          user={user}
+          onComplete={() => {
+            setOnboarding("ok");
+            const nm = getDisplayName(user);
+            api.listNotebooks(nm).then(setNotebooks).catch(() => {});
+            api.listClasses().then(setClasses).catch(() => {});
+          }}
+        />
       )}
 
       {pendingInviteToken && authReady && !user && (

@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail } from "./email.js";
+import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail, sendReferralEmail } from "./email.js";
 import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
@@ -2487,6 +2487,23 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
           { user_id: uid, email, email_type: "invite_friend", send_at: new Date(now + 7 * 86400000).toISOString() },
         ]);
       } catch (e) { console.error("[onboarding enqueue]", e.message); }
+
+      // Referral attribution: signup came via ?ref=<referrerId>.
+      const ref = String(req.body?.ref ?? "").trim();
+      if (ref && ref !== uid) {
+        try {
+          await supabase.from("profiles").upsert({ user_id: uid, referred_by: ref }, { onConflict: "user_id" });
+          const { data: existing } = await supabase
+            .from("referrals").select("id")
+            .eq("referrer_id", ref).eq("referred_email", email.toLowerCase())
+            .limit(1).maybeSingle();
+          if (existing) {
+            await supabase.from("referrals").update({ status: "signed_up", referred_user_id: uid }).eq("id", existing.id);
+          } else {
+            await supabase.from("referrals").insert({ referrer_id: ref, referred_email: email.toLowerCase(), referred_user_id: uid, status: "signed_up" });
+          }
+        } catch (e) { console.error("[referral capture]", e.message); }
+      }
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -2676,6 +2693,88 @@ app.get("/api/user/terms-status", requireAuth, async (req, res) => {
     .eq("user_id", req.user.id)
     .maybeSingle();
   res.json({ accepted: !!data?.terms_accepted_at });
+});
+
+// ── Profile flags (onboarding wizard + streak gamification) ───────────────────
+app.get("/api/user/profile", requireAuth, async (req, res) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("onboarding_completed, longest_streak, streak_milestones_shown, referral_months_earned")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  res.json({
+    onboarding_completed: !!data?.onboarding_completed,
+    longest_streak: data?.longest_streak ?? 0,
+    streak_milestones_shown: data?.streak_milestones_shown ?? [],
+    referral_months_earned: data?.referral_months_earned ?? 0,
+  });
+});
+
+app.post("/api/user/complete-onboarding", requireAuth, async (req, res) => {
+  await supabase.from("profiles").upsert({ user_id: req.user.id, onboarding_completed: true }, { onConflict: "user_id" });
+  res.json({ ok: true });
+});
+
+// Update longest streak if the current run beats the stored record.
+app.post("/api/user/streak", requireAuth, async (req, res) => {
+  const current = Math.max(0, parseInt(req.body?.current, 10) || 0);
+  const { data } = await supabase.from("profiles").select("longest_streak").eq("user_id", req.user.id).maybeSingle();
+  const longest = Math.max(current, data?.longest_streak ?? 0);
+  await supabase.from("profiles").upsert({ user_id: req.user.id, longest_streak: longest }, { onConflict: "user_id" });
+  res.json({ longest_streak: longest });
+});
+
+// Record that a streak-milestone celebration was shown (idempotent).
+app.post("/api/user/streak-milestone", requireAuth, async (req, res) => {
+  const day = parseInt(req.body?.day, 10);
+  if (!day) return res.status(400).json({ error: "invalid day" });
+  const { data } = await supabase.from("profiles").select("streak_milestones_shown").eq("user_id", req.user.id).maybeSingle();
+  const shown = new Set((data?.streak_milestones_shown ?? []).map(String));
+  shown.add(String(day));
+  await supabase.from("profiles").upsert({ user_id: req.user.id, streak_milestones_shown: [...shown] }, { onConflict: "user_id" });
+  res.json({ streak_milestones_shown: [...shown] });
+});
+
+// ── Referrals ─────────────────────────────────────────────────────────────────
+function appOriginForRef() {
+  const o = process.env.CLIENT_ORIGIN;
+  return o && !o.startsWith("http://localhost") ? o : "https://scholr.dev";
+}
+
+app.post("/api/referral/invite", requireAuth, async (req, res) => {
+  const referrerUserId = req.user.id;
+  const referredEmail = String(req.body?.referredEmail ?? "").trim().toLowerCase();
+  if (!referredEmail || !referredEmail.includes("@")) return res.status(400).json({ error: "A valid email is required." });
+  try {
+    await supabase.from("referrals").insert({ referrer_id: referrerUserId, referred_email: referredEmail, status: "pending" });
+    const referrerName = req.user.user_metadata?.full_name?.split(" ")[0] || req.user.email?.split("@")[0] || "A friend";
+    await sendReferralEmail(referredEmail, referrerName, referrerUserId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[referral/invite]", err.message);
+    res.status(500).json({ error: "Failed to send invite." });
+  }
+});
+
+app.get("/api/referral/stats", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const link = `${appOriginForRef()}?ref=${userId}`;
+  try {
+    const [invitedRes, signedRes, profRes] = await Promise.all([
+      supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId),
+      supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId).eq("status", "signed_up"),
+      supabase.from("profiles").select("referral_months_earned").eq("user_id", userId).maybeSingle(),
+    ]);
+    res.json({
+      referralLink: link,
+      invited: invitedRes.count ?? 0,
+      signedUp: signedRes.count ?? 0,
+      monthsEarned: profRes.data?.referral_months_earned ?? 0,
+    });
+  } catch (err) {
+    console.error("[referral/stats]", err.message);
+    res.json({ referralLink: link, invited: 0, signedUp: 0, monthsEarned: 0 });
+  }
 });
 
 // POST /api/user/accept-terms — record consent for an existing logged-in user

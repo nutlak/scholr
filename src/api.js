@@ -666,4 +666,57 @@ export const api = {
     }
     return res.json();
   },
+
+  // ── Profile flags (onboarding + streak) ─────────────────────────────────
+  async getProfile() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/user/profile`, { headers });
+    if (!res.ok) return { onboarding_completed: true, longest_streak: 0, streak_milestones_shown: [], referral_months_earned: 0 };
+    return res.json();
+  },
+
+  async completeOnboarding() {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/complete-onboarding`, { method: "POST", headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async updateStreak(current) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/streak`, {
+      method: "POST", headers, body: JSON.stringify({ current }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { longest_streak }
+  },
+
+  async recordStreakMilestone(day) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/streak-milestone`, {
+      method: "POST", headers, body: JSON.stringify({ day }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { streak_milestones_shown }
+  },
+
+  // ── Referrals ───────────────────────────────────────────────────────────
+  async getReferralStats() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/referral/stats`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { referralLink, invited, signedUp, monthsEarned }
+  },
+
+  async sendReferralInvite(referredEmail) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/referral/invite`, {
+      method: "POST", headers, body: JSON.stringify({ referredEmail }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Failed to send invite");
+    }
+    return res.json(); // { success: true }
+  },
 };

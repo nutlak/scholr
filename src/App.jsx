@@ -1911,7 +1911,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
     : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
+    <div className="print-area" data-print-title={nb.title || "Notes"} style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
       {showUpload && (
         <UploadNotesModal
           notebookId={nb.id} accentColor={t.hue}
@@ -1992,7 +1992,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       )}
 
       {/* Header */}
-      <div className="nb-header" style={{
+      <div className="nb-header no-print" style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
         paddingBottom: 14, borderBottom: "1px solid var(--border-default)",
       }}>
@@ -2049,6 +2049,23 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
 
         {/* Action buttons — desktop: inline; mobile: full-width scrollable Row 2 */}
         <div className="nb-header-actions">
+          <button
+            onClick={() => {
+              const prev = document.title;
+              document.title = nb.title || "Scholr notes";
+              window.print();
+              setTimeout(() => { document.title = prev; }, 1000);
+            }}
+            aria-label="Export PDF"
+            data-tooltip="Export as PDF"
+            className="btn-press has-tip"
+            style={{
+              background: "transparent", border: "1px solid var(--border-strong)",
+              color: "var(--text-secondary)",
+              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 14, flexShrink: 0,
+            }}
+          >📄</button>
           <button
             onClick={() => setConfirmDelete(true)}
             aria-label="Delete notebook"
@@ -3825,7 +3842,7 @@ function InviteLanding({ inviteInfo, onSignIn }) {
   );
 }
 
-function ActivityHeatmap({ data }) {
+function ActivityHeatmap({ data, longestStreak = 0 }) {
   const [viewMode, setViewMode] = useState("week"); // 'week' | 'month' | 'year'
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
@@ -4057,7 +4074,8 @@ function ActivityHeatmap({ data }) {
         borderTop: "1px solid var(--border)",
       }}>
         {[
-          { val: streak,     label: streak === 1 ? "day streak" : "day streak", color: "var(--acc)" },
+          { val: streak,     label: "day streak", color: "var(--acc)" },
+          { val: Math.max(longestStreak, streak), label: "longest", color: "var(--text-secondary)" },
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
@@ -4543,6 +4561,101 @@ function TermsWall({ onAccepted }) {
   );
 }
 
+// ── Streak helpers (1F) ────────────────────────────────────────────────────
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+function computeStreak(heatmap) {
+  const map = new Map((heatmap || []).map(d => [d.date, d.count]));
+  const fmtKey = dt => dt.toISOString().slice(0, 10);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let streak = 0;
+  for (let i = 0; ; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    if ((map.get(fmtKey(d)) ?? 0) > 0) streak++; else break;
+  }
+  return streak;
+}
+// Streak alive but at risk = yesterday had activity, today does not (yet).
+function streakAtRiskFromHeatmap(heatmap) {
+  if (!heatmap || !heatmap.length) return false;
+  const map = new Map(heatmap.map(d => [d.date, d.count]));
+  const fmtKey = dt => dt.toISOString().slice(0, 10);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const yest = new Date(today); yest.setDate(today.getDate() - 1);
+  return (map.get(fmtKey(yest)) ?? 0) > 0 && (map.get(fmtKey(today)) ?? 0) === 0;
+}
+
+function StreakMilestoneModal({ day, onClose }) {
+  const [copied, setCopied] = useState(false);
+  async function share() {
+    try {
+      await navigator.clipboard.writeText(`I'm on a ${day}-day study streak on Scholr! scholr.dev`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  }
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, maxWidth: 380, width: "100%", textAlign: "center", animation: "onbSlide 0.3s ease" }}>
+        <div style={{ fontSize: 52, marginBottom: 8 }}>🔥</div>
+        <div style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>{day}-day streak!</div>
+        <div style={{ fontFamily: FONT, fontSize: 14, color: "var(--text-secondary)", marginBottom: 24 }}>You're on fire. Keep it up.</div>
+        <button onClick={share} style={{ width: "100%", height: 44, borderRadius: 10, border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>{copied ? "Copied! ✓" : "Share my streak"}</button>
+        <button onClick={onClose} style={{ width: "100%", height: 44, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Keep going →</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Referrals settings section (1D) ─────────────────────────────────────────
+function ReferralSection() {
+  const [stats, setStats] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => { api.getReferralStats().then(setStats).catch(() => {}); }, []);
+  const link = stats?.referralLink || "";
+
+  async function copy() {
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ }
+  }
+  async function invite() {
+    if (!email.includes("@")) return;
+    setSending(true); setMsg("");
+    try {
+      await api.sendReferralInvite(email.trim());
+      setMsg(`Invite sent to ${email.trim()} ✓`); setEmail("");
+      api.getReferralStats().then(setStats).catch(() => {});
+    } catch (e) { setMsg(e.message || "Failed to send invite"); }
+    setSending(false);
+  }
+
+  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 };
+  const field = { height: 40, borderRadius: 10, background: "var(--bg-subtle, rgba(255,255,255,0.04))", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, padding: "0 12px", outline: "none", boxSizing: "border-box" };
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={hdr}>Referrals</div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <input readOnly value={link} placeholder="loading…" onFocus={e => e.target.select()} style={{ ...field, flex: 1 }} />
+        <button onClick={copy} className="btn-press" style={{ ...field, width: "auto", padding: "0 16px", cursor: "pointer", color: "var(--acc)", fontWeight: 600 }}>{copied ? "Copied!" : "Copy"}</button>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 14 }}>
+        {(stats?.invited ?? 0)} friends invited · {(stats?.signedUp ?? 0)} signed up · {(stats?.monthsEarned ?? 0)} months earned
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <input value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} placeholder="friend@school.edu" style={{ ...field, flex: 1 }} />
+        <button onClick={invite} disabled={sending || !email.includes("@")} className="btn-press" style={{ height: 40, borderRadius: 10, border: "none", padding: "0 16px", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 13.5, fontWeight: 700, cursor: sending || !email.includes("@") ? "not-allowed" : "pointer", opacity: sending || !email.includes("@") ? 0.6 : 1, whiteSpace: "nowrap" }}>{sending ? "Sending…" : "Send invite"}</button>
+      </div>
+      {msg && <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 6 }}>{msg}</div>}
+      <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, lineHeight: 1.5 }}>
+        Your friend gets Scholr for free. You get 1 month of Pro when they sign up.
+      </div>
+    </div>
+  );
+}
+
 export default function Scholr() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -4721,6 +4834,28 @@ export default function Scholr() {
     }
   }, [user, authReady]);
 
+  // Streak gamification: bump longest streak + fire one-time milestone modals.
+  // All setState happens inside async callbacks (never synchronously in the
+  // effect) to avoid cascading re-renders; guards keep it idempotent.
+  useEffect(() => {
+    if (!user || !profile || !heatmap.length) return;
+    const streak = computeStreak(heatmap);
+    if (streak > (profile.longest_streak ?? 0)) {
+      api.updateStreak(streak)
+        .then(() => setProfile(p => ({ ...p, longest_streak: streak })))
+        .catch(() => {});
+    }
+    const shown = new Set((profile.streak_milestones_shown ?? []).map(String));
+    if (STREAK_MILESTONES.includes(streak) && !shown.has(String(streak))) {
+      api.recordStreakMilestone(streak)
+        .catch(() => {})
+        .finally(() => {
+          setMilestoneModal({ day: streak });
+          setProfile(p => ({ ...p, streak_milestones_shown: [...(p.streak_milestones_shown ?? []), String(streak)] }));
+        });
+    }
+  }, [user, profile, heatmap]);
+
   function patchNotebookEverywhere(notebookId, patch) {
     const apply = list => list.map(n => n.id === notebookId ? { ...n, ...patch } : n);
     setNotebooks(apply);
@@ -4883,6 +5018,7 @@ export default function Scholr() {
   }
 
   const displayName = getDisplayName(user);
+  const streakAtRisk = streakAtRiskFromHeatmap(heatmap);
 
   const filteredClasses = classes.filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase())
@@ -4924,6 +5060,11 @@ export default function Scholr() {
             api.listClasses().then(setClasses).catch(() => {});
           }}
         />
+      )}
+
+      {/* Streak milestone celebration */}
+      {milestoneModal && (
+        <StreakMilestoneModal day={milestoneModal.day} onClose={() => setMilestoneModal(null)} />
       )}
 
       {pendingInviteToken && authReady && !user && (
@@ -5425,6 +5566,9 @@ export default function Scholr() {
                 </div>
               </div>
 
+              {/* ── Referrals (1D) ── */}
+              <ReferralSection />
+
               {/* ── Appearance ────────────────────────────────────────────── */}
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 Appearance
@@ -5546,6 +5690,12 @@ export default function Scholr() {
 
           ) : (
             <div style={{ animation: "fadeIn 0.25s ease" }}>
+              {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
+                <div className="streak-banner">
+                  🔥 Your streak is at risk! Study today to keep it alive.
+                  <button onClick={() => setStreakBannerDismissed(true)} aria-label="Dismiss">×</button>
+                </div>
+              )}
               {/* Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
                 <div>
@@ -5732,7 +5882,7 @@ export default function Scholr() {
 
               {/* Dashboard: activity heatmap */}
               {activeView === "dashboard" && (
-                <ActivityHeatmap data={heatmap} />
+                <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} />
               )}
 
               {/* Notifications — dashboard only */}

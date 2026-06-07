@@ -810,6 +810,11 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
   if (req.membership.role !== "owner")
     return res.status(403).json({ error: "Only the owner can delete this notebook" });
 
+  // Defense-in-depth: explicitly clear star rows for this notebook so none are
+  // orphaned even if starred_notebooks.notebook_id lacks ON DELETE CASCADE.
+  // (Postgres cascade also handles notes/members/etc. — see migration 030.)
+  await supabase.from("starred_notebooks").delete().eq("notebook_id", req.params.id);
+
   const { error } = await supabase
     .from("notebooks")
     .delete()

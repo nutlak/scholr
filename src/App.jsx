@@ -5087,6 +5087,31 @@ export default function Scholr() {
     setActiveNb(curr => curr && curr.id === notebookId ? { ...curr, ...patch } : curr);
   }
 
+  // Remove notebook(s) from EVERY place notebooks are stored: all list views,
+  // the starred set, the per-class unit cache, and the currently-open notebook.
+  function removeNotebooksByIds(idSet) {
+    if (!idSet || idSet.size === 0) return;
+    const drop = list => list.filter(n => !idSet.has(n.id));
+    setNotebooks(drop);
+    setOwnedNotebooks(drop);
+    setSharedNotebooks(drop);
+    setStarredNotebooks(drop);
+    setStarredIds(prev => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const id of idSet) if (next.delete(id)) changed = true;
+      return changed ? next : prev;
+    });
+    setClassUnitsCache(prev => {
+      const next = { ...prev };
+      for (const cid of Object.keys(next)) {
+        if (Array.isArray(next[cid])) next[cid] = next[cid].filter(u => !idSet.has(u.id));
+      }
+      return next;
+    });
+    setActiveNb(curr => (curr && idSet.has(curr.id) ? null : curr));
+  }
+
   async function handleSetStatus(nb, status) {
     patchNotebookEverywhere(nb.id, { status });
     try { await api.updateNotebookStatus(nb.id, status); }
@@ -5235,8 +5260,17 @@ export default function Scholr() {
 
   async function handleDeleteClass(classId) {
     await api.deleteClass(classId);
+    // The server cascades the class's notebooks → drop every one of them from
+    // all client-side notebook state (lists, starred, open notebook), not just
+    // the class + its unit cache.
+    const removed = new Set();
+    for (const list of [notebooks, ownedNotebooks, sharedNotebooks, starredNotebooks, ...Object.values(classUnitsCache)]) {
+      for (const n of (list || [])) if (n && n.class_id === classId) removed.add(n.id);
+    }
     setClasses(prev => prev.filter(c => c.id !== classId));
     setClassUnitsCache(prev => { const next = { ...prev }; delete next[classId]; return next; });
+    removeNotebooksByIds(removed);
+    if (activeNb && removed.has(activeNb.id)) setActiveView("dashboard");
     if (expandedClassId === classId) setExpandedClassId(null);
     setToast("Class deleted");
     setTimeout(() => setToast(""), 3000);
@@ -5681,15 +5715,8 @@ export default function Scholr() {
                 onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
                 onUpgradeNeeded={limitType => setUpgradeModal({ limitType })}
                 onDeleted={id => {
-                  setNotebooks(prev => prev.filter(n => n.id !== id));
-                  setClassUnitsCache(prev => {
-                    const next = { ...prev };
-                    for (const cid of Object.keys(next)) {
-                      if (Array.isArray(next[cid])) next[cid] = next[cid].filter(u => u.id !== id);
-                    }
-                    return next;
-                  });
-                  setActiveNb(null);
+                  removeNotebooksByIds(new Set([id])); // clears lists, starred, cache, and closes it
+                  setActiveView("dashboard");           // the open notebook was just deleted → dashboard
                   setToast("Unit deleted");
                   setTimeout(() => setToast(""), 3000);
                 }}

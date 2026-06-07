@@ -119,6 +119,19 @@ const PRIVACY_VERSION = "2026-06-02";
 // Resilient: the profiles write falls back to a timestamp-only shape if the
 // version columns aren't present (migration 021 not run), and the log insert is
 // non-fatal if that table is absent (migration 022 not run).
+// ── Analytics: behavior events + JARVIS relay (fire-and-forget, never block) ──
+function trackEvent(userId, type, metadata = {}) {
+  if (!userId) return;
+  supabase.from("user_events").insert({ user_id: userId, event_type: type, metadata })
+    .then(({ error }) => { if (error) console.error(`[trackEvent ${type}]`, error.message); })
+    .catch(() => {});
+}
+function relayJarvis(type, payload = {}) {
+  supabase.from("jarvis_events").insert({ event_type: type, payload })
+    .then(({ error }) => { if (error) console.error(`[relayJarvis ${type}]`, error.message); })
+    .catch(() => {});
+}
+
 async function recordConsent(userId) {
   if (!userId) return;
   const acceptedAt = new Date().toISOString();
@@ -286,6 +299,8 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
         console.log(`[stripe] checkout.session.completed: user=${userId} → pro, period_end=${periodEnd}`);
+        trackEvent(userId, "subscription_created");
+        relayJarvis("new_subscription", { userId });
         break;
       }
       case "customer.subscription.updated": {
@@ -311,6 +326,7 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
           .update({ tier: "free", stripe_subscription_id: null, updated_at: new Date().toISOString() })
           .eq("stripe_subscription_id", sub.id);
         console.log(`[stripe] subscription.deleted: id=${sub.id} → free`);
+        relayJarvis("subscription_cancelled", { subscriptionId: sub.id });
         break;
       }
       default:
@@ -637,6 +653,7 @@ app.post("/api/notebooks", requireAuth, async (req, res) => {
     role: "owner",
   });
 
+  trackEvent(req.user.id, "notebook_created", { notebookId: nb.id });
   res.status(201).json(nb);
 });
 
@@ -962,6 +979,7 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
     notebook_id: nb.id, user_id: req.user.id, role: "owner",
   });
 
+  trackEvent(req.user.id, "notebook_created", { notebookId: nb.id, classId: req.params.id });
   res.status(201).json(nb);
 });
 
@@ -1130,6 +1148,7 @@ app.post(
       .single();
 
     if (error) return res.status(500).json({ error: error.message });
+    trackEvent(req.user.id, fileUrl ? "file_uploaded" : "note_created", { notebookId: req.params.id });
     res.status(201).json(data);
 
     // Bump daily activity for streak/heatmap
@@ -1296,6 +1315,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, a
     const sources = (notes ?? [])
       .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
       .map(n => n.title);
+    trackEvent(req.user.id, "ai_message_sent", { notebookId: req.params.id });
     res.json({ answer, sources });
 
     // Increment usage counter fire-and-forget
@@ -1642,6 +1662,7 @@ app.post("/api/notebooks/:id/share", requireAuth, requireMember, async (req, res
     }
     if (!slug) return res.status(500).json({ error: "Could not generate a share link. Please try again." });
   }
+  trackEvent(req.user.id, "notebook_shared", { notebookId: req.params.id });
   res.json({ slug, shareUrl: `${shareBase()}/s/${slug}` });
 });
 
@@ -1672,7 +1693,8 @@ app.get("/api/share/:slug", async (req, res) => {
   let ownerName = "A Scholr student";
   try {
     const { data: u } = await supabase.auth.admin.getUserById(nb.created_by);
-    ownerName = u?.user?.user_metadata?.full_name?.trim() || u?.user?.email?.split("@")[0] || ownerName;
+    // Display name only — never the email (not even the local-part) on a public page.
+    ownerName = u?.user?.user_metadata?.full_name?.trim() || ownerName;
   } catch { /* best-effort; never expose details */ }
 
   res.json({ title: nb.title, topic: nb.topic ?? null, ownerName, notes: notes ?? [] });
@@ -1979,6 +2001,7 @@ app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, podc
     }).catch(err => console.error("podcast pipeline crashed:", err));
   });
 
+  trackEvent(req.user.id, "podcast_created", { notebookId: req.params.id });
   res.json({ podcastId: row.id });
 });
 
@@ -2579,6 +2602,8 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
       const uid = created.user.id;
       const name = fullName?.trim()?.split(" ")[0] || "";
       sendOnboardingEmail("welcome", email, name, uid).catch(e => console.error("[onboarding welcome]", e.message));
+      trackEvent(uid, "user_signed_up");
+      relayJarvis("new_user", { email });
       try {
         const now = Date.now();
         await supabase.from("pending_emails").insert([
@@ -2811,6 +2836,7 @@ app.get("/api/user/profile", requireAuth, async (req, res) => {
 
 app.post("/api/user/complete-onboarding", requireAuth, async (req, res) => {
   await supabase.from("profiles").upsert({ user_id: req.user.id, onboarding_completed: true }, { onConflict: "user_id" });
+  trackEvent(req.user.id, "onboarding_completed");
   res.json({ ok: true });
 });
 
@@ -2840,6 +2866,7 @@ app.post("/api/user/upgrade-trigger", requireAuth, async (req, res) => {
   if (!trigger) return res.status(400).json({ error: "trigger required" });
   try {
     await supabase.from("profiles").upsert({ user_id: req.user.id, upgrade_trigger: trigger }, { onConflict: "user_id" });
+    trackEvent(req.user.id, "upgrade_modal_viewed", { trigger });
   } catch (e) { console.error("[upgrade-trigger]", e.message); }
   res.json({ ok: true });
 });
@@ -2858,6 +2885,7 @@ app.post("/api/referral/invite", requireAuth, async (req, res) => {
     await supabase.from("referrals").insert({ referrer_id: referrerUserId, referred_email: referredEmail, status: "pending" });
     const referrerName = req.user.user_metadata?.full_name?.split(" ")[0] || req.user.email?.split("@")[0] || "A friend";
     await sendReferralEmail(referredEmail, referrerName, referrerUserId);
+    trackEvent(referrerUserId, "referral_sent", { referredEmail });
     res.json({ success: true });
   } catch (err) {
     console.error("[referral/invite]", err.message);
@@ -2956,6 +2984,7 @@ app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (re
     }, { onConflict: "user_id" });
   }
 
+  trackEvent(userId, "checkout_started");
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     client_reference_id: userId, // ties checkout back to our user_id in webhook

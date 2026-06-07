@@ -447,7 +447,7 @@ async function checkClassLimit(userId) {
   return { allowed: true };
 }
 
-// Count notebooks the user OWNS (created/role=owner). Pro = unlimited; Free = 50.
+// Count notebooks the user OWNS (created/role=owner). Pro = unlimited; Free = 3.
 async function countOwnedNotebooks(userId) {
   const { count, error } = await supabase
     .from("notebook_members")
@@ -462,7 +462,7 @@ async function checkNotebookLimit(userId) {
   const tier = await getUserTier(userId);
   if (tier === "pro") return { allowed: true };
   const count = await countOwnedNotebooks(userId);
-  if (count >= 15) return { allowed: false, reason: "notebook_limit" };
+  if (count >= 3) return { allowed: false, reason: "notebook_limit" };
   return { allowed: true };
 }
 
@@ -618,7 +618,7 @@ app.post("/api/notebooks", requireAuth, async (req, res) => {
   if (!nbLimit.allowed) {
     return res.status(403).json({
       error: "notebook_limit_reached",
-      message: "Free accounts are limited to 15 notes. Upgrade to Pro for unlimited storage.",
+      message: "Free plan is limited to 3 notebooks. Upgrade to Pro for unlimited notebooks.",
     });
   }
 
@@ -947,7 +947,7 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
   if (!nbLimit.allowed) {
     return res.status(403).json({
       error: "notebook_limit_reached",
-      message: "Free accounts are limited to 15 notes. Upgrade to Pro for unlimited storage.",
+      message: "Free plan is limited to 3 notebooks. Upgrade to Pro for unlimited notebooks.",
     });
   }
 
@@ -2822,7 +2822,7 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
     forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
     forgeLimit:     tier === "pro" ? null : 3,
     notebooksUsed,
-    notebooksLimit: tier === "pro" ? null : 15,
+    notebooksLimit: tier === "pro" ? null : 3,
     resetAt:        usageRow?.reset_at ?? null,
     currentPeriodEnd: sub?.current_period_end ?? null,
   });

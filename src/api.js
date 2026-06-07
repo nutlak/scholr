@@ -564,7 +564,7 @@ export const api = {
       tier: "free",
       messagesUsed: 0, messagesLimit: 30,
       forgeUsed: 0, forgeLimit: 3,
-      notebooksUsed: 0, notebooksLimit: 15,
+      notebooksUsed: 0, notebooksLimit: 3,
     };
     return res.json();
   },

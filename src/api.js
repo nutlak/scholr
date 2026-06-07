@@ -667,6 +667,16 @@ export const api = {
     return res.json();
   },
 
+  // Record which limit triggered an upgrade prompt (fire-and-forget).
+  async recordUpgradeTrigger(trigger) {
+    try {
+      const headers = await authHeaders({ "Content-Type": "application/json" });
+      await fetch(`${API_URL}/api/user/upgrade-trigger`, {
+        method: "POST", headers, body: JSON.stringify({ trigger }),
+      });
+    } catch { /* analytics only — never block the UI */ }
+  },
+
   // ── Profile flags (onboarding + streak) ─────────────────────────────────
   async getProfile() {
     const headers = await authHeaders();

@@ -2735,6 +2735,16 @@ app.post("/api/user/streak-milestone", requireAuth, async (req, res) => {
   res.json({ streak_milestones_shown: [...shown] });
 });
 
+// Record which limit triggered an upgrade prompt (analytics: what converts).
+app.post("/api/user/upgrade-trigger", requireAuth, async (req, res) => {
+  const trigger = String(req.body?.trigger ?? "").slice(0, 64);
+  if (!trigger) return res.status(400).json({ error: "trigger required" });
+  try {
+    await supabase.from("profiles").upsert({ user_id: req.user.id, upgrade_trigger: trigger }, { onConflict: "user_id" });
+  } catch (e) { console.error("[upgrade-trigger]", e.message); }
+  res.json({ ok: true });
+});
+
 // ── Referrals ─────────────────────────────────────────────────────────────────
 function appOriginForRef() {
   const o = process.env.CLIENT_ORIGIN;

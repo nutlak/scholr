@@ -4339,8 +4339,39 @@ const NAV = [
 ];
 
 // ── UpgradeModal ─────────────────────────────────────────────────────────────
+// Same 3 testimonials as the landing page (illustrative early-stage social proof).
+const UPGRADE_TESTIMONIALS = [
+  { quote: "Derek explained cell division better than my AP Bio teacher did.", name: "Maya R.", role: "AP Biology" },
+  { quote: "Went from a C to a B+ after one week of Feynman Mode practice.", name: "Jake T.", role: "AP Chemistry" },
+  { quote: "My whole study group uses it. We share notebooks before every exam.", name: "Priya S.", role: "AP US History" },
+];
+
+function UpgradeSocialProof() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % UPGRADE_TESTIMONIALS.length), 4000);
+    return () => clearInterval(t);
+  }, []);
+  const t = UPGRADE_TESTIMONIALS[idx];
+  return (
+    <div style={{ marginTop: 18, textAlign: "center" }}>
+      <div style={{ fontSize: 15, letterSpacing: 2, marginBottom: 8 }}>⭐⭐⭐⭐⭐</div>
+      <div key={idx} style={{ minHeight: 54, animation: "fadeIn 0.6s ease" }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5, fontFamily: FONT }}>"{t.quote}"</div>
+        <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 5 }}>— {t.name}, {t.role}</div>
+      </div>
+      <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 10 }}>
+        Join students improving their grades with Scholr
+      </div>
+    </div>
+  );
+}
+
 function UpgradeModal({ limitType, onClose }) {
   const [loading, setLoading] = useState(false);
+
+  // Track which limit triggered this prompt (conversion analytics).
+  useEffect(() => { api.recordUpgradeTrigger(limitType || "upgrade"); }, [limitType]);
 
   const context = {
     message_limit_reached: {
@@ -4355,13 +4386,13 @@ function UpgradeModal({ limitType, onClose }) {
     },
     class_limit_reached: {
       Icon: BookOpen,
-      headline: "Class limit reached",
-      detail: "Free accounts are limited to 3 classes.",
+      headline: "You're on a roll.",
+      detail: "Free plan is limited to 3 classes. Upgrade to Pro for unlimited classes, notebooks, podcast mode, and more.",
     },
     notebook_limit_reached: {
       Icon: Notebook,
-      headline: "Storage limit reached",
-      detail: "Free accounts are limited to 15 notes. Upgrade for unlimited storage.",
+      headline: "You're on a roll.",
+      detail: "Free plan is limited to 3 notebooks. Upgrade to Pro for unlimited notebooks, notes, podcast mode, and more.",
     },
   }[limitType] ?? {
     Icon: Rocket,
@@ -4401,7 +4432,7 @@ function UpgradeModal({ limitType, onClose }) {
             <context.Icon size={36} strokeWidth={1.5} />
           </div>
           <div style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, letterSpacing: "-0.01em", marginBottom: 6 }}>
-            Upgrade to scholr <span style={{ color: "var(--acc)" }}>Pro</span>
+            {context.headline}
           </div>
           <div style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>
             {context.detail}
@@ -4449,7 +4480,7 @@ function UpgradeModal({ limitType, onClose }) {
             transition: "all 0.18s",
           }}
         >
-          {loading ? "Redirecting…" : "Upgrade now →"}
+          {loading ? "Redirecting…" : "Upgrade to Pro — $8.49/mo"}
         </button>
         <button
           onClick={onClose}
@@ -4463,6 +4494,8 @@ function UpgradeModal({ limitType, onClose }) {
         >
           Maybe later
         </button>
+
+        <UpgradeSocialProof />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import LegalPage, { LegalFooter } from "./LegalPages.jsx";
 import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
+import SharedNotebook from "./components/SharedNotebook.jsx";
 import {
   DndContext,
   closestCenter,
@@ -1729,6 +1730,76 @@ function SourcesPanel({ sources }) {
   );
 }
 
+// ── Public-share modal ───────────────────────────────────────────────────────
+function ShareModal({ notebookId, onClose, onStateChange }) {
+  const [loading, setLoading] = useState(true);
+  const [shareUrl, setShareUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.shareNotebook(notebookId)
+      .then(r => { setShareUrl(r.shareUrl); setLoading(false); onStateChange?.(true); })
+      .catch(e => { setError(e.message || "Couldn't create a share link."); setLoading(false); });
+  }, [notebookId]);
+
+  async function copy() {
+    try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ }
+  }
+  async function stopSharing() {
+    setStopping(true);
+    try { await api.unshareNotebook(notebookId); onStateChange?.(false); onClose(); }
+    catch (e) { setError(e.message || "Couldn't stop sharing."); setStopping(false); }
+  }
+
+  return (
+    <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.18s ease",
+    }}>
+      <div className="mobile-sheet" style={{
+        background: "var(--bg-surface-1)", border: "1px solid rgba(167,139,250,0.28)",
+        borderRadius: 18, padding: "28px 26px", maxWidth: 440, width: "100%",
+        boxShadow: "var(--sh-modal)", fontFamily: FONT, animation: "slideInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <Share2 size={18} strokeWidth={2} style={{ color: "var(--acc)" }} />
+          <div style={{ fontSize: 18, fontWeight: 600, fontFamily: FONT_HEADING, color: "var(--text-primary)" }}>Your notebook is now public!</div>
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 18 }}>Anyone with this link can view your notes.</div>
+
+        {error ? (
+          <div style={{ fontSize: 13, color: "#F87171", marginBottom: 14 }}>{error}</div>
+        ) : (
+          <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+            <input readOnly value={loading ? "Generating link…" : shareUrl} onFocus={e => e.target.select()} style={{
+              flex: 1, height: 42, borderRadius: 10, background: "var(--s1)", border: "1px solid var(--border)",
+              color: "var(--text-primary)", fontFamily: FONT, fontSize: 13.5, padding: "0 12px", outline: "none",
+            }} />
+            <button onClick={copy} disabled={loading} className="btn-press" style={{
+              height: 42, borderRadius: 10, border: "none", padding: "0 16px", cursor: loading ? "wait" : "pointer",
+              background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontWeight: 700, fontSize: 13.5, fontFamily: FONT, whiteSpace: "nowrap",
+            }}>{copied ? "Copied! ✓" : "Copy"}</button>
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
+          <button onClick={stopSharing} disabled={stopping} className="btn-press" style={{
+            height: 40, borderRadius: 10, padding: "0 16px", cursor: "pointer",
+            background: "transparent", border: "1px solid rgba(248,113,113,0.4)", color: "var(--danger)",
+            fontFamily: FONT, fontSize: 13, fontWeight: 600,
+          }}>{stopping ? "Stopping…" : "Stop sharing"}</button>
+          <button onClick={onClose} className="btn-press" style={{
+            height: 40, borderRadius: 10, padding: "0 18px", cursor: "pointer",
+            background: "transparent", border: "1px solid var(--border-h)", color: "var(--text-secondary)", fontFamily: FONT, fontSize: 13,
+          }}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueDate, onSetStatus, onUpgradeNeeded }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
@@ -1737,6 +1808,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
   const [showUpload, setShowUpload] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [isShared, setIsShared] = useState(!!nb.is_public);
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [members, setMembers]       = useState([]);
@@ -1912,6 +1985,9 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
 
   return (
     <div className="print-area" data-print-title={nb.title || "Notes"} style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
+      {showShare && (
+        <ShareModal notebookId={nb.id} onClose={() => setShowShare(false)} onStateChange={setIsShared} />
+      )}
       {showUpload && (
         <UploadNotesModal
           notebookId={nb.id} accentColor={t.hue}
@@ -2066,6 +2142,19 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               fontFamily: FONT, fontSize: 14, flexShrink: 0,
             }}
           >📄</button>
+          <button
+            onClick={() => setShowShare(true)}
+            aria-label="Share notebook"
+            data-tooltip="Share notebook"
+            className="btn-press has-tip"
+            style={{
+              background: isShared ? "var(--acc-bg)" : "transparent",
+              border: `1px solid ${isShared ? "var(--acc)" : "var(--border-strong)"}`,
+              color: isShared ? "var(--acc-h)" : "var(--text-secondary)",
+              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
+              fontFamily: FONT, fontSize: 14, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6,
+            }}
+          ><Share2 size={14} strokeWidth={1.85} /></button>
           <button
             onClick={() => setConfirmDelete(true)}
             aria-label="Delete notebook"
@@ -5068,6 +5157,10 @@ export default function Scholr() {
   });
 
   const viewLabel = NAV.find(n => n.id === activeView)?.label ?? "Dashboard";
+
+  // Public shared-notebook route (/s/:slug) — standalone, no auth required.
+  const shareMatch = (typeof window !== "undefined" ? window.location.pathname : "").match(/^\/s\/([A-Za-z0-9]+)/);
+  if (shareMatch) return <SharedNotebook slug={shareMatch[1]} />;
 
   // Public legal routes — render standalone regardless of auth (no router).
   const legalPage = { "/privacy": "privacy", "/terms": "terms", "/copyright": "copyright" }[

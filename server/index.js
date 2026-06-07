@@ -965,6 +965,43 @@ app.post("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
   res.status(201).json(nb);
 });
 
+// POST /api/classes/:id/apply-template — batch-create notebooks + starter notes
+// for a class. Respects the plan's notebook limit (stops early if reached).
+app.post("/api/classes/:id/apply-template", requireAuth, async (req, res) => {
+  const { data: cls } = await supabase
+    .from("classes").select("id").eq("id", req.params.id).eq("user_id", req.user.id).maybeSingle();
+  if (!cls) return res.status(403).json({ error: "Class not found" });
+
+  const specs = Array.isArray(req.body?.notebooks) ? req.body.notebooks : [];
+  let firstNotebookId = null;
+  let created = 0;
+  let limitHit = false;
+
+  for (const spec of specs) {
+    const limit = await checkNotebookLimit(req.user.id);
+    if (!limit.allowed) { limitHit = true; break; }
+
+    const { data: nb, error } = await supabase
+      .from("notebooks")
+      .insert({ title: String(spec.name || "Untitled").slice(0, 80), created_by: req.user.id, class_id: req.params.id })
+      .select("id")
+      .single();
+    if (error || !nb) continue;
+
+    await supabase.from("notebook_members").insert({ notebook_id: nb.id, user_id: req.user.id, role: "owner" });
+    if (!firstNotebookId) firstNotebookId = nb.id;
+    created++;
+
+    const noteNames = Array.isArray(spec.notes) ? spec.notes : [];
+    if (noteNames.length) {
+      await supabase.from("notes").insert(noteNames.map(n => ({
+        notebook_id: nb.id, uploader_id: req.user.id, title: String(n).slice(0, 200), content: "",
+      })));
+    }
+  }
+  res.json({ success: true, firstNotebookId, created, limitHit });
+});
+
 // DELETE /api/classes/:id — delete a class and all its notebooks/units
 app.delete("/api/classes/:id", requireAuth, async (req, res) => {
   const { data: cls } = await supabase
@@ -1577,6 +1614,68 @@ app.get("/api/invite/:token", async (req, res) => {
     notebook_title: data.notebooks.title,
     class_title:    data.notebooks.classes?.title ?? null,
   });
+});
+
+// ── Public notebook sharing ───────────────────────────────────────────────────
+function genSlug(n = 8) {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = randomBytes(n);
+  let s = "";
+  for (let i = 0; i < n; i++) s += chars[bytes[i] % chars.length];
+  return s;
+}
+function shareBase() {
+  const o = process.env.CLIENT_ORIGIN;
+  return o && !o.startsWith("http://localhost") ? o : "https://scholr.dev";
+}
+
+// POST /api/notebooks/:id/share — make public (owner only). Create-or-return slug.
+app.post("/api/notebooks/:id/share", requireAuth, requireMember, async (req, res) => {
+  if (req.membership.role !== "owner") return res.status(403).json({ error: "Only the notebook owner can share it." });
+  const { data: nb } = await supabase.from("notebooks").select("is_public, public_slug").eq("id", req.params.id).maybeSingle();
+  let slug = (nb?.is_public && nb?.public_slug) ? nb.public_slug : null;
+  if (!slug) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const candidate = genSlug(8);
+      const { error } = await supabase.from("notebooks").update({ is_public: true, public_slug: candidate }).eq("id", req.params.id);
+      if (!error) { slug = candidate; break; }
+    }
+    if (!slug) return res.status(500).json({ error: "Could not generate a share link. Please try again." });
+  }
+  res.json({ slug, shareUrl: `${shareBase()}/s/${slug}` });
+});
+
+// DELETE /api/notebooks/:id/share — stop sharing (owner only).
+app.delete("/api/notebooks/:id/share", requireAuth, requireMember, async (req, res) => {
+  if (req.membership.role !== "owner") return res.status(403).json({ error: "Only the notebook owner can stop sharing." });
+  const { error } = await supabase.from("notebooks").update({ is_public: false, public_slug: null }).eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
+});
+
+// GET /api/share/:slug — PUBLIC read-only view (no auth). Never leaks the email.
+app.get("/api/share/:slug", async (req, res) => {
+  const { data: nb } = await supabase
+    .from("notebooks")
+    .select("id, title, topic, created_by")
+    .eq("public_slug", req.params.slug)
+    .eq("is_public", true)
+    .maybeSingle();
+  if (!nb) return res.status(404).json({ error: "This shared notebook doesn't exist or is no longer public." });
+
+  const { data: notes } = await supabase
+    .from("notes")
+    .select("title, content, created_at")
+    .eq("notebook_id", nb.id)
+    .order("created_at", { ascending: true });
+
+  let ownerName = "A Scholr student";
+  try {
+    const { data: u } = await supabase.auth.admin.getUserById(nb.created_by);
+    ownerName = u?.user?.user_metadata?.full_name?.trim() || u?.user?.email?.split("@")[0] || ownerName;
+  } catch { /* best-effort; never expose details */ }
+
+  res.json({ title: nb.title, topic: nb.topic ?? null, ownerName, notes: notes ?? [] });
 });
 
 // POST /api/invite/:token/accept — authenticated: join the notebook as member

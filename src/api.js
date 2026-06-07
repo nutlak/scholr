@@ -729,4 +729,36 @@ export const api = {
     }
     return res.json(); // { success: true }
   },
+
+  // ── Public notebook sharing ─────────────────────────────────────────────
+  async shareNotebook(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/share`, { method: "POST", headers });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to share"); }
+    return res.json(); // { slug, shareUrl }
+  },
+
+  async unshareNotebook(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/share`, { method: "DELETE", headers });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to stop sharing"); }
+    return res.json();
+  },
+
+  // PUBLIC — no auth header sent.
+  async getSharedNotebook(slug) {
+    const res = await fetch(`${API_URL}/api/share/${slug}`);
+    if (!res.ok) throw new Error("not_found");
+    return res.json(); // { title, topic, ownerName, notes }
+  },
+
+  // ── Class templates ─────────────────────────────────────────────────────
+  async applyTemplate(classId, notebooks) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/classes/${classId}/apply-template`, {
+      method: "POST", headers, body: JSON.stringify({ notebooks }),
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to set up class"); }
+    return res.json(); // { success, firstNotebookId, created, limitHit }
+  },
 };

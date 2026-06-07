@@ -1742,7 +1742,7 @@ function ShareModal({ notebookId, onClose, onStateChange }) {
     api.shareNotebook(notebookId)
       .then(r => { setShareUrl(r.shareUrl); setLoading(false); onStateChange?.(true); })
       .catch(e => { setError(e.message || "Couldn't create a share link."); setLoading(false); });
-  }, [notebookId]);
+  }, [notebookId, onStateChange]);
 
   async function copy() {
     try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ }
@@ -3554,23 +3554,79 @@ function ColorSwatchPicker({ value, onChange }) {
   );
 }
 
+// Pre-built course templates (starter notebooks + note structures).
+const CLASS_TEMPLATES = [
+  { id: "ap-bio", name: "AP Biology", emoji: "🧬", color: "#34D399", notebooks: [
+    { name: "Unit 1 — Chemistry of Life", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
+    { name: "Unit 2 — Cell Structure", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
+    { name: "Unit 3 — Cellular Energetics", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
+    { name: "Unit 4 — Cell Communication", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
+    { name: "Exam Prep", notes: ["FRQ Practice", "MCQ Review", "Formula Sheet"] },
+  ] },
+  { id: "ap-calc-ab", name: "AP Calculus AB", emoji: "📐", color: "#60A5FA", notebooks: [
+    { name: "Unit 1 — Limits", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
+    { name: "Unit 2 — Derivatives", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
+    { name: "Unit 3 — Integrals", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
+    { name: "Unit 4 — Differential Equations", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Calculator Tips"] },
+  ] },
+  { id: "ap-us-history", name: "AP US History", emoji: "🇺🇸", color: "#F87171", notebooks: [
+    { name: "Period 1-2 (1491–1754)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
+    { name: "Period 3-4 (1754–1848)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
+    { name: "Period 5-6 (1844–1898)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
+    { name: "Period 7-8 (1898–1980)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
+    { name: "Period 9 (1980–Present)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
+    { name: "Exam Prep", notes: ["SAQ Practice", "LEQ Practice", "DBQ Practice", "Key Themes"] },
+  ] },
+  { id: "ap-chem", name: "AP Chemistry", emoji: "⚗️", color: "#A78BFA", notebooks: [
+    { name: "Unit 1 — Atomic Structure", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Unit 2 — Molecular Structure", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Unit 3 — Intermolecular Forces", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Unit 4 — Chemical Reactions", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Unit 5 — Kinetics", notes: ["Key Concepts", "Practice Problems"] },
+    { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Lab Review"] },
+  ] },
+  { id: "ap-english", name: "AP English Literature", emoji: "📚", color: "#FBBF24", notebooks: [
+    { name: "Poetry Analysis", notes: ["Poems List", "Analysis Notes", "Essay Practice"] },
+    { name: "Prose Fiction", notes: ["Reading Notes", "Literary Devices", "Essay Practice"] },
+    { name: "Drama", notes: ["Play Notes", "Themes", "Essay Practice"] },
+    { name: "Exam Prep", notes: ["Free Response Practice", "Essay Outlines", "Key Terms"] },
+  ] },
+  { id: "ap-physics", name: "AP Physics 1", emoji: "⚡", color: "#F472B6", notebooks: [
+    { name: "Unit 1 — Kinematics", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
+    { name: "Unit 2 — Forces", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
+    { name: "Unit 3 — Energy", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
+    { name: "Unit 4 — Waves", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
+    { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Lab Skills"] },
+  ] },
+  { id: "blank", name: "Start blank", emoji: "✨", color: "#6B7280", notebooks: [] },
+];
+
 function NewClassModal({ onClose, onCreate }) {
+  const [step, setStep] = useState(1); // 1 = template picker, 2 = name + color
+  const [template, setTemplate] = useState(null);
   const [title, setTitle] = useState("");
   const [color, setColor] = useState(CLASS_COLORS[0].hue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
 
   const tint = classTint(color);
+  const hasTemplate = template && template.id !== "blank" && template.notebooks.length > 0;
+
+  function advance(t) {
+    setTemplate(t);
+    if (t.id !== "blank") { setTitle(t.name); if (t.color) setColor(t.color); }
+    setStep(2);
+    setTimeout(() => inputRef.current?.focus(), 60);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) { setError("Class name is required."); return; }
     setError(""); setLoading(true);
-    try { await onCreate(title.trim(), color); onClose(); }
-    catch (err) { setError(err.message); }
-    setLoading(false);
+    try { await onCreate(title.trim(), color, template); onClose(); }
+    catch (err) { setError(err.message); setLoading(false); }
   }
 
   const inp = {
@@ -3606,48 +3662,85 @@ function NewClassModal({ onClose, onCreate }) {
           pointerEvents: "none", transition: "background 0.25s",
         }} />
         <div style={{ position: "relative" }}>
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.01em" }}>New Class</div>
-            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.6 }}>A class holds your units and notes for one course</div>
-          </div>
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div>
-              <label style={lbl}>Class Name</label>
-              <input
-                ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. AP World History" maxLength={80}
-                style={inp}
-                onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
-                onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
-              />
-            </div>
-            <div>
-              <label style={lbl}>Color</label>
-              <ColorSwatchPicker value={color} onChange={setColor} />
-            </div>
-            {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-              <button type="button" onClick={onClose} className="btn-press" style={{
-                background: "transparent", border: "1px solid var(--border-h)",
-                borderRadius: 10, padding: "0 16px", height: 38,
-                color: "var(--t2)", fontSize: 13, fontWeight: 500,
-                cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
-              >Cancel</button>
-              <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
-                background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
-                border: "none", borderRadius: 10, padding: "0 20px", height: 38,
-                color: "#fff", fontWeight: 600, fontSize: 13,
-                cursor: loading || !title.trim() ? "not-allowed" : "pointer",
-                fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
-                boxShadow: `0 4px 14px ${tint.hue}55, 0 0 0 1px ${tint.hue}66`,
-                letterSpacing: "-0.01em",
-                transition: "all 0.18s",
-              }}>{loading ? "Creating…" : "Create Class"}</button>
-            </div>
-          </form>
+          {step === 1 ? (
+            <>
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.01em" }}>Start with a template</div>
+                <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.6 }}>Pre-built notebooks &amp; notes for common courses — or start blank.</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: 340, overflowY: "auto", marginBottom: 18 }}>
+                {CLASS_TEMPLATES.map(t => {
+                  const sel = template?.id === t.id;
+                  return (
+                    <button key={t.id} type="button" onClick={() => setTemplate(t)} className="btn-press" style={{
+                      textAlign: "left", background: sel ? `${t.color}1f` : "var(--s1)",
+                      border: `1.5px solid ${sel ? t.color : "var(--border)"}`,
+                      borderRadius: 12, padding: "13px 14px", cursor: "pointer", fontFamily: FONT,
+                      display: "flex", flexDirection: "column", gap: 3,
+                    }}>
+                      <span style={{ fontSize: 22 }}>{t.emoji}</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.01em" }}>{t.name}</span>
+                      <span style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT }}>{t.notebooks.length ? `${t.notebooks.length} notebooks` : "Empty"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button type="button" onClick={onClose} className="btn-press" style={{
+                  background: "transparent", border: "1px solid var(--border-h)", borderRadius: 10,
+                  padding: "0 16px", height: 38, color: "var(--t2)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT,
+                }}>Cancel</button>
+                <button type="button" disabled={!template} onClick={() => advance(template)} className="btn-press" style={{
+                  background: template ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)` : "var(--s2)",
+                  border: "none", borderRadius: 10, padding: "0 22px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
+                  cursor: template ? "pointer" : "not-allowed", opacity: template ? 1 : 0.5, fontFamily: FONT, letterSpacing: "-0.01em",
+                }}>Next →</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: 22 }}>
+                <div style={{ fontSize: 19, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.01em" }}>New Class</div>
+                <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.6 }}>
+                  {hasTemplate ? `${template.notebooks.length} starter notebooks will be added automatically` : "A class holds your units and notes for one course"}
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div>
+                  <label style={lbl}>Class Name</label>
+                  <input
+                    ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
+                    placeholder="e.g. AP World History" maxLength={80}
+                    style={inp}
+                    onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
+                    onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
+                  />
+                </div>
+                <div>
+                  <label style={lbl}>Color</label>
+                  <ColorSwatchPicker value={color} onChange={setColor} />
+                </div>
+                {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+                  <button type="button" onClick={() => setStep(1)} className="btn-press" style={{
+                    background: "transparent", border: "1px solid var(--border-h)",
+                    borderRadius: 10, padding: "0 16px", height: 38,
+                    color: "var(--t2)", fontSize: 13, fontWeight: 500,
+                    cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
+                  }}>← Back</button>
+                  <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
+                    background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
+                    border: "none", borderRadius: 10, padding: "0 20px", height: 38,
+                    color: "#fff", fontWeight: 600, fontSize: 13,
+                    cursor: loading || !title.trim() ? "not-allowed" : "pointer",
+                    fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
+                    boxShadow: `0 4px 14px ${tint.hue}55, 0 0 0 1px ${tint.hue}66`,
+                    letterSpacing: "-0.01em", transition: "all 0.18s",
+                  }}>{loading ? (hasTemplate ? "Setting up your class…" : "Creating…") : "Create Class"}</button>
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -5019,10 +5112,32 @@ export default function Scholr() {
     }
   }
 
-  async function handleCreateClass(title, color) {
+  async function handleCreateClass(title, color, template) {
     try {
       const cls = await api.createClass(title, color);
       setClasses(prev => [...prev, cls]);
+      // Template selected → batch-create its notebooks + starter notes, open the first.
+      if (template && template.id !== "blank" && template.notebooks?.length) {
+        try {
+          const result = await api.applyTemplate(cls.id, template.notebooks);
+          const nm = getDisplayName(user);
+          api.listNotebooks(nm).then(setNotebooks).catch(() => {});
+          api.listClasses().then(setClasses).catch(() => {});
+          if (result.firstNotebookId) {
+            const units = await api.listClassNotebooks(cls.id, nm).catch(() => []);
+            const first = units.find(u => u.id === result.firstNotebookId) || units[0];
+            if (first) { setActiveNb(first); setActiveView("dashboard"); }
+          }
+          if (result.limitHit) {
+            setToast("Some notebooks weren't added — you've hit the free plan limit.");
+            setTimeout(() => setToast(""), 4500);
+          }
+        } catch (e) {
+          console.error("applyTemplate failed:", e);
+          setToast("Class created, but template setup failed.");
+          setTimeout(() => setToast(""), 3500);
+        }
+      }
     } catch (err) {
       if (err.code === "class_limit_reached") {
         setShowNewClassModal(false);

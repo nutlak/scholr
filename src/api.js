@@ -562,7 +562,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/subscription`, { headers });
     if (!res.ok) return {
       tier: "free",
-      messagesUsed: 0, messagesLimit: 30,
+      messagesUsed: 0, messagesLimit: 100,
       forgeUsed: 0, forgeLimit: 3,
       notebooksUsed: 0, notebooksLimit: 3,
     };
@@ -690,6 +690,14 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/complete-onboarding`, { method: "POST", headers });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
+  },
+
+  // First-login: seed a "Welcome to Scholr" notebook + demo note (idempotent).
+  async seedWelcome() {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/user/seed-welcome`, { method: "POST", headers });
+    if (!res.ok) return { seeded: false };
+    return res.json(); // { seeded, notebookId }
   },
 
   async updateStreak(current) {

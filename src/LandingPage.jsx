@@ -288,7 +288,7 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "Is Scholr free?", a: "Yes — the Free plan is free forever: 30 AI messages and 3 Forge outputs a month, up to 3 classes and 15 notes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
+  { q: "Is Scholr free?", a: "Yes — the Free plan is free forever: 100 AI messages and 3 Forge outputs a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
   { q: "What can I upload?", a: "PDFs, lecture slides, Word docs, images, and plain text. Scholr extracts the text so Derek can read and reference your actual material." },
   { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you really understand it — what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
   { q: "Is my data private?", a: "Your notebooks are invite-only — no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
@@ -821,7 +821,7 @@ export default function LandingPage({ onSignIn }) {
               ctaLabel="Get started free"
               onClick={onSignIn}
               features={[
-                "30 AI messages per month",
+                "100 AI messages per month",
                 "3 Forge outputs per month",
                 "Up to 3 classes",
                 "Up to 15 notes",

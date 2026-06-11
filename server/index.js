@@ -432,23 +432,29 @@ async function resetUsageIfNeeded(userId) {
   }
 }
 
+// Free-tier monthly AI message budget. 100 lets a student form a habit before
+// hitting the wall; a soft nudge fires at FREE_MSG_WARN.
+const FREE_MSG_LIMIT = 100;
+const FREE_MSG_WARN = 80;
+
 async function checkUsageLimit(userId, type) {
   const tier = await getUserTier(userId);
-  if (tier === "pro") return { allowed: true };
+  if (tier === "pro") return { allowed: true, tier, used: 0 };
   await resetUsageIfNeeded(userId);
   const { data } = await supabase
     .from("usage")
     .select("messages_this_month, forge_outputs_this_month")
     .eq("user_id", userId)
     .maybeSingle();
-  if (!data) return { allowed: true }; // no record yet = new user
-  if (type === "message" && (data.messages_this_month ?? 0) >= 30) {
-    return { allowed: false, reason: "message_limit" };
+  if (!data) return { allowed: true, tier, used: 0 }; // no record yet = new user
+  const msgUsed = data.messages_this_month ?? 0;
+  if (type === "message" && msgUsed >= FREE_MSG_LIMIT) {
+    return { allowed: false, reason: "message_limit", tier, used: msgUsed };
   }
   if (type === "forge" && (data.forge_outputs_this_month ?? 0) >= 3) {
-    return { allowed: false, reason: "forge_limit" };
+    return { allowed: false, reason: "forge_limit", tier, used: data.forge_outputs_this_month ?? 0 };
   }
-  return { allowed: true };
+  return { allowed: true, tier, used: type === "message" ? msgUsed : (data.forge_outputs_this_month ?? 0) };
 }
 
 async function checkClassLimit(userId) {
@@ -1321,7 +1327,12 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, a
       .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
       .map(n => n.title);
     trackEvent(req.user.id, "ai_message_sent", { notebookId: req.params.id });
-    res.json({ answer, sources });
+    // Soft nudge: warn a free user once they cross FREE_MSG_WARN (pre-wall).
+    const nextUsed = usageCheck.tier !== "pro" ? usageCheck.used + 1 : null;
+    const usageWarning = (nextUsed !== null && nextUsed >= FREE_MSG_WARN && nextUsed < FREE_MSG_LIMIT)
+      ? { used: nextUsed, limit: FREE_MSG_LIMIT, message: "You're almost out of free AI messages — upgrade for unlimited." }
+      : undefined;
+    res.json({ answer, sources, usageWarning });
 
     // Increment usage counter fire-and-forget
     incrementUsage(userId, "message").catch(err => console.error("usage increment error:", err));
@@ -2845,6 +2856,43 @@ app.post("/api/user/complete-onboarding", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// First-run sample notebook — an instant AI "aha" for a brand-new user instead
+// of an empty dashboard. Idempotent: only seeds when the user owns 0 notebooks;
+// also marks onboarding done so the setup wizard doesn't double up.
+const WELCOME_NOTE = `Welcome to Scholr! This is a sample note so you can see how it works.
+
+Scholr turns your class notes into a study buddy named Derek:
+
+1) Upload your notes — PDFs, slides, photos, or pasted text. Derek reads them.
+2) Ask Derek anything — "explain this like I'm 12", "quiz me", "what's the main idea?" — and he answers using YOUR notes.
+3) Study smarter — make flashcards and study guides with Forge, test yourself with Feynman Mode, and share notebooks with your study group.
+
+Try it now: tap "Ask AI about this" below and Derek will summarize this note and quiz you. That's your first question — go.
+
+Sample fact to quiz on: the mitochondria is the powerhouse of the cell — it produces ATP through cellular respiration.`;
+
+app.post("/api/user/seed-welcome", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const count = await countOwnedNotebooks(userId);
+    if (count > 0) return res.json({ seeded: false }); // brand-new users only
+    const { data: nb, error } = await supabase
+      .from("notebooks")
+      .insert({ title: "Welcome to Scholr 👋", topic: "Start here", created_by: userId })
+      .select("id")
+      .single();
+    if (error || !nb) { console.error("[seed-welcome]", error?.message); return res.json({ seeded: false }); }
+    await supabase.from("notebook_members").insert({ notebook_id: nb.id, user_id: userId, role: "owner" });
+    await supabase.from("notes").insert({ notebook_id: nb.id, uploader_id: userId, title: "How Scholr works", content: WELCOME_NOTE });
+    await supabase.from("profiles").upsert({ user_id: userId, onboarding_completed: true }, { onConflict: "user_id" });
+    trackEvent(userId, "notebook_created", { notebookId: nb.id, seeded: true });
+    res.json({ seeded: true, notebookId: nb.id });
+  } catch (e) {
+    console.error("[seed-welcome]", e.message);
+    res.json({ seeded: false });
+  }
+});
+
 // Update longest streak if the current run beats the stored record.
 app.post("/api/user/streak", requireAuth, async (req, res) => {
   const current = Math.max(0, parseInt(req.body?.current, 10) || 0);
@@ -2950,7 +2998,7 @@ app.get("/api/user/subscription", requireAuth, async (req, res) => {
   res.json({
     tier,
     messagesUsed:   usageRow?.messages_this_month ?? 0,
-    messagesLimit:  tier === "pro" ? null : 30,
+    messagesLimit:  tier === "pro" ? null : FREE_MSG_LIMIT,
     forgeUsed:      usageRow?.forge_outputs_this_month ?? 0,
     forgeLimit:     tier === "pro" ? null : 3,
     notebooksUsed,

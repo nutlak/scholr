@@ -1901,8 +1901,8 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
     return () => window.removeEventListener('resize', fn);
   }, []);
 
-  async function ask() {
-    const text = query.trim();
+  async function ask(presetText) {
+    const text = (typeof presetText === "string" ? presetText : query).trim();
     if (!text || loading) return;
 
     setQuery("");
@@ -1916,6 +1916,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
       if (data.error) throw new Error(data.error);
       const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(err => { console.error("addMessage failed (assistant):", err); return null; });
       setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
+      if (data.usageWarning) onToast?.(`⚡ ${data.usageWarning.message}`);
     } catch (err) {
       if (err.code === "message_limit_reached") {
         // Remove the optimistic user message bubble and show upgrade modal
@@ -2421,6 +2422,22 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
           }}>
             Derek is AI — responses may be inaccurate. Verify important information independently.
           </div>
+
+          {/* First-run aha: suggested prompt when the chat is empty */}
+          {messages.length === 0 && (
+            <button
+              onClick={() => ask("Summarize this note and quiz me on the key points.")}
+              disabled={loading}
+              className="btn-press"
+              style={{
+                alignSelf: "flex-start", marginBottom: 10,
+                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", border: "none",
+                borderRadius: 999, padding: "10px 18px", color: "#fff",
+                fontFamily: FONT, fontSize: 13.5, fontWeight: 700,
+                cursor: loading ? "wait" : "pointer", boxShadow: "0 4px 14px rgba(167,139,250,0.35)",
+              }}
+            >✨ Ask AI about this →</button>
+          )}
 
           {/* Input row */}
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
@@ -4559,7 +4576,7 @@ function UpgradeModal({ limitType, onClose }) {
     message_limit_reached: {
       Icon: MessageCircle,
       headline: "Message limit reached",
-      detail: "You've used all 30 messages this month on the free plan.",
+      detail: "You've used all 100 messages this month on the free plan.",
     },
     forge_limit_reached: {
       Icon: Zap,
@@ -5004,10 +5021,23 @@ export default function Scholr() {
       .then(s => setTermsGate(s?.accepted ? "ok" : "needed"))
       .catch(() => setTermsGate("ok"));
 
-    // Notebooks + profile together → decide whether to show the onboarding wizard
-    // (first login: no notebooks AND onboarding not yet completed).
+    // Notebooks + profile together. First login (no notebooks, not onboarded) →
+    // seed a "Welcome to Scholr" notebook with a demo note + AI aha and drop the
+    // user straight into it, instead of an empty dashboard or setup wizard.
     Promise.all([api.listNotebooks(name), api.getProfile()])
-      .then(([nbs, prof]) => {
+      .then(async ([nbs, prof]) => {
+        if (prof && !prof.onboarding_completed && nbs.length === 0) {
+          const r = await api.seedWelcome().catch(() => ({ seeded: false }));
+          if (r.seeded && r.notebookId) {
+            const fresh = await api.listNotebooks(name).catch(() => nbs);
+            setNotebooks(fresh);
+            setProfile({ ...(prof || {}), onboarding_completed: true });
+            setOnboarding("ok");
+            const welcome = fresh.find(n => n.id === r.notebookId);
+            if (welcome) { setActiveNb(welcome); setActiveView("dashboard"); }
+            return;
+          }
+        }
         setNotebooks(nbs);
         setProfile(prof);
         setOnboarding(prof && !prof.onboarding_completed && nbs.length === 0 ? "needed" : "ok");

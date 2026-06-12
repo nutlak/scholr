@@ -70,8 +70,8 @@ function blurGray(e) {
   e.target.style.boxShadow = "none";
 }
 
-export default function AuthModal({ onAuth }) {
-  const [tab, setTab]     = useState("login");
+export default function AuthModal({ onAuth, initialTab = "login" }) {
+  const [tab, setTab]     = useState(initialTab === "signup" ? "signup" : "login");
   const [screen, setScreen]   = useState(null);
   const [otpFlow, setOtpFlow] = useState(null);
 

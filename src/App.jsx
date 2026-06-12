@@ -81,6 +81,14 @@ const STATUS_META = {
   need_help:   { label: "Need Help",   color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.32)" },
 };
 
+// Two-domain split: getscholr.com is the marketing site, scholr.dev is the app.
+// Auth + the Supabase session live on the app origin (sessions are per-origin and
+// cannot cross to a different domain), so marketing CTAs bounce users to APP_ORIGIN
+// to sign in rather than authenticating on getscholr.com.
+const APP_ORIGIN = "https://scholr.dev";
+const IS_MARKETING_HOST =
+  typeof window !== "undefined" && /(^|\.)getscholr\.com$/i.test(window.location.hostname);
+
 const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
@@ -4920,6 +4928,7 @@ export default function Scholr() {
   const [deleteClassTarget, setDeleteClassTarget] = useState(null);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [authIntent, setAuthIntent] = useState("signup"); // which tab to open: "signup" | "login"
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
@@ -5076,6 +5085,15 @@ export default function Scholr() {
       window.history.replaceState({}, "", "/app");
       setToast("Welcome to scholr Pro!");
       setTimeout(() => setToast(""), 4000);
+    }
+
+    // Handle ?auth=signup|signin — used by getscholr.com CTAs that bounce visitors
+    // here to actually sign in. Only opens the modal for logged-out users.
+    const authParam = params.get("auth");
+    if (!user && !IS_MARKETING_HOST && authParam) {
+      setAuthIntent(authParam === "login" || authParam === "signin" ? "login" : "signup");
+      setShowAuth(true);
+      window.history.replaceState({}, "", "/");
     }
   }, [user, authReady]);
 
@@ -5377,11 +5395,22 @@ export default function Scholr() {
       )}
 
       {authReady && !user && !showPasswordReset && !pendingInviteToken && !showAuth && (
-        <LandingPage onSignIn={() => setShowAuth(true)} />
+        <LandingPage onSignIn={() => {
+          // Marketing domain can't host the session → send users to the app origin to sign in.
+          if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/?auth=signup`; return; }
+          setAuthIntent("signup");
+          setShowAuth(true);
+        }} />
       )}
 
       {authReady && !user && !showPasswordReset && (showAuth || showInviteAuth) && (
-        <AuthModal onAuth={(u) => { setShowAuth(false); setShowInviteAuth(false); setUser(u); }} />
+        <AuthModal initialTab={authIntent} onAuth={(u) => {
+          setShowAuth(false); setShowInviteAuth(false); setUser(u);
+          // Land the freshly-authed user in the app. On the app origin this is just a
+          // URL tidy-up; the marketing-host branch is a defensive fallback (shouldn't fire).
+          if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/app`; return; }
+          window.history.replaceState({}, "", "/app");
+        }} />
       )}
 
       {showPasswordReset && (

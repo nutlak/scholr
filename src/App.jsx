@@ -89,6 +89,16 @@ const APP_ORIGIN = "https://scholr.dev";
 const IS_MARKETING_HOST =
   typeof window !== "undefined" && /(^|\.)getscholr\.com$/i.test(window.location.hostname);
 
+// Reads ?auth=signup|signin from the URL → normalized tab ("signup"/"login"), or
+// null. Used to derive the AuthModal's INITIAL open state so it paints open on the
+// first render (visitors arriving from getscholr.com), with no effect/double-render.
+function readAuthIntentFromUrl() {
+  if (typeof window === "undefined" || IS_MARKETING_HOST) return null;
+  const p = new URLSearchParams(window.location.search).get("auth");
+  if (!p) return null;
+  return p === "login" || p === "signin" ? "login" : "signup";
+}
+
 const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
 const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
@@ -4927,8 +4937,8 @@ export default function Scholr() {
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteClassTarget, setDeleteClassTarget] = useState(null);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [authIntent, setAuthIntent] = useState("signup"); // which tab to open: "signup" | "login"
+  const [showAuth, setShowAuth] = useState(() => readAuthIntentFromUrl() !== null);
+  const [authIntent, setAuthIntent] = useState(() => readAuthIntentFromUrl() || "signup"); // tab: "signup" | "login"
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
@@ -5086,16 +5096,17 @@ export default function Scholr() {
       setToast("Welcome to scholr Pro!");
       setTimeout(() => setToast(""), 4000);
     }
-
-    // Handle ?auth=signup|signin — used by getscholr.com CTAs that bounce visitors
-    // here to actually sign in. Only opens the modal for logged-out users.
-    const authParam = params.get("auth");
-    if (!user && !IS_MARKETING_HOST && authParam) {
-      setAuthIntent(authParam === "login" || authParam === "signin" ? "login" : "signup");
-      setShowAuth(true);
-      window.history.replaceState({}, "", "/");
-    }
   }, [user, authReady]);
+
+  // The AuthModal's initial open state + tab are derived from ?auth=… in the
+  // useState initializers above (so it paints open immediately). Here we only
+  // strip the param from the URL on mount, so a later refresh won't reopen it.
+  // No setState → no cascading re-render.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!new URLSearchParams(window.location.search).get("auth")) return;
+    window.history.replaceState({}, "", (window.location.pathname + window.location.hash) || "/");
+  }, []);
 
   // Streak gamification: bump longest streak + fire one-time milestone modals.
   // All setState happens inside async callbacks (never synchronously in the

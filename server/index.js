@@ -226,6 +226,8 @@ const ALLOWED_ORIGINS = [
   stripTrailingSlash(process.env.CLIENT_ORIGIN),  // https://scholr.dev
   "https://scholr.dev",
   "https://www.scholr.dev",
+  "https://getscholr.com",      // marketing domain (landing page fetches /api/stats/public)
+  "https://www.getscholr.com",
 ].filter(Boolean);
 
 app.use(cors({

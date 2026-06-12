@@ -5108,6 +5108,22 @@ export default function Scholr() {
     window.history.replaceState({}, "", (window.location.pathname + window.location.hash) || "/");
   }, []);
 
+  // Canonical app URL: the logged-in app lives at /app, the landing/auth at /.
+  // Keep the address bar consistent with auth state once it's known. This is a
+  // cosmetic replaceState — the app renders by `user`, not by path, and the
+  // public routes (/s/:slug, /privacy, /terms, /copyright) return earlier — so
+  // matching ONLY the exact root and /app leaves every other route untouched.
+  useEffect(() => {
+    if (!authReady || IS_MARKETING_HOST) return;
+    const path = window.location.pathname;
+    const tail = window.location.search + window.location.hash;
+    if (user && path === "/") {
+      window.history.replaceState({}, "", "/app" + tail);   // logged-in at root → /app
+    } else if (!user && path === "/app") {
+      window.history.replaceState({}, "", "/" + tail);      // logged-out at /app → /
+    }
+  }, [authReady, user]);
+
   // Streak gamification: bump longest streak + fire one-time milestone modals.
   // All setState happens inside async callbacks (never synchronously in the
   // effect) to avoid cascading re-renders; guards keep it idempotent.

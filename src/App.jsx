@@ -8,6 +8,7 @@ import NewNotebookModal from "./NewNotebookModal.jsx";
 import UploadNotesModal from "./UploadNotesModal.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import SharedNotebook from "./components/SharedNotebook.jsx";
+import ImageGeneratorModal from "./ImageGeneratorModal.jsx";
 import {
   DndContext,
   closestCenter,

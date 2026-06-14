@@ -769,4 +769,34 @@ export const api = {
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to set up class"); }
     return res.json(); // { success, firstNotebookId, created, limitHit }
   },
+
+  async saveImageToNotebook(notebookId, b64) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, {
+      method: "POST", headers,
+      body: JSON.stringify({ image: b64 }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { url }
+  },
+
+  async generateImage({ prompt, size = "1024x1024", n = 1 }) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/generate-image`, {
+      method: "POST", headers,
+      body: JSON.stringify({ prompt, size, n }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { images: [{ url, revised_prompt }] }
+  },
 };

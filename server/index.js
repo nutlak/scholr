@@ -529,6 +529,7 @@ app.get("/api/health", (_, res) => res.json({
     SUPABASE_ANON_KEY:         !!process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     CLAUDE_API_KEY:            !!process.env.CLAUDE_API_KEY,
+    OPENAI_API_KEY:            !!process.env.OPENAI_API_KEY,
     RESEND_API_KEY:            !!process.env.RESEND_API_KEY,
     CLIENT_ORIGIN:             !!process.env.CLIENT_ORIGIN,
     STRIPE_SECRET_KEY:         !!process.env.STRIPE_SECRET_KEY,
@@ -536,6 +537,169 @@ app.get("/api/health", (_, res) => res.json({
     STRIPE_WEBHOOK_SECRET:     !!process.env.STRIPE_WEBHOOK_SECRET,
   },
 }));
+
+// POST /api/notebooks/:id/images — save a generated image to the notebook.
+// REQUIRES (one-time setup in Supabase before this works):
+//   • storage bucket "notebook-images" (public or private)
+//   • table notebook_images (
+//       id            uuid primary key default gen_random_uuid(),
+//       notebook_id   uuid references notebooks(id) on delete cascade,
+//       user_id       uuid references auth.users(id) on delete cascade,
+//       storage_path  text,
+//       created_at    timestamptz default now()
+//     )
+// See supabase/migrations/012_notebook_images.sql.
+app.post("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res) => {
+  const { image } = req.body ?? {};
+  if (typeof image !== "string" || image.length < 100) {
+    return res.status(400).json({ error: "image (base64) is required" });
+  }
+
+  // Decode base64 → Buffer. Strip data-URI prefix if the client sent one.
+  const b64 = image.replace(/^data:image\/\w+;base64,/, "");
+  let buffer;
+  try {
+    buffer = Buffer.from(b64, "base64");
+  } catch {
+    return res.status(400).json({ error: "image is not valid base64" });
+  }
+  if (buffer.length === 0) {
+    return res.status(400).json({ error: "image decoded to empty buffer" });
+  }
+
+  const storagePath = `${req.user.id}/${req.params.id}/${Date.now()}.png`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("notebook-images")
+    .upload(storagePath, buffer, { contentType: "image/png" });
+
+  if (uploadError) {
+    console.error("saveImage: storage upload failed:", uploadError);
+    return res.status(500).json({ error: uploadError.message });
+  }
+
+  const { error: insertError } = await supabase
+    .from("notebook_images")
+    .insert({
+      notebook_id:  req.params.id,
+      user_id:      req.user.id,
+      storage_path: storagePath,
+    });
+
+  if (insertError) {
+    console.error("saveImage: notebook_images insert failed:", insertError);
+    return res.status(500).json({ error: insertError.message });
+  }
+
+  // Try a public URL first; fall back to a signed URL for private buckets.
+  const { data: pub } = supabase.storage.from("notebook-images").getPublicUrl(storagePath);
+  let url = pub?.publicUrl ?? null;
+  if (!url) {
+    const { data: signed, error: signError } = await supabase.storage
+      .from("notebook-images")
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
+    if (signError) {
+      console.error("saveImage: signed URL failed:", signError);
+      return res.status(500).json({ error: signError.message });
+    }
+    url = signed?.signedUrl ?? null;
+  }
+
+  res.status(201).json({ url });
+});
+
+// ── Image generation (OpenAI proxy) ───────────────────────────────────────────
+// Keeps OPENAI_API_KEY server-side; client never sees it.
+// Simple in-memory token bucket per user: 5 requests / 60s window.
+const IMAGE_RATE_LIMIT = { max: 5, windowMs: 60_000 };
+const imageHits = new Map(); // userId -> [timestamps]
+
+function checkImageRateLimit(userId) {
+  const now = Date.now();
+  const cutoff = now - IMAGE_RATE_LIMIT.windowMs;
+  const hits = (imageHits.get(userId) ?? []).filter(t => t > cutoff);
+  if (hits.length >= IMAGE_RATE_LIMIT.max) {
+    const retryAfter = Math.ceil((hits[0] + IMAGE_RATE_LIMIT.windowMs - now) / 1000);
+    return { ok: false, retryAfter };
+  }
+  hits.push(now);
+  imageHits.set(userId, hits);
+  return { ok: true };
+}
+
+const ALLOWED_IMAGE_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
+
+// POST /api/generate-image — { prompt, size?, n? } → { images: [{ url, revised_prompt? }] }
+app.post("/api/generate-image", requireAuth, async (req, res) => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY not configured on server" });
+
+  // ── Input validation ──
+  const { prompt, size = "1024x1024", n = 1 } = req.body ?? {};
+
+  if (typeof prompt !== "string") {
+    return res.status(400).json({ error: "prompt must be a string" });
+  }
+  const cleanPrompt = prompt.trim();
+  if (cleanPrompt.length < 3) {
+    return res.status(400).json({ error: "prompt must be at least 3 characters" });
+  }
+  if (cleanPrompt.length > 1000) {
+    return res.status(400).json({ error: "prompt must be 1000 characters or fewer" });
+  }
+  if (!ALLOWED_IMAGE_SIZES.has(size)) {
+    return res.status(400).json({ error: `size must be one of: ${[...ALLOWED_IMAGE_SIZES].join(", ")}` });
+  }
+  const count = Number.isInteger(n) ? n : parseInt(n, 10);
+  if (!Number.isInteger(count) || count < 1 || count > 4) {
+    return res.status(400).json({ error: "n must be an integer between 1 and 4" });
+  }
+
+  // ── Rate limit ──
+  const rl = checkImageRateLimit(req.user.id);
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter));
+    return res.status(429).json({
+      error: `Rate limit: ${IMAGE_RATE_LIMIT.max} images per minute. Try again in ${rl.retryAfter}s.`,
+    });
+  }
+
+  // ── Call OpenAI ──
+  // gpt-image-1.5 supports n natively and returns base64 (b64_json).
+  try {
+    const oaRes = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-image-2",
+        prompt: cleanPrompt,
+        size,
+        n: count,
+      }),
+    });
+
+    if (!oaRes.ok) {
+      const body = await oaRes.json().catch(() => ({}));
+      const message = body?.error?.message ?? `OpenAI request failed (${oaRes.status})`;
+      // Surface OpenAI's own status codes where useful
+      const status = oaRes.status === 429 ? 429
+                    : oaRes.status === 400 ? 400
+                    : 502;
+      return res.status(status).json({ error: message });
+    }
+
+    const body = await oaRes.json();
+    const images = (body.data ?? []).map(img => ({ b64_json: img.b64_json }));
+
+    res.json({ images });
+  } catch (err) {
+    console.error("generate-image error:", err);
+    res.status(502).json({ error: "Failed to reach OpenAI. Try again." });
+  }
+});
 
 // GET /api/notebooks — list notebooks the user belongs to
 app.get("/api/notebooks", requireAuth, async (req, res) => {

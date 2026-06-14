@@ -1835,7 +1835,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
   // Scholr 2.0 — one source of truth for which study tool is open (it renders
   // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
   // tangle; responsive behavior is now handled purely in CSS.
-  const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman'
+  const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [explainLevel, setExplainLevel] = useState(null); // { messageId } showing submenu
@@ -2507,6 +2507,24 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
               onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
             />
             <button
+              onClick={() => setActiveTool("image-gen")}
+              className="btn-press"
+              title="Generate image"
+              aria-label="Generate image"
+              style={{
+                background: "var(--s2)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                width: 48, height: 48, fontSize: 18, fontWeight: 600,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+            >
+              🖼️
+            </button>
+            <button
               onClick={ask}
               disabled={loading || !query.trim()}
               className="btn-press"
@@ -2533,7 +2551,7 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
       </div>
 
       {/* Scholr 2.0 — every study tool opens in one spacious, dismissible shell */}
-      {activeTool && (
+      {activeTool && NB_TOOL_META[activeTool] && (
         <ToolModal
           open
           onClose={() => setActiveTool(null)}
@@ -2554,6 +2572,11 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
             <FeynmanPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
         </ToolModal>
+      )}
+
+      {/* Image generator brings its own modal chrome, so it's gated on activeTool but rendered outside ToolModal */}
+      {activeTool === "image-gen" && (
+        <ImageGeneratorModal notebookId={nb.id} onClose={() => setActiveTool(null)} />
       )}
     </div>
   );

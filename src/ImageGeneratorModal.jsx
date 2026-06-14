@@ -151,7 +151,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
               fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em",
             }}>Generate Image</div>
             <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>
-              Describe the image you want. Powered by DALL·E 3.
+              Describe the image you want.
             </div>
           </div>
 

@@ -3271,6 +3271,229 @@ app.post("/api/create-portal-session", requireAuth, async (req, res) => {
   res.json({ url: session.url });
 });
 
+// ── Friends system ────────────────────────────────────────────────────────────
+// Mutual friendships are stored in `friendships` as one row per pair with
+// user_a < user_b (enforced by CHECK constraint). Pending/declined requests
+// live in `friend_requests` keyed by (from_user, to_user).
+
+// Build the lexicographically-ordered pair so friendships always has one row
+// per relationship regardless of who friended whom first.
+function orderedPair(a, b) {
+  return a < b ? [a, b] : [b, a];
+}
+
+// Resolve a user id → { userId, name, email } using the auth admin API
+// (matches the convention used by listMembers / listSharedNotebooks).
+async function resolveUserBrief(uid) {
+  const { data } = await supabase.auth.admin.getUserById(uid);
+  const u = data?.user;
+  return {
+    userId: uid,
+    name:   u?.user_metadata?.full_name?.trim() || u?.email?.split("@")[0] || "User",
+    email:  u?.email ?? null,
+  };
+}
+
+// POST /api/friends/request — { toUserId } → request or auto-accept
+app.post("/api/friends/request", requireAuth, async (req, res) => {
+  const { toUserId } = req.body ?? {};
+  if (!toUserId || typeof toUserId !== "string") {
+    return res.status(400).json({ error: "toUserId is required" });
+  }
+  if (toUserId === req.user.id) {
+    return res.status(400).json({ error: "You can't friend yourself" });
+  }
+
+  // Verify the target user actually exists, otherwise FK insertion will 500.
+  const { data: targetData } = await supabase.auth.admin.getUserById(toUserId);
+  if (!targetData?.user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  // Already friends? Return current state.
+  const [a, b] = orderedPair(req.user.id, toUserId);
+  const { data: existingFriendship } = await supabase
+    .from("friendships")
+    .select("id")
+    .eq("user_a", a)
+    .eq("user_b", b)
+    .maybeSingle();
+  if (existingFriendship) {
+    return res.json({ status: "already_friends" });
+  }
+
+  // Reciprocal pending request from the other side? Auto-accept both.
+  const { data: reciprocal } = await supabase
+    .from("friend_requests")
+    .select("id, status")
+    .eq("from_user", toUserId)
+    .eq("to_user", req.user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (reciprocal) {
+    const { error: friendshipErr } = await supabase
+      .from("friendships")
+      .insert({ user_a: a, user_b: b });
+    if (friendshipErr) {
+      console.error("friend auto-accept: friendship insert failed:", friendshipErr);
+      return res.status(500).json({ error: friendshipErr.message });
+    }
+    await supabase
+      .from("friend_requests")
+      .update({ status: "accepted" })
+      .eq("id", reciprocal.id);
+    return res.status(201).json({ status: "accepted" });
+  }
+
+  // Existing outbound request (pending or declined)? Make it pending and return.
+  const { data: outbound } = await supabase
+    .from("friend_requests")
+    .select("id, status")
+    .eq("from_user", req.user.id)
+    .eq("to_user", toUserId)
+    .maybeSingle();
+
+  if (outbound) {
+    if (outbound.status === "pending") {
+      return res.json({ status: "pending", requestId: outbound.id });
+    }
+    // 'declined' or stale 'accepted' — flip back to pending so we can re-send.
+    const { error: updErr } = await supabase
+      .from("friend_requests")
+      .update({ status: "pending", created_at: new Date().toISOString() })
+      .eq("id", outbound.id);
+    if (updErr) return res.status(500).json({ error: updErr.message });
+    return res.status(201).json({ status: "pending", requestId: outbound.id });
+  }
+
+  // Fresh request.
+  const { data: created, error: insertErr } = await supabase
+    .from("friend_requests")
+    .insert({ from_user: req.user.id, to_user: toUserId, status: "pending" })
+    .select("id")
+    .single();
+  if (insertErr) {
+    console.error("friend request insert failed:", insertErr);
+    return res.status(500).json({ error: insertErr.message });
+  }
+  res.status(201).json({ status: "pending", requestId: created.id });
+});
+
+// POST /api/friends/respond — { requestId, action: 'accept' | 'decline' }
+app.post("/api/friends/respond", requireAuth, async (req, res) => {
+  const { requestId, action } = req.body ?? {};
+  if (!requestId || typeof requestId !== "string") {
+    return res.status(400).json({ error: "requestId is required" });
+  }
+  if (action !== "accept" && action !== "decline") {
+    return res.status(400).json({ error: "action must be 'accept' or 'decline'" });
+  }
+
+  const { data: request, error: lookupErr } = await supabase
+    .from("friend_requests")
+    .select("id, from_user, to_user, status")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (lookupErr) return res.status(500).json({ error: lookupErr.message });
+  if (!request) return res.status(404).json({ error: "Friend request not found" });
+
+  // Only the recipient may respond.
+  if (request.to_user !== req.user.id) {
+    return res.status(403).json({ error: "Only the recipient can respond to this request" });
+  }
+  if (request.status !== "pending") {
+    return res.status(400).json({ error: `Request is already ${request.status}` });
+  }
+
+  if (action === "accept") {
+    const [a, b] = orderedPair(request.from_user, request.to_user);
+    const { error: friendshipErr } = await supabase
+      .from("friendships")
+      .insert({ user_a: a, user_b: b });
+    // 23505 = unique_violation: already friends (e.g. accepted twice in a race).
+    // Tolerate it so the request transitions to accepted regardless.
+    if (friendshipErr && friendshipErr.code !== "23505") {
+      console.error("friend accept: friendship insert failed:", friendshipErr);
+      return res.status(500).json({ error: friendshipErr.message });
+    }
+  }
+
+  const newStatus = action === "accept" ? "accepted" : "declined";
+  const { error: updErr } = await supabase
+    .from("friend_requests")
+    .update({ status: newStatus })
+    .eq("id", requestId);
+  if (updErr) return res.status(500).json({ error: updErr.message });
+
+  res.json({ status: newStatus });
+});
+
+// GET /api/friends — accepted friends as [{ userId, name, email }]
+app.get("/api/friends", requireAuth, async (req, res) => {
+  const me = req.user.id;
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("user_a, user_b, created_at")
+    .or(`user_a.eq.${me},user_b.eq.${me}`)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const otherIds = (data ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a));
+  const friends = await Promise.all(otherIds.map(resolveUserBrief));
+  res.json(friends.filter(f => f.email));
+});
+
+// GET /api/friends/requests — incoming pending requests
+app.get("/api/friends/requests", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("friend_requests")
+    .select("id, from_user, created_at")
+    .eq("to_user", req.user.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const rows = await Promise.all((data ?? []).map(async (r) => {
+    const brief = await resolveUserBrief(r.from_user);
+    return {
+      requestId:  r.id,
+      fromUserId: brief.userId,
+      fromName:   brief.name,
+      fromEmail:  brief.email,
+      created_at: r.created_at,
+    };
+  }));
+  res.json(rows.filter(r => r.fromEmail));
+});
+
+// GET /api/friends/search?q=... — search users by name or email (limit 10)
+// Filters in-memory against listUsers; fine for current scale, swap for a
+// dedicated profiles table + ILIKE query if user count grows past ~10k.
+app.get("/api/friends/search", requireAuth, async (req, res) => {
+  const q = String(req.query.q ?? "").trim().toLowerCase();
+  if (q.length < 2) return res.json([]); // require a real query
+
+  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const matches = (data?.users ?? [])
+    .filter(u => u.id !== req.user.id)
+    .filter(u => {
+      const name = u.user_metadata?.full_name?.toLowerCase() ?? "";
+      const email = u.email?.toLowerCase() ?? "";
+      return name.includes(q) || email.includes(q);
+    })
+    .slice(0, 10)
+    .map(u => ({
+      userId: u.id,
+      name:   u.user_metadata?.full_name?.trim() || u.email?.split("@")[0] || "User",
+      email:  u.email ?? null,
+    }));
+
+  res.json(matches);
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 // ── Public aggregate stats (landing-page social proof) — cached 5 min ─────────
 let statsCache = { data: null, at: 0 };

@@ -817,4 +817,56 @@ export const api = {
     }
     return data; // { images: [{ b64_json }] }
   },
+
+  // ── Friends system ─────────────────────────────────────────────────
+  async requestFriend(toUserId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/request`, {
+      method: "POST", headers,
+      body: JSON.stringify({ toUserId }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? "Failed to send friend request");
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { status: 'pending'|'accepted'|'already_friends', requestId? }
+  },
+
+  async respondToFriend(requestId, action) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/respond`, {
+      method: "POST", headers,
+      body: JSON.stringify({ requestId, action }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? "Failed to respond to friend request");
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { status: 'accepted'|'declined' }
+  },
+
+  async getFriends() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ userId, name, email }]
+  },
+
+  async getFriendRequests() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/requests`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ requestId, fromUserId, fromName, fromEmail, created_at }]
+  },
+
+  async searchUsers(q) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/search?q=${encodeURIComponent(q)}`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ userId, name, email }]
+  },
 };

@@ -341,7 +341,9 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
   }
 });
 
-app.use(express.json());
+// 50mb limit so /api/notebooks/:id/images can accept base64-encoded
+// generated images (a 1536x1536 PNG can be ~3–6 MB raw, ~4–8 MB as base64).
+app.use(express.json({ limit: '50mb' }));
 
 // Attach authenticated user to req.user from Supabase JWT in Authorization header.
 // Routes that need auth call this middleware explicitly.

@@ -24,7 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Flame, Calendar, Star, Bell, CheckCircle, Plus, Search, FileText, Paperclip,
+  Flame, Star, Bell, CheckCircle, Plus, Search, FileText, Paperclip,
   Hammer, MessageCircle, Users, Settings, LayoutDashboard, Trash2, ArrowLeft,
   ChevronRight, Sparkles, BarChart2, Target, Lightbulb, BookOpen, HelpCircle,
   Layers, ClipboardList, Sun, Moon, LogOut, Palette, AlertTriangle, Link as LinkIcon,
@@ -1819,7 +1819,7 @@ function ShareModal({ notebookId, onClose, onStateChange }) {
   );
 }
 
-function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueDate, onSetStatus, onUpgradeNeeded }) {
+function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStatus, onUpgradeNeeded }) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -2129,11 +2129,6 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="md" />
             </span>
           )}
-          {onSetDueDate && (
-            <span className="nb-desktop-only">
-              <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} />
-            </span>
-          )}
         </div>
 
         {/* Avatar — mobile: in Row 1 right; desktop: in actions */}
@@ -2196,12 +2191,6 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetDueD
               <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" compact />
             </span>
           )}
-          {onSetDueDate && (
-            <span className="nb-mobile-only">
-              <DueDateButton dueDate={nb.due_date} onChange={iso => onSetDueDate(iso)} compact />
-            </span>
-          )}
-
           <span className="nb-actions-divider nb-desktop-only" />
 
           {/* Primary study tools — all open in the shared spacious ToolModal */}
@@ -4451,88 +4440,6 @@ function StatusPill({ status, onChange, size = "sm", compact = false }) {
   );
 }
 
-function DueDateButton({ dueDate, onChange, compact = false }) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(dueDate ? new Date(dueDate).toISOString().slice(0, 10) : "");
-  const tone = dueDateTone(dueDate);
-
-  async function save() {
-    const iso = draft ? new Date(draft + "T23:59:59").toISOString() : null;
-    await onChange(iso);
-    setOpen(false);
-  }
-
-  return (
-    <div style={{ position: "relative", display: "inline-block" }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        title={compact ? (dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date") : "Edit due date"}
-        style={{
-          background: tone ? `${tone.color}1A` : "transparent",
-          border: `1px solid ${tone ? `${tone.color}55` : "var(--border-default)"}`,
-          borderRadius: 8, padding: compact ? "0 8px" : "0 10px", height: 30, cursor: "pointer",
-          fontSize: 12, fontWeight: 600, fontFamily: FONT,
-          color: tone ? tone.color : "var(--text-tertiary)",
-          display: "flex", alignItems: "center", gap: compact ? 0 : 6,
-        }}
-      >
-        <Calendar size={13} strokeWidth={1.75} />
-        {!compact && <span>{dueDate ? `Due ${formatDueDate(dueDate)}` : "Set due date"}</span>}
-      </button>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} />
-          <div onClick={e => e.stopPropagation()} style={{
-            position: "absolute", top: "calc(100% + 6px)", left: 0,
-            background: "var(--bg-surface-2)",
-            border: "1px solid var(--border-default)",
-            borderRadius: 10, padding: 12, zIndex: 110,
-            boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
-            minWidth: 240,
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
-              Due date
-            </div>
-            <input
-              type="date"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              style={{
-                width: "100%", background: "var(--bg, #0F0F18)",
-                border: "1px solid var(--border-default)",
-                borderRadius: 8, padding: "0 10px", height: 36,
-                color: "var(--text-primary)", fontSize: 13, fontFamily: FONT,
-                outline: "none", colorScheme: "dark",
-              }}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              {dueDate && (
-                <button
-                  onClick={async () => { setDraft(""); await onChange(null); setOpen(false); }}
-                  style={{
-                    background: "transparent", border: "1px solid var(--border)",
-                    borderRadius: 8, padding: "0 12px", height: 30,
-                    color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
-                  }}
-                >Clear</button>
-              )}
-              <button
-                onClick={save}
-                style={{
-                  flex: 1,
-                  background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-                  border: "none", borderRadius: 8, padding: "0 12px", height: 30,
-                  color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
-                }}
-              >Save</button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]
@@ -5194,12 +5101,6 @@ export default function Scholr() {
     catch (err) { console.error(err); setToast("Couldn't update status"); setTimeout(() => setToast(""), 2500); }
   }
 
-  async function handleSetDueDate(nb, isoOrNull) {
-    patchNotebookEverywhere(nb.id, { due_date: isoOrNull });
-    try { await api.updateDueDate(nb.id, isoOrNull); }
-    catch (err) { console.error(err); setToast("Couldn't update due date"); setTimeout(() => setToast(""), 2500); }
-  }
-
   async function handleToggleClass(classId) {
     if (expandedClassId === classId) { setExpandedClassId(null); return; }
     setExpandedClassId(classId);
@@ -5798,7 +5699,6 @@ export default function Scholr() {
                 currentUserId={user?.id}
                 onBack={() => setActiveNb(null)}
                 onSetStatus={status => handleSetStatus(activeNb, status)}
-                onSetDueDate={iso => handleSetDueDate(activeNb, iso)}
                 onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
                 onUpgradeNeeded={limitType => setUpgradeModal({ limitType })}
                 onDeleted={id => {

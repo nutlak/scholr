@@ -520,19 +520,7 @@ export const api = {
     }
   },
 
-  // ── Due date / Status ───────────────────────────────────────────────
-  async updateDueDate(notebookId, dueDate) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/due-date`, {
-      method: "PATCH", headers, body: JSON.stringify({ due_date: dueDate }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to update due date");
-    }
-    return res.json();
-  },
-
+  // ── Status ─────────────────────────────────────────────────────────
   async updateNotebookStatus(notebookId, status) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/status`, {

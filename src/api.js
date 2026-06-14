@@ -758,6 +758,16 @@ export const api = {
     return res.json(); // { success, firstNotebookId, created, limitHit }
   },
 
+  async getNotebookImages(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, { headers });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to load saved images");
+    }
+    return res.json(); // [{ url, created_at }]
+  },
+
   async saveImageToNotebook(notebookId, b64) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, {

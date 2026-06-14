@@ -62,6 +62,24 @@ async function downloadImage(b64, filename) {
   }
 }
 
+// Fetch a remote (Supabase storage) URL and trigger Save-As. Same approach as
+// downloadImage, but for already-hosted URLs rather than base64 payloads.
+async function downloadImageFromUrl(url, filename) {
+  try {
+    const blob = await fetch(url).then(r => r.blob());
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
 export default function ImageGeneratorModal({ notebookId, onClose }) {
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState("1024x1024");
@@ -71,7 +89,20 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
   const [images, setImages] = useState([]); // [{ b64_json, revised_prompt }]
   // Per-image save state, keyed by image index: "idle" | "saving" | "saved" | "error"
   const [saveState, setSaveState] = useState({});
+  // Previously saved images for this notebook: [{ url, created_at }]
+  const [savedImages, setSavedImages] = useState([]);
   const promptRef = useRef(null);
+
+  // Load previously-saved images on mount (and whenever notebookId changes).
+  // Fail silently — the gallery just stays empty if the fetch errors.
+  useEffect(() => {
+    if (!notebookId) return;
+    let cancelled = false;
+    api.getNotebookImages(notebookId)
+      .then(rows => { if (!cancelled) setSavedImages(rows ?? []); })
+      .catch(() => { /* ignore — gallery hides itself when empty */ });
+    return () => { cancelled = true; };
+  }, [notebookId]);
 
   async function handleSave(idx, b64) {
     if (!notebookId) {
@@ -82,6 +113,11 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
     try {
       await api.saveImageToNotebook(notebookId, b64);
       setSaveState(s => ({ ...s, [idx]: "saved" }));
+      // Refresh the gallery so the newly-saved image shows up immediately.
+      try {
+        const rows = await api.getNotebookImages(notebookId);
+        setSavedImages(rows ?? []);
+      } catch { /* swallow — save itself succeeded */ }
     } catch {
       setSaveState(s => ({ ...s, [idx]: "error" }));
     }
@@ -159,6 +195,49 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
               Describe the image you want.
             </div>
           </div>
+
+          {savedImages.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ ...labelStyle, marginBottom: 9 }}>Saved Images</div>
+              <div style={{
+                display: "flex", gap: 10, overflowX: "auto",
+                paddingBottom: 6, // room for the scrollbar so it doesn't crop the bottom edge
+                scrollbarWidth: "thin",
+              }}>
+                {savedImages.map((img, i) => (
+                  <div key={img.url + i} style={{
+                    position: "relative", flexShrink: 0,
+                    width: 110, height: 110, borderRadius: 10, overflow: "hidden",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "#0F0F18",
+                  }}>
+                    <img
+                      src={img.url}
+                      alt={`Saved image ${i + 1}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => downloadImageFromUrl(img.url, `image-${new Date(img.created_at).getTime()}.png`)}
+                      title="Download"
+                      aria-label="Download saved image"
+                      style={{
+                        position: "absolute", bottom: 6, right: 6,
+                        background: "rgba(20,20,31,0.85)",
+                        border: "1px solid rgba(167,139,250,0.32)",
+                        borderRadius: 6, padding: "3px 8px",
+                        color: "#C4B5FD", fontWeight: 600, fontSize: 10.5,
+                        cursor: "pointer", fontFamily: FONT,
+                        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+                      }}
+                    >
+                      Download
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>

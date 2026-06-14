@@ -32,6 +32,7 @@ import {
   Coffee, Folder, File, ArrowUp, Headphones, Play, Pause, Download, Share2,
   Brain, XCircle, ArrowRight, RotateCcw,
   Maximize2, Minimize2, ChevronLeft,
+  Image as ImageIcon,
 } from "lucide-react";
 import "./App.css";
 
@@ -2509,14 +2510,14 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
                 background: "var(--s2)",
                 border: "1px solid var(--border)",
                 borderRadius: 12,
-                width: 48, height: 48, fontSize: 18, fontWeight: 600,
+                width: 48, height: 48,
                 color: "var(--text-primary)",
                 cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.2s",
               }}
             >
-              🖼️
+              <ImageIcon size={20} strokeWidth={1.85} />
             </button>
             <button
               onClick={ask}

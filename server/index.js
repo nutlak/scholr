@@ -610,6 +610,36 @@ app.post("/api/notebooks/:id/images", requireAuth, requireMember, async (req, re
   res.status(201).json({ url });
 });
 
+// GET /api/notebooks/:id/images — list saved images for a notebook (newest first).
+app.get("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res) => {
+  const { data: rows, error } = await supabase
+    .from("notebook_images")
+    .select("id, storage_path, created_at")
+    .eq("notebook_id", req.params.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("listImages: query failed:", error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  // Resolve each storage_path to a URL. Public bucket → public URL; otherwise
+  // fall back to a 7-day signed URL. Mirrors the POST handler.
+  const images = await Promise.all((rows ?? []).map(async (row) => {
+    const { data: pub } = supabase.storage.from("notebook-images").getPublicUrl(row.storage_path);
+    let url = pub?.publicUrl ?? null;
+    if (!url) {
+      const { data: signed } = await supabase.storage
+        .from("notebook-images")
+        .createSignedUrl(row.storage_path, 60 * 60 * 24 * 7);
+      url = signed?.signedUrl ?? null;
+    }
+    return { url, created_at: row.created_at };
+  }));
+
+  res.json(images.filter(img => img.url));
+});
+
 // ── Image generation (OpenAI proxy) ───────────────────────────────────────────
 // Keeps OPENAI_API_KEY server-side; client never sees it.
 // Simple in-memory token bucket per user: 5 requests / 60s window.

@@ -1914,12 +1914,6 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  useEffect(() => {
-    const fn = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', fn);
-    return () => window.removeEventListener('resize', fn);
-  }, []);
-
   async function ask(presetText) {
     const text = (typeof presetText === "string" ? presetText : query).trim();
     if (!text || loading) return;

@@ -775,16 +775,36 @@ export const api = {
 
   async generateImage({ prompt, size = "1024x1024", n = 1 }) {
     const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/generate-image`, {
-      method: "POST", headers,
-      body: JSON.stringify({ prompt, size, n }),
-    });
+    // 90s client-side timeout: image generation can legitimately take 30–60s,
+    // but anything past 90s is almost certainly a stalled server/upstream and
+    // shouldn't leave the UI spinning forever.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90_000);
+    let res;
+    try {
+      res = await fetch(`${API_URL}/api/generate-image`, {
+        method: "POST", headers,
+        body: JSON.stringify({ prompt, size, n }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === "AbortError") {
+        const err = new Error("Request timed out after 90s. The server may be down or the OpenAI API is slow.");
+        err.status = 0;
+        throw err;
+      }
+      const err = new Error(e.message || "Network error reaching the image server.");
+      err.status = 0;
+      throw err;
+    }
+    clearTimeout(timeoutId);
     const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
       const err = new Error(data.error ?? `Request failed (${res.status})`);
       err.status = res.status;
       throw err;
     }
-    return data; // { images: [{ url, revised_prompt }] }
+    return data; // { images: [{ b64_json }] }
   },
 };

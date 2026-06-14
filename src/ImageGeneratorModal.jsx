@@ -111,11 +111,16 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
         setError(err.message || "You're going too fast. Wait a moment and try again.");
       } else if (err.status === 400) {
         setError(err.message || "OpenAI rejected that prompt. Try rewording it.");
+      } else if (err.status === 0) {
+        // Network failure or 90s timeout from the api client.
+        setError(err.message || "Couldn't reach the image server. Try again.");
       } else {
         setError(err.message || "Image generation failed. Try again.");
       }
+    } finally {
+      // Always reset loading, even if an unexpected throw escapes the catch.
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

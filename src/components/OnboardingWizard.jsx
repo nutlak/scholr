@@ -197,6 +197,12 @@ export default function OnboardingWizard({ user, onComplete }) {
               <textarea
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!loading && pasteText.trim()) handlePaste();
+                  }
+                }}
                 placeholder="…or paste your notes here"
                 rows={3}
                 style={{ ...inputStyle, height: "auto", padding: "10px 14px", resize: "vertical", fontFamily: FONT }}

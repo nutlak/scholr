@@ -246,6 +246,12 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                 ref={promptRef}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!loading && prompt.trim().length >= 3) handleSubmit(e);
+                  }
+                }}
                 placeholder="A watercolor diagram of the water cycle, soft pastels"
                 maxLength={1000}
                 rows={3}

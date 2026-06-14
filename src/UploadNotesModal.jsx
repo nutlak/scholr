@@ -183,6 +183,12 @@ export default function UploadNotesModal({ notebookId, accentColor, onClose, onU
                   <textarea
                     value={content}
                     onChange={e => setContent(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (canSubmit) handleSubmit(e);
+                      }
+                    }}
                     placeholder="Paste your notes here…"
                     rows={8}
                     style={{

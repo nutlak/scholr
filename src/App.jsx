@@ -626,6 +626,12 @@ function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
           className="fm-field"
           value={concept}
           onChange={e => setConcept(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (canGrade) grade();
+            }
+          }}
           placeholder="What are you trying to understand?"
           style={fmField}
         />
@@ -646,6 +652,12 @@ function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
           className="fm-field"
           value={explanation}
           onChange={e => setExplanation(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (canGrade) grade();
+            }
+          }}
           rows={6}
           placeholder="Explain it in plain words, as if teaching a curious 12-year-old. No jargon you can't unpack."
           style={{ ...fmField, resize: "none", lineHeight: 1.55, minHeight: 124 }}
@@ -1164,6 +1176,12 @@ function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
           <input
             value={focusTopic}
             onChange={e => setFocusTopic(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (!isLocked) handleGenerate();
+              }
+            }}
             disabled={isLocked}
             placeholder="e.g. mitochondrial respiration"
             className="forge-topic-input"

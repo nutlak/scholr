@@ -3386,6 +3386,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
     <div style={{ position: "relative" }}>
       {/* Card header */}
       <div
+        className="class-card-header"
         onClick={onToggle}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -3429,6 +3430,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               ref={pickerBtnRef}
               onClick={openPicker}
               title="Change color"
+              className="class-color-swatch"
               style={{
                 width: 16, height: 16, borderRadius: 4, padding: 0,
                 border: "1.5px solid var(--border-h)",
@@ -3444,6 +3446,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
               <>
                 <div onClick={e => { e.stopPropagation(); setPickerOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 50 }} />
                 <div
+                  className="class-color-popover"
                   onClick={e => e.stopPropagation()}
                   style={{
                     position: "fixed", top: pickerPos.top, right: pickerPos.right,
@@ -3470,6 +3473,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
           <button
             onClick={e => { e.stopPropagation(); onDeleteClass(); }}
             title="Delete class"
+            className="class-delete-btn"
             style={{
               background: "none", border: "none", cursor: "pointer",
               padding: "4px 6px", fontSize: 13, lineHeight: 1, color: "var(--text-tertiary)",
@@ -3482,7 +3486,7 @@ function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDe
         )}
 
         {/* Chevron */}
-        <div style={{
+        <div className="class-chevron" style={{
           color: expanded ? t.hue : "var(--text-tertiary)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",
           transform: expanded ? "rotate(90deg)" : "none", flexShrink: 0,
@@ -3586,7 +3590,7 @@ function SortableClassCard({ cls, dragDisabled, ...rest }) {
 
 function ColorSwatchPicker({ value, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <div className="color-swatch-grid" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
       {CLASS_COLORS.map(c => {
         const selected = c.hue.toLowerCase() === (value ?? "").toLowerCase();
         return (
@@ -3595,7 +3599,7 @@ function ColorSwatchPicker({ value, onChange }) {
             type="button"
             title={c.label}
             onClick={() => onChange(c.hue)}
-            className="btn-press"
+            className="btn-press color-swatch"
             style={{
               width: 36, height: 36, borderRadius: 10,
               background: `linear-gradient(135deg, ${c.hue} 0%, ${c.deep} 100%)`,

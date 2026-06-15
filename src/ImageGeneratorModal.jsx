@@ -91,6 +91,8 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
   const [saveState, setSaveState] = useState({});
   // Previously saved images for this notebook: [{ url, created_at }]
   const [savedImages, setSavedImages] = useState([]);
+  // Fullscreen lightbox: the URL/data-URI of the image being expanded, or null.
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const promptRef = useRef(null);
 
   // Load previously-saved images on mount (and whenever notebookId changes).
@@ -160,6 +162,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
   }
 
   return (
+    <>
     <div
       onClick={handleOverlayClick}
       style={{
@@ -214,7 +217,8 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                     <img
                       src={img.url}
                       alt={`Saved image ${i + 1}`}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      onClick={() => setLightboxUrl(img.url)}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", cursor: "zoom-in" }}
                     />
                     <button
                       type="button"
@@ -358,7 +362,8 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                   <img
                     src={`data:image/png;base64,${img.b64_json}`}
                     alt={prompt.trim().slice(0, 60)}
-                    style={{ width: "100%", display: "block" }}
+                    onClick={() => setLightboxUrl(`data:image/png;base64,${img.b64_json}`)}
+                    style={{ width: "100%", display: "block", cursor: "zoom-in" }}
                   />
                   <div style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -424,5 +429,56 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
         </div>
       </div>
     </div>
+
+    {/* Fullscreen lightbox — stacks above the generator modal */}
+    {lightboxUrl && (
+      <div
+        onClick={e => { if (e.target === e.currentTarget) setLightboxUrl(null); }}
+        style={{
+          position: "fixed", inset: 0, background: "rgba(5,5,9,0.92)",
+          backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          gap: 16, zIndex: 1100, padding: 24,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setLightboxUrl(null)}
+          title="Close"
+          aria-label="Close"
+          style={{
+            position: "absolute", top: 18, right: 18,
+            background: "rgba(20,20,31,0.85)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 10, width: 40, height: 40, cursor: "pointer",
+            color: "#F5F5FA", fontSize: 20, lineHeight: 1,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+          }}
+        >✕</button>
+        <img
+          src={lightboxUrl}
+          alt="Expanded image"
+          style={{
+            maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain",
+            borderRadius: 10, boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => downloadImageFromUrl(lightboxUrl, `image-${Date.now()}.png`)}
+          style={{
+            background: "rgba(167,139,250,0.16)",
+            border: "1px solid rgba(167,139,250,0.36)",
+            borderRadius: 10, padding: "9px 18px",
+            color: "#C4B5FD", fontWeight: 600, fontSize: 13,
+            cursor: "pointer", fontFamily: FONT,
+          }}
+        >
+          Download
+        </button>
+      </div>
+    )}
+    </>
   );
 }

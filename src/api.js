@@ -818,6 +818,29 @@ export const api = {
     return data; // { images: [{ b64_json }] }
   },
 
+  // ── Username ───────────────────────────────────────────────────────
+  async getMyUsername() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/me/username`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { username: string | null }
+  },
+
+  async setMyUsername(username) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/me/username`, {
+      method: "POST", headers,
+      body: JSON.stringify({ username }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? "Failed to set username");
+      err.status = res.status; // 409 = taken, 400 = invalid/reserved
+      throw err;
+    }
+    return data; // { username }
+  },
+
   // ── Friends system ─────────────────────────────────────────────────
   async requestFriend(toUserId) {
     const headers = await authHeaders();
@@ -853,21 +876,21 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ userId, name, email }]
+    return res.json(); // [{ userId, name, username }]
   },
 
   async getFriendRequests() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/requests`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ requestId, fromUserId, fromName, fromEmail, created_at }]
+    return res.json(); // [{ requestId, fromUserId, fromName, fromUsername, created_at }]
   },
 
   async getBestFriends() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/best`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ userId, name, email, activityCount }]
+    return res.json(); // [{ userId, name, username, activityCount }]
   },
 
   async inviteFriendToNotebook(notebookId, friendUserId) {
@@ -889,6 +912,6 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/search?q=${encodeURIComponent(q)}`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ userId, name, email }]
+    return res.json(); // [{ userId, username, name }] — username prefix match, no email
   },
 };

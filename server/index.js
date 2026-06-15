@@ -3337,15 +3337,19 @@ function orderedPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
 
-// Resolve a user id → { userId, name, email } using the auth admin API
-// (matches the convention used by listMembers / listSharedNotebooks).
+// Resolve a user id → { userId, name, username }. Never returns email — friend
+// surfaces are username-based and must not leak email addresses.
 async function resolveUserBrief(uid) {
-  const { data } = await supabase.auth.admin.getUserById(uid);
-  const u = data?.user;
+  const [authRes, profRes] = await Promise.all([
+    supabase.auth.admin.getUserById(uid),
+    supabase.from("profiles").select("username").eq("user_id", uid).maybeSingle(),
+  ]);
+  const u = authRes.data?.user;
+  const username = profRes.data?.username ?? null;
   return {
-    userId: uid,
-    name:   u?.user_metadata?.full_name?.trim() || u?.email?.split("@")[0] || "User",
-    email:  u?.email ?? null,
+    userId:   uid,
+    name:     u?.user_metadata?.full_name?.trim() || username || "User",
+    username,
   };
 }
 
@@ -3484,7 +3488,7 @@ app.post("/api/friends/respond", requireAuth, async (req, res) => {
   res.json({ status: newStatus });
 });
 
-// GET /api/friends — accepted friends as [{ userId, name, email }]
+// GET /api/friends — accepted friends as [{ userId, name, username }]
 app.get("/api/friends", requireAuth, async (req, res) => {
   const me = req.user.id;
   const { data, error } = await supabase
@@ -3496,7 +3500,7 @@ app.get("/api/friends", requireAuth, async (req, res) => {
 
   const otherIds = (data ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a));
   const friends = await Promise.all(otherIds.map(resolveUserBrief));
-  res.json(friends.filter(f => f.email));
+  res.json(friends);
 });
 
 // GET /api/friends/best — top 5 friends ranked by shared-notebook activity
@@ -3565,7 +3569,7 @@ app.get("/api/friends/best", requireAuth, async (req, res) => {
     return { ...brief, activityCount: r.activityCount };
   }));
 
-  res.json(result.filter(r => r.email));
+  res.json(result);
 });
 
 // GET /api/friends/requests — incoming pending requests
@@ -3581,41 +3585,98 @@ app.get("/api/friends/requests", requireAuth, async (req, res) => {
   const rows = await Promise.all((data ?? []).map(async (r) => {
     const brief = await resolveUserBrief(r.from_user);
     return {
-      requestId:  r.id,
-      fromUserId: brief.userId,
-      fromName:   brief.name,
-      fromEmail:  brief.email,
-      created_at: r.created_at,
+      requestId:    r.id,
+      fromUserId:   brief.userId,
+      fromName:     brief.name,
+      fromUsername: brief.username,
+      created_at:   r.created_at,
     };
   }));
-  res.json(rows.filter(r => r.fromEmail));
+  res.json(rows);
 });
 
-// GET /api/friends/search?q=... — search users by name or email (limit 10)
-// Filters in-memory against listUsers; fine for current scale, swap for a
-// dedicated profiles table + ILIKE query if user count grows past ~10k.
+// GET /api/friends/search?q=... — search users by USERNAME prefix (limit 10).
+// Returns [{ userId, username, name }] — never email. Querying the profiles
+// table by username keeps emails fully private.
 app.get("/api/friends/search", requireAuth, async (req, res) => {
   const q = String(req.query.q ?? "").trim().toLowerCase();
   if (q.length < 2) return res.json([]); // require a real query
 
-  const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  // Escape LIKE wildcards so a literal % or _ in the query isn't a pattern.
+  const esc = q.replace(/[%_\\]/g, m => `\\${m}`);
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id, username")
+    .ilike("username", `${esc}%`)
+    .neq("user_id", req.user.id)
+    .not("username", "is", null)
+    .limit(10);
   if (error) return res.status(500).json({ error: error.message });
 
-  const matches = (data?.users ?? [])
-    .filter(u => u.id !== req.user.id)
-    .filter(u => {
-      const name = u.user_metadata?.full_name?.toLowerCase() ?? "";
-      const email = u.email?.toLowerCase() ?? "";
-      return name.includes(q) || email.includes(q);
-    })
-    .slice(0, 10)
-    .map(u => ({
-      userId: u.id,
-      name:   u.user_metadata?.full_name?.trim() || u.email?.split("@")[0] || "User",
-      email:  u.email ?? null,
-    }));
+  // Resolve display name from auth metadata; fall back to the username.
+  const rows = await Promise.all((data ?? []).map(async (r) => {
+    const { data: authData } = await supabase.auth.admin.getUserById(r.user_id);
+    return {
+      userId:   r.user_id,
+      username: r.username,
+      name:     authData?.user?.user_metadata?.full_name?.trim() || r.username,
+    };
+  }));
 
-  res.json(matches);
+  res.json(rows);
+});
+
+// GET /api/me/username — current user's username (null if not set yet)
+app.get("/api/me/username", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ username: data?.username ?? null });
+});
+
+// POST /api/me/username — set/update the current user's username.
+const RESERVED_USERNAMES = new Set(["admin", "root", "support"]);
+app.post("/api/me/username", requireAuth, async (req, res) => {
+  let { username } = req.body ?? {};
+  if (typeof username !== "string") {
+    return res.status(400).json({ error: "username is required" });
+  }
+  username = username.trim().toLowerCase();
+
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    return res.status(400).json({ error: "Username must be 3–20 characters: letters, numbers, or underscores only" });
+  }
+  if (RESERVED_USERNAMES.has(username)) {
+    return res.status(400).json({ error: "That username is reserved" });
+  }
+
+  // Reject if taken by another user (stored lowercase, so eq is case-insensitive).
+  const { data: existing, error: lookupErr } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("username", username)
+    .maybeSingle();
+  if (lookupErr) return res.status(500).json({ error: lookupErr.message });
+  if (existing && existing.user_id !== req.user.id) {
+    return res.status(409).json({ error: "Username already taken" });
+  }
+
+  const { error: upsertErr } = await supabase
+    .from("profiles")
+    .upsert({ user_id: req.user.id, username }, { onConflict: "user_id" });
+  if (upsertErr) {
+    // 23505 = unique_violation from the lower(username) index (lost a race).
+    if (upsertErr.code === "23505") {
+      return res.status(409).json({ error: "Username already taken" });
+    }
+    return res.status(500).json({ error: upsertErr.message });
+  }
+
+  res.json({ username });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

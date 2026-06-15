@@ -103,6 +103,7 @@ export default function AddFriendModal({ onClose, onChanged }) {
 
   return (
     <div
+      className="mobile-sheet-overlay"
       onClick={handleOverlayClick}
       style={{
         position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
@@ -111,7 +112,7 @@ export default function AddFriendModal({ onClose, onChanged }) {
         zIndex: 1000, padding: 16,
       }}
     >
-      <div style={{
+      <div className="mobile-sheet" style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
         border: "1px solid rgba(255,255,255,0.09)",

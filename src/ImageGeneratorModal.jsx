@@ -164,6 +164,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
   return (
     <>
     <div
+      className="mobile-sheet-overlay"
       onClick={handleOverlayClick}
       style={{
         position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
@@ -172,7 +173,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
         justifyContent: "center", zIndex: 1000, padding: 16,
       }}
     >
-      <div style={{
+      <div className="mobile-sheet" style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
         border: "1px solid rgba(255,255,255,0.09)",
@@ -206,6 +207,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                 display: "flex", gap: 10, overflowX: "auto",
                 paddingBottom: 6, // room for the scrollbar so it doesn't crop the bottom edge
                 scrollbarWidth: "thin",
+                WebkitOverflowScrolling: "touch", // momentum scroll on iOS
               }}>
                 {savedImages.map((img, i) => (
                   <div key={img.url + i} style={{
@@ -271,7 +273,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="imggen-controls" style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <label style={labelStyle}>Size</label>
                 <select
@@ -447,11 +449,12 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
           title="Close"
           aria-label="Close"
           style={{
-            position: "absolute", top: 18, right: 18,
+            position: "absolute",
+            top: "calc(14px + env(safe-area-inset-top))", right: 14,
             background: "rgba(20,20,31,0.85)",
             border: "1px solid rgba(255,255,255,0.14)",
-            borderRadius: 10, width: 40, height: 40, cursor: "pointer",
-            color: "#F5F5FA", fontSize: 20, lineHeight: 1,
+            borderRadius: 10, width: 44, height: 44, cursor: "pointer",
+            color: "#F5F5FA", fontSize: 22, lineHeight: 1,
             display: "flex", alignItems: "center", justifyContent: "center",
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
           }}

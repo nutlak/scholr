@@ -366,6 +366,14 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* ── Friends sidebar rows (rendered in the mobile friends sheet) ── */
+  /* Bump the 32px desktop rows to tap-friendly height on mobile. */
+  .friend-sidebar-row { min-height: 44px !important; }
+
+  /* ── Image generator: stack Size/Count controls when cramped ──── */
+  .imggen-controls { flex-direction: column !important; }
+  .imggen-controls > * { width: 100% !important; }
 }
 
 /* Above mobile: keep .mobile-only hidden  */

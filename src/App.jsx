@@ -4660,7 +4660,7 @@ function FriendsSidebarSection() {
           ) : (
             friends.map(f => (
               <div
-                key={f.userId} style={rowStyle}
+                key={f.userId} className="friend-sidebar-row" style={rowStyle}
                 onClick={() => setInviteFor(f)}
                 title={`Invite ${f.name} to a notebook`}
                 onMouseEnter={hoverOn} onMouseLeave={hoverOff}
@@ -4682,7 +4682,7 @@ function FriendsSidebarSection() {
             </div>
           ) : (
             bestFriends.slice(0, 5).map((f, i) => (
-              <div key={f.userId} style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <div key={f.userId} className="friend-sidebar-row" style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
                 <span style={{ width: 18, textAlign: "center", fontSize: 13, flexShrink: 0 }}>{BEST_FRIEND_RANKS[i]}</span>
                 <Avatar name={f.name} size={22} seed={f.email || f.userId} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
@@ -4728,6 +4728,7 @@ function FriendInviteModal({ friend, onClose }) {
 
   return (
     <div
+      className="mobile-sheet-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
@@ -4736,7 +4737,7 @@ function FriendInviteModal({ friend, onClose }) {
         zIndex: 1000, padding: 16,
       }}
     >
-      <div style={{
+      <div className="mobile-sheet" style={{
         position: "relative",
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
         border: "1px solid rgba(255,255,255,0.09)",
@@ -5212,6 +5213,7 @@ export default function Scholr() {
     catch { return "var(--acc)"; }
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showMobileFriends, setShowMobileFriends] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
@@ -6662,7 +6664,51 @@ export default function Scholr() {
                 </button>
               );
             })}
+            {/* Friends opens a bottom sheet (sidebar is hidden on mobile) */}
+            <button
+              className="mobile-tab"
+              onClick={() => setShowMobileFriends(true)}
+              aria-label="Friends"
+            >
+              <UserPlus size={22} strokeWidth={1.75} />
+              <span>Friends</span>
+            </button>
           </nav>
+        )}
+
+        {/* ── Mobile friends sheet (sidebar Friends/Best Friends, in a bottom sheet) ── */}
+        {showMobileFriends && (
+          <div
+            className="mobile-sheet-overlay"
+            onClick={e => { if (e.target === e.currentTarget) setShowMobileFriends(false); }}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+              backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+              display: "flex", justifyContent: "center", zIndex: 1000,
+            }}
+          >
+            <div className="mobile-sheet" style={{
+              background: "var(--bg-base)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 18, width: "100%", maxWidth: 440,
+              padding: "8px 12px 20px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 4px 8px" }}>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>Friends</span>
+                <button
+                  onClick={() => setShowMobileFriends(false)}
+                  aria-label="Close"
+                  style={{
+                    background: "transparent", border: "1px solid var(--border-default)",
+                    borderRadius: 8, width: 36, height: 36, cursor: "pointer",
+                    color: "var(--text-secondary)", fontSize: 16,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >✕</button>
+              </div>
+              <FriendsSidebarSection />
+            </div>
+          </div>
         )}
 
         {/* ── Mobile FAB: New Class (dashboard only) ── */}

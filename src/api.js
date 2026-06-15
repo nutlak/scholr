@@ -870,6 +870,21 @@ export const api = {
     return res.json(); // [{ userId, name, email, activityCount }]
   },
 
+  async inviteFriendToNotebook(notebookId, friendUserId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/invite-friend`, {
+      method: "POST", headers,
+      body: JSON.stringify({ friendUserId }),
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.error ?? "Failed to invite friend");
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { success: true }
+  },
+
   async searchUsers(q) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/search?q=${encodeURIComponent(q)}`, { headers });

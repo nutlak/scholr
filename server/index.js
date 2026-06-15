@@ -640,6 +640,42 @@ app.get("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res
   res.json(images.filter(img => img.url));
 });
 
+// POST /api/notebooks/:id/invite-friend — add an existing friend directly as a
+// notebook member (no email step). Requires: caller is a member of the notebook
+// (requireMember) AND the two users are actually friends.
+app.post("/api/notebooks/:id/invite-friend", requireAuth, requireMember, async (req, res) => {
+  const { friendUserId } = req.body ?? {};
+  if (!friendUserId || typeof friendUserId !== "string") {
+    return res.status(400).json({ error: "friendUserId is required" });
+  }
+  if (friendUserId === req.user.id) {
+    return res.status(400).json({ error: "You can't invite yourself" });
+  }
+
+  // Verify the two users are actually friends (friendships stores user_a < user_b).
+  const [a, b] = orderedPair(req.user.id, friendUserId);
+  const { data: friendship, error: friendErr } = await supabase
+    .from("friendships")
+    .select("id")
+    .eq("user_a", a)
+    .eq("user_b", b)
+    .maybeSingle();
+  if (friendErr) return res.status(500).json({ error: friendErr.message });
+  if (!friendship) return res.status(403).json({ error: "You can only invite your friends" });
+
+  // Add the friend as a member (idempotent — no-op if already a member).
+  const { error: upsertError } = await supabase.from("notebook_members").upsert(
+    { notebook_id: req.params.id, user_id: friendUserId, role: "member" },
+    { onConflict: "notebook_id,user_id" }
+  );
+  if (upsertError) {
+    console.error("inviteFriend: failed to add member:", upsertError);
+    return res.status(500).json({ error: "Failed to add friend: " + upsertError.message });
+  }
+
+  res.status(201).json({ success: true });
+});
+
 // ── Image generation (OpenAI proxy) ───────────────────────────────────────────
 // Keeps OPENAI_API_KEY server-side; client never sees it.
 // Simple in-memory token bucket per user: 5 requests / 60s window.

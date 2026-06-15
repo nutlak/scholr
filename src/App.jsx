@@ -3913,6 +3913,26 @@ function InviteModal({ notebookId, onClose }) {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [sentTo, setSentTo] = useState("");
+  const [friends, setFriends] = useState([]);
+  const [friendState, setFriendState] = useState({}); // userId → 'busy' | 'done' | 'error'
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getFriends()
+      .then(rows => { if (!cancelled) setFriends(rows ?? []); })
+      .catch(() => { /* friends section just stays hidden on error */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function addFriend(friendUserId) {
+    setFriendState(s => ({ ...s, [friendUserId]: "busy" }));
+    try {
+      await api.inviteFriendToNotebook(notebookId, friendUserId);
+      setFriendState(s => ({ ...s, [friendUserId]: "done" }));
+    } catch {
+      setFriendState(s => ({ ...s, [friendUserId]: "error" }));
+    }
+  }
 
   async function handleSend() {
     const trimmed = email.trim();
@@ -4020,6 +4040,57 @@ function InviteModal({ notebookId, onClose }) {
                   }}
                 >{status === "sending" ? "Sending…" : "Send Invite"}</button>
               </div>
+
+              {/* Friends — one-click share with someone you're already friends with */}
+              {friends.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
+                  }}>
+                    <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--t3)", fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      Or add a friend
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto" }}>
+                    {friends.map(f => {
+                      const st = friendState[f.userId];
+                      const done = st === "done";
+                      return (
+                        <div key={f.userId} style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "7px 9px", borderRadius: 10,
+                          background: "var(--s1)", border: "1px solid var(--border)",
+                        }}>
+                          <Avatar name={f.name} size={26} seed={f.email || f.userId} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--t3)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.email}</div>
+                          </div>
+                          <button
+                            onClick={() => addFriend(f.userId)}
+                            disabled={st === "busy" || done}
+                            className="btn-press"
+                            style={{
+                              flexShrink: 0,
+                              background: done ? "rgba(52,211,153,0.14)" : "var(--acc-bg)",
+                              border: `1px solid ${done ? "rgba(52,211,153,0.32)" : "var(--acc-bg-h)"}`,
+                              borderRadius: 8, padding: "6px 12px",
+                              color: done ? "#6EE7B7" : "var(--acc-h)",
+                              fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                              cursor: st === "busy" || done ? "default" : "pointer",
+                              opacity: st === "busy" ? 0.7 : 1,
+                            }}
+                          >
+                            {st === "busy" ? "…" : done ? "Added!" : st === "error" ? "Retry" : "Add"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -4512,6 +4583,7 @@ function FriendsSidebarSection() {
   const [requests, setRequests]       = useState([]);
   const [open, setOpen]               = useState(true);
   const [showAdd, setShowAdd]         = useState(false);
+  const [inviteFor, setInviteFor]     = useState(null); // friend object whose invite menu is open
 
   const refresh = useCallback(async () => {
     const [f, bf, rq] = await Promise.all([
@@ -4587,7 +4659,12 @@ function FriendsSidebarSection() {
             </div>
           ) : (
             friends.map(f => (
-              <div key={f.userId} style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <div
+                key={f.userId} style={rowStyle}
+                onClick={() => setInviteFor(f)}
+                title={`Invite ${f.name} to a notebook`}
+                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
+              >
                 <Avatar name={f.name} size={22} seed={f.email || f.userId} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </div>
@@ -4618,7 +4695,123 @@ function FriendsSidebarSection() {
       {showAdd && (
         <AddFriendModal onClose={() => setShowAdd(false)} onChanged={refresh} />
       )}
+      {inviteFor && (
+        <FriendInviteModal friend={inviteFor} onClose={() => setInviteFor(null)} />
+      )}
     </>
+  );
+}
+
+// ── FriendInviteModal ─────────────────────────────────────────────────────────
+// Pick one of the current user's notebooks to add a friend to directly.
+function FriendInviteModal({ friend, onClose }) {
+  const [notebooks, setNotebooks] = useState(null); // null = loading
+  const [state, setState] = useState({}); // notebookId → 'busy' | 'done' | 'error'
+
+  useEffect(() => {
+    let cancelled = false;
+    api.listNotebooks()
+      .then(nbs => { if (!cancelled) setNotebooks(nbs ?? []); })
+      .catch(() => { if (!cancelled) setNotebooks([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  async function invite(nbId) {
+    setState(s => ({ ...s, [nbId]: "busy" }));
+    try {
+      await api.inviteFriendToNotebook(nbId, friend.userId);
+      setState(s => ({ ...s, [nbId]: "done" }));
+    } catch {
+      setState(s => ({ ...s, [nbId]: "error" }));
+    }
+  }
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 1000, padding: 16,
+      }}
+    >
+      <div style={{
+        position: "relative",
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        borderRadius: 18, width: "100%", maxWidth: 420,
+        maxHeight: "80vh", display: "flex", flexDirection: "column",
+        padding: "24px 22px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease", overflow: "hidden",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <Avatar name={friend.name} size={34} seed={friend.email || friend.userId} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+              Invite {friend.name}
+            </div>
+            <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT }}>
+              Choose a notebook to share
+            </div>
+          </div>
+          <button
+            onClick={onClose} aria-label="Close"
+            style={{
+              marginLeft: "auto", background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8, width: 30, height: 30, cursor: "pointer",
+              color: "rgba(245,245,250,0.6)", fontSize: 15, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >✕</button>
+        </div>
+
+        <div style={{ overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+          {notebooks === null ? (
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "8px 2px" }}>Loading…</div>
+          ) : notebooks.length === 0 ? (
+            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "8px 2px" }}>
+              You don't have any notebooks yet.
+            </div>
+          ) : (
+            notebooks.map(nb => {
+              const st = state[nb.id];
+              const done = st === "done";
+              return (
+                <div key={nb.id} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "9px 11px", borderRadius: 10,
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.title}</div>
+                    {nb.topic && <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.topic}</div>}
+                  </div>
+                  <button
+                    onClick={() => invite(nb.id)}
+                    disabled={st === "busy" || done}
+                    style={{
+                      flexShrink: 0,
+                      background: done ? "rgba(52,211,153,0.14)" : "rgba(167,139,250,0.14)",
+                      border: `1px solid ${done ? "rgba(52,211,153,0.32)" : "rgba(167,139,250,0.32)"}`,
+                      borderRadius: 8, padding: "6px 12px",
+                      color: done ? "#6EE7B7" : "#C4B5FD",
+                      fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                      cursor: st === "busy" || done ? "default" : "pointer",
+                      opacity: st === "busy" ? 0.7 : 1,
+                    }}
+                  >
+                    {st === "busy" ? "…" : done ? "Invited!" : st === "error" ? "Retry" : "Invite"}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

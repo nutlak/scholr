@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { api } from "./api.js";
 import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
@@ -9,6 +9,7 @@ import UploadNotesModal from "./UploadNotesModal.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import SharedNotebook from "./components/SharedNotebook.jsx";
 import ImageGeneratorModal from "./ImageGeneratorModal.jsx";
+import AddFriendModal from "./AddFriendModal.jsx";
 import {
   DndContext,
   closestCenter,
@@ -32,7 +33,7 @@ import {
   Coffee, Folder, File, ArrowUp, Headphones, Play, Pause, Download, Share2,
   Brain, XCircle, ArrowRight, RotateCcw,
   Maximize2, Minimize2, ChevronLeft,
-  Image as ImageIcon,
+  Image as ImageIcon, UserPlus, ChevronDown,
 } from "lucide-react";
 import "./App.css";
 
@@ -4499,6 +4500,128 @@ const NAV = [
   { id: "settings",  label: "Settings",   Icon: Settings },
 ];
 
+const BEST_FRIEND_RANKS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+// ── FriendsSidebarSection ─────────────────────────────────────────────────────
+// Two collapsible sidebar blocks: Friends (current friends + add button + pending
+// request badge) and Best Friends (top 5 by shared-notebook activity). Self-
+// contained: loads its own data and refreshes after request actions.
+function FriendsSidebarSection() {
+  const [friends, setFriends]         = useState([]);
+  const [bestFriends, setBestFriends] = useState([]);
+  const [requests, setRequests]       = useState([]);
+  const [open, setOpen]               = useState(true);
+  const [showAdd, setShowAdd]         = useState(false);
+
+  const refresh = useCallback(async () => {
+    const [f, bf, rq] = await Promise.all([
+      api.getFriends().catch(() => []),
+      api.getBestFriends().catch(() => []),
+      api.getFriendRequests().catch(() => []),
+    ]);
+    setFriends(f ?? []);
+    setBestFriends(bf ?? []);
+    setRequests(rq ?? []);
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const sectionLabel = {
+    fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+    color: "var(--text-tertiary)", fontFamily: FONT,
+  };
+  const rowStyle = {
+    display: "flex", alignItems: "center", gap: 9,
+    padding: "0 12px", height: 32, borderRadius: 8,
+    color: "var(--text-secondary)", fontSize: 13, fontWeight: 500,
+    cursor: "pointer", userSelect: "none", letterSpacing: "-0.01em",
+    transition: "background 150ms ease, color 150ms ease",
+  };
+  const hoverOn = e => { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; };
+  const hoverOff = e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; };
+
+  return (
+    <>
+      {/* ── Friends header ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 12px 6px" }}>
+        <div
+          onClick={() => setOpen(o => !o)}
+          style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", flex: 1, minWidth: 0 }}
+        >
+          <ChevronDown
+            size={13} strokeWidth={2}
+            style={{ color: "var(--text-tertiary)", transform: open ? "none" : "rotate(-90deg)", transition: "transform 150ms ease" }}
+          />
+          <span style={sectionLabel}>Friends</span>
+          {requests.length > 0 && (
+            <span style={{
+              minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
+              background: "#F87171", color: "#fff", fontSize: 10, fontWeight: 700,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              fontFamily: FONT,
+            }}>{requests.length}</span>
+          )}
+        </div>
+        <button
+          onClick={() => setShowAdd(true)}
+          title="Add friend"
+          aria-label="Add friend"
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            color: "var(--text-tertiary)", display: "flex", alignItems: "center",
+            padding: 2, borderRadius: 6,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; }}
+        >
+          <UserPlus size={15} strokeWidth={1.85} />
+        </button>
+      </div>
+
+      {open && (
+        <>
+          {/* Friend list */}
+          {friends.length === 0 ? (
+            <div style={{ padding: "2px 12px 8px", fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.7 }}>
+              No friends yet
+            </div>
+          ) : (
+            friends.map(f => (
+              <div key={f.userId} style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                <Avatar name={f.name} size={22} seed={f.email || f.userId} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+              </div>
+            ))
+          )}
+
+          {/* ── Best Friends ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "14px 12px 6px" }}>
+            <Flame size={13} strokeWidth={2} style={{ color: "var(--text-tertiary)" }} />
+            <span style={sectionLabel}>Best Friends</span>
+          </div>
+          {bestFriends.length === 0 ? (
+            <div style={{ padding: "2px 12px 8px", fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.7, lineHeight: 1.45 }}>
+              Add friends to see your best friends
+            </div>
+          ) : (
+            bestFriends.slice(0, 5).map((f, i) => (
+              <div key={f.userId} style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                <span style={{ width: 18, textAlign: "center", fontSize: 13, flexShrink: 0 }}>{BEST_FRIEND_RANKS[i]}</span>
+                <Avatar name={f.name} size={22} seed={f.email || f.userId} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+              </div>
+            ))
+          )}
+        </>
+      )}
+
+      {showAdd && (
+        <AddFriendModal onClose={() => setShowAdd(false)} onChanged={refresh} />
+      )}
+    </>
+  );
+}
+
 // ── UpgradeModal ─────────────────────────────────────────────────────────────
 // Same 3 testimonials as the landing page (illustrative early-stage social proof).
 const UPGRADE_TESTIMONIALS = [
@@ -5507,8 +5630,8 @@ export default function Scholr() {
           {NAV.map(({ id, label, Icon }) => {
             const active = activeView === id;
             return (
+              <Fragment key={id}>
               <div
-                key={id}
                 onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); setSidebarOpen(false); }}
                 style={{
                   position: "relative",
@@ -5533,6 +5656,9 @@ export default function Scholr() {
                 </span>
                 {label}
               </div>
+              {/* Friends + Best Friends sit between Starred and Settings */}
+              {id === "starred" && <FriendsSidebarSection />}
+              </Fragment>
             );
           })}
 

@@ -863,6 +863,13 @@ export const api = {
     return res.json(); // [{ requestId, fromUserId, fromName, fromEmail, created_at }]
   },
 
+  async getBestFriends() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/best`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ userId, name, email, activityCount }]
+  },
+
   async searchUsers(q) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/search?q=${encodeURIComponent(q)}`, { headers });

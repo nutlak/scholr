@@ -929,6 +929,25 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
   // Activity log + @mention notifications — fire-and-forget
   if (role === "user") {
     logUserActivity(userId);
+
+    // Shared-notebook activity log (powers Best Friends ranking) — only record
+    // activity for notebooks with more than one member. Fire-and-forget.
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from("notebook_members")
+          .select("user_id", { count: "exact", head: true })
+          .eq("notebook_id", notebookId);
+        if ((count ?? 0) > 1) {
+          await supabase
+            .from("notebook_activity")
+            .insert({ user_id: userId, notebook_id: notebookId });
+        }
+      } catch (err) {
+        console.error("notebook_activity log error:", err);
+      }
+    })();
+
     (async () => {
       try {
         const mentions = [...new Set((content.match(/@([A-Za-z][A-Za-z0-9_]*)/g) ?? []).map(m => m.slice(1).toLowerCase()))];
@@ -3442,6 +3461,75 @@ app.get("/api/friends", requireAuth, async (req, res) => {
   const otherIds = (data ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a));
   const friends = await Promise.all(otherIds.map(resolveUserBrief));
   res.json(friends.filter(f => f.email));
+});
+
+// GET /api/friends/best — top 5 friends ranked by shared-notebook activity
+// (last 90 days). Falls back to newest friends if there's no activity yet.
+app.get("/api/friends/best", requireAuth, async (req, res) => {
+  const me = req.user.id;
+
+  // 1. My friends, with friendship recency for the fallback ordering.
+  const { data: friendships, error: fErr } = await supabase
+    .from("friendships")
+    .select("user_a, user_b, created_at")
+    .or(`user_a.eq.${me},user_b.eq.${me}`)
+    .order("created_at", { ascending: false });
+  if (fErr) return res.status(500).json({ error: fErr.message });
+
+  // friendId → friendship created_at (preserves newest-first fallback order)
+  const friendOrder = (friendships ?? []).map(row => row.user_a === me ? row.user_b : row.user_a);
+  if (!friendOrder.length) return res.json([]);
+
+  // 2. My notebook memberships.
+  const { data: myMemberships } = await supabase
+    .from("notebook_members")
+    .select("notebook_id")
+    .eq("user_id", me);
+  const myNotebookIds = new Set((myMemberships ?? []).map(m => m.notebook_id));
+
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+  // 3. For each friend: shared notebooks → activity count (either user, 90d).
+  const ranked = await Promise.all(friendOrder.map(async (friendId) => {
+    let activityCount = 0;
+
+    if (myNotebookIds.size) {
+      const { data: friendMemberships } = await supabase
+        .from("notebook_members")
+        .select("notebook_id")
+        .eq("user_id", friendId);
+      const shared = (friendMemberships ?? [])
+        .map(m => m.notebook_id)
+        .filter(id => myNotebookIds.has(id));
+
+      if (shared.length) {
+        const { count } = await supabase
+          .from("notebook_activity")
+          .select("id", { count: "exact", head: true })
+          .in("notebook_id", shared)
+          .in("user_id", [me, friendId])
+          .gte("created_at", since);
+        activityCount = count ?? 0;
+      }
+    }
+
+    return { friendId, activityCount };
+  }));
+
+  const totalActivity = ranked.reduce((sum, r) => sum + r.activityCount, 0);
+
+  // Sort: by activity desc when we have data, otherwise keep newest-first order.
+  const ordered = totalActivity > 0
+    ? [...ranked].sort((x, y) => y.activityCount - x.activityCount)
+    : ranked; // already newest-first from friendOrder
+
+  const top = ordered.slice(0, 5);
+  const result = await Promise.all(top.map(async (r) => {
+    const brief = await resolveUserBrief(r.friendId);
+    return { ...brief, activityCount: r.activityCount };
+  }));
+
+  res.json(result.filter(r => r.email));
 });
 
 // GET /api/friends/requests — incoming pending requests

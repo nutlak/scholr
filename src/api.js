@@ -861,6 +861,11 @@ export const api = {
     return res.json(); // { ok: true }
   },
 
+  // Mark every unread social notification as read (empty ids = all, server-side).
+  async markAllSocialNotificationsRead() {
+    return this.markSocialNotificationsRead([]);
+  },
+
   // ── Friends system ─────────────────────────────────────────────────
   async requestFriend(toUserId) {
     const headers = await authHeaders();

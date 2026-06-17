@@ -35,7 +35,7 @@ import {
   Coffee, Folder, File, ArrowUp, Headphones, Play, Pause, Download, Share2,
   Brain, XCircle, ArrowRight, RotateCcw,
   Maximize2, Minimize2, ChevronLeft,
-  Image as ImageIcon, UserPlus, ChevronDown,
+  Image as ImageIcon, UserPlus, ChevronDown, AtSign, FolderPlus,
 } from "lucide-react";
 import "./App.css";
 
@@ -5300,6 +5300,30 @@ function ReferralSection() {
   );
 }
 
+// Unified notification rendering (drives both the dashboard feed and the bell's
+// fallback). Reads the social_notifications payload by type.
+const NOTIF_ICON = {
+  friend_request:  UserPlus,
+  friend_accepted: Check,
+  notebook_invite: FolderPlus,
+  mention:         AtSign,
+  note_uploaded:   FileText,
+};
+function notifLine(n) {
+  const who = n.payload?.fromUsername ? `@${n.payload.fromUsername}` : "Someone";
+  const book = n.payload?.notebookTitle ?? "a notebook";
+  switch (n.type) {
+    case "friend_request":  return `${who} sent you a friend request`;
+    case "friend_accepted": return `${who} accepted your friend request`;
+    case "notebook_invite": return `${who} added you to ${book}`;
+    case "mention":         return `${who} mentioned you in ${book}`;
+    case "note_uploaded":   return `${who} added ${n.payload?.noteTitle ?? "a note"} to ${book}`;
+    default:                return "New notification";
+  }
+}
+// Which types deep-link into a notebook when tapped.
+const NOTIF_OPENS_NOTEBOOK = new Set(["notebook_invite", "mention", "note_uploaded"]);
+
 export default function Scholr() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -5467,7 +5491,7 @@ export default function Scholr() {
       })
       .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
-    api.getNotifications().then(setNotifications).catch(console.error);
+    api.getSocialNotifications().then(d => setNotifications(d?.notifications ?? [])).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
     api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => setMyUsername(null));
 
@@ -5502,6 +5526,21 @@ export default function Scholr() {
     const id = setInterval(() => api.sendHeartbeat().catch(() => {}), 60_000);
     return () => clearInterval(id);
   }, [user]);
+
+  // Unified notifications feed — reload helper + 30s polling so the dashboard
+  // Recent Activity stays live (the bell polls its own copy independently).
+  const refreshNotifications = useCallback(async () => {
+    try {
+      const d = await api.getSocialNotifications();
+      setNotifications(d?.notifications ?? []);
+    } catch { /* keep last good state */ }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const id = setInterval(refreshNotifications, 30_000);
+    return () => clearInterval(id);
+  }, [user, refreshNotifications]);
 
   // The AuthModal's initial open state + tab are derived from ?auth=… in the
   // useState initializers above (so it paints open immediately). Here we only
@@ -5612,6 +5651,14 @@ export default function Scholr() {
       if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
       else { setActiveView("shared"); }
     } catch { setActiveView("shared"); }
+  }
+
+  // Accept/Decline a friend request straight from the Recent Activity feed.
+  async function respondToFriendFromFeed(requestId, action) {
+    if (!requestId) return;
+    try { await api.respondToFriend(requestId, action); }
+    catch { /* already handled elsewhere — just refresh below */ }
+    refreshNotifications();
   }
 
   async function handleToggleClass(classId) {
@@ -6657,7 +6704,7 @@ export default function Scholr() {
                 <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} />
               )}
 
-              {/* Notifications — dashboard only */}
+              {/* Notifications — dashboard only. Unified social_notifications feed. */}
               {activeView === "dashboard" && (
                 <>
                   <div style={{
@@ -6672,66 +6719,95 @@ export default function Scholr() {
                       }}>
                         Recent Activity
                       </div>
-                      {notifications.length > 0 && (
+                      {notifications.filter(n => !n.read).length > 0 && (
                         <span style={{
                           fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
                           background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
                           padding: "1px 7px", borderRadius: 999,
-                        }}>{notifications.length}</span>
+                        }}>{notifications.filter(n => !n.read).length}</span>
                       )}
                     </div>
-                    {notifications.length > 0 && (
+                    {notifications.some(n => !n.read) && (
                       <button
                         onClick={async () => {
-                          setNotifications([]);
-                          try { await api.clearAllNotifications(); } catch { /* silent */ }
+                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
                         }}
                         style={{
                           background: "none", border: "none", cursor: "pointer",
                           fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
                           padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                          fontWeight: 500,
+                          fontWeight: 500, minHeight: 44,
                         }}
                         onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
                         onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
                       >
-                        Clear all
+                        Mark all read
                       </button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
                     <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
-                      You're all caught up. New activity from study groups will appear here.
+                      You're all caught up. Friend requests, invites, and study-group activity appear here.
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      {notifications.map(n => (
-                        <div key={n.id} style={{
-                          display: "flex", alignItems: "center", gap: 14,
-                          padding: "11px 6px",
-                          borderBottom: "1px solid var(--border-subtle)",
-                        }}>
-                          <div style={{
-                            width: 6, height: 6, borderRadius: "50%",
-                            background: "var(--accent)", flexShrink: 0,
-                          }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.5, letterSpacing: "-0.005em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {n.activities?.description ?? n.activities?.action}
+                      {notifications.map(n => {
+                        const Icon = NOTIF_ICON[n.type] ?? Bell;
+                        const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
+                        const isRequest = n.type === "friend_request";
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={opensNotebook ? () => openNotebookById(n.payload.notebookId) : undefined}
+                            className="notif-row"
+                            style={{
+                              display: "flex", alignItems: "center", gap: 12,
+                              padding: "11px 8px", minHeight: 44,
+                              borderBottom: "1px solid var(--border-subtle)",
+                              borderRadius: 8,
+                              cursor: opensNotebook ? "pointer" : "default",
+                              background: n.read ? "transparent" : "var(--acc-bg)",
+                            }}
+                          >
+                            <span style={{
+                              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              background: "var(--bg-surface-2)", color: "var(--accent)",
+                            }}>
+                              <Icon size={15} strokeWidth={1.85} />
+                            </span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.45, letterSpacing: "-0.005em" }}>
+                                {notifLine(n)}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>
+                                {timeAgo(n.created_at)}
+                              </div>
                             </div>
-                            {n.activities?.notebooks?.title && (
-                              <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 1 }}>
-                                in {n.activities.notebooks.title}
+                            {isRequest && (
+                              <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                <button
+                                  onClick={() => respondToFriendFromFeed(n.payload?.requestId, "accept")}
+                                  style={{
+                                    background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
+                                    borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                    color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT, cursor: "pointer",
+                                  }}
+                                >Accept</button>
+                                <button
+                                  onClick={() => respondToFriendFromFeed(n.payload?.requestId, "decline")}
+                                  style={{
+                                    background: "transparent", border: "1px solid var(--border-default)",
+                                    borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                    color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT, cursor: "pointer",
+                                  }}
+                                >Decline</button>
                               </div>
                             )}
                           </div>
-                          <div style={{
-                            fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, flexShrink: 0,
-                          }}>
-                            {timeAgo(n.created_at)}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </>

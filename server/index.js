@@ -1024,29 +1024,22 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
         );
         if (!matched.length) return;
 
-        // Look up notebook title for the description
+        // Unified notification (social_notifications) — one per mentioned member.
         const { data: nb } = await supabase
           .from("notebooks").select("title").eq("id", notebookId).single();
-        const { data: actor } = await supabase.auth.admin.getUserById(userId);
-        const actorName = actor?.user?.user_metadata?.full_name?.split(" ")[0]?.trim()
-          || actor?.user?.email?.split("@")[0]
-          || "Someone";
+        const meBrief = await resolveUserBrief(userId);
+        const fromUsername = meBrief.username || meBrief.name;
+        const snippet = content.slice(0, 140);
 
-        const { data: activity } = await supabase
-          .from("activities")
-          .insert({
-            notebook_id: notebookId,
-            user_id: userId,
-            action: "mention",
-            description: `${actorName} mentioned you in ${nb?.title ?? "a unit"}`,
+        await Promise.all(matched.map(m =>
+          pushNotification(m.user_id, "mention", {
+            fromUserId:    userId,
+            fromUsername,
+            notebookId,
+            notebookTitle: nb?.title ?? "a notebook",
+            snippet,
           })
-          .select("id")
-          .single();
-        if (!activity) return;
-
-        await supabase.from("notifications").insert(
-          matched.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
-        );
+        ));
       } catch (err) {
         console.error("mention notification error:", err);
       }
@@ -1432,62 +1425,40 @@ app.post(
     // Bump daily activity for streak/heatmap
     logUserActivity(req.user.id);
 
-    // Fire-and-forget: log activity and notify other members
+    // Fire-and-forget: notify other notebook members (unified notifications)
     (async () => {
       try {
         const noteTitle = title || req.file?.originalname || "note";
-
-        // Look up uploader's first name for a human-readable description
-        const { data: uploaderData } = await supabase.auth.admin.getUserById(req.user.id);
-        const uploaderName = uploaderData?.user?.user_metadata?.full_name?.split(" ")[0]?.trim()
-          || uploaderData?.user?.email?.split("@")[0]
-          || "Someone";
-
         const notebookId = req.params.id;
         const userId = req.user.id;
-        const description = `${uploaderName} uploaded: ${noteTitle}`;
-        console.log("creating activity:", { notebookId, action: "note_uploaded", description, userId });
-
-        const { data: activity, error: activityError } = await supabase
-          .from("activities")
-          .insert({
-            notebook_id: notebookId,
-            user_id: userId,
-            action: "note_uploaded",
-            description,
-          })
-          .select("id")
-          .single();
-
-        if (activityError) {
-          console.error("activity/notification error (activity insert):", activityError);
-          return;
-        }
-        console.log("activity created:", activity?.id);
-
-        if (!activity) { console.warn("activity insert returned no row"); return; }
 
         const { data: otherMembers, error: membersError } = await supabase
           .from("notebook_members")
           .select("user_id")
           .eq("notebook_id", notebookId)
           .neq("user_id", userId);
-
         if (membersError) {
-          console.error("activity/notification error (members query):", membersError);
+          console.error("note_uploaded notify error (members query):", membersError);
           return;
         }
+        if (!otherMembers?.length) return;
 
-        console.log("inserting notifications for", otherMembers?.length ?? 0, "members");
+        const { data: nb } = await supabase
+          .from("notebooks").select("title").eq("id", notebookId).single();
+        const meBrief = await resolveUserBrief(userId);
+        const fromUsername = meBrief.username || meBrief.name;
 
-        if (otherMembers?.length) {
-          const { error: notifError } = await supabase.from("notifications").insert(
-            otherMembers.map(m => ({ user_id: m.user_id, activity_id: activity.id }))
-          );
-          if (notifError) console.error("activity/notification error (notifications insert):", notifError);
-        }
+        await Promise.all(otherMembers.map(m =>
+          pushNotification(m.user_id, "note_uploaded", {
+            fromUserId:    userId,
+            fromUsername,
+            notebookId,
+            notebookTitle: nb?.title ?? "a notebook",
+            noteTitle,
+          })
+        ));
       } catch (err) {
-        console.error("activity/notification error:", err);
+        console.error("note_uploaded notify error:", err);
       }
     })();
   }
@@ -3481,7 +3452,7 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
       .eq("id", outbound.id);
     if (updErr) return res.status(500).json({ error: updErr.message });
     const meBrief = await resolveUserBrief(req.user.id);
-    pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
+    pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name, requestId: outbound.id });
     return res.status(201).json({ status: "pending", requestId: outbound.id });
   }
 
@@ -3496,7 +3467,7 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
     return res.status(500).json({ error: insertErr.message });
   }
   const meBrief = await resolveUserBrief(req.user.id);
-  pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
+  pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name, requestId: created.id });
   res.status(201).json({ status: "pending", requestId: created.id });
 });
 

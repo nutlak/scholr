@@ -1002,4 +1002,75 @@ export const api = {
     if (!res.ok) throw new Error(await res.text());
     return res.json(); // [{ userId, username, name }] — username prefix match, no email
   },
+
+  // ── Flashcards (spaced repetition) ──────────────────────────────────
+  async generateFlashcards(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/flashcards/generate`, {
+      method: "POST", headers,
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) {
+      const err = new Error(data.message ?? data.error ?? "Failed to generate flashcards");
+      err.code = data.error;     // e.g. "forge_limit_reached"
+      err.status = res.status;
+      throw err;
+    }
+    return data; // { cards: [...] }
+  },
+
+  async getFlashcards(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/flashcards`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, front, back, due_date, ... }]
+  },
+
+  async getDueFlashcards(notebookId) {
+    const headers = await authHeaders();
+    const qs = notebookId ? `?notebookId=${encodeURIComponent(notebookId)}` : "";
+    const res = await fetch(`${API_URL}/api/flashcards/due${qs}`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { cards: [{ ..., notebookTitle }], total }
+  },
+
+  async getDueCount() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/flashcards/due/count`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { count }
+  },
+
+  async reviewFlashcard(id, quality) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/flashcards/${id}/review`, {
+      method: "POST", headers, body: JSON.stringify({ quality }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to record review");
+    }
+    return res.json(); // updated card
+  },
+
+  async updateFlashcard(id, { front, back }) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/flashcards/${id}`, {
+      method: "PATCH", headers, body: JSON.stringify({ front, back }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update card");
+    }
+    return res.json();
+  },
+
+  async deleteFlashcard(id) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/flashcards/${id}`, { method: "DELETE", headers });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to delete card");
+    }
+  },
 };

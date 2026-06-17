@@ -12,6 +12,7 @@ import ImageGeneratorModal from "./ImageGeneratorModal.jsx";
 import AddFriendModal from "./AddFriendModal.jsx";
 import UsernameSetupModal from "./UsernameSetupModal.jsx";
 import NotificationsBell from "./NotificationsBell.jsx";
+import { FlashcardsPanel, FlashcardReview } from "./Flashcards.jsx";
 import {
   DndContext,
   closestCenter,
@@ -399,6 +400,7 @@ const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 const NB_TOOLS = [
   { id: "notes",   text: "Notes",   label: "Unit notes",   title: "Unit Notes",    Icon: FileText,   subtitle: "Shared notes for everyone in this notebook" },
   { id: "forge",   text: "Forge",   label: "The Forge",    title: "The Forge",     Icon: Hammer,     subtitle: "Generate study guides, quizzes & flashcards from your notes" },
+  { id: "flashcards", text: "Cards", label: "Flashcards", title: "Flashcards",   Icon: Layers,     subtitle: "Spaced-repetition flashcards generated from your notes" },
   { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, subtitle: "A two-host AI audio overview of your notes" },
   { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      subtitle: "Explain a concept in your words — Claude grades your understanding" },
 ];
@@ -2580,6 +2582,9 @@ function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStat
           )}
           {activeTool === "forge" && (
             <TheForge nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          )}
+          {activeTool === "flashcards" && (
+            <FlashcardsPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           {activeTool === "podcast" && (
             <PodcastPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
@@ -5372,6 +5377,8 @@ export default function Scholr() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
+  const [dueCount, setDueCount] = useState(0);            // flashcards due across all notebooks
+  const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
@@ -5494,6 +5501,7 @@ export default function Scholr() {
     api.getSocialNotifications().then(d => setNotifications(d?.notifications ?? [])).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
     api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => setMyUsername(null));
+    api.getDueCount().then(d => setDueCount(d?.count ?? 0)).catch(() => {});
 
     // Mark today as an "active" day for the streak. Fire-and-forget; we still
     // refresh the heatmap *after* this resolves so today shows immediately.
@@ -5651,6 +5659,20 @@ export default function Scholr() {
       if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
       else { setActiveView("shared"); }
     } catch { setActiveView("shared"); }
+  }
+
+  // Launch an all-notebooks flashcard review from the dashboard.
+  async function startAllReview() {
+    try {
+      const { cards } = await api.getDueFlashcards();
+      if (cards.length) setReviewSession(cards);
+      else { setToast("No cards due — you're caught up"); setTimeout(() => setToast(""), 2500); }
+    } catch { setToast("Couldn't load due cards"); setTimeout(() => setToast(""), 2500); }
+  }
+
+  async function endReviewSession() {
+    setReviewSession(null);
+    try { const d = await api.getDueCount(); setDueCount(d?.count ?? 0); } catch { /* ignore */ }
   }
 
   // Accept/Decline a friend request straight from the Recent Activity feed.
@@ -6062,6 +6084,13 @@ export default function Scholr() {
                   <Icon size={16} strokeWidth={1.75} />
                 </span>
                 {label}
+                {id === "dashboard" && dueCount > 0 && (
+                  <span style={{
+                    marginLeft: "auto", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9,
+                    background: "var(--accent)", color: "#fff", fontSize: 10.5, fontWeight: 700,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: FONT,
+                  }}>{dueCount > 99 ? "99+" : dueCount}</span>
+                )}
               </div>
               {/* Friends + Best Friends sit between Starred and Settings */}
               {id === "starred" && <FriendsSidebarSection />}
@@ -6704,6 +6733,37 @@ export default function Scholr() {
                 </>
               )}
 
+              {/* Dashboard: cards due — spaced repetition entry point */}
+              {activeView === "dashboard" && dueCount > 0 && (
+                <button
+                  onClick={startAllReview}
+                  className="btn-press"
+                  style={{
+                    width: "100%", textAlign: "left", marginBottom: 18,
+                    display: "flex", alignItems: "center", gap: 14, minHeight: 64,
+                    padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                    background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
+                    border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
+                  }}
+                >
+                  <span style={{
+                    width: 40, height: 40, borderRadius: 11, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+                    boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
+                  }}><Layers size={19} strokeWidth={2} /></span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
+                      {dueCount} card{dueCount === 1 ? "" : "s"} due
+                    </span>
+                    <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
+                      Review now to keep your streak sharp
+                    </span>
+                  </span>
+                  <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
+                </button>
+              )}
+
               {/* Dashboard: activity heatmap */}
               {activeView === "dashboard" && (
                 <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} />
@@ -6899,9 +6959,19 @@ export default function Scholr() {
                   onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
                   aria-current={active ? "page" : undefined}
                   aria-label={label}
+                  style={{ position: "relative" }}
                 >
                   <Icon size={22} strokeWidth={active ? 2 : 1.75} />
                   <span>{label}</span>
+                  {id === "dashboard" && dueCount > 0 && (
+                    <span style={{
+                      position: "absolute", top: 4, right: "50%", marginRight: -22,
+                      minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
+                      background: "var(--accent)", color: "#fff", fontSize: 9.5, fontWeight: 700,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: FONT, border: "2px solid var(--bg-surface-1)",
+                    }}>{dueCount > 9 ? "9+" : dueCount}</span>
+                  )}
                 </button>
               );
             })}
@@ -6956,6 +7026,11 @@ export default function Scholr() {
         {/* First-run username prompt — gates friends features until set */}
         {user && myUsername === null && (
           <UsernameSetupModal onDone={uname => setMyUsername(uname)} />
+        )}
+
+        {/* All-notebooks flashcard review (launched from the dashboard) */}
+        {reviewSession && (
+          <FlashcardReview cards={reviewSession} onDone={endReviewSession} />
         )}
 
         {/* ── Mobile FAB: New Class (dashboard only) ── */}

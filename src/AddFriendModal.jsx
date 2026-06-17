@@ -194,10 +194,10 @@ export default function AddFriendModal({ onClose, onChanged }) {
                         background: "rgba(255,255,255,0.02)",
                         border: "1px solid rgba(255,255,255,0.06)",
                       }}>
-                        <Initial name={u.name} seed={u.email || u.userId} />
+                        <Initial name={u.name} seed={u.username || u.userId} />
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
-                          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</div>
+                          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.username ? `@${u.username}` : ""}</div>
                         </div>
                         <button
                           onClick={() => handleAdd(u.userId)}
@@ -242,10 +242,10 @@ export default function AddFriendModal({ onClose, onChanged }) {
                         background: "rgba(255,255,255,0.02)",
                         border: "1px solid rgba(255,255,255,0.06)",
                       }}>
-                        <Initial name={r.fromName} seed={r.fromEmail || r.fromUserId} />
+                        <Initial name={r.fromName} seed={r.fromUsername || r.fromUserId} />
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.fromName}</div>
-                          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.fromEmail}</div>
+                          <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.fromUsername ? `@${r.fromUsername}` : ""}</div>
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           <button

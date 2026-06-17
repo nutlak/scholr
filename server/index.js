@@ -674,6 +674,20 @@ app.post("/api/notebooks/:id/invite-friend", requireAuth, requireMember, async (
   }
 
   res.status(201).json({ success: true });
+
+  // Notify the invited friend — fire-and-forget after responding.
+  (async () => {
+    const [{ data: nb }, meBrief] = await Promise.all([
+      supabase.from("notebooks").select("title").eq("id", req.params.id).maybeSingle(),
+      resolveUserBrief(req.user.id),
+    ]);
+    pushNotification(friendUserId, "notebook_invite", {
+      fromUserId:    req.user.id,
+      fromUsername:  meBrief.username || meBrief.name,
+      notebookId:    req.params.id,
+      notebookTitle: nb?.title ?? "a notebook",
+    });
+  })();
 });
 
 // ── Image generation (OpenAI proxy) ───────────────────────────────────────────
@@ -3353,6 +3367,15 @@ async function resolveUserBrief(uid) {
   };
 }
 
+// Insert a social notification (friend_request | notebook_invite | friend_accepted).
+// Fire-and-forget — a failed notification must never break the triggering action.
+async function pushNotification(userId, type, payload = {}) {
+  const { error } = await supabase
+    .from("social_notifications")
+    .insert({ user_id: userId, type, payload });
+  if (error) console.error(`pushNotification(${type}) failed:`, error);
+}
+
 // POST /api/friends/request — { toUserId } → request or auto-accept
 app.post("/api/friends/request", requireAuth, async (req, res) => {
   const { toUserId } = req.body ?? {};
@@ -3402,6 +3425,9 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
       .from("friend_requests")
       .update({ status: "accepted" })
       .eq("id", reciprocal.id);
+    // The reciprocal sender (toUserId) just got their request accepted.
+    const meBrief = await resolveUserBrief(req.user.id);
+    pushNotification(toUserId, "friend_accepted", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
     return res.status(201).json({ status: "accepted" });
   }
 
@@ -3423,6 +3449,8 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
       .update({ status: "pending", created_at: new Date().toISOString() })
       .eq("id", outbound.id);
     if (updErr) return res.status(500).json({ error: updErr.message });
+    const meBrief = await resolveUserBrief(req.user.id);
+    pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
     return res.status(201).json({ status: "pending", requestId: outbound.id });
   }
 
@@ -3436,6 +3464,8 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
     console.error("friend request insert failed:", insertErr);
     return res.status(500).json({ error: insertErr.message });
   }
+  const meBrief = await resolveUserBrief(req.user.id);
+  pushNotification(toUserId, "friend_request", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
   res.status(201).json({ status: "pending", requestId: created.id });
 });
 
@@ -3484,6 +3514,12 @@ app.post("/api/friends/respond", requireAuth, async (req, res) => {
     .update({ status: newStatus })
     .eq("id", requestId);
   if (updErr) return res.status(500).json({ error: updErr.message });
+
+  // Notify the original sender that their request was accepted.
+  if (action === "accept") {
+    const meBrief = await resolveUserBrief(req.user.id);
+    pushNotification(request.from_user, "friend_accepted", { fromUserId: req.user.id, fromUsername: meBrief.username || meBrief.name });
+  }
 
   res.json({ status: newStatus });
 });
@@ -3677,6 +3713,40 @@ app.post("/api/me/username", requireAuth, async (req, res) => {
   }
 
   res.json({ username });
+});
+
+// ── Social notifications (friend requests / accepts / notebook invites) ─────────
+// Separate from the activity-based `notifications` table (migration 008); these
+// live in `social_notifications`. See migration 016.
+
+// GET /api/social/notifications — recent notifications, unread first
+app.get("/api/social/notifications", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("social_notifications")
+    .select("id, type, payload, read, created_at")
+    .eq("user_id", req.user.id)
+    .order("read", { ascending: true })        // false (unread) sorts before true
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const notifications = data ?? [];
+  const unreadCount = notifications.filter(n => !n.read).length;
+  res.json({ notifications, unreadCount });
+});
+
+// POST /api/social/notifications/read — { ids } marks those read; omit/empty = all
+app.post("/api/social/notifications/read", requireAuth, async (req, res) => {
+  const { ids } = req.body ?? {};
+  let q = supabase
+    .from("social_notifications")
+    .update({ read: true })
+    .eq("user_id", req.user.id);
+  if (Array.isArray(ids) && ids.length) q = q.in("id", ids);
+  else q = q.eq("read", false); // mark all unread as read
+  const { error } = await q;
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────

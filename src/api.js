@@ -841,6 +841,26 @@ export const api = {
     return data; // { username }
   },
 
+  // ── Social notifications (friend requests / accepts / notebook invites) ──
+  // Named *Social* to avoid colliding with the existing activity-based
+  // getNotifications()/clearAllNotifications() above.
+  async getSocialNotifications() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/social/notifications`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { notifications: [{ id, type, payload, read, created_at }], unreadCount }
+  },
+
+  async markSocialNotificationsRead(ids) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/social/notifications/read`, {
+      method: "POST", headers,
+      body: JSON.stringify({ ids: ids ?? [] }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { ok: true }
+  },
+
   // ── Friends system ─────────────────────────────────────────────────
   async requestFriend(toUserId) {
     const headers = await authHeaders();

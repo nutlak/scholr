@@ -10,6 +10,8 @@ import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import SharedNotebook from "./components/SharedNotebook.jsx";
 import ImageGeneratorModal from "./ImageGeneratorModal.jsx";
 import AddFriendModal from "./AddFriendModal.jsx";
+import UsernameSetupModal from "./UsernameSetupModal.jsx";
+import NotificationsBell from "./NotificationsBell.jsx";
 import {
   DndContext,
   closestCenter,
@@ -4067,10 +4069,10 @@ function InviteModal({ notebookId, onClose }) {
                           padding: "7px 9px", borderRadius: 10,
                           background: "var(--s1)", border: "1px solid var(--border)",
                         }}>
-                          <Avatar name={f.name} size={26} seed={f.email || f.userId} />
+                          <Avatar name={f.name} size={26} seed={f.username || f.userId} />
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--t3)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.email}</div>
+                            <div style={{ fontSize: 11, color: "var(--t3)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.username ? `@${f.username}` : ""}</div>
                           </div>
                           <button
                             onClick={() => addFriend(f.userId)}
@@ -4588,6 +4590,7 @@ function FriendsSidebarSection() {
   const [open, setOpen]               = useState(true);
   const [showAdd, setShowAdd]         = useState(false);
   const [inviteFor, setInviteFor]     = useState(null); // friend object whose invite menu is open
+  const [myUsername, setMyUsername]   = useState(null); // own handle, shown in the header
 
   const refresh = useCallback(async () => {
     const [f, bf, rq] = await Promise.all([
@@ -4601,6 +4604,7 @@ function FriendsSidebarSection() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => {}); }, []);
 
   const sectionLabel = {
     fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
@@ -4629,6 +4633,9 @@ function FriendsSidebarSection() {
             style={{ color: "var(--text-tertiary)", transform: open ? "none" : "rotate(-90deg)", transition: "transform 150ms ease" }}
           />
           <span style={sectionLabel}>Friends</span>
+          {myUsername && (
+            <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.75 }}>@{myUsername}</span>
+          )}
           {requests.length > 0 && (
             <span style={{
               minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
@@ -4669,7 +4676,7 @@ function FriendsSidebarSection() {
                 title={`Invite ${f.name} to a notebook`}
                 onMouseEnter={hoverOn} onMouseLeave={hoverOff}
               >
-                <Avatar name={f.name} size={22} seed={f.email || f.userId} />
+                <Avatar name={f.name} size={22} seed={f.username || f.userId} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </div>
             ))
@@ -4688,7 +4695,7 @@ function FriendsSidebarSection() {
             bestFriends.slice(0, 5).map((f, i) => (
               <div key={f.userId} className="friend-sidebar-row" style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
                 <span style={{ width: 18, textAlign: "center", fontSize: 13, flexShrink: 0 }}>{BEST_FRIEND_RANKS[i]}</span>
-                <Avatar name={f.name} size={22} seed={f.email || f.userId} />
+                <Avatar name={f.name} size={22} seed={f.username || f.userId} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </div>
             ))
@@ -4752,7 +4759,7 @@ function FriendInviteModal({ friend, onClose }) {
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <Avatar name={friend.name} size={34} seed={friend.email || friend.userId} />
+          <Avatar name={friend.name} size={34} seed={friend.username || friend.userId} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
               Invite {friend.name}
@@ -5218,6 +5225,7 @@ export default function Scholr() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
+  const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
@@ -5339,6 +5347,7 @@ export default function Scholr() {
     api.listClasses().then(setClasses).catch(console.error);
     api.getNotifications().then(setNotifications).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
+    api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => setMyUsername(null));
 
     // Mark today as an "active" day for the streak. Fire-and-forget; we still
     // refresh the heatmap *after* this resolves so today shows immediately.
@@ -5457,6 +5466,22 @@ export default function Scholr() {
     patchNotebookEverywhere(nb.id, { status });
     try { await api.updateNotebookStatus(nb.id, status); }
     catch (err) { console.error(err); setToast("Couldn't update status"); setTimeout(() => setToast(""), 2500); }
+  }
+
+  // Open a notebook by id (from a notification). Look across loaded lists first;
+  // if not found (e.g. just invited, not yet in any list), refresh shared and retry.
+  async function openNotebookById(notebookId) {
+    setShowMobileFriends(false);
+    const found = [...notebooks, ...sharedNotebooks, ...ownedNotebooks, ...starredNotebooks]
+      .find(n => n.id === notebookId);
+    if (found) { setActiveNb(found); setActiveView("dashboard"); return; }
+    try {
+      const shared = await api.listSharedNotebooks(getDisplayName(user));
+      setSharedNotebooks(shared);
+      const nb = shared.find(n => n.id === notebookId);
+      if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
+      else { setActiveView("shared"); }
+    } catch { setActiveView("shared"); }
   }
 
   async function handleToggleClass(classId) {
@@ -5810,6 +5835,7 @@ export default function Scholr() {
               {/* outer span = one inline box → letter-spacing holds across the color split */}
               <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>
             </div>
+            <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} /></span>
             <button
               className="mobile-only"
               onClick={() => setSidebarOpen(false)}
@@ -6697,8 +6723,9 @@ export default function Scholr() {
               borderRadius: 18, width: "100%", maxWidth: 440,
               padding: "8px 12px 20px",
             }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 4px 8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 4px 8px" }}>
                 <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>Friends</span>
+                <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} /></span>
                 <button
                   onClick={() => setShowMobileFriends(false)}
                   aria-label="Close"
@@ -6713,6 +6740,11 @@ export default function Scholr() {
               <FriendsSidebarSection />
             </div>
           </div>
+        )}
+
+        {/* First-run username prompt — gates friends features until set */}
+        {user && myUsername === null && (
+          <UsernameSetupModal onDone={uname => setMyUsername(uname)} />
         )}
 
         {/* ── Mobile FAB: New Class (dashboard only) ── */}

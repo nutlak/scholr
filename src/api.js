@@ -896,7 +896,7 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ userId, name, username }]
+    return res.json(); // [{ userId, name, username, isOnline, lastActive }]
   },
 
   async getFriendRequests() {
@@ -904,6 +904,69 @@ export const api = {
     const res = await fetch(`${API_URL}/api/friends/requests`, { headers });
     if (!res.ok) throw new Error(await res.text());
     return res.json(); // [{ requestId, fromUserId, fromName, fromUsername, created_at }]
+  },
+
+  async getOutgoingRequests() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/requests/outgoing`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ requestId, toUserId, toName, toUsername, created_at }]
+  },
+
+  async cancelFriendRequest(requestId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/request/${requestId}`, { method: "DELETE", headers });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to cancel request");
+    }
+  },
+
+  async removeFriend(friendUserId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/${friendUserId}`, { method: "DELETE", headers });
+    if (res.status !== 204) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to remove friend");
+    }
+  },
+
+  async blockUser(userId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/block`, {
+      method: "POST", headers, body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to block user");
+    }
+    return res.json(); // { ok: true }
+  },
+
+  async unblockUser(userId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/unblock`, {
+      method: "POST", headers, body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to unblock user");
+    }
+    return res.json(); // { ok: true }
+  },
+
+  async getBlockedUsers() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/blocked`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ userId, username, name }]
+  },
+
+  async sendHeartbeat() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/me/heartbeat`, { method: "POST", headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { ok: true }
   },
 
   async getBestFriends() {

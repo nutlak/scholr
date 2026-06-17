@@ -3356,14 +3356,15 @@ function orderedPair(a, b) {
 async function resolveUserBrief(uid) {
   const [authRes, profRes] = await Promise.all([
     supabase.auth.admin.getUserById(uid),
-    supabase.from("profiles").select("username").eq("user_id", uid).maybeSingle(),
+    supabase.from("profiles").select("username, last_active").eq("user_id", uid).maybeSingle(),
   ]);
   const u = authRes.data?.user;
   const username = profRes.data?.username ?? null;
   return {
-    userId:   uid,
-    name:     u?.user_metadata?.full_name?.trim() || username || "User",
+    userId:     uid,
+    name:       u?.user_metadata?.full_name?.trim() || username || "User",
     username,
+    lastActive: profRes.data?.last_active ?? null,
   };
 }
 
@@ -3374,6 +3375,31 @@ async function pushNotification(userId, type, payload = {}) {
     .from("social_notifications")
     .insert({ user_id: userId, type, payload });
   if (error) console.error(`pushNotification(${type}) failed:`, error);
+}
+
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const isOnline = (lastActive) =>
+  !!lastActive && (Date.now() - new Date(lastActive).getTime() <= ONLINE_WINDOW_MS);
+
+// True if either user has blocked the other (in either direction).
+async function isBlockedBetween(u1, u2) {
+  const { data } = await supabase
+    .from("blocks")
+    .select("id")
+    .or(`and(blocker.eq.${u1},blocked.eq.${u2}),and(blocker.eq.${u2},blocked.eq.${u1})`)
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
+// Set of user ids involved in a block edge with `me` (either direction).
+async function blockedUserIds(me) {
+  const { data } = await supabase
+    .from("blocks")
+    .select("blocker, blocked")
+    .or(`blocker.eq.${me},blocked.eq.${me}`);
+  const set = new Set();
+  for (const r of data ?? []) set.add(r.blocker === me ? r.blocked : r.blocker);
+  return set;
 }
 
 // POST /api/friends/request — { toUserId } → request or auto-accept
@@ -3390,6 +3416,11 @@ app.post("/api/friends/request", requireAuth, async (req, res) => {
   const { data: targetData } = await supabase.auth.admin.getUserById(toUserId);
   if (!targetData?.user) {
     return res.status(404).json({ error: "User not found" });
+  }
+
+  // Block gate: neither party may friend the other if a block exists either way.
+  if (await isBlockedBetween(req.user.id, toUserId)) {
+    return res.status(403).json({ error: "Can't send a friend request to this user" });
   }
 
   // Already friends? Return current state.
@@ -3524,7 +3555,7 @@ app.post("/api/friends/respond", requireAuth, async (req, res) => {
   res.json({ status: newStatus });
 });
 
-// GET /api/friends — accepted friends as [{ userId, name, username }]
+// GET /api/friends — accepted friends as [{ userId, name, username, isOnline, lastActive }]
 app.get("/api/friends", requireAuth, async (req, res) => {
   const me = req.user.id;
   const { data, error } = await supabase
@@ -3536,7 +3567,7 @@ app.get("/api/friends", requireAuth, async (req, res) => {
 
   const otherIds = (data ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a));
   const friends = await Promise.all(otherIds.map(resolveUserBrief));
-  res.json(friends);
+  res.json(friends.map(f => ({ ...f, isOnline: isOnline(f.lastActive) })));
 });
 
 // GET /api/friends/best — top 5 friends ranked by shared-notebook activity
@@ -3631,6 +3662,118 @@ app.get("/api/friends/requests", requireAuth, async (req, res) => {
   res.json(rows);
 });
 
+// GET /api/friends/requests/outgoing — pending requests I've SENT
+app.get("/api/friends/requests/outgoing", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("friend_requests")
+    .select("id, to_user, created_at")
+    .eq("from_user", req.user.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const rows = await Promise.all((data ?? []).map(async (r) => {
+    const brief = await resolveUserBrief(r.to_user);
+    return {
+      requestId:  r.id,
+      toUserId:   brief.userId,
+      toName:     brief.name,
+      toUsername: brief.username,
+      created_at: r.created_at,
+    };
+  }));
+  res.json(rows);
+});
+
+// DELETE /api/friends/request/:requestId — cancel an outgoing pending request.
+// Only the sender (from_user) may cancel.
+app.delete("/api/friends/request/:requestId", requireAuth, async (req, res) => {
+  const { data: reqRow, error: lookupErr } = await supabase
+    .from("friend_requests")
+    .select("id, from_user, status")
+    .eq("id", req.params.requestId)
+    .maybeSingle();
+  if (lookupErr) return res.status(500).json({ error: lookupErr.message });
+  if (!reqRow) return res.status(204).end(); // already gone — idempotent
+  if (reqRow.from_user !== req.user.id) {
+    return res.status(403).json({ error: "Only the sender can cancel this request" });
+  }
+
+  const { error } = await supabase.from("friend_requests").delete().eq("id", req.params.requestId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// GET /api/friends/blocked — users I've blocked
+app.get("/api/friends/blocked", requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from("blocks")
+    .select("blocked, created_at")
+    .eq("blocker", req.user.id)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const rows = await Promise.all((data ?? []).map(async (r) => {
+    const brief = await resolveUserBrief(r.blocked);
+    return { userId: brief.userId, username: brief.username, name: brief.name };
+  }));
+  res.json(rows);
+});
+
+// POST /api/friends/block — { userId }: block a user, sever friendship + requests
+app.post("/api/friends/block", requireAuth, async (req, res) => {
+  const { userId } = req.body ?? {};
+  if (!userId || typeof userId !== "string") return res.status(400).json({ error: "userId is required" });
+  if (userId === req.user.id) return res.status(400).json({ error: "You can't block yourself" });
+
+  // Insert the block (idempotent on the unique (blocker, blocked) pair).
+  const { error: blockErr } = await supabase
+    .from("blocks")
+    .upsert({ blocker: req.user.id, blocked: userId }, { onConflict: "blocker,blocked" });
+  if (blockErr) return res.status(500).json({ error: blockErr.message });
+
+  // Sever any existing friendship (normalized pair).
+  const [a, b] = orderedPair(req.user.id, userId);
+  await supabase.from("friendships").delete().eq("user_a", a).eq("user_b", b);
+
+  // Delete any pending/other requests in either direction.
+  await supabase.from("friend_requests").delete()
+    .or(`and(from_user.eq.${req.user.id},to_user.eq.${userId}),and(from_user.eq.${userId},to_user.eq.${req.user.id})`);
+
+  res.json({ ok: true });
+});
+
+// POST /api/friends/unblock — { userId }: remove the block row
+app.post("/api/friends/unblock", requireAuth, async (req, res) => {
+  const { userId } = req.body ?? {};
+  if (!userId || typeof userId !== "string") return res.status(400).json({ error: "userId is required" });
+
+  const { error } = await supabase
+    .from("blocks")
+    .delete()
+    .eq("blocker", req.user.id)
+    .eq("blocked", userId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// DELETE /api/friends/:friendUserId — remove a friendship (idempotent)
+app.delete("/api/friends/:friendUserId", requireAuth, async (req, res) => {
+  const [a, b] = orderedPair(req.user.id, req.params.friendUserId);
+  const { error } = await supabase.from("friendships").delete().eq("user_a", a).eq("user_b", b);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// POST /api/me/heartbeat — mark the current user active now (drives online status)
+app.post("/api/me/heartbeat", requireAuth, async (req, res) => {
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: req.user.id, last_active: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // GET /api/friends/search?q=... — search users by USERNAME prefix (limit 10).
 // Returns [{ userId, username, name }] — never email. Querying the profiles
 // table by username keeps emails fully private.
@@ -3641,17 +3784,22 @@ app.get("/api/friends/search", requireAuth, async (req, res) => {
   // Escape LIKE wildcards so a literal % or _ in the query isn't a pattern.
   const esc = q.replace(/[%_\\]/g, m => `\\${m}`);
 
+  // Pull a few extra so block-filtering still leaves up to 10 results.
   const { data, error } = await supabase
     .from("profiles")
     .select("user_id, username")
     .ilike("username", `${esc}%`)
     .neq("user_id", req.user.id)
     .not("username", "is", null)
-    .limit(10);
+    .limit(25);
   if (error) return res.status(500).json({ error: error.message });
 
+  // Exclude anyone I've blocked or who has blocked me.
+  const blocked = await blockedUserIds(req.user.id);
+  const visible = (data ?? []).filter(r => !blocked.has(r.user_id)).slice(0, 10);
+
   // Resolve display name from auth metadata; fall back to the username.
-  const rows = await Promise.all((data ?? []).map(async (r) => {
+  const rows = await Promise.all(visible.map(async (r) => {
     const { data: authData } = await supabase.auth.admin.getUserById(r.user_id);
     return {
       userId:   r.user_id,

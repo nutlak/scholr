@@ -4589,7 +4589,8 @@ function FriendsSidebarSection() {
   const [requests, setRequests]       = useState([]);
   const [open, setOpen]               = useState(true);
   const [showAdd, setShowAdd]         = useState(false);
-  const [inviteFor, setInviteFor]     = useState(null); // friend object whose invite menu is open
+  const [inviteFor, setInviteFor]     = useState(null); // friend whose notebook-picker is open
+  const [actionFor, setActionFor]     = useState(null); // friend whose action menu is open
   const [myUsername, setMyUsername]   = useState(null); // own handle, shown in the header
 
   const refresh = useCallback(async () => {
@@ -4672,11 +4673,19 @@ function FriendsSidebarSection() {
             friends.map(f => (
               <div
                 key={f.userId} className="friend-sidebar-row" style={rowStyle}
-                onClick={() => setInviteFor(f)}
-                title={`Invite ${f.name} to a notebook`}
+                onClick={() => setActionFor(f)}
+                title={f.isOnline ? `${f.name} — active now` : f.name}
                 onMouseEnter={hoverOn} onMouseLeave={hoverOff}
               >
-                <Avatar name={f.name} size={22} seed={f.username || f.userId} />
+                <span style={{ position: "relative", flexShrink: 0, display: "inline-flex" }}>
+                  <Avatar name={f.name} size={22} seed={f.username || f.userId} />
+                  <span style={{
+                    position: "absolute", bottom: -1, right: -1,
+                    width: 9, height: 9, borderRadius: "50%",
+                    background: f.isOnline ? "#34D399" : "#6B7280",
+                    border: "2px solid var(--bg-base)",
+                  }} />
+                </span>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </div>
             ))
@@ -4706,10 +4715,123 @@ function FriendsSidebarSection() {
       {showAdd && (
         <AddFriendModal onClose={() => setShowAdd(false)} onChanged={refresh} />
       )}
+      {actionFor && (
+        <FriendActionModal
+          friend={actionFor}
+          onClose={() => setActionFor(null)}
+          onInvite={() => { setInviteFor(actionFor); setActionFor(null); }}
+          onChanged={refresh}
+        />
+      )}
       {inviteFor && (
         <FriendInviteModal friend={inviteFor} onClose={() => setInviteFor(null)} />
       )}
     </>
+  );
+}
+
+// ── FriendActionModal ─────────────────────────────────────────────────────────
+// Per-friend action menu: invite to a notebook, remove, or block — the last two
+// behind an inline confirm step so they aren't one-tap accidents.
+function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
+  const [view, setView] = useState("menu"); // menu | confirmRemove | confirmBlock
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function doRemove() {
+    setBusy(true); setError("");
+    try { await api.removeFriend(friend.userId); onChanged?.(); onClose(); }
+    catch (e) { setError(e.message || "Failed to remove friend"); setBusy(false); }
+  }
+  async function doBlock() {
+    setBusy(true); setError("");
+    try { await api.blockUser(friend.userId); onChanged?.(); onClose(); }
+    catch (e) { setError(e.message || "Failed to block user"); setBusy(false); }
+  }
+
+  const btn = (bg, border, color) => ({
+    width: "100%", minHeight: 44, borderRadius: 10, border, background: bg, color,
+    fontWeight: 600, fontSize: 13.5, fontFamily: FONT, cursor: busy ? "default" : "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+    opacity: busy ? 0.7 : 1, transition: "all 0.15s",
+  });
+
+  return (
+    <div
+      className="mobile-sheet-overlay"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 16,
+      }}
+    >
+      <div className="mobile-sheet" style={{
+        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        border: "1px solid rgba(255,255,255,0.09)", borderRadius: 18,
+        width: "100%", maxWidth: 380, padding: "22px 20px",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        animation: "fadeIn 0.2s ease",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 18 }}>
+          <span style={{ position: "relative", flexShrink: 0, display: "inline-flex" }}>
+            <Avatar name={friend.name} size={38} seed={friend.username || friend.userId} />
+            <span style={{
+              position: "absolute", bottom: -1, right: -1, width: 11, height: 11, borderRadius: "50%",
+              background: friend.isOnline ? "#34D399" : "#6B7280", border: "2.5px solid #14141F",
+            }} />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friend.name}</div>
+            <div style={{ fontSize: 12, color: friend.isOnline ? "#6EE7B7" : "rgba(245,245,250,0.45)", fontFamily: FONT }}>
+              {friend.isOnline ? "Active now" : (friend.username ? `@${friend.username}` : "Offline")}
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ fontSize: 12.5, color: "#F87171", fontFamily: FONT, marginBottom: 12 }}>{error}</div>
+        )}
+
+        {view === "menu" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button onClick={onInvite} style={btn("rgba(167,139,250,0.14)", "1px solid rgba(167,139,250,0.32)", "#C4B5FD")}>
+              Invite to notebook
+            </button>
+            <button onClick={() => setView("confirmRemove")} style={btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.8)")}>
+              Remove friend
+            </button>
+            <button onClick={() => setView("confirmBlock")} style={btn("rgba(248,113,113,0.08)", "1px solid rgba(248,113,113,0.28)", "#F87171")}>
+              Block
+            </button>
+          </div>
+        )}
+
+        {view === "confirmRemove" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 13.5, color: "rgba(245,245,250,0.8)", fontFamily: FONT, lineHeight: 1.5 }}>
+              Remove <strong style={{ color: "#F5F5FA" }}>{friend.name}</strong> from your friends?
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setView("menu")} disabled={busy} style={{ ...btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.65)"), flex: 1 }}>Cancel</button>
+              <button onClick={doRemove} disabled={busy} style={{ ...btn("rgba(248,113,113,0.14)", "1px solid rgba(248,113,113,0.4)", "#F87171"), flex: 1 }}>{busy ? "Removing…" : "Remove"}</button>
+            </div>
+          </div>
+        )}
+
+        {view === "confirmBlock" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 13.5, color: "rgba(245,245,250,0.8)", fontFamily: FONT, lineHeight: 1.5 }}>
+              Block <strong style={{ color: "#F5F5FA" }}>{friend.name}</strong>? This also removes them from your friends and they won't be able to send you requests.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setView("menu")} disabled={busy} style={{ ...btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.65)"), flex: 1 }}>Cancel</button>
+              <button onClick={doBlock} disabled={busy} style={{ ...btn("rgba(248,113,113,0.14)", "1px solid rgba(248,113,113,0.4)", "#F87171"), flex: 1 }}>{busy ? "Blocking…" : "Block"}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -5372,6 +5494,14 @@ export default function Scholr() {
       setTimeout(() => setToast(""), 4000);
     }
   }, [user, authReady]);
+
+  // Online presence: heartbeat on mount + every 60s while the app is open.
+  useEffect(() => {
+    if (!user) return;
+    api.sendHeartbeat().catch(() => {});
+    const id = setInterval(() => api.sendHeartbeat().catch(() => {}), 60_000);
+    return () => clearInterval(id);
+  }, [user]);
 
   // The AuthModal's initial open state + tab are derived from ?auth=… in the
   // useState initializers above (so it paints open immediately). Here we only

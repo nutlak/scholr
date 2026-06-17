@@ -5654,10 +5654,15 @@ export default function Scholr() {
   }
 
   // Accept/Decline a friend request straight from the Recent Activity feed.
-  async function respondToFriendFromFeed(requestId, action) {
+  // notifId = the social_notifications row id (so we can clear it); requestId =
+  // the friend_request id (for respondToFriend).
+  async function respondToFriendFromFeed(notifId, requestId, action) {
     if (!requestId) return;
+    // Optimistically remove the row so it vanishes immediately.
+    setNotifications(prev => prev.filter(n => n.id !== notifId));
     try { await api.respondToFriend(requestId, action); }
-    catch { /* already handled elsewhere — just refresh below */ }
+    catch { /* already handled elsewhere — refresh reconciles below */ }
+    if (notifId) { try { await api.markSocialNotificationsRead([notifId]); } catch { /* non-fatal */ } }
     refreshNotifications();
   }
 
@@ -6788,7 +6793,7 @@ export default function Scholr() {
                             {isRequest && (
                               <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                                 <button
-                                  onClick={() => respondToFriendFromFeed(n.payload?.requestId, "accept")}
+                                  onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
                                   style={{
                                     background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
                                     borderRadius: 8, padding: "7px 12px", minHeight: 34,
@@ -6796,7 +6801,7 @@ export default function Scholr() {
                                   }}
                                 >Accept</button>
                                 <button
-                                  onClick={() => respondToFriendFromFeed(n.payload?.requestId, "decline")}
+                                  onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
                                   style={{
                                     background: "transparent", border: "1px solid var(--border-default)",
                                     borderRadius: 8, padding: "7px 12px", minHeight: 34,

@@ -3151,6 +3151,25 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
       return res.status(400).json({ error: "You must be at least 13 and accept the Terms of Service and Privacy Policy to create an account." });
     }
 
+    // ── Age gate (COPPA): require a valid date of birth and block under-13.
+    // Authoritative server-side check — never trust the client's check alone.
+    // The account is NOT created if this fails.
+    const dateOfBirth = typeof req.body?.dateOfBirth === "string" ? req.body.dateOfBirth.trim() : "";
+    const dob = dateOfBirth ? new Date(dateOfBirth) : null;
+    if (!dob || isNaN(dob.getTime()) || dob > new Date()) {
+      return res.status(400).json({ error: "A valid date of birth is required." });
+    }
+    const ageNow = (() => {
+      const now = new Date();
+      let a = now.getFullYear() - dob.getFullYear();
+      const m = now.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) a--;
+      return a;
+    })();
+    if (ageNow < 13) {
+      return res.status(403).json({ error: "You must be at least 13 to use Scholr." });
+    }
+
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -3168,6 +3187,12 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
     // Record consent (13+, Terms + Privacy) — latest snapshot + append-only log.
     if (created?.user?.id) {
       await recordConsent(created.user.id);
+      // Store the verified birthdate on the profile (auditable). Best-effort:
+      // a not-yet-run migration must not block signup.
+      await supabase.from("profiles").upsert(
+        { user_id: created.user.id, date_of_birth: dateOfBirth, age_verified_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      ).then(({ error }) => { if (error) console.error("[signup] DOB save error:", error.message); });
     }
 
     // Onboarding email sequence: welcome now, Feynman in 3 days, invite in 7.

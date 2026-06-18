@@ -78,11 +78,13 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  const [dob, setDob]             = useState(""); // date of birth (YYYY-MM-DD)
   const [agreed, setAgreed]       = useState(false);
 
   const [pendingEmail,    setPendingEmail]    = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
   const [pendingName,     setPendingName]     = useState("");
+  const [pendingDob,      setPendingDob]      = useState("");
 
   const [otp, setOtp]                       = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -121,10 +123,11 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     return apiPost("/api/auth/send-otp", { email: emailAddr, type });
   }
 
-  function enterOtpScreen(emailAddr, flow, pwd = "", name = "") {
+  function enterOtpScreen(emailAddr, flow, pwd = "", name = "", birthDate = "") {
     setPendingEmail(emailAddr);
     setPendingPassword(pwd);
     setPendingName(name);
+    setPendingDob(birthDate);
     setOtp("");
     setOtpFlow(flow);
     setScreen("otp");
@@ -141,11 +144,29 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     setLoading(false);
   }
 
+  // Whole years between a YYYY-MM-DD birthdate and today.
+  function ageFromDob(birthDate) {
+    if (!birthDate) return NaN;
+    const d = new Date(birthDate);
+    if (isNaN(d)) return NaN;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    return age;
+  }
+
   async function handleSignup(e) {
     e.preventDefault(); setError(""); setLoading(true);
     try {
+      // Age gate (minimum 13). Client-side block — the server re-checks before
+      // ever creating the account.
+      const age = ageFromDob(dob);
+      if (isNaN(age)) { setError("Please enter your date of birth."); setLoading(false); return; }
+      if (age < 13) { setError("You must be at least 13 to use Scholr."); setLoading(false); return; }
+
       await sendOtp(email, "signup");
-      enterOtpScreen(email, "signup", password, firstName.trim());
+      enterOtpScreen(email, "signup", password, firstName.trim(), dob);
     } catch (err) { setError(err.message); }
     setLoading(false);
   }
@@ -169,6 +190,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
         body.password = pendingPassword;
         body.fullName = pendingName;
         body.termsAccepted = agreed;
+        body.dateOfBirth = pendingDob;
       }
       const data = await apiPost("/api/auth/verify-otp", body);
 
@@ -465,6 +487,22 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
               placeholder="e.g. Noah" maxLength={32}
               style={inputStyle} onFocus={focusPurple} onBlur={blurGray}
             />
+          </div>
+        )}
+
+        {tab === "signup" && (
+          <div>
+            <label style={labelStyle}>Date of birth</label>
+            <input
+              type="date" required
+              value={dob} onChange={e => setDob(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              style={{ ...inputStyle, minHeight: 44, colorScheme: "dark" }}
+              onFocus={focusPurple} onBlur={blurGray}
+            />
+            <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", marginTop: 6, fontFamily: FONT }}>
+              You must be at least 13 to use Scholr.
+            </div>
           </div>
         )}
 

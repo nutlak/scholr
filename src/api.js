@@ -811,7 +811,10 @@ export const api = {
     clearTimeout(timeoutId);
     const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
-      const err = new Error(data.error ?? `Request failed (${res.status})`);
+      // Prefer the friendly `message` (e.g. limit prompts); expose `code` so the
+      // UI can branch on image_limit_reached like other gated features.
+      const err = new Error(data.message ?? data.error ?? `Request failed (${res.status})`);
+      err.code = data.error;
       err.status = res.status;
       throw err;
     }

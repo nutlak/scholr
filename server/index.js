@@ -433,6 +433,9 @@ async function resetUsageIfNeeded(userId) {
       reset_at: nextReset.toISOString(),
       updated_at: new Date().toISOString(),
     }).eq("user_id", userId);
+    // Reset the image counter in a separate statement so a not-yet-migrated
+    // images_this_month column can't block the message/forge reset above.
+    await supabase.from("usage").update({ images_this_month: 0 }).eq("user_id", userId);
   }
 }
 
@@ -440,11 +443,29 @@ async function resetUsageIfNeeded(userId) {
 // hitting the wall; a soft nudge fires at FREE_MSG_WARN.
 const FREE_MSG_LIMIT = 100;
 const FREE_MSG_WARN = 80;
+// Free-tier monthly image-generation budget (OpenAI spend). Pro = unlimited.
+const FREE_IMAGE_LIMIT = 5;
 
-async function checkUsageLimit(userId, type) {
+// checkUsageLimit(userId, type[, amount]) — amount lets a single call reserve
+// more than one unit (image gen of n images costs n). Defaults to 1 so existing
+// "message"/"forge" callers are unaffected.
+async function checkUsageLimit(userId, type, amount = 1) {
   const tier = await getUserTier(userId);
   if (tier === "pro") return { allowed: true, tier, used: 0 };
   await resetUsageIfNeeded(userId);
+
+  // Image budget is kept fully isolated (own query) so a not-yet-migrated
+  // images_this_month column can never break message/forge metering below.
+  if (type === "image") {
+    const { data } = await supabase
+      .from("usage").select("images_this_month").eq("user_id", userId).maybeSingle();
+    const imgUsed = data?.images_this_month ?? 0;
+    if (imgUsed + amount > FREE_IMAGE_LIMIT) {
+      return { allowed: false, reason: "image_limit", tier, used: imgUsed };
+    }
+    return { allowed: true, tier, used: imgUsed };
+  }
+
   const { data } = await supabase
     .from("usage")
     .select("messages_this_month, forge_outputs_this_month")
@@ -492,7 +513,31 @@ async function checkNotebookLimit(userId) {
   return { allowed: true };
 }
 
-async function incrementUsage(userId, type) {
+async function incrementUsage(userId, type, amount = 1) {
+  // Image usage is isolated (own upsert) so the images_this_month column never
+  // appears in the message/forge insert path — keeps existing metering safe.
+  if (type === "image") {
+    const { data: existing } = await supabase
+      .from("usage").select("id, images_this_month").eq("user_id", userId).maybeSingle();
+    if (existing) {
+      await supabase.from("usage").update({
+        images_this_month: (existing.images_this_month ?? 0) + amount,
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", userId);
+    } else {
+      const nextReset = new Date();
+      nextReset.setMonth(nextReset.getMonth() + 1);
+      nextReset.setDate(1);
+      nextReset.setHours(0, 0, 0, 0);
+      await supabase.from("usage").insert({
+        user_id: userId,
+        images_this_month: amount,
+        reset_at: nextReset.toISOString(),
+      });
+    }
+    return;
+  }
+
   const field = type === "message" ? "messages_this_month" : "forge_outputs_this_month";
   const { data: existing } = await supabase
     .from("usage")
@@ -501,7 +546,7 @@ async function incrementUsage(userId, type) {
     .maybeSingle();
   if (existing) {
     await supabase.from("usage").update({
-      [field]: (existing[field] ?? 0) + 1,
+      [field]: (existing[field] ?? 0) + amount,
       updated_at: new Date().toISOString(),
     }).eq("user_id", userId);
   } else {
@@ -746,6 +791,15 @@ app.post("/api/generate-image", requireAuth, async (req, res) => {
     });
   }
 
+  // ── Tier/usage limit (counts each image — n images cost n) ──
+  const usage = await checkUsageLimit(req.user.id, "image", count);
+  if (!usage.allowed) {
+    return res.status(403).json({
+      error: "image_limit_reached",
+      message: `You have reached your ${FREE_IMAGE_LIMIT} image limit this month. Upgrade to Pro for unlimited.`,
+    });
+  }
+
   // ── Call OpenAI ──
   // gpt-image-1.5 supports n natively and returns base64 (b64_json).
   try {
@@ -777,6 +831,12 @@ app.post("/api/generate-image", requireAuth, async (req, res) => {
     const images = (body.data ?? []).map(img => ({ b64_json: img.b64_json }));
 
     res.json({ images });
+
+    // Count the images actually generated against the monthly budget.
+    if (images.length) {
+      incrementUsage(req.user.id, "image", images.length)
+        .catch(err => console.error("image usage increment error:", err));
+    }
   } catch (err) {
     console.error("generate-image error:", err);
     res.status(502).json({ error: "Failed to reach OpenAI. Try again." });

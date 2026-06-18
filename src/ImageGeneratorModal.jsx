@@ -145,7 +145,10 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
       const { images: out } = await api.generateImage({ prompt: trimmed, size, n });
       setImages(out ?? []);
     } catch (err) {
-      if (err.status === 429) {
+      if (err.code === "image_limit_reached" || (err.status === 403 && err.code !== "forge_limit_reached")) {
+        // Hit the monthly free image cap — show the upgrade prompt, not a generic error.
+        setError(err.message || "You've reached your free image limit this month. Upgrade to Pro for unlimited.");
+      } else if (err.status === 429) {
         setError(err.message || "You're going too fast. Wait a moment and try again.");
       } else if (err.status === 400) {
         setError(err.message || "OpenAI rejected that prompt. Try rewording it.");

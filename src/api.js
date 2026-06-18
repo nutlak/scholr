@@ -2,6 +2,19 @@ import { supabase } from "./supabase.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
+// Build an Error from a failed response. 429s (global or per-feature rate limit)
+// always get a friendly "slow down" message so the UI never shows a raw error.
+function apiError(res, data, fallback) {
+  const isRateLimited = res.status === 429;
+  const message = isRateLimited
+    ? (data?.message ?? "You're going too fast — please wait a moment and try again.")
+    : (data?.message ?? data?.error ?? fallback);
+  const err = new Error(message);
+  err.code = isRateLimited ? (data?.error ?? "rate_limited") : data?.error;
+  err.status = res.status;
+  return err;
+}
+
 async function authHeaders(extra = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   return {
@@ -318,10 +331,7 @@ export const api = {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({ error: res.statusText }));
-      const err = new Error(data.message ?? data.error ?? "Failed to generate");
-      err.code = data.error;
-      err.status = res.status;
-      throw err;
+      throw apiError(res, data, "Failed to generate");
     }
 
     const reader = res.body.getReader();
@@ -395,9 +405,7 @@ export const api = {
 
     const data = await res.json();
     if (!res.ok) {
-      const err = new Error(data.message ?? data.error ?? `Request failed (${res.status})`);
-      err.code = data.error;
-      err.status = res.status;
+      const err = apiError(res, data, `Request failed (${res.status})`);
       throw err;
     }
     return data;
@@ -594,9 +602,7 @@ export const api = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      const err = new Error(data.message ?? data.error ?? "Failed to start podcast");
-      err.code = data.error;
-      throw err;
+      throw apiError(res, data, "Failed to start podcast");
     }
     return res.json(); // { podcastId }
   },
@@ -811,12 +817,9 @@ export const api = {
     clearTimeout(timeoutId);
     const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
-      // Prefer the friendly `message` (e.g. limit prompts); expose `code` so the
-      // UI can branch on image_limit_reached like other gated features.
-      const err = new Error(data.message ?? data.error ?? `Request failed (${res.status})`);
-      err.code = data.error;
-      err.status = res.status;
-      throw err;
+      // apiError surfaces the friendly `message` and exposes `code` so the UI can
+      // branch on image_limit_reached / rate_limited like other gated features.
+      throw apiError(res, data, `Request failed (${res.status})`);
     }
     return data; // { images: [{ b64_json }] }
   },
@@ -1014,10 +1017,7 @@ export const api = {
     });
     const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
-      const err = new Error(data.message ?? data.error ?? "Failed to generate flashcards");
-      err.code = data.error;     // e.g. "forge_limit_reached"
-      err.status = res.status;
-      throw err;
+      throw apiError(res, data, "Failed to generate flashcards"); // code e.g. "forge_limit_reached" / "rate_limited"
     }
     return data; // { cards: [...] }
   },

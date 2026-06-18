@@ -15,6 +15,35 @@ import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
 // Auth'd routes key by user ID; IP is the fallback (ipKeyGenerator handles IPv6 safely)
+//
+// NOTE: all limiters use express-rate-limit's default in-memory store. This is
+// correct for a single instance. A multi-instance deploy would double-count
+// budgets across processes — switch to a shared store (e.g. Redis via
+// rate-limit-redis) before scaling horizontally.
+
+// Global baseline applied to every /api route (except the Stripe webhook, which
+// is registered before this middleware). Keyed by IP at this layer because it
+// runs before per-route auth populates req.user; verified per-user throttling is
+// handled by the per-feature limiters below.
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "rate_limited", message: "Too many requests, please slow down." },
+});
+
+// Defense-in-depth burst cap on the expensive AI endpoints, layered on top of
+// the global limiter and each feature's monthly usage/tier cap. Placed after
+// requireAuth in the chain, so it keys by the verified user id.
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "rate_limited", message: "Too many requests, please slow down." },
+});
+
 const queryLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100,
@@ -167,6 +196,9 @@ if (missing.length) {
 }
 
 const app = express();
+// Behind Railway/Vercel's proxy, the client IP is in X-Forwarded-For. Trust the
+// first hop so rate-limit IP keying uses the real client IP, not the proxy's.
+app.set("trust proxy", 1);
 const ALLOWED_UPLOAD_MIMES = new Set([
   "application/pdf",
   "text/plain",
@@ -344,6 +376,11 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
 // 50mb limit so /api/notebooks/:id/images can accept base64-encoded
 // generated images (a 1536x1536 PNG can be ~3–6 MB raw, ~4–8 MB as base64).
 app.use(express.json({ limit: '50mb' }));
+
+// Global rate limit on all /api routes. Registered AFTER the Stripe webhook
+// route (above) so Stripe's retries are never throttled, and after express.json
+// so it doesn't interfere with body parsing.
+app.use("/api", globalLimiter);
 
 // Attach authenticated user to req.user from Supabase JWT in Authorization header.
 // Routes that need auth call this middleware explicitly.
@@ -757,7 +794,7 @@ function checkImageRateLimit(userId) {
 const ALLOWED_IMAGE_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
 
 // POST /api/generate-image — { prompt, size?, n? } → { images: [{ url, revised_prompt? }] }
-app.post("/api/generate-image", requireAuth, async (req, res) => {
+app.post("/api/generate-image", requireAuth, aiLimiter, async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY not configured on server" });
 
@@ -1563,7 +1600,7 @@ app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
 });
 
 // POST /api/notebooks/:id/query — AI query against notebook notes (Derek chat)
-app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, async (req, res) => {
+app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, queryLimiter, async (req, res) => {
   const { question } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
@@ -1645,7 +1682,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, queryLimiter, a
 
 // POST /api/notebooks/:id/flashcards/generate — AI-generate cards from notes.
 // Counts against the same free/Pro "forge" generation budget (3/mo free).
-app.post("/api/notebooks/:id/flashcards/generate", requireAuth, requireMember, forgeLimiter, async (req, res) => {
+app.post("/api/notebooks/:id/flashcards/generate", requireAuth, requireMember, aiLimiter, forgeLimiter, async (req, res) => {
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
 
@@ -1866,7 +1903,7 @@ app.delete("/api/flashcards/:id", requireAuth, async (req, res) => {
 });
 
 // POST /api/notebooks/:id/forge — generate study materials with streaming SSE
-app.post("/api/notebooks/:id/forge", requireAuth, requireMember, forgeLimiter, async (req, res) => {
+app.post("/api/notebooks/:id/forge", requireAuth, requireMember, aiLimiter, forgeLimiter, async (req, res) => {
   const { action, topic } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
 
@@ -2503,7 +2540,7 @@ async function runPodcastPipeline(podcastId, { notebookId, userId, lengthPreset,
 
 // POST /api/notebooks/:id/podcast/generate — Pro-only.
 // Responds with { podcastId } immediately; client polls GET /api/podcasts/:id.
-app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, podcastLimiter, async (req, res) => {
+app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, aiLimiter, podcastLimiter, async (req, res) => {
   const tier = await getUserTier(req.user.id);
   if (tier !== "pro") {
     return res.status(403).json({ error: "pro_required", message: "Podcast Mode is a Pro feature." });

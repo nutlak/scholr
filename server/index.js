@@ -722,6 +722,26 @@ app.get("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res
   res.json(images.filter(img => img.url));
 });
 
+// Delete the actual stored files in the "notebook-images" bucket for the given
+// notebook ids. DB rows cascade on notebook/account delete; this clears the
+// orphaned storage objects. Defensive — logs and continues, never throws.
+async function removeNotebookImageFiles(notebookIds) {
+  try {
+    const ids = (notebookIds ?? []).filter(Boolean);
+    if (!ids.length) return;
+    const { data, error } = await supabase
+      .from("notebook_images").select("storage_path").in("notebook_id", ids);
+    if (error) { console.error("[storage cleanup] notebook_images query failed:", error.message); return; }
+    const paths = [...new Set((data ?? []).map(r => r.storage_path).filter(Boolean))];
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error: rmErr } = await supabase.storage.from("notebook-images").remove(paths.slice(i, i + 100));
+      if (rmErr) console.error("[storage cleanup] notebook-images remove failed:", rmErr.message);
+    }
+  } catch (e) {
+    console.error("[storage cleanup] notebook-images unexpected error:", e?.message ?? e);
+  }
+}
+
 // POST /api/notebooks/:id/invite-friend — add an existing friend directly as a
 // notebook member (no email step). Requires: caller is a member of the notebook
 // (requireMember) AND the two users are actually friends.
@@ -1177,6 +1197,10 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
   // orphaned even if starred_notebooks.notebook_id lacks ON DELETE CASCADE.
   // (Postgres cascade also handles notes/members/etc. — see migration 030.)
   await supabase.from("starred_notebooks").delete().eq("notebook_id", req.params.id);
+
+  // Purge generated-image files from the notebook-images bucket BEFORE the
+  // delete cascades away the notebook_images rows (otherwise files orphan).
+  await removeNotebookImageFiles([req.params.id]);
 
   const { error } = await supabase
     .from("notebooks")
@@ -2712,25 +2736,33 @@ app.delete("/api/unit-notes/:id/react/:emoji", requireAuth, async (req, res) => 
 
 // GET /api/unit-notes/:id/reactions — list reactions for a note (with names)
 app.get("/api/unit-notes/:id/reactions", requireAuth, async (req, res) => {
+  // Membership check: resolve the note's notebook, confirm the caller is a member.
+  const { data: note } = await supabase
+    .from("unit_notes").select("id, notebook_id").eq("id", req.params.id).maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members").select("role")
+    .eq("notebook_id", note.notebook_id).eq("user_id", req.user.id).maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
   const { data, error } = await supabase
     .from("note_reactions")
     .select("id, emoji, user_id, created_at")
     .eq("unit_note_id", req.params.id);
   if (error) return res.status(500).json({ error: error.message });
 
+  // Identity is username + name only — never raw emails.
   const userIds = [...new Set((data ?? []).map(r => r.user_id))];
   const info = {};
   await Promise.all(userIds.map(async (uid) => {
-    const { data: u } = await supabase.auth.admin.getUserById(uid);
-    info[uid] = {
-      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
-      email: u?.user?.email ?? null,
-    };
+    const b = await resolveUserBrief(uid);
+    info[uid] = { first_name: b.name?.split(" ")[0] ?? null, full_name: b.name ?? null, username: b.username ?? null };
   }));
   res.json((data ?? []).map(r => ({
     ...r,
     first_name: info[r.user_id]?.first_name ?? null,
-    email: info[r.user_id]?.email ?? null,
+    full_name: info[r.user_id]?.full_name ?? null,
+    username: info[r.user_id]?.username ?? null,
   })));
 });
 
@@ -2775,6 +2807,15 @@ app.post("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
 
 // GET /api/unit-notes/:id/comments — list comments with user info
 app.get("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
+  // Membership check: resolve the note's notebook, confirm the caller is a member.
+  const { data: note } = await supabase
+    .from("unit_notes").select("id, notebook_id").eq("id", req.params.id).maybeSingle();
+  if (!note) return res.status(404).json({ error: "Note not found" });
+  const { data: mem } = await supabase
+    .from("notebook_members").select("role")
+    .eq("notebook_id", note.notebook_id).eq("user_id", req.user.id).maybeSingle();
+  if (!mem) return res.status(403).json({ error: "Not a member" });
+
   const { data, error } = await supabase
     .from("note_comments")
     .select("id, user_id, content, created_at")
@@ -2782,21 +2823,18 @@ app.get("/api/unit-notes/:id/comments", requireAuth, async (req, res) => {
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
 
+  // Identity is username + name only — never raw emails.
   const userIds = [...new Set((data ?? []).map(r => r.user_id))];
   const info = {};
   await Promise.all(userIds.map(async (uid) => {
-    const { data: u } = await supabase.auth.admin.getUserById(uid);
-    info[uid] = {
-      first_name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
-      full_name: u?.user?.user_metadata?.full_name ?? null,
-      email: u?.user?.email ?? null,
-    };
+    const b = await resolveUserBrief(uid);
+    info[uid] = { first_name: b.name?.split(" ")[0] ?? null, full_name: b.name ?? null, username: b.username ?? null };
   }));
   res.json((data ?? []).map(r => ({
     ...r,
     first_name: info[r.user_id]?.first_name ?? null,
     full_name: info[r.user_id]?.full_name ?? null,
-    email: info[r.user_id]?.email ?? null,
+    username: info[r.user_id]?.username ?? null,
   })));
 });
 
@@ -3048,11 +3086,10 @@ Keep each array item under 18 words. Use 2-4 items per array where applicable (m
     if (err?.status === 401) {
       return res.status(502).json({ error: "grade_failed", message: "Claude rejected the request — check the server key." });
     }
-    console.error("[feynman] grade error:", err);
+    console.error("[feynman] grade error:", aiErrorDetail(err, "Claude"));
     res.status(502).json({
       error: "grade_failed",
       message: "Couldn't grade that explanation. Please try again.",
-      detail: aiErrorDetail(err, "Claude"),
     });
   }
 });
@@ -3336,10 +3373,26 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
         ...(noteFiles ?? []).map(f => extractPath(f.file_url)),
         ...(podcastFiles ?? []).map(f => extractPath(f.audio_url)),
       ]);
+      // Purge generated-image files for owned notebooks before the cascade
+      // removes their notebook_images rows.
+      await step("remove owned-notebook image files", () => removeNotebookImageFiles(ownedNotebookIds));
       await step("delete owned notebooks", () =>
         supabase.from("notebooks").delete().in("id", ownedNotebookIds));
     }
     console.log(`[delete-account] owned notebooks processed: ${ownedNotebookIds.length}`);
+
+    // 0a. Images this user saved into notebooks owned by OTHERS: the rows cascade
+    //     on auth-user delete, but the storage files would orphan. Remove them.
+    await step("remove user image files", async () => {
+      const { data, error } = await supabase
+        .from("notebook_images").select("storage_path").eq("user_id", userId);
+      if (error) return { error };
+      const paths = [...new Set((data ?? []).map(r => r.storage_path).filter(Boolean))];
+      for (let i = 0; i < paths.length; i += 100) {
+        await supabase.storage.from("notebook-images").remove(paths.slice(i, i + 100));
+      }
+      return {};
+    });
 
     // 0b. ROOT-CAUSE FIX. podcasts.created_by REFERENCES auth.users(id) WITHOUT
     //     ON DELETE CASCADE (migration 019). Podcasts the user created in a
@@ -3388,20 +3441,17 @@ app.delete("/api/auth/delete-account", requireAuth, async (req, res) => {
     console.log("[delete-account] calling admin.deleteUser");
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
+      // Full cause is logged server-side only — never returned to the client.
       console.error("[delete-account] admin.deleteUser failed:", error.message, JSON.stringify(error));
-      // TEMP DEBUG: Railway logs aren't reachable via CLI, so surface the real
-      // cause to diagnose any remaining non-cascade FK. `detail` carries a
-      // Postgres/GoTrue error string (table/column names only — never secrets).
-      // Revert to the bare generic message once confirmed working in production.
-      return res.status(500).json({ error: "Failed to delete account. Please try again.", detail: error.message });
+      return res.status(500).json({ error: "Failed to delete account. Please try again." });
     }
 
     console.log(`[delete-account] success for user=${userId}`);
     res.status(204).end();
   } catch (err) {
+    // Full cause is logged server-side only — never returned to the client.
     console.error("[delete-account] Unexpected error:", err);
-    // TEMP DEBUG (see above) — revert `detail` after the fix is confirmed.
-    res.status(500).json({ error: "Failed to delete account. Please try again.", detail: err?.message ?? String(err) });
+    res.status(500).json({ error: "Failed to delete account. Please try again." });
   }
 });
 

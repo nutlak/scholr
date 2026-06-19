@@ -21,11 +21,12 @@ function describe(n) {
     case "friend_request":  return `${who} sent you a friend request`;
     case "friend_accepted": return `${who} accepted your friend request`;
     case "notebook_invite": return `${who} added you to ${n.payload?.notebookTitle ?? "a notebook"}`;
+    case "payment_failed":  return "Your payment didn't go through — tap to update your card";
     default:                return "New notification";
   }
 }
 
-export default function NotificationsBell({ onOpenNotebook }) {
+export default function NotificationsBell({ onOpenNotebook, onOpenBilling }) {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -68,6 +69,9 @@ export default function NotificationsBell({ onOpenNotebook }) {
   function handleClick(n) {
     if (n.type === "notebook_invite" && n.payload?.notebookId) {
       onOpenNotebook?.(n.payload.notebookId);
+      setOpen(false);
+    } else if (n.type === "payment_failed") {
+      onOpenBilling?.();
       setOpen(false);
     }
   }
@@ -119,7 +123,7 @@ export default function NotificationsBell({ onOpenNotebook }) {
             </div>
           ) : (
             items.map(n => {
-              const tappable = n.type === "notebook_invite" && n.payload?.notebookId;
+              const tappable = (n.type === "notebook_invite" && n.payload?.notebookId) || n.type === "payment_failed";
               return (
                 <div
                   key={n.id}

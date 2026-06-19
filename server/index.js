@@ -363,6 +363,21 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
         relayJarvis("subscription_cancelled", { subscriptionId: sub.id });
         break;
       }
+      case "invoice.payment_failed": {
+        // A renewal charge failed. Do NOT downgrade here — Stripe auto-retries
+        // (dunning), and the eventual real downgrade flows through
+        // subscription.updated/deleted above. Just notify the user to fix their
+        // card so they don't silently lose Pro.
+        const invoice = event.data.object;
+        const userId = await getUserIdByStripeCustomer(invoice.customer);
+        if (userId) {
+          await pushNotification(userId, "payment_failed", {});
+          console.log(`[stripe] invoice.payment_failed: notified user=${userId}`);
+        } else {
+          console.warn(`[stripe] invoice.payment_failed: no user for customer=${invoice.customer}`);
+        }
+        break;
+      }
       default:
         console.log(`[stripe] unhandled event: ${event.type}`);
     }

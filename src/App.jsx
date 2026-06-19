@@ -5313,6 +5313,7 @@ const NOTIF_ICON = {
   notebook_invite: FolderPlus,
   mention:         AtSign,
   note_uploaded:   FileText,
+  payment_failed:  AlertTriangle,
 };
 function notifLine(n) {
   const who = n.payload?.fromUsername ? `@${n.payload.fromUsername}` : "Someone";
@@ -5323,6 +5324,7 @@ function notifLine(n) {
     case "notebook_invite": return `${who} added you to ${book}`;
     case "mention":         return `${who} mentioned you in ${book}`;
     case "note_uploaded":   return `${who} added ${n.payload?.noteTitle ?? "a note"} to ${book}`;
+    case "payment_failed":  return "Your payment didn't go through — tap to update your card and keep Pro";
     default:                return "New notification";
   }
 }
@@ -6039,7 +6041,7 @@ export default function Scholr() {
               {/* outer span = one inline box → letter-spacing holds across the color split */}
               <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>
             </div>
-            <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} /></span>
+            <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} /></span>
             <button
               className="mobile-only"
               onClick={() => setSidebarOpen(false)}
@@ -6764,6 +6766,46 @@ export default function Scholr() {
                 </button>
               )}
 
+              {/* Dashboard: passive renewal reminder — Pro plan renewing within 3 days.
+                  No cron needed; computed from the stored current_period_end on load. */}
+              {activeView === "dashboard" && subscription.tier === "pro" && subscription.currentPeriodEnd && (() => {
+                const days = Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - Date.now()) / 86400000);
+                if (days < 0 || days > 3) return null;
+                const when = days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+                return (
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                    className="btn-press"
+                    style={{
+                      width: "100%", textAlign: "left", marginBottom: 18,
+                      display: "flex", alignItems: "center", gap: 14, minHeight: 60,
+                      padding: "13px 18px", borderRadius: 14,
+                      cursor: portalLoading ? "wait" : "pointer",
+                      background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
+                      fontFamily: FONT,
+                    }}
+                  >
+                    <span style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "var(--bg-surface-2)", color: "var(--accent)",
+                    }}><RefreshCw size={17} strokeWidth={1.9} /></span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                        Your Pro plan renews {when}
+                      </span>
+                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
+                        Manage or cancel anytime before you're charged
+                      </span>
+                    </span>
+                    <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+                      {portalLoading ? "Opening…" : "Manage →"}
+                    </span>
+                  </button>
+                );
+              })()}
+
               {/* Dashboard: activity heatmap */}
               {activeView === "dashboard" && (
                 <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} />
@@ -6820,18 +6862,22 @@ export default function Scholr() {
                       {notifications.map(n => {
                         const Icon = NOTIF_ICON[n.type] ?? Bell;
                         const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
+                        const opensBilling = n.type === "payment_failed";
                         const isRequest = n.type === "friend_request";
+                        const onRowClick = opensNotebook
+                          ? () => openNotebookById(n.payload.notebookId)
+                          : opensBilling ? () => handleManageSubscription() : undefined;
                         return (
                           <div
                             key={n.id}
-                            onClick={opensNotebook ? () => openNotebookById(n.payload.notebookId) : undefined}
+                            onClick={onRowClick}
                             className="notif-row"
                             style={{
                               display: "flex", alignItems: "center", gap: 12,
                               padding: "11px 8px", minHeight: 44,
                               borderBottom: "1px solid var(--border-subtle)",
                               borderRadius: 8,
-                              cursor: opensNotebook ? "pointer" : "default",
+                              cursor: onRowClick ? "pointer" : "default",
                               background: n.read ? "transparent" : "var(--acc-bg)",
                             }}
                           >
@@ -7006,7 +7052,7 @@ export default function Scholr() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 4px 8px" }}>
                 <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>Friends</span>
-                <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} /></span>
+                <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} /></span>
                 <button
                   onClick={() => setShowMobileFriends(false)}
                   aria-label="Close"

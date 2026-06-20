@@ -3897,20 +3897,39 @@ app.post("/api/friends/respond", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "action must be 'accept' or 'decline'" });
   }
 
+  // Remove the friend_request notification row(s) for THIS recipient tied to
+  // this request, so the Recent Activity feed / bell stop showing it after it's
+  // actioned (marking-read alone wasn't enough — the feed lists read rows too).
+  const clearRequestNotif = async () => {
+    const { error } = await supabase
+      .from("social_notifications")
+      .delete()
+      .eq("user_id", req.user.id)
+      .eq("type", "friend_request")
+      .eq("payload->>requestId", requestId);
+    if (error) console.error("clear friend_request notif:", error.message);
+  };
+
   const { data: request, error: lookupErr } = await supabase
     .from("friend_requests")
     .select("id, from_user, to_user, status")
     .eq("id", requestId)
     .maybeSingle();
   if (lookupErr) return res.status(500).json({ error: lookupErr.message });
-  if (!request) return res.status(404).json({ error: "Friend request not found" });
+  // Gone entirely → treat as already handled (and clear any stale notification).
+  if (!request) {
+    await clearRequestNotif();
+    return res.status(409).json({ error: "already_actioned", message: "This request was already handled." });
+  }
 
   // Only the recipient may respond.
   if (request.to_user !== req.user.id) {
     return res.status(403).json({ error: "Only the recipient can respond to this request" });
   }
+  // Already accepted/declined → graceful 409 (not a 500/400), and clear the row.
   if (request.status !== "pending") {
-    return res.status(400).json({ error: `Request is already ${request.status}` });
+    await clearRequestNotif();
+    return res.status(409).json({ error: "already_actioned", message: "This request was already handled." });
   }
 
   if (action === "accept") {
@@ -3932,6 +3951,9 @@ app.post("/api/friends/respond", requireAuth, async (req, res) => {
     .update({ status: newStatus })
     .eq("id", requestId);
   if (updErr) return res.status(500).json({ error: updErr.message });
+
+  // The request is handled — remove its notification so the feed clears for good.
+  await clearRequestNotif();
 
   // Notify the original sender that their request was accepted.
   if (action === "accept") {

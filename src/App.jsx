@@ -4589,7 +4589,7 @@ const BEST_FRIEND_RANKS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
 // Two collapsible sidebar blocks: Friends (current friends + add button + pending
 // request badge) and Best Friends (top 5 by shared-notebook activity). Self-
 // contained: loads its own data and refreshes after request actions.
-function FriendsSidebarSection() {
+function FriendsSidebarSection({ refreshSignal = 0 }) {
   const [friends, setFriends]         = useState([]);
   const [bestFriends, setBestFriends] = useState([]);
   const [requests, setRequests]       = useState([]);
@@ -4611,6 +4611,9 @@ function FriendsSidebarSection() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+  // Re-fetch when the parent bumps the signal (e.g. a request accepted from the
+  // Recent Activity feed) — only on a real bump, not the initial 0.
+  useEffect(() => { if (refreshSignal) refresh(); }, [refreshSignal, refresh]);
   useEffect(() => { api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => {}); }, []);
 
   const sectionLabel = {
@@ -5390,6 +5393,8 @@ export default function Scholr() {
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
   const [dueCount, setDueCount] = useState(0);            // flashcards due across all notebooks
   const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
+  const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | inline status message
+  const [friendsVersion, setFriendsVersion] = useState(0); // bump to refresh FriendsSidebarSection
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
@@ -5690,18 +5695,36 @@ export default function Scholr() {
   // notifId = the social_notifications row id (so we can clear it); requestId =
   // the friend_request id (for respondToFriend).
   async function respondToFriendFromFeed(notifId, requestId, action) {
-    // (a) Remove the row FIRST — before any await and regardless of requestId —
-    // so it vanishes instantly even if the request was already actioned
-    // elsewhere or the notification predates requestId in its payload.
-    if (notifId) setNotifications(prev => prev.filter(n => n.id !== notifId));
-    // (c) Tolerate an "already actioned" rejection — the row is already gone.
-    if (requestId) {
-      try { await api.respondToFriend(requestId, action); }
-      catch { /* already handled elsewhere — ignore */ }
+    const dropRow = () => setNotifications(prev => prev.filter(n => n.id !== notifId));
+
+    // Legacy/stale notification with no requestId in its payload — nothing to
+    // action server-side; just clear the row and mark it read.
+    if (!requestId) {
+      dropRow();
+      if (notifId) api.markSocialNotificationsRead([notifId]).catch(() => {});
+      return;
     }
-    // (b) Mark the notification read so it can't reappear on the next poll.
-    if (notifId) { try { await api.markSocialNotificationsRead([notifId]); } catch { /* non-fatal */ } }
-    refreshNotifications();
+
+    // Immediate visible feedback so the button never feels dead.
+    setFeedActioned(s => ({ ...s, [notifId]: "busy" }));
+    try {
+      await api.respondToFriend(requestId, action);
+      // Success: row removed, sidebar friends refreshed so the new friend shows,
+      // and the feed re-fetched (the server deleted this notification, so it
+      // won't come back).
+      dropRow();
+      setFriendsVersion(v => v + 1);
+      refreshNotifications();
+    } catch (err) {
+      if (err.status === 409 || err.code === "already_actioned") {
+        // Already handled elsewhere — show a brief inline note, then clear.
+        setFeedActioned(s => ({ ...s, [notifId]: err.message || "Already handled" }));
+        setFriendsVersion(v => v + 1);
+        setTimeout(() => { dropRow(); refreshNotifications(); }, 1400);
+      } else {
+        setFeedActioned(s => ({ ...s, [notifId]: "Couldn't respond — try again" }));
+      }
+    }
   }
 
   async function handleToggleClass(classId) {
@@ -6109,7 +6132,7 @@ export default function Scholr() {
                 )}
               </div>
               {/* Friends + Best Friends sit between Starred and Settings */}
-              {id === "starred" && <FriendsSidebarSection />}
+              {id === "starred" && <FriendsSidebarSection refreshSignal={friendsVersion} />}
               </Fragment>
             );
           })}
@@ -6910,26 +6933,40 @@ export default function Scholr() {
                                 {timeAgo(n.created_at)}
                               </div>
                             </div>
-                            {isRequest && (
-                              <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                <button
-                                  onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
-                                  style={{
-                                    background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
-                                    borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                    color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT, cursor: "pointer",
-                                  }}
-                                >Accept</button>
-                                <button
-                                  onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
-                                  style={{
-                                    background: "transparent", border: "1px solid var(--border-default)",
-                                    borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                    color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT, cursor: "pointer",
-                                  }}
-                                >Decline</button>
-                              </div>
-                            )}
+                            {isRequest && (() => {
+                              const st = feedActioned[n.id];
+                              // Show an inline status (e.g. "Already handled") instead of buttons.
+                              if (st && st !== "busy") {
+                                return (
+                                  <span style={{ flexShrink: 0, fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>{st}</span>
+                                );
+                              }
+                              const busy = st === "busy";
+                              return (
+                                <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                  <button
+                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
+                                    disabled={busy}
+                                    style={{
+                                      background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
+                                      borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                      color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                                      cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                                    }}
+                                  >{busy ? "…" : "Accept"}</button>
+                                  <button
+                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
+                                    disabled={busy}
+                                    style={{
+                                      background: "transparent", border: "1px solid var(--border-default)",
+                                      borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                      color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                                      cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                                    }}
+                                  >Decline</button>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
@@ -7078,7 +7115,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsSidebarSection />
+              <FriendsSidebarSection refreshSignal={friendsVersion} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

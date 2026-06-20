@@ -896,7 +896,10 @@ export const api = {
     });
     const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
-      const err = new Error(data.error ?? "Failed to respond to friend request");
+      // Prefer the friendly message; expose code so the UI can detect
+      // already_actioned (409) and show "Already handled" rather than failing.
+      const err = new Error(data.message ?? data.error ?? "Failed to respond to friend request");
+      err.code = data.error;       // e.g. "already_actioned"
       err.status = res.status;
       throw err;
     }

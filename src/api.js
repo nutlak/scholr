@@ -872,6 +872,14 @@ export const api = {
     return this.markSocialNotificationsRead([]);
   },
 
+  // Clear inbox — permanently DELETE all of the current user's notifications.
+  async clearSocialNotifications() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/social/notifications`, { method: "DELETE", headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { ok: true }
+  },
+
   // ── Friends system ─────────────────────────────────────────────────
   async requestFriend(toUserId) {
     const headers = await authHeaders();
@@ -889,12 +897,14 @@ export const api = {
   },
 
   async respondToFriend(requestId, action) {
+    console.log("[api.respondToFriend] sending", { requestId, action });
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/respond`, {
       method: "POST", headers,
       body: JSON.stringify({ requestId, action }),
     });
     const data = await res.json().catch(() => ({ error: res.statusText }));
+    console.log("[api.respondToFriend] response", res.status, data);
     if (!res.ok) {
       // Prefer the friendly message; expose code so the UI can detect
       // already_actioned (409) and show "Already handled" rather than failing.

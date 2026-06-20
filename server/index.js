@@ -4306,6 +4306,17 @@ app.post("/api/social/notifications/read", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// DELETE /api/social/notifications — clear inbox: delete ALL of the current
+// user's notifications (actually deletes, so nothing resurrects on refresh).
+app.delete("/api/social/notifications", requireAuth, async (req, res) => {
+  const { error } = await supabase
+    .from("social_notifications")
+    .delete()
+    .eq("user_id", req.user.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 // ── Public aggregate stats (landing-page social proof) — cached 5 min ─────────
 let statsCache = { data: null, at: 0 };

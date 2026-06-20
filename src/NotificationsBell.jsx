@@ -31,7 +31,7 @@ function describe(n) {
   }
 }
 
-export default function NotificationsBell({ onOpenNotebook, onOpenBilling }) {
+export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloadSignal = 0 }) {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -51,6 +51,9 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling }) {
     const id = setInterval(load, 30_000);
     return () => clearInterval(id);
   }, [load]);
+
+  // Reload immediately when the parent bumps the signal (e.g. Clear inbox).
+  useEffect(() => { if (reloadSignal) load(); }, [reloadSignal, load]);
 
   // Close on outside click.
   useEffect(() => {

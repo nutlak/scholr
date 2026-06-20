@@ -5395,6 +5395,7 @@ export default function Scholr() {
   const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
   const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | inline status message
   const [friendsVersion, setFriendsVersion] = useState(0); // bump to refresh FriendsSidebarSection
+  const [notifVersion, setNotifVersion] = useState(0);     // bump to make NotificationsBell reload
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
@@ -5694,7 +5695,17 @@ export default function Scholr() {
   // Accept/Decline a friend request straight from the Recent Activity feed.
   // notifId = the social_notifications row id (so we can clear it); requestId =
   // the friend_request id (for respondToFriend).
+  // Clear inbox — delete ALL notifications (with a confirm), and clear the bell.
+  async function clearInbox() {
+    if (!window.confirm("Clear all notifications?")) return;
+    setNotifications([]);            // optimistic: empty the feed
+    setNotifVersion(v => v + 1);     // tell the bell to reload (→ empty)
+    try { await api.clearSocialNotifications(); }
+    catch { refreshNotifications(); } // restore on failure
+  }
+
   async function respondToFriendFromFeed(notifId, requestId, action) {
+    console.log("HANDLER FIRED", { notifId, requestId, action });
     const dropRow = () => setNotifications(prev => prev.filter(n => n.id !== notifId));
 
     // Legacy/stale notification with no requestId in its payload — nothing to
@@ -6078,7 +6089,7 @@ export default function Scholr() {
               {/* outer span = one inline box → letter-spacing holds across the color split */}
               <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>
             </div>
-            <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} /></span>
+            <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} reloadSignal={notifVersion} /></span>
             <button
               className="mobile-only"
               onClick={() => setSidebarOpen(false)}
@@ -6871,24 +6882,41 @@ export default function Scholr() {
                         }}>{notifications.filter(n => !n.read).length}</span>
                       )}
                     </div>
-                    {notifications.some(n => !n.read) && (
-                      <button
-                        onClick={async () => {
-                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                          try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
-                        }}
-                        style={{
-                          background: "none", border: "none", cursor: "pointer",
-                          fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                          padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                          fontWeight: 500, minHeight: 44,
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-                      >
-                        Mark all read
-                      </button>
-                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {notifications.some(n => !n.read) && (
+                        <button
+                          onClick={async () => {
+                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                            try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
+                          }}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
+                            padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                            fontWeight: 500, minHeight: 44,
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={clearInbox}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
+                            padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                            fontWeight: 500, minHeight: 44,
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
+                        >
+                          Clear inbox
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {notifications.length === 0 ? (
                     <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
@@ -6945,7 +6973,7 @@ export default function Scholr() {
                               return (
                                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                                   <button
-                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
+                                    onClick={() => { console.log("ACCEPT CLICKED", n.id, n.payload?.requestId, n); respondToFriendFromFeed(n.id, n.payload?.requestId, "accept"); }}
                                     disabled={busy}
                                     style={{
                                       background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
@@ -6955,7 +6983,7 @@ export default function Scholr() {
                                     }}
                                   >{busy ? "…" : "Accept"}</button>
                                   <button
-                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
+                                    onClick={() => { console.log("DECLINE CLICKED", n.id, n.payload?.requestId, n); respondToFriendFromFeed(n.id, n.payload?.requestId, "decline"); }}
                                     disabled={busy}
                                     style={{
                                       background: "transparent", border: "1px solid var(--border-default)",
@@ -7103,7 +7131,7 @@ export default function Scholr() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 4px 8px" }}>
                 <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>Friends</span>
-                <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} /></span>
+                <span style={{ marginLeft: "auto" }}><NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} reloadSignal={notifVersion} /></span>
                 <button
                   onClick={() => setShowMobileFriends(false)}
                   aria-label="Close"

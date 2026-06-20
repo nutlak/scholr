@@ -3757,11 +3757,14 @@ async function resolveUserBrief(uid) {
 
 // Insert a social notification (friend_request | notebook_invite | friend_accepted).
 // Fire-and-forget — a failed notification must never break the triggering action.
+// Returns true on success, false if the insert failed (callers that need to
+// know — e.g. the renewal worker — can react; existing callers ignore it).
 async function pushNotification(userId, type, payload = {}) {
   const { error } = await supabase
     .from("social_notifications")
     .insert({ user_id: userId, type, payload });
-  if (error) console.error(`pushNotification(${type}) failed:`, error);
+  if (error) { console.error(`pushNotification(${type}) failed:`, error); return false; }
+  return true;
 }
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
@@ -4427,17 +4430,39 @@ async function processRenewalReminders() {
     let sent = 0;
     for (const row of due) {
       try {
-        // Idempotent: skip if we already reminded for this exact period end.
-        if (row.reminder_sent_for_period === row.current_period_end) continue;
-        const days = Math.max(0, Math.ceil((new Date(row.current_period_end).getTime() - Date.now()) / 86400000));
-        await pushNotification(row.user_id, "renewal_reminder", {
-          periodEnd: row.current_period_end,
-          days,
-        });
-        await supabase.from("subscriptions")
-          .update({ reminder_sent_for_period: row.current_period_end })
-          .eq("user_id", row.user_id);
-        sent++;
+        const cpe = row.current_period_end;
+        if (!cpe) continue;
+        const cpeMs = new Date(cpe).getTime();
+        // (#2) Robust epoch comparison — skip if already reminded for this period
+        // regardless of timestamp string formatting differences.
+        if (row.reminder_sent_for_period && new Date(row.reminder_sent_for_period).getTime() === cpeMs) continue;
+
+        const cpeIso = new Date(cpe).toISOString(); // canonical (…Z) for the filter
+        const prev = row.reminder_sent_for_period;
+
+        // (#4) Atomic claim: flip the marker ONLY if it's still unset or for an
+        // older period. Two racing workers can't both claim the same row — the
+        // loser's update matches no rows. select() returns the rows we changed.
+        const { data: claimed, error: claimErr } = await supabase
+          .from("subscriptions")
+          .update({ reminder_sent_for_period: cpeIso })
+          .eq("user_id", row.user_id)
+          .or(`reminder_sent_for_period.is.null,reminder_sent_for_period.lt.${cpeIso}`)
+          .select("user_id");
+        if (claimErr) { console.error(`[renewal_reminders claim ${row.user_id}]`, claimErr.message); continue; }
+        if (!claimed || claimed.length === 0) continue; // another worker claimed it
+
+        // (#3) Send AFTER claiming; if the insert fails, revert the marker so the
+        // next daily run retries instead of silently skipping this period.
+        const days = Math.max(0, Math.ceil((cpeMs - Date.now()) / 86400000));
+        const ok = await pushNotification(row.user_id, "renewal_reminder", { periodEnd: cpe, days });
+        if (ok) {
+          sent++;
+        } else {
+          await supabase.from("subscriptions")
+            .update({ reminder_sent_for_period: prev ?? null })
+            .eq("user_id", row.user_id);
+        }
       } catch (e) { console.error(`[renewal_reminders send ${row.user_id}]`, e.message); }
     }
     if (sent) console.log(`[renewal_reminders] sent ${sent}`);

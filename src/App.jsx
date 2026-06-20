@@ -5393,7 +5393,8 @@ export default function Scholr() {
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
   const [dueCount, setDueCount] = useState(0);            // flashcards due across all notebooks
   const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
-  const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | inline status message
+  const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | terminal status (e.g. already-handled)
+  const [feedError, setFeedError] = useState({});         // notifId -> inline error shown ALONGSIDE the buttons (retryable)
   const [friendsVersion, setFriendsVersion] = useState(0); // bump to refresh FriendsSidebarSection
   const [notifVersion, setNotifVersion] = useState(0);     // bump to make NotificationsBell reload
   const [profileOpen, setProfileOpen] = useState(false);
@@ -5715,8 +5716,10 @@ export default function Scholr() {
       return;
     }
 
-    // Immediate visible feedback so the button never feels dead.
+    // Immediate visible feedback so the button never feels dead. Clear any prior
+    // inline error from a previous failed attempt.
     setFeedActioned(s => ({ ...s, [notifId]: "busy" }));
+    setFeedError(s => { const next = { ...s }; delete next[notifId]; return next; });
     try {
       await api.respondToFriend(requestId, action);
       // Success: row removed, sidebar friends refreshed so the new friend shows,
@@ -5727,12 +5730,15 @@ export default function Scholr() {
       refreshNotifications();
     } catch (err) {
       if (err.status === 409 || err.code === "already_actioned") {
-        // Already handled elsewhere — show a brief inline note, then clear.
+        // Already handled elsewhere — show a brief terminal note, then clear.
         setFeedActioned(s => ({ ...s, [notifId]: err.message || "Already handled" }));
         setFriendsVersion(v => v + 1);
         setTimeout(() => { dropRow(); refreshNotifications(); }, 1400);
       } else {
-        setFeedActioned(s => ({ ...s, [notifId]: "Couldn't respond — try again" }));
+        // Generic failure — restore the actionable buttons and show an inline
+        // error next to them so "try again" is actually possible.
+        setFeedActioned(s => { const next = { ...s }; delete next[notifId]; return next; });
+        setFeedError(s => ({ ...s, [notifId]: "Couldn't respond — try again" }));
       }
     }
   }
@@ -6962,15 +6968,17 @@ export default function Scholr() {
                             </div>
                             {isRequest && (() => {
                               const st = feedActioned[n.id];
-                              // Show an inline status (e.g. "Already handled") instead of buttons.
+                              // Terminal status (e.g. "Already handled") replaces the buttons; the row clears shortly after.
                               if (st && st !== "busy") {
                                 return (
                                   <span style={{ flexShrink: 0, fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>{st}</span>
                                 );
                               }
                               const busy = st === "busy";
+                              const err = feedError[n.id];
                               return (
-                                <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                  {err && <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: FONT }}>{err}</span>}
                                   <button
                                     onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
                                     disabled={busy}

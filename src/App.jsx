@@ -36,7 +36,7 @@ import {
   Coffee, Folder, File, ArrowUp, Headphones, Play, Pause, Download, Share2,
   Brain, XCircle, ArrowRight, RotateCcw,
   Maximize2, Minimize2, ChevronLeft,
-  Image as ImageIcon, UserPlus, ChevronDown, AtSign, FolderPlus,
+  Image as ImageIcon, UserPlus, ChevronDown, AtSign, FolderPlus, CreditCard,
 } from "lucide-react";
 import "./App.css";
 
@@ -5314,6 +5314,7 @@ const NOTIF_ICON = {
   mention:         AtSign,
   note_uploaded:   FileText,
   payment_failed:  AlertTriangle,
+  renewal_reminder: RefreshCw,
 };
 function notifLine(n) {
   const who = n.payload?.fromUsername ? `@${n.payload.fromUsername}` : "Someone";
@@ -5325,11 +5326,18 @@ function notifLine(n) {
     case "mention":         return `${who} mentioned you in ${book}`;
     case "note_uploaded":   return `${who} added ${n.payload?.noteTitle ?? "a note"} to ${book}`;
     case "payment_failed":  return "Your payment didn't go through — tap to update your card and keep Pro";
+    case "renewal_reminder": {
+      const d = n.payload?.days;
+      const when = d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d ?? "a few"} days`;
+      return `Your scholr Pro renews ${when} — tap to manage`;
+    }
     default:                return "New notification";
   }
 }
 // Which types deep-link into a notebook when tapped.
 const NOTIF_OPENS_NOTEBOOK = new Set(["notebook_invite", "mention", "note_uploaded"]);
+// Which types open the Stripe billing portal when tapped.
+const NOTIF_OPENS_BILLING = new Set(["payment_failed", "renewal_reminder"]);
 
 export default function Scholr() {
   const [user, setUser] = useState(null);
@@ -6862,7 +6870,7 @@ export default function Scholr() {
                       {notifications.map(n => {
                         const Icon = NOTIF_ICON[n.type] ?? Bell;
                         const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
-                        const opensBilling = n.type === "payment_failed";
+                        const opensBilling = NOTIF_OPENS_BILLING.has(n.type);
                         const isRequest = n.type === "friend_request";
                         const onRowClick = opensNotebook
                           ? () => openNotebookById(n.payload.notebookId)
@@ -7065,6 +7073,27 @@ export default function Scholr() {
                 >✕</button>
               </div>
               <FriendsSidebarSection />
+
+              {/* Labeled billing entry — reachable via the Friends tab so mobile
+                  users don't have to discover the avatar to manage their plan. */}
+              <button
+                onClick={() => {
+                  setShowMobileFriends(false);
+                  if (subscription.tier === "pro") handleManageSubscription();
+                  else setUpgradeModal({ limitType: "upgrade" });
+                }}
+                disabled={portalLoading}
+                style={{
+                  width: "100%", minHeight: 48, marginTop: 12, borderRadius: 12,
+                  display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
+                  background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
+                  color: "var(--text-primary)", fontSize: 14, fontWeight: 600, fontFamily: FONT,
+                  cursor: portalLoading ? "wait" : "pointer",
+                }}
+              >
+                <CreditCard size={17} strokeWidth={1.85} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                {subscription.tier === "pro" ? "Manage subscription" : "Upgrade to Pro"}
+              </button>
             </div>
           </div>
         )}

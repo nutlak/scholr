@@ -371,8 +371,13 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
         const invoice = event.data.object;
         const userId = await getUserIdByStripeCustomer(invoice.customer);
         if (userId) {
-          await pushNotification(userId, "payment_failed", {});
-          console.log(`[stripe] invoice.payment_failed: notified user=${userId}`);
+          await pushNotification(userId, "payment_failed", {
+            attemptCount: invoice.attempt_count ?? null,
+            nextPaymentAttempt: invoice.next_payment_attempt
+              ? new Date(invoice.next_payment_attempt * 1000).toISOString()
+              : null,
+          });
+          console.log(`[stripe] invoice.payment_failed: notified user=${userId} (attempt ${invoice.attempt_count})`);
         } else {
           console.warn(`[stripe] invoice.payment_failed: no user for customer=${invoice.customer}`);
         }
@@ -4365,3 +4370,45 @@ async function processPendingEmails() {
 }
 setInterval(processPendingEmails, 60 * 60 * 1000); // hourly
 setTimeout(processPendingEmails, 30 * 1000);        // once shortly after boot
+
+// ── Renewal-reminder worker: warn Pro users 3 days before they renew ──────────
+// Same pattern as processPendingEmails (single-instance in-process timer). The
+// reminder_sent_for_period marker makes it idempotent per billing period:
+// reset naturally when current_period_end advances to a new value.
+// Backward-compatible: if migration 021 hasn't run, the query errors and is
+// logged, never crashing the server.
+async function processRenewalReminders() {
+  try {
+    const now = new Date();
+    const horizon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // +3 days
+    const { data: due, error } = await supabase
+      .from("subscriptions")
+      .select("user_id, current_period_end, reminder_sent_for_period")
+      .eq("tier", "pro")
+      .gte("current_period_end", now.toISOString())
+      .lte("current_period_end", horizon.toISOString())
+      .limit(500);
+    if (error) { console.error("[renewal_reminders]", error.message); return; }
+    if (!due?.length) return;
+
+    let sent = 0;
+    for (const row of due) {
+      try {
+        // Idempotent: skip if we already reminded for this exact period end.
+        if (row.reminder_sent_for_period === row.current_period_end) continue;
+        const days = Math.max(0, Math.ceil((new Date(row.current_period_end).getTime() - Date.now()) / 86400000));
+        await pushNotification(row.user_id, "renewal_reminder", {
+          periodEnd: row.current_period_end,
+          days,
+        });
+        await supabase.from("subscriptions")
+          .update({ reminder_sent_for_period: row.current_period_end })
+          .eq("user_id", row.user_id);
+        sent++;
+      } catch (e) { console.error(`[renewal_reminders send ${row.user_id}]`, e.message); }
+    }
+    if (sent) console.log(`[renewal_reminders] sent ${sent}`);
+  } catch (e) { console.error("[renewal_reminders worker]", e.message); }
+}
+setInterval(processRenewalReminders, 24 * 60 * 60 * 1000); // daily
+setTimeout(processRenewalReminders, 45 * 1000);            // once shortly after boot

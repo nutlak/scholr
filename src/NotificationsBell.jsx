@@ -22,6 +22,11 @@ function describe(n) {
     case "friend_accepted": return `${who} accepted your friend request`;
     case "notebook_invite": return `${who} added you to ${n.payload?.notebookTitle ?? "a notebook"}`;
     case "payment_failed":  return "Your payment didn't go through — tap to update your card";
+    case "renewal_reminder": {
+      const d = n.payload?.days;
+      const when = d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d ?? "a few"} days`;
+      return `Your scholr Pro renews ${when}`;
+    }
     default:                return "New notification";
   }
 }
@@ -70,7 +75,7 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling }) {
     if (n.type === "notebook_invite" && n.payload?.notebookId) {
       onOpenNotebook?.(n.payload.notebookId);
       setOpen(false);
-    } else if (n.type === "payment_failed") {
+    } else if (n.type === "payment_failed" || n.type === "renewal_reminder") {
       onOpenBilling?.();
       setOpen(false);
     }
@@ -123,7 +128,7 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling }) {
             </div>
           ) : (
             items.map(n => {
-              const tappable = (n.type === "notebook_invite" && n.payload?.notebookId) || n.type === "payment_failed";
+              const tappable = (n.type === "notebook_invite" && n.payload?.notebookId) || n.type === "payment_failed" || n.type === "renewal_reminder";
               return (
                 <div
                   key={n.id}

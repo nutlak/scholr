@@ -105,9 +105,9 @@ function readAuthIntentFromUrl() {
   return p === "login" || p === "signin" ? "login" : "signup";
 }
 
-const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Instrument Serif", "Times New Roman", Georgia, serif`;
-const FONT_HEADING = `"Playfair Display", Georgia, "Times New Roman", serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
 const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
 
 // Warm tint palette for class/member color accents (deterministic by id/name)
@@ -4128,7 +4128,8 @@ function InviteLanding({ inviteInfo, onSignIn }) {
       }}>
         <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
         <div style={{
-          fontSize: 26, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.03em",
+          fontSize: 28, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.01em",
+          fontFamily: FONT_HEADING,
         }}>
           <span>schol<span style={{ color: "var(--acc)" }}>r</span></span>
         </div>
@@ -5689,11 +5690,16 @@ export default function Scholr() {
   // notifId = the social_notifications row id (so we can clear it); requestId =
   // the friend_request id (for respondToFriend).
   async function respondToFriendFromFeed(notifId, requestId, action) {
-    if (!requestId) return;
-    // Optimistically remove the row so it vanishes immediately.
-    setNotifications(prev => prev.filter(n => n.id !== notifId));
-    try { await api.respondToFriend(requestId, action); }
-    catch { /* already handled elsewhere — refresh reconciles below */ }
+    // (a) Remove the row FIRST — before any await and regardless of requestId —
+    // so it vanishes instantly even if the request was already actioned
+    // elsewhere or the notification predates requestId in its payload.
+    if (notifId) setNotifications(prev => prev.filter(n => n.id !== notifId));
+    // (c) Tolerate an "already actioned" rejection — the row is already gone.
+    if (requestId) {
+      try { await api.respondToFriend(requestId, action); }
+      catch { /* already handled elsewhere — ignore */ }
+    }
+    // (b) Mark the notification read so it can't reappear on the next poll.
     if (notifId) { try { await api.markSocialNotificationsRead([notifId]); } catch { /* non-fatal */ } }
     refreshNotifications();
   }
@@ -6042,9 +6048,9 @@ export default function Scholr() {
               style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
             />
             <div style={{
-              fontSize: 19, fontWeight: 600,
-              color: "var(--text-primary)", letterSpacing: "-0.03em",
-              fontFamily: FONT,
+              fontSize: 21, fontWeight: 600,
+              color: "var(--text-primary)", letterSpacing: "-0.01em",
+              fontFamily: FONT_HEADING,
             }}>
               {/* outer span = one inline box → letter-spacing holds across the color split */}
               <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>

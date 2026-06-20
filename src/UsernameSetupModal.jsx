@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { api } from "./api.js";
 
-const FONT = `"Outfit", "Poppins", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 // Mirrors the server-side rule: 3–20 chars, lowercase letters/numbers/underscore.
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;

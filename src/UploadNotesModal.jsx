@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { api } from "./api.js";
 import { CheckCircle, File, Folder } from "lucide-react";
 
-const FONT = `"Mulish", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
 
 const labelStyle = {

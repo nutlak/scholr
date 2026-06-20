@@ -897,14 +897,12 @@ export const api = {
   },
 
   async respondToFriend(requestId, action) {
-    console.log("[api.respondToFriend] sending", { requestId, action });
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/respond`, {
       method: "POST", headers,
       body: JSON.stringify({ requestId, action }),
     });
     const data = await res.json().catch(() => ({ error: res.statusText }));
-    console.log("[api.respondToFriend] response", res.status, data);
     if (!res.ok) {
       // Prefer the friendly message; expose code so the UI can detect
       // already_actioned (409) and show "Already handled" rather than failing.

@@ -5705,7 +5705,6 @@ export default function Scholr() {
   }
 
   async function respondToFriendFromFeed(notifId, requestId, action) {
-    console.log("HANDLER FIRED", { notifId, requestId, action });
     const dropRow = () => setNotifications(prev => prev.filter(n => n.id !== notifId));
 
     // Legacy/stale notification with no requestId in its payload — nothing to
@@ -6973,7 +6972,7 @@ export default function Scholr() {
                               return (
                                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                                   <button
-                                    onClick={() => { console.log("ACCEPT CLICKED", n.id, n.payload?.requestId, n); respondToFriendFromFeed(n.id, n.payload?.requestId, "accept"); }}
+                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
                                     disabled={busy}
                                     style={{
                                       background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
@@ -6983,7 +6982,7 @@ export default function Scholr() {
                                     }}
                                   >{busy ? "…" : "Accept"}</button>
                                   <button
-                                    onClick={() => { console.log("DECLINE CLICKED", n.id, n.payload?.requestId, n); respondToFriendFromFeed(n.id, n.payload?.requestId, "decline"); }}
+                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
                                     disabled={busy}
                                     style={{
                                       background: "transparent", border: "1px solid var(--border-default)",

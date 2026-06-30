@@ -6364,7 +6364,7 @@ export default function Scholr() {
             </div>
 
           ) : activeView === "settings" ? (
-            <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 560 }}>
+            <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
               <div style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.025em", marginBottom: 32 }}>
                 Settings
               </div>

@@ -5353,6 +5353,8 @@ export default function Scholr() {
   const [milestoneModal, setMilestoneModal] = useState(null); // { day } | null
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
+  // TEMP DEBUG: confirms whether activeView actually updates on mobile nav taps.
+  useEffect(() => { console.log("[activeView]", activeView, "activeNb:", !!activeNb); }, [activeView, activeNb]);
   const [search, setSearch] = useState("");
   const [notebooks, setNotebooks] = useState([]);
   const [ownedNotebooks, setOwnedNotebooks] = useState([]);
@@ -7047,7 +7049,7 @@ export default function Scholr() {
               <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 14 }} />
               {/* Settings link */}
               <button
-                onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
+                onClick={() => { console.log("[mobile settings] tapped"); setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
                 style={{
                   width: "100%", height: 48, borderRadius: 10, cursor: "pointer",
                   background: "transparent", border: "1px solid var(--border-default)",

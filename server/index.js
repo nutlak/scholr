@@ -262,6 +262,19 @@ const ALLOWED_ORIGINS = [
   "https://www.getscholr.com",
 ].filter(Boolean);
 
+// ── Security headers ─────────────────────────────────────────────────────────
+// Small hand-rolled set rather than a helmet dependency: this is a JSON API,
+// so most of helmet's surface (CSP, frame options for HTML) does not apply.
+app.disable("x-powered-by"); // stop advertising the framework and version
+app.use((req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");      // no MIME sniffing
+  res.set("Referrer-Policy", "no-referrer");         // never leak API URLs onward
+  res.set("Cross-Origin-Resource-Policy", "same-site");
+  // Railway terminates TLS; tell browsers to never try this host over http.
+  res.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+
 app.use(cors({
   origin(origin, cb) {
     // Allow non-browser requests (curl, Railway healthcheck, server-to-server)
@@ -318,10 +331,19 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
           break;
         }
 
-        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        // Fetching the renewal date is a nice-to-have; granting Pro is not.
+        // This call previously ran unguarded, so a missing "Subscriptions:
+        // Read" permission on the API key — or any transient Stripe error —
+        // threw, the handler 500'd, and a customer who had already been
+        // charged never received Pro. The grant below now proceeds either way
+        // and customer.subscription.updated fills in the date later.
+        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId).catch(err => {
+          console.error(`[stripe] could not retrieve subscription ${subscriptionId}: ${err.message} — granting Pro anyway`);
+          return null;
+        });
         // Stripe's newer API moves current_period_end to items.data[0]; fall back to top-level
-        const rawEnd = stripeSub.current_period_end
-          ?? stripeSub.items?.data?.[0]?.current_period_end;
+        const rawEnd = stripeSub?.current_period_end
+          ?? stripeSub?.items?.data?.[0]?.current_period_end;
         const periodEnd = rawEnd ? new Date(rawEnd * 1000).toISOString() : null;
 
         await supabase.from("subscriptions").upsert({
@@ -463,10 +485,14 @@ async function getUserTier(userId) {
     .select("tier, current_period_end")
     .eq("user_id", userId)
     .maybeSingle();
-  if (data?.tier === "pro" && data?.current_period_end && new Date(data.current_period_end) > new Date()) {
-    return "pro";
-  }
-  return "free";
+  if (data?.tier !== "pro") return "free";
+  // A known-past renewal date means the subscription lapsed. A *missing* one
+  // means we never managed to sync it — previously that was treated the same
+  // as expired, so a paying customer whose date failed to sync was billed and
+  // still served the free tier. Absence is no longer treated as expiry;
+  // customer.subscription.deleted is what revokes access.
+  if (data.current_period_end && new Date(data.current_period_end) <= new Date()) return "free";
+  return "pro";
 }
 
 function getModel(tier) {

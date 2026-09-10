@@ -138,6 +138,7 @@ const podcastLimiter = rateLimit({
 // wrong codes for an email, burn all outstanding codes so they can't be guessed.
 const otpFailures = new Map(); // emailLower -> consecutive failed attempts
 const OTP_MAX_VERIFY_FAILS = 5;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // How much of the shared chat Derek sees. Enough to follow a thread and answer
 // "explain that again"; short enough that a long-running notebook doesn't blow
@@ -3888,10 +3889,29 @@ function orderedPair(a, b) {
 
 // Resolve a user id → { userId, name, username }. Never returns email — friend
 // surfaces are username-based and must not leak email addresses.
+// Migration 033 adds profiles.last_notebook_id. Until it runs, selecting the
+// column errors and would blank out every name and presence dot with it — so
+// fall back to the pre-033 shape rather than losing the whole row.
+let profileHasNotebookColumn = true;
+async function profileBrief(uid) {
+  if (profileHasNotebookColumn) {
+    const res = await supabase
+      .from("profiles").select("username, last_active, last_notebook_id")
+      .eq("user_id", uid).maybeSingle();
+    if (!res.error) return res;
+    if (!res.error.message?.includes("last_notebook_id")) return res;
+    profileHasNotebookColumn = false;
+    console.warn("[presence] profiles.last_notebook_id missing — run migration 033");
+  }
+  return supabase
+    .from("profiles").select("username, last_active")
+    .eq("user_id", uid).maybeSingle();
+}
+
 async function resolveUserBrief(uid) {
   const [authRes, profRes] = await Promise.all([
     supabase.auth.admin.getUserById(uid),
-    supabase.from("profiles").select("username, last_active").eq("user_id", uid).maybeSingle(),
+    profileBrief(uid),
   ]);
   const u = authRes.data?.user;
   const username = profRes.data?.username ?? null;
@@ -3900,7 +3920,32 @@ async function resolveUserBrief(uid) {
     name:       u?.user_metadata?.full_name?.trim() || username || "User",
     username,
     lastActive: profRes.data?.last_active ?? null,
+    lastNotebookId: profRes.data?.last_notebook_id ?? null,
   };
+}
+
+// Presence context, filtered by what the *viewer* is allowed to know. A friend
+// studying in a notebook you don't share shows as plain "online" — the title of
+// a notebook you can't open must never leak through a friends list.
+async function visibleActiveNotebooks(viewerId, friends) {
+  const wanted = [...new Set(
+    friends.filter(f => f.lastNotebookId && isOnline(f.lastActive)).map(f => f.lastNotebookId)
+  )];
+  if (wanted.length === 0) return new Map();
+
+  const { data: shared } = await supabase
+    .from("notebook_members")
+    .select("notebook_id")
+    .eq("user_id", viewerId)
+    .in("notebook_id", wanted);
+  const allowed = new Set((shared ?? []).map(r => r.notebook_id));
+  if (allowed.size === 0) return new Map();
+
+  const { data: nbs } = await supabase
+    .from("notebooks")
+    .select("id, title")
+    .in("id", [...allowed]);
+  return new Map((nbs ?? []).map(n => [n.id, { id: n.id, title: n.title }]));
 }
 
 // Insert a social notification (friend_request | notebook_invite | friend_accepted).
@@ -4127,11 +4172,52 @@ app.get("/api/friends", requireAuth, async (req, res) => {
 
   const otherIds = (data ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a));
   const friends = await Promise.all(otherIds.map(resolveUserBrief));
-  res.json(friends.map(f => ({ ...f, isOnline: isOnline(f.lastActive) })));
+  const visible = await visibleActiveNotebooks(me, friends).catch(() => new Map());
+  res.json(friends.map(f => {
+    const online = isOnline(f.lastActive);
+    const { lastNotebookId, ...rest } = f;
+    return {
+      ...rest,
+      isOnline: online,
+      // Only present when we share the notebook — see visibleActiveNotebooks.
+      activeNotebook: online ? (visible.get(lastNotebookId) ?? null) : null,
+    };
+  }));
 });
 
 // GET /api/friends/best — top 5 friends ranked by shared-notebook activity
 // (last 90 days). Falls back to newest friends if there's no activity yet.
+
+// GET /api/friends/:friendId/shared — notebooks the caller and this friend both
+// belong to. Every notebook returned is one the caller is already a member of,
+// so this reveals nothing new about the friend's other notebooks.
+app.get("/api/friends/:friendId/shared", requireAuth, async (req, res) => {
+  const me = req.user.id;
+  const friendId = req.params.friendId;
+  if (!UUID_RE.test(friendId)) return res.status(400).json({ error: "Invalid friend id" });
+
+  const [a, b] = orderedPair(me, friendId);
+  const { data: friendship } = await supabase
+    .from("friendships").select("user_a").eq("user_a", a).eq("user_b", b).maybeSingle();
+  if (!friendship) return res.status(403).json({ error: "Not your friend" });
+
+  const [mine, theirs] = await Promise.all([
+    supabase.from("notebook_members").select("notebook_id").eq("user_id", me),
+    supabase.from("notebook_members").select("notebook_id").eq("user_id", friendId),
+  ]);
+  const theirIds = new Set((theirs.data ?? []).map(r => r.notebook_id));
+  const shared = (mine.data ?? []).map(r => r.notebook_id).filter(id => theirIds.has(id));
+  if (shared.length === 0) return res.json([]);
+
+  const { data: nbs, error } = await supabase
+    .from("notebooks")
+    .select("id, title, topic, color, updated_at")
+    .in("id", shared)
+    .order("updated_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(nbs ?? []);
+});
+
 app.get("/api/friends/best", requireAuth, async (req, res) => {
   const me = req.user.id;
 
@@ -4327,9 +4413,35 @@ app.delete("/api/friends/:friendUserId", requireAuth, async (req, res) => {
 
 // POST /api/me/heartbeat — mark the current user active now (drives online status)
 app.post("/api/me/heartbeat", requireAuth, async (req, res) => {
+  const now = new Date().toISOString();
+  // Optional: which notebook the user is looking at, so friends can see what
+  // they're studying rather than just that they're around. Membership is
+  // checked here so a caller can't advertise presence in a notebook they
+  // aren't in — the friends list trusts this value.
+  const raw = req.body?.notebookId;
+  let notebookId = null;
+  if (typeof raw === "string" && UUID_RE.test(raw)) {
+    const { data: member } = await supabase
+      .from("notebook_members")
+      .select("user_id")
+      .eq("notebook_id", raw)
+      .eq("user_id", req.user.id)
+      .maybeSingle();
+    if (member) notebookId = raw;
+  }
+
   const { error } = await supabase
     .from("profiles")
-    .upsert({ user_id: req.user.id, last_active: new Date().toISOString() }, { onConflict: "user_id" });
+    .upsert({ user_id: req.user.id, last_active: now, last_notebook_id: notebookId }, { onConflict: "user_id" });
+
+  // Migration 033 may not have run yet — fall back to presence without context.
+  if (error?.message?.includes("last_notebook_id")) {
+    const { error: retryErr } = await supabase
+      .from("profiles")
+      .upsert({ user_id: req.user.id, last_active: now }, { onConflict: "user_id" });
+    if (retryErr) return res.status(500).json({ error: retryErr.message });
+    return res.json({ ok: true });
+  }
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });

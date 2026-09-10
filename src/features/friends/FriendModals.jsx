@@ -6,10 +6,20 @@ import { Avatar } from "../../ui/Avatar.jsx";
 // ── FriendActionModal ─────────────────────────────────────────────────────────
 // Per-friend action menu: invite to a notebook, remove, or block — the last two
 // behind an inline confirm step so they aren't one-tap accidents.
-export function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
+export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpenNotebook }) {
   const [view, setView] = useState("menu"); // menu | confirmRemove | confirmBlock
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [shared, setShared] = useState(null); // null = loading
+
+  // What you two actually work on together — the reason to open this at all.
+  useEffect(() => {
+    let cancelled = false;
+    api.getSharedNotebooks(friend.userId)
+      .then(rows => { if (!cancelled) setShared(rows ?? []); })
+      .catch(() => { if (!cancelled) setShared([]); });
+    return () => { cancelled = true; };
+  }, [friend.userId]);
 
   async function doRemove() {
     setBusy(true); setError("");
@@ -68,7 +78,36 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
 
         {view === "menu" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <button onClick={onInvite} style={btn("rgba(167,139,250,0.14)", "1px solid rgba(167,139,250,0.32)", "#C4B5FD")}>
+            <div style={{
+              fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+              color: "rgba(245,245,250,0.45)", fontFamily: FONT, marginBottom: 2,
+            }}>
+              {shared === null ? "Shared notebooks" : `${shared.length} shared notebook${shared.length === 1 ? "" : "s"}`}
+            </div>
+
+            {shared === null && (
+              <div className="shimmer" style={{ fontSize: 13, fontFamily: FONT, padding: "4px 0" }}>Loading…</div>
+            )}
+            {shared?.length === 0 && (
+              <div style={{ fontSize: 13, color: "rgba(245,245,250,0.5)", fontFamily: FONT, lineHeight: 1.5, marginBottom: 4 }}>
+                Nothing yet. Invite {friend.name.split(" ")[0]} to a notebook and you can study it together.
+              </div>
+            )}
+            {shared?.slice(0, 4).map(nb => (
+              <button
+                key={nb.id}
+                onClick={() => { onOpenNotebook?.(nb.id); onClose(); }}
+                style={{
+                  ...btn("rgba(255,255,255,0.03)", "1px solid rgba(255,255,255,0.09)", "#F5F5FA"),
+                  justifyContent: "space-between", padding: "0 14px", fontWeight: 500,
+                }}
+              >
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.title}</span>
+                <span style={{ color: "rgba(245,245,250,0.4)", flexShrink: 0 }}>&rarr;</span>
+              </button>
+            ))}
+
+            <button onClick={onInvite} style={{ ...btn("rgba(167,139,250,0.14)", "1px solid rgba(167,139,250,0.32)", "#C4B5FD"), marginTop: 4 }}>
               Invite to notebook
             </button>
             <button onClick={() => setView("confirmRemove")} style={btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.8)")}>

@@ -1002,11 +1002,23 @@ export const api = {
     return res.json(); // [{ userId, username, name }]
   },
 
-  async sendHeartbeat() {
+  // notebookId is optional context so friends can see what you're studying,
+  // not merely that you're around. The server drops it unless you're a member.
+  async sendHeartbeat(notebookId) {
     const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/me/heartbeat`, { method: "POST", headers });
+    const res = await fetch(`${API_URL}/api/me/heartbeat`, {
+      method: "POST", headers,
+      body: JSON.stringify(notebookId ? { notebookId } : {}),
+    });
     if (!res.ok) throw new Error(await res.text());
     return res.json(); // { ok: true }
+  },
+
+  async getSharedNotebooks(friendUserId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/${friendUserId}/shared`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, title, topic, color, updated_at }]
   },
 
   async getBestFriends() {

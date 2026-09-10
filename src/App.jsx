@@ -1129,13 +1129,16 @@ export default function Scholr() {
     }
   }, [user, authReady]);
 
-  // Online presence: heartbeat on mount + every 60s while the app is open.
+  // Online presence: heartbeat on mount + every 60s while the app is open. It
+  // carries the notebook currently open so friends see "Noah is in Bio 101"
+  // rather than a bare green dot — that's what turns presence into company.
   useEffect(() => {
     if (!user) return;
-    api.sendHeartbeat().catch(() => {});
-    const id = setInterval(() => api.sendHeartbeat().catch(() => {}), 60_000);
+    const beat = () => api.sendHeartbeat(activeNb?.id).catch(() => {});
+    beat();
+    const id = setInterval(beat, 60_000);
     return () => clearInterval(id);
-  }, [user]);
+  }, [user, activeNb?.id]);
 
   // Unified notifications feed — reload helper + 30s polling so the dashboard
   // Recent Activity stays live (the bell polls its own copy independently).
@@ -2317,6 +2320,7 @@ export default function Scholr() {
                 <FriendsRow
                   refreshSignal={friendsVersion}
                   onChanged={() => setFriendsVersion(v => v + 1)}
+                  onOpenNotebook={openNotebookById}
                 />
               )}
 
@@ -2820,7 +2824,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} />
+              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} onOpenNotebook={openNotebookById} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

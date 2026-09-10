@@ -11,7 +11,7 @@ import { FriendActionModal, FriendInviteModal } from "./FriendModals.jsx";
    who's online, who's waiting on an answer, and one obvious way to add
    someone. Requests are answered in place — they used to be reachable only
    from the activity feed further down the page. */
-export function FriendsRow({ refreshSignal = 0, onChanged }) {
+export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook }) {
   const BEST = ["\u{1F947}", "\u{1F948}", "\u{1F949}"]; // top three, by shared-notebook activity
   const [friends, setFriends]   = useState([]);
   const [bestIds, setBestIds]   = useState({});
@@ -20,17 +20,26 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
   const [actionFor, setActionFor] = useState(null);
   const [inviteFor, setInviteFor] = useState(null);
   const [busyId, setBusyId]     = useState(null);
+  const [outgoing, setOutgoing] = useState([]);
 
   const refresh = useCallback(async () => {
-    const [f, rq, best] = await Promise.all([
+    const [f, rq, best, out] = await Promise.all([
       api.getFriends().catch(() => []),
       api.getFriendRequests().catch(() => []),
       api.getBestFriends().catch(() => []),
+      api.getOutgoingRequests().catch(() => []),
     ]);
     setFriends(f ?? []);
     setRequests(rq ?? []);
+    setOutgoing(out ?? []);
     setBestIds(Object.fromEntries((best ?? []).slice(0, 3).map((b, i) => [b.userId, i])));
   }, []);
+
+  // Presence is worth showing only if it's current — match the 60s heartbeat.
+  useEffect(() => {
+    const id = setInterval(refresh, 60_000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { if (refreshSignal) refresh(); }, [refreshSignal, refresh]);
@@ -44,6 +53,10 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
   }
 
   const online = friends.filter(f => f.isOnline).length;
+  // Someone studying in a notebook you share is the most actionable thing here.
+  const studying = friends.filter(f => f.activeNotebook);
+  const ordered = [...friends].sort((a, b) =>
+    (b.activeNotebook ? 2 : b.isOnline ? 1 : 0) - (a.activeNotebook ? 2 : a.isOnline ? 1 : 0));
 
   return (
     <section style={{ marginBottom: 28 }}>
@@ -69,6 +82,29 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
         ><UserPlus size={15} strokeWidth={1.95} /> Add friend</button>
         <span style={{ flex: 1 }} />
       </div>
+
+      {studying.map(f => (
+        <button
+          key={`studying-${f.userId}`}
+          onClick={() => onOpenNotebook?.(f.activeNotebook.id)}
+          className="btn-press"
+          style={{
+            display: "flex", alignItems: "center", gap: 12, width: "100%",
+            marginBottom: 8, padding: "10px 14px", minHeight: 56, cursor: "pointer",
+            textAlign: "left", fontFamily: FONT,
+            background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.42)",
+          }}
+        >
+          <Avatar name={f.name} size={32} seed={f.username || f.userId} />
+          <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: "var(--text-primary)" }}>
+            <b style={{ fontWeight: 600 }}>{f.name}</b> is studying{" "}
+            <b style={{ fontWeight: 600 }}>{f.activeNotebook.title}</b> right now
+          </span>
+          <span style={{ color: "#34D399", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+            Join &rarr;
+          </span>
+        </button>
+      ))}
 
       {requests.map(r => (
         <div key={r.requestId} style={{
@@ -113,7 +149,7 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
         </p>
       ) : (
         <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
-          {friends.map(f => (
+          {ordered.map(f => (
             <button
               key={f.userId}
               onClick={() => setActionFor(f)}
@@ -145,9 +181,24 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
                 fontSize: 12, fontWeight: 500, color: "var(--text-secondary)",
                 maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>{f.name}</span>
+              {f.activeNotebook && (
+                <span style={{
+                  fontSize: 10.5, color: "#34D399", maxWidth: "100%",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>in {f.activeNotebook.title}</span>
+              )}
             </button>
           ))}
         </div>
+      )}
+
+      {outgoing.length > 0 && (
+        <p style={{
+          margin: "10px 0 0", fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
+        }}>
+          Waiting on {outgoing.map(o => o.toName || `@${o.toUsername}`).join(", ")}
+          {outgoing.length === 1 ? " to accept" : " to accept"}
+        </p>
       )}
 
       {showAdd && <AddFriendModal onClose={() => setShowAdd(false)} onChanged={() => { refresh(); onChanged?.(); }} />}
@@ -156,6 +207,7 @@ export function FriendsRow({ refreshSignal = 0, onChanged }) {
           friend={actionFor}
           onClose={() => setActionFor(null)}
           onInvite={() => { setInviteFor(actionFor); setActionFor(null); }}
+          onOpenNotebook={onOpenNotebook}
           onChanged={() => { refresh(); onChanged?.(); }}
         />
       )}

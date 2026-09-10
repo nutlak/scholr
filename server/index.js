@@ -1235,14 +1235,19 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
 
 // GET /api/classes — list the calling user's classes
 app.get("/api/classes", requireAuth, async (req, res) => {
+  // Embed the unit count so the dashboard can show it without expanding each
+  // card (units themselves are still loaded lazily on expand).
   const { data, error } = await supabase
     .from("classes")
-    .select("id, title, color, created_at, sort_order")
+    .select("id, title, color, created_at, sort_order, notebooks(count)")
     .eq("user_id", req.user.id)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data ?? []);
+  res.json((data ?? []).map(({ notebooks, ...c }) => ({
+    ...c,
+    unit_count: notebooks?.[0]?.count ?? 0,
+  })));
 });
 
 // PUT /api/classes/reorder — persist drag-to-reorder result

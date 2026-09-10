@@ -635,6 +635,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   )}
                   <div style={{
                     maxWidth: "78%",
+                    minWidth: 44,
+                    textAlign: "left",
                     background: m.isError
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
@@ -649,8 +651,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border-default)"}`
                       : "none",
                     boxShadow: isOwn
-                      ? "0 4px 14px rgba(167,139,250,0.28)"
-                      : "0 2px 6px rgba(0,0,0,0.2)",
+                      ? "0 2px 8px rgba(167,139,250,0.18)"
+                      : "0 1px 3px rgba(0,0,0,0.18)",
                     whiteSpace: "pre-wrap",
                     letterSpacing: "-0.005em",
                     animation: isOwn

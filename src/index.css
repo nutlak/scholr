@@ -755,3 +755,26 @@ textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
   /* generous tap spacing for list/card rows */
   .card { padding: 16px !important; }
 }
+
+/* ── Select ───────────────────────────────────────────────────────────
+   Native selects were the one control still painted in OS chrome, which
+   read as unfinished next to the custom inputs. Strip the platform arrow
+   and draw our own; `option` still renders natively (browsers do not let
+   us style the popup), so keep its colours legible on dark. */
+.app-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-tertiary) 50%),
+    linear-gradient(135deg, var(--text-tertiary) 50%, transparent 50%);
+  background-position:
+    right 16px center,
+    right 11px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.app-select:hover { background-color: var(--bg-surface-2); }
+.app-select option {
+  background: #14141F;
+  color: #F5F5FA;
+}

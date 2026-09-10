@@ -484,6 +484,19 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
     })
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
+  // Nothing due: collapse to a single muted line. A section header above an
+  // empty body cost ~70px of the most valuable space on the dashboard.
+  if (upcoming.length === 0) {
+    return (
+      <div style={{
+        marginBottom: 22, fontSize: 12.5, color: "var(--text-tertiary)",
+        fontFamily: FONT,
+      }}>
+        No deadlines in the next 7 days.
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{
@@ -492,28 +505,20 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
         marginBottom: 10, display: "flex", alignItems: "center", gap: 8,
       }}>
         Upcoming Deadlines
-        {upcoming.length > 0 && (
-          <span style={{
-            fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
-            background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
-            padding: "1px 7px", borderRadius: 999,
-          }}>{upcoming.length}</span>
-        )}
+        <span style={{
+          fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
+          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
+          padding: "1px 7px", borderRadius: 999,
+        }}>{upcoming.length}</span>
       </div>
-      {upcoming.length === 0 ? (
-        <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
-          No deadlines in the next 7 days.
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
           {upcoming.map(nb => {
             const cls = classes.find(c => c.id === nb.class_id);
             return (
               <DeadlineRow key={nb.id} nb={nb} cls={cls} onOpen={onOpen} />
             );
           })}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

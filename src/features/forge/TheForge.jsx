@@ -227,11 +227,12 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
             className={`forge-action-btn${action === a.id ? " forge-active" : ""}`}
             style={{ "--btn-color": a.color }}
           >
-            <div className="forge-action-icon">{a.icon}</div>
+            <div className="forge-action-icon"><a.Icon size={16} strokeWidth={1.75} /></div>
             <div style={{
               fontSize: 12, fontWeight: 600, fontFamily: FONT,
               letterSpacing: "-0.01em",
             }}>{a.label}</div>
+            <div className="forge-action-desc">{a.desc}</div>
           </button>
         ))}
       </div>

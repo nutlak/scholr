@@ -121,10 +121,17 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           </div>
         </div>
 
-        {/* Unit count */}
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, flexShrink: 0 }}>
-          {units === null ? "" : `${units.length} ${units.length === 1 ? "unit" : "units"}`}
-        </div>
+        {/* Unit count — from the loaded list once expanded, otherwise the count
+            the classes endpoint embeds, so a collapsed card still says something. */}
+        {(() => {
+          const n = units === null ? cls.unit_count : units.length;
+          if (n === null || n === undefined) return null;
+          return (
+            <div style={{ fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT, flexShrink: 0 }}>
+              {n === 0 ? "Empty" : `${n} ${n === 1 ? "unit" : "units"}`}
+            </div>
+          );
+        })()}
 
         {/* Color picker swatch */}
         {onChangeColor && (

@@ -283,7 +283,8 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                   value={size}
                   onChange={e => setSize(e.target.value)}
                   disabled={loading}
-                  style={{ ...inputStyle, height: 42, padding: "0 14px", cursor: "pointer" }}
+                  className="app-select"
+                  style={{ ...inputStyle, height: 42, padding: "0 34px 0 14px", cursor: "pointer" }}
                   onFocus={focusPurple} onBlur={blurGray}
                 >
                   {SIZES.map(s => (
@@ -297,7 +298,8 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                   value={n}
                   onChange={e => setN(parseInt(e.target.value, 10))}
                   disabled={loading}
-                  style={{ ...inputStyle, height: 42, padding: "0 14px", cursor: "pointer" }}
+                  className="app-select"
+                  style={{ ...inputStyle, height: 42, padding: "0 34px 0 14px", cursor: "pointer" }}
                   onFocus={focusPurple} onBlur={blurGray}
                 >
                   {[1, 2, 3, 4].map(v => <option key={v} value={v}>{v}</option>)}

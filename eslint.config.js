@@ -27,5 +27,10 @@ export default defineConfig([
     // Express backend runs on Node, not in the browser.
     files: ['server/**/*.js'],
     languageOptions: { globals: globals.node },
+    rules: {
+      // Express identifies error middleware by arity, so the 4th parameter has
+      // to be declared even when unused. Underscore marks that as deliberate.
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
   },
 ])

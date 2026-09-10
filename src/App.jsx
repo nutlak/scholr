@@ -600,12 +600,20 @@ function UpgradeModal({ limitType, onClose }) {
     detail: "Unlock the full scholr experience.",
   };
 
+  const [checkoutError, setCheckoutError] = useState("");
+
   async function handleUpgrade() {
     setLoading(true);
+    setCheckoutError("");
     try {
       await api.createCheckoutSession();
+      // On success the browser is already navigating away, so `loading` is
+      // intentionally left set — the button should not flick back to idle.
     } catch (err) {
       setLoading(false);
+      // Previously this only hit the console, so a failed checkout looked
+      // identical to a slow one and the user was told nothing.
+      setCheckoutError(err?.message || "Couldn't start checkout. Please try again.");
       console.error("Checkout error:", err);
     }
   }
@@ -682,6 +690,14 @@ function UpgradeModal({ limitType, onClose }) {
         >
           {loading ? "Redirecting…" : "Upgrade to Pro — $8.49/mo"}
         </button>
+        {checkoutError && (
+          <div role="alert" style={{
+            background: "rgba(248,113,113,0.08)",
+            border: "1px solid rgba(248,113,113,0.22)",
+            borderRadius: 10, padding: "9px 11px", marginBottom: 10,
+            fontSize: 12.5, color: "#F87171", fontFamily: FONT, lineHeight: 1.45,
+          }}>{checkoutError}</div>
+        )}
         <button
           onClick={onClose}
           style={{

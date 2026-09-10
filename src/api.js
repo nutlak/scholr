@@ -572,6 +572,9 @@ export const api = {
       throw new Error(data.error ?? "Failed to start checkout");
     }
     const { url } = await res.json();
+    // A 2xx with no url would otherwise navigate to "/undefined" (or nowhere)
+    // while the caller's spinner span forever. Fail loudly instead.
+    if (!url) throw new Error("Checkout session was created without a URL");
     window.location.href = url;
   },
 

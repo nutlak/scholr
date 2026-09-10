@@ -4380,6 +4380,29 @@ app.post("/api/email/unsubscribe", async (req, res) => {
   res.set("Content-Type", "text/html").send(unsubPage(`<p style="color:#A0A0B8;">You're unsubscribed. You won't get onboarding emails anymore.</p>`));
 });
 
+// Unmatched API routes: reply JSON, not Express's HTML 404 page, so a client
+// typo or a removed endpoint surfaces as a readable message rather than an
+// unparseable body. Non-/api paths keep the default behaviour.
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: `No such endpoint: ${req.method} ${req.originalUrl}` });
+});
+
+// ── JSON error handler ───────────────────────────────────────────────────────
+// Without this, an error thrown in any route (a rejected Stripe call, say)
+// falls through to Express's default handler, which replies with an HTML error
+// page. The client does `res.json().catch(() => ({}))` and ends up with no
+// message at all, so a real backend failure surfaced to users as a button that
+// silently did nothing. Every route now fails as JSON the UI can display.
+// Must stay last, after all routes.
+app.use((err, req, res, _next) => {
+  const status = err?.statusCode || err?.status || 500;
+  console.error(`[error] ${req.method} ${req.path} ->`, err?.message || err);
+  if (res.headersSent) return;
+  res.status(status).json({
+    error: err?.message || "Something went wrong. Please try again.",
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Scholr API running on http://localhost:${PORT}`);

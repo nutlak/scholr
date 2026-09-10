@@ -2143,7 +2143,7 @@ export default function Scholr() {
             </div>
 
           ) : (
-            <div className="view-shell" style={{ animation: "fadeIn 0.25s ease" }}>
+            <div style={{ animation: "fadeIn 0.25s ease" }}>
               {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
                 <div className="streak-banner">
                   🔥 Your streak is at risk! Study today to keep it alive.
@@ -2217,11 +2217,6 @@ export default function Scholr() {
                 />
               </div>
 
-              {/* Dashboard is a two-column layout: work on the left, context on
-                  the right. Other views keep the single column, so the grid class
-                  is only applied for the dashboard. */}
-              <div className={activeView === "dashboard" ? "dash-grid" : undefined}>
-              <div className="dash-main">
               {/* Dashboard: upcoming deadlines */}
               {activeView === "dashboard" && (
                 <UpcomingDeadlines
@@ -2331,9 +2326,6 @@ export default function Scholr() {
                 </>
               )}
 
-              </div>{/* /dash-main */}
-
-              <aside className="dash-side">
               {/* Dashboard: cards due — spaced repetition entry point */}
               {activeView === "dashboard" && dueCount > 0 && (
                 <button
@@ -2555,8 +2547,6 @@ export default function Scholr() {
                   )}
                 </>
               )}
-              </aside>{/* /dash-side */}
-              </div>{/* /dash-grid */}
             </div>
           )}
         </div>

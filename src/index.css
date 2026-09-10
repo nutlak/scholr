@@ -827,37 +827,6 @@ select:focus:not(:focus-visible) { outline: none; }
   color: var(--t4);
 }
 
-/* ── Dashboard: two-column workspace ──────────────────────────────────
-   Everything used to stack in one narrow column, so the page was an
-   endless scroll with dead space to the right. Work (classes) sits on
-   the left; context (deadlines, streak, activity) rides a sticky rail. */
-@media (min-width: 1080px) {
-  .dash-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.85fr);
-    gap: 26px;
-    align-items: start;
-  }
-  .dash-side {
-    position: sticky;
-    top: 26px;
-    align-self: start;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    background: var(--s1);
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    padding: 16px;
-  }
-  .dash-side:empty { display: none; }
-}
-.dash-main { min-width: 0; }
-
-/* Content shell — keeps line lengths and column widths sane on wide displays
-   instead of stretching to the viewport. */
-.view-shell { max-width: 1180px; margin: 0 auto; width: 100%; }
-
 /* ── Panel workspace ──────────────────────────────────────────────────
    Notebook view reads as three panels rather than one flat page: each
    owns a header, a surface and an edge, the way a workspace app does. */

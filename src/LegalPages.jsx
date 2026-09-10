@@ -7,9 +7,10 @@
 // and the support email — the link text is the phrase itself, so wording is
 // unchanged. Uses theme tokens (var(--…)) only.
 
+import { LegalFooter, SUPPORT_EMAIL } from "./LegalFooter.jsx";
+
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
-const SUPPORT_EMAIL = "support@scholr.dev";
 
 const linkStyle = { color: "var(--accent)", fontWeight: 600, textDecoration: "none" };
 
@@ -79,43 +80,6 @@ function renderDoc(body) {
     const isMeta = /^(Effective date:|Last updated:)/.test(b.text);
     return <p key={i} style={isMeta ? metaStyle : pStyle}>{linkify(b.text, i)}</p>;
   });
-}
-
-export function LegalFooter({ compact = false }) {
-  const links = [
-    ["Privacy", "/privacy"],
-    ["Terms", "/terms"],
-    ["Copyright", "/copyright"],
-  ];
-  if (compact) {
-    return (
-      <div style={{
-        display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px",
-        padding: "10px 12px", fontFamily: FONT, fontSize: 11,
-        color: "var(--text-tertiary)",
-      }}>
-        {links.map(([label, href]) => (
-          <a key={href} href={href} style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>{label}</a>
-        ))}
-        <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>Contact</a>
-      </div>
-    );
-  }
-  return (
-    <div style={{
-      display: "flex", flexWrap: "wrap", alignItems: "center",
-      justifyContent: "center", gap: "8px 18px",
-      marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--border-subtle)",
-      fontFamily: FONT, fontSize: 13, color: "var(--text-tertiary)",
-    }}>
-      {links.map(([label, href]) => (
-        <a key={href} href={href} style={{ color: "var(--text-secondary)", textDecoration: "none" }}>{label}</a>
-      ))}
-      <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
-        Contact: {SUPPORT_EMAIL}
-      </a>
-    </div>
-  );
 }
 
 const DOCS = {

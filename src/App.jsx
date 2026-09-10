@@ -4,12 +4,14 @@ import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
 const LandingPage = lazy(() => import("./LandingPage.jsx"));
 const LegalPage = lazy(() => import("./LegalPages.jsx"));
-import { LegalFooter } from "./LegalPages.jsx";
+import { LegalFooter } from "./LegalFooter.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import SharedNotebook from "./components/SharedNotebook.jsx";
 import UsernameSetupModal from "./UsernameSetupModal.jsx";
 import NotificationsBell from "./NotificationsBell.jsx";
-import { FlashcardReview } from "./Flashcards.jsx";
+// Lazy: only renders during an active review session. A static import here also
+// defeated NotebookView's lazy() of FlashcardsPanel from this same module.
+const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
 import {
   DndContext,
   closestCenter,
@@ -2857,7 +2859,9 @@ export default function Scholr() {
 
         {/* All-notebooks flashcard review (launched from the dashboard) */}
         {reviewSession && (
-          <FlashcardReview cards={reviewSession} onDone={endReviewSession} />
+          <Suspense fallback={null}>
+            <FlashcardReview cards={reviewSession} onDone={endReviewSession} />
+          </Suspense>
         )}
 
         {/* ── Mobile FAB: New Class (dashboard only) ── */}

@@ -6,7 +6,7 @@ import { clientLocalDate } from "./lib/date.js";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import Stripe from "stripe";
@@ -3165,7 +3165,9 @@ Keep each array item under 18 words. Use 2-4 items per array where applicable (m
 // ── OTP helpers ──────────────────────────────────────────────────────────────
 
 function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  // Must be cryptographically random: this code is the only thing standing
+  // between an attacker and a password reset. Math.random() is predictable.
+  return String(randomInt(100000, 1000000));
 }
 
 function generateToken() {
@@ -3339,11 +3341,18 @@ app.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, res
     return res.json({ ok: true });
   }
 
-  // password_reset: issue a single-use reset token
+  // password_reset: issue a single-use, short-lived reset token. The row's
+  // expires_at is re-stamped here so the token carries its own 15-minute
+  // window rather than inheriting the code's remaining seconds — and so
+  // reset-password has something to check it against.
   const resetToken = generateToken();
   await supabase
     .from("verification_codes")
-    .update({ used: true, reset_token: resetToken })
+    .update({
+      used: true,
+      reset_token: resetToken,
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    })
     .eq("id", row.id);
 
   res.json({ ok: true, resetToken });
@@ -3359,6 +3368,7 @@ app.post("/api/auth/reset-password", resetLimiter, async (req, res) => {
     .from("verification_codes")
     .select("user_id")
     .eq("reset_token", resetToken)
+    .gt("expires_at", new Date().toISOString())
     .maybeSingle();
 
   if (!row?.user_id) return res.status(400).json({ error: "Invalid or expired reset token" });

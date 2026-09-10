@@ -843,33 +843,45 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </div>
       </div>
 
-      {sheet === "tools" && (
-        <SheetMenu
-          title="Forge"
-          subtitle="Turn these notes into something you can study from."
+      {/* Menus dock to the same right rail the tools use — never a centred dialog. */}
+      {sheet === "tools" && !activeTool && (
+        <ToolModal
+          open
           onClose={() => setSheet(null)}
-          items={NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => ({
-            id, label, description: subtitle, Icon, tint,
-            onSelect: () => setActiveTool(id),
-          }))}
-        />
+          title="Forge"
+          subtitle="Turn these notes into something you can study from"
+          Icon={Hammer}
+        >
+          <SheetMenu
+            items={NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => ({
+              id, label, description: subtitle, Icon, tint,
+              onSelect: () => { setSheet(null); setActiveTool(id); },
+            }))}
+          />
+        </ToolModal>
       )}
 
-      {sheet === "more" && (
-        <SheetMenu
-          title="Notebook"
+      {sheet === "more" && !activeTool && (
+        <ToolModal
+          open
           onClose={() => setSheet(null)}
-          items={[
-            { id: "invite", label: "Invite people", description: "Let classmates read and add to this notebook",
-              Icon: UserPlus, onSelect: () => setShowInvite(true) },
-            { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
-              Icon: Share2, onSelect: () => setShowShare(true) },
-            { id: "pdf", label: "Save as PDF", description: "Print or download these notes",
-              Icon: FileDown, onSelect: exportPdf },
-            { id: "delete", label: "Delete notebook", description: "This cannot be undone",
-              Icon: Trash2, danger: true, onSelect: () => setConfirmDelete(true) },
-          ]}
-        />
+          title="Notebook"
+          subtitle={nb.title}
+          Icon={MoreHorizontal}
+        >
+          <SheetMenu
+            items={[
+              { id: "invite", label: "Invite people", description: "Let classmates read and add to this notebook",
+                Icon: UserPlus, onSelect: () => { setSheet(null); setShowInvite(true); } },
+              { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
+                Icon: Share2, onSelect: () => { setSheet(null); setShowShare(true); } },
+              { id: "pdf", label: "Save as PDF", description: "Print or download these notes",
+                Icon: FileDown, onSelect: () => { setSheet(null); exportPdf(); } },
+              { id: "delete", label: "Delete notebook", description: "This cannot be undone",
+                Icon: Trash2, danger: true, onSelect: () => { setSheet(null); setConfirmDelete(true); } },
+            ]}
+          />
+        </ToolModal>
       )}
 
       {/* Scholr 2.0 — every study tool opens in one spacious, dismissible shell */}

@@ -11,7 +11,7 @@ export function HudBar({ streak = 0, due = 0, classes = 0, tier = "free" }) {
     return () => clearInterval(t);
   }, []);
 
-  const time = clock.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const time = clock.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
 
   return (
     <div className="hud-bar" role="status" aria-label="Study status">

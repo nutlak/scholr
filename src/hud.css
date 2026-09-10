@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Chakra+Petch:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ======================================================================
    Scholr — HUD instrument layer.
@@ -27,13 +26,8 @@
      nowrap line so this stays constant and the fixed sidebar can sit under it. */
   --hud-h: 36px;
 
-  --display: 'Orbitron', 'Chakra Petch', system-ui, sans-serif;
-  --tech:    'Chakra Petch', system-ui, sans-serif;
-
-  /* Content type stays Inter — the instrument faces are chrome, not body copy,
-     and only the status strip and mono readouts use them. */
-  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
-
+  /* One typeface everywhere, including the readouts. Tabular figures keep the
+     clock from jittering as the seconds tick, without a second font. */
   /* Card chrome: hairline, not neon. */
   --hud-line:  rgba(167, 139, 250, 0.42);
   --hud-hair:  rgba(167, 139, 250, 0.16);
@@ -155,8 +149,14 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
   color: var(--text-tertiary);
 }
 
-/* The sidebar is position:fixed at top:0, so it has to be told about the strip. */
+/* Anything fixed at top:0 has to be told about the strip, or it covers it. */
 .sidebar { top: var(--hud-h) !important; }
+@media (min-width: 769px) {
+  .tool-mode-dock .tool-modal-card {
+    top: var(--hud-h) !important;
+    height: calc(100dvh - var(--hud-h)) !important;
+  }
+}
 
 /* Narrow screens drop the optional readouts rather than wrapping the strip,
    which would change its height and desync the sidebar offset. */
@@ -174,7 +174,7 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 .hud-sep    { color: rgba(167, 139, 250, 0.25); }
 .hud-spacer { flex: 1 1 auto; }
 /* Numbers stay mono so they stop jittering as the clock ticks. */
-.hud-num    { font-family: var(--mono); font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+.hud-num    { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
 .hud-num.warn { color: var(--hud-gold); }
 
 .hud-dot {
@@ -193,7 +193,7 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 
 /* ── Small instrument label, for section headers ────────────────────── */
 .hud-label {
-  font-family: var(--tech); font-weight: 500; font-size: 11.5px;
+  font-weight: 500; font-size: 11.5px;
   color: var(--hud); letter-spacing: 0.28em; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
   text-shadow: 0 0 8px rgba(167, 139, 250, 0.35);

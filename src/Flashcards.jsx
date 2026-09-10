@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
@@ -13,7 +13,7 @@ const RATINGS = [
 
 // ── FlashcardReview ───────────────────────────────────────────────────────────
 // Focused full-screen review. Tap/Space flips; 1-4 rate; advances through `cards`.
-export function FlashcardReview({ cards, onDone, title }) {
+export function FlashcardReview({ cards, onDone }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reviewed, setReviewed] = useState(0);

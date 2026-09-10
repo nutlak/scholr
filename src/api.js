@@ -30,7 +30,7 @@ function shapeNotebook(nb, displayName) {
   return {
     ...nb,
     notes: nb.notes_count ?? 0,
-    color: COLORS[nb.id?.charCodeAt(0) % COLORS.length ?? 0] ?? COLORS[0],
+    color: COLORS[nb.id?.charCodeAt(0) % COLORS.length] ?? COLORS[0],
     contributors: [displayName ?? "You"],
     updated: nb.created_at
       ? new Date(nb.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -359,7 +359,6 @@ export const api = {
   },
 
   async saveForgeOutput(notebookId, type, content, topic) {
-    console.log("saveForgeOutput API called:", { notebookId, type, contentLength: content?.length });
     const headers = await authHeaders();
     // Send the date label formatted in the user's local timezone so the title
     // reflects the user's actual local date (not the server's UTC date).

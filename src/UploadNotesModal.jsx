@@ -33,7 +33,7 @@ function blurGray(e) {
   e.target.style.boxShadow = "none";
 }
 
-export default function UploadNotesModal({ notebookId, accentColor, onClose, onUploaded }) {
+export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
   const [mode, setMode]       = useState("text");
   const [title, setTitle]     = useState("");
   const [content, setContent] = useState("");
@@ -44,7 +44,6 @@ export default function UploadNotesModal({ notebookId, accentColor, onClose, onU
   const fileRef               = useRef(null);
 
   const canSubmit = title.trim() && (mode === "text" ? content.trim() : file) && !loading;
-  const accent = "#A78BFA";
 
   function handleOverlayClick(e) {
     if (e.target === e.currentTarget) onClose();

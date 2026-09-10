@@ -17,5 +17,15 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // New in React 19's plugin. Fires on working load-then-poll effects;
+      // kept visible as a warning rather than rewriting effects that work.
+      'react-hooks/set-state-in-effect': 'warn',
+    },
+  },
+  {
+    // Express backend runs on Node, not in the browser.
+    files: ['server/**/*.js'],
+    languageOptions: { globals: globals.node },
   },
 ])

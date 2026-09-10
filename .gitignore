@@ -29,3 +29,6 @@ server/.env
 .env.development
 .env.*.local
 src/.env.local
+
+# generated knowledge-graph cache
+graphify-out/

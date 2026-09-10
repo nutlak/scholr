@@ -81,12 +81,20 @@ function SourcesPanel({ sources }) {
           border: "1px solid var(--border-default)",
           borderRadius: 8, maxWidth: 360,
         }}>
-          {sources.map((s, i) => (
-            <div key={i} style={{
-              fontSize: 11.5, color: "var(--text-secondary)",
-              fontFamily: FONT, padding: "2px 0",
-            }}>• {s}</div>
-          ))}
+          {sources.map((s, i) => {
+            const [title, author] = String(s).split(" \u2014 ");
+            return (
+              <div key={i} style={{
+                fontSize: 11.5, color: "var(--text-secondary)",
+                fontFamily: FONT, padding: "2px 0",
+              }}>
+                &bull; {title}
+                {author && (
+                  <span style={{ color: "var(--accent)" }}> &mdash; {author}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -197,8 +205,13 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   // the deterministic per-notebook tint so other views still render nicely.
   const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
 
+  // Re-poll while the notebook is open so "here now" stays true — presence is
+  // only worth showing if it's current. Matches the 60s heartbeat interval.
   useEffect(() => {
-    api.listMembers(nb.id).then(setMembers).catch(() => {});
+    const load = () => api.listMembers(nb.id).then(setMembers).catch(() => {});
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
   }, [nb.id]);
 
   useEffect(() => {

@@ -40,8 +40,11 @@ export function AvatarStack({ names }) {
 }
 export function MemberAvatarStack({ members }) {
   const [open, setOpen] = useState(false);
-  const visible = members.slice(0, 3);
+  // Whoever is here right now goes to the front of the stack.
+  const byPresence = [...members].sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
+  const visible = byPresence.slice(0, 3);
   const overflow = members.length - 3;
+  const onlineCount = members.filter(m => m.isOnline).length;
 
   // Owners first, then alphabetical by display label
   const sorted = [...members].sort((a, b) => {
@@ -56,8 +59,18 @@ export function MemberAvatarStack({ members }) {
       style={{ display: "flex", alignItems: "center", position: "relative", cursor: "default" }}
     >
       {visible.map((m, i) => (
-        <div key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i }}>
+        <div key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i, position: "relative" }}>
           <Avatar name={m.email} size={28} seed={m.email} />
+          {m.isOnline && (
+            <span
+              aria-label="Here now"
+              style={{
+                position: "absolute", bottom: -1, right: -1,
+                width: 9, height: 9, borderRadius: "50%",
+                background: "#34D399", border: "2px solid var(--bg-base)",
+              }}
+            />
+          )}
         </div>
       ))}
       {overflow > 0 && (
@@ -67,6 +80,12 @@ export function MemberAvatarStack({ members }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 10.5, fontWeight: 600, color: "var(--t2)", fontFamily: FONT, zIndex: 0,
         }}>+{overflow}</div>
+      )}
+      {onlineCount > 1 && (
+        <span style={{
+          marginLeft: 9, fontSize: 12, fontWeight: 500, color: "#34D399",
+          fontFamily: FONT, whiteSpace: "nowrap",
+        }}>{onlineCount} here now</span>
       )}
 
       {open && (

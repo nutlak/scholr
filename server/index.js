@@ -3703,6 +3703,16 @@ app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (re
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+    // Without this Checkout shows no promo-code field, so promotion codes
+    // created in the dashboard or via the API are unredeemable.
+    allow_promotion_codes: true,
+    // A 100%-off code brings the first invoice to zero; without this Checkout
+    // still demands a card, which defeats the point of comping an account.
+    // Only skips collection when the total really is zero, so normal paid
+    // upgrades are unaffected. Note: a *time-limited* free code (duration:
+    // "once") would leave the subscription with no card for its first real
+    // renewal — Stripe asks for one then.
+    payment_method_collection: "if_required",
     success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?upgraded=true`,
     cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
   });

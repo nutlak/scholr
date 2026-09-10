@@ -1694,7 +1694,7 @@ app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
 // POST /api/notebooks/:id/query — AI query against notebook notes (Derek chat)
 app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, queryLimiter, async (req, res) => {
   const { question } = req.body;
-  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  const claudeKey = process.env.CLAUDE_API_KEY;
 
   if (!question) return res.status(400).json({ error: "question is required" });
   if (typeof question !== "string" || question.length > 8000) return res.status(400).json({ error: "Question too long (max 8000 characters)." });
@@ -1775,7 +1775,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, quer
 // POST /api/notebooks/:id/flashcards/generate — AI-generate cards from notes.
 // Counts against the same free/Pro "forge" generation budget (3/mo free).
 app.post("/api/notebooks/:id/flashcards/generate", requireAuth, requireMember, aiLimiter, forgeLimiter, async (req, res) => {
-  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  const claudeKey = process.env.CLAUDE_API_KEY;
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
 
   // Tier gate FIRST — same shape/limit as Forge.
@@ -1997,7 +1997,7 @@ app.delete("/api/flashcards/:id", requireAuth, async (req, res) => {
 // POST /api/notebooks/:id/forge — generate study materials with streaming SSE
 app.post("/api/notebooks/:id/forge", requireAuth, requireMember, aiLimiter, forgeLimiter, async (req, res) => {
   const { action, topic } = req.body;
-  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  const claudeKey = process.env.CLAUDE_API_KEY;
 
   const VALID_ACTIONS = ["study_guide", "questions", "flashcards", "summary"];
   if (!action || !VALID_ACTIONS.includes(action))
@@ -2963,7 +2963,7 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, e
   if (!VALID.includes(level)) {
     return res.status(400).json({ error: `level must be one of: ${VALID.join(", ")}` });
   }
-  const claudeKey = process.env.CLAUDE_API_KEY || req.headers["x-claude-key"];
+  const claudeKey = process.env.CLAUDE_API_KEY;
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
 
   // Meter against the shared monthly message allowance (free: 30/mo; pro: unlimited).

@@ -131,7 +131,7 @@ export function InviteModal({ notebookId, onClose }) {
                     padding: "0 20px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
                     cursor: status === "sending" ? "not-allowed" : "pointer",
                     fontFamily: FONT, opacity: status === "sending" ? 0.65 : 1,
-                    boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px var(--acc-bg-h)",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                     letterSpacing: "-0.01em",
                   }}
                 >{status === "sending" ? "Sending…" : "Send Invite"}</button>

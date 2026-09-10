@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from "lucide-react";
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -691,7 +691,7 @@ export default function LandingPage({ onSignIn }) {
                 background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                 flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, color: "#fff",
-                boxShadow: "0 4px 12px rgba(167,139,250,0.3)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}>D</div>
               <div style={{
                 background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
@@ -710,7 +710,7 @@ export default function LandingPage({ onSignIn }) {
                 borderRadius: 12,
                 padding: "10px 14px", maxWidth: 380,
                 fontSize: 13, color: "#fff", fontFamily: FONT, fontWeight: 500,
-                boxShadow: "0 4px 12px rgba(167,139,250,0.25)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                 textAlign: "left",
               }}>
                 What's the difference between ionic and covalent bonds?
@@ -724,7 +724,7 @@ export default function LandingPage({ onSignIn }) {
                 background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
-                boxShadow: "0 4px 12px rgba(167,139,250,0.3)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}>D</div>
               <div style={{
                 background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",

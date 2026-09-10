@@ -767,7 +767,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", border: "none",
                 borderRadius: 999, padding: "10px 18px", color: "#fff",
                 fontFamily: FONT, fontSize: 13.5, fontWeight: 700,
-                cursor: loading ? "wait" : "pointer", boxShadow: "0 4px 14px rgba(167,139,250,0.35)",
+                cursor: loading ? "wait" : "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
             >✨ Ask AI about this →</button>
           )}

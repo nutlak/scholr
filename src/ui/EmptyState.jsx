@@ -31,7 +31,7 @@ export function EmptyState({ icon, title, body, cta }) {
             border: "none", borderRadius: 10, padding: "0 20px", height: 40,
             color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
             fontFamily: FONT,
-            boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             letterSpacing: "-0.01em",
           }}
         >{cta.label}</button>

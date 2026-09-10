@@ -115,7 +115,7 @@ export default function UsernameSetupModal({ onDone }) {
                 color: "#fff", fontWeight: 600, fontSize: 14, fontFamily: FONT,
                 cursor: !valid || saving ? "not-allowed" : "pointer",
                 opacity: !valid || saving ? 0.55 : 1,
-                boxShadow: "0 4px 14px rgba(167,139,250,0.34)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                 letterSpacing: "-0.01em",
               }}
             >

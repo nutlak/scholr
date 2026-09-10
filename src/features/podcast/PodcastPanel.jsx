@@ -450,7 +450,7 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
                 : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
               border: "none", color: "#fff", fontWeight: 700, fontSize: 14,
               fontFamily: FONT, cursor: isLocked ? "not-allowed" : "pointer",
-              boxShadow: isLocked ? "none" : "0 6px 18px rgba(167,139,250,0.36)",
+              boxShadow: isLocked ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
               letterSpacing: "-0.01em",
               display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
               opacity: isLocked ? 0.6 : 1,

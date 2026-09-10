@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { api } from "../api.js";
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 // Public, read-only notebook view (no auth, no sidebar). Viral growth surface.
 export default function SharedNotebook({ slug }) {
@@ -109,5 +109,5 @@ const ctaBtn = {
   background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
   color: "#fff", fontWeight: 700, fontSize: 15, fontFamily: FONT,
   padding: "13px 28px", borderRadius: 12, textDecoration: "none",
-  boxShadow: "0 8px 24px rgba(167,139,250,0.35)",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
 };

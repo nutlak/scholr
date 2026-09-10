@@ -94,11 +94,11 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "16px 20px",
+          display: "flex", alignItems: "center", gap: 11,
+          padding: "11px 14px",
           background: "var(--bg-surface-1)",
-          border: `1px solid ${hovered ? "var(--accent)" : "var(--border-subtle)"}`,
-          borderRadius: 10,
+          border: `1px solid ${hovered ? "var(--border-strong)" : "var(--border-default)"}`,
+          borderRadius: 8,
           cursor: "pointer",
           transition: "border-color 200ms ease, transform 200ms ease",
           transform: hovered ? "translateY(-1px)" : "translateY(0)",
@@ -106,14 +106,14 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
       >
         {/* Color dot */}
         <div style={{
-          width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
+          width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
           background: t.hue,
         }} />
 
         {/* Class name */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 15, fontWeight: 600, color: "var(--text-primary)",
+            fontSize: 13.5, fontWeight: 550, color: "var(--text-primary)",
             fontFamily: FONT, letterSpacing: "-0.01em",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>

@@ -96,7 +96,7 @@ export function FlashcardReview({ cards, onDone }) {
               marginTop: 8, minHeight: 48, padding: "0 28px",
               background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
               border: "none", borderRadius: 12, color: "#fff", fontWeight: 600, fontSize: 15,
-              cursor: "pointer", fontFamily: FONT, boxShadow: "0 6px 18px rgba(167,139,250,0.36)",
+              cursor: "pointer", fontFamily: FONT, boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             }}
           >Done</button>
         </div>
@@ -234,7 +234,7 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
             background: generating ? "var(--bg-surface-2)" : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
             border: "none", color: "#fff", fontWeight: 600, fontSize: 13.5, fontFamily: FONT,
             cursor: generating ? "default" : "pointer", opacity: generating ? 0.7 : 1,
-            boxShadow: generating ? "none" : "0 4px 14px rgba(167,139,250,0.34)",
+            boxShadow: generating ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
           }}
         >{generating ? "Generating…" : "Generate from notes"}</button>
         <button

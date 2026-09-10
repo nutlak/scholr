@@ -289,7 +289,7 @@ function PasswordResetModal({ onDone }) {
             fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer",
             fontFamily: FONT, opacity: loading ? 0.65 : 1, marginTop: 4,
             transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
-            boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px var(--acc-bg-h)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             letterSpacing: "-0.01em",
           }}>
             {loading ? "Saving…" : "Update password"}
@@ -676,7 +676,7 @@ function UpgradeModal({ limitType, onClose }) {
             border: "none", borderRadius: 12,
             color: "#fff", fontWeight: 700, fontSize: 15,
             fontFamily: FONT, cursor: loading ? "wait" : "pointer",
-            boxShadow: "0 4px 18px rgba(167,139,250,0.38)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             transition: "all 0.18s",
           }}
         >
@@ -1664,11 +1664,12 @@ export default function Scholr() {
                 onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); setSidebarOpen(false); }}
                 style={{
                   position: "relative",
-                  padding: "0 12px", height: 36, borderRadius: 8,
+                  padding: "0 12px", height: 34, borderRadius: 6,
                   display: "flex", alignItems: "center", gap: 10,
-                  background: active ? "var(--accent-soft)" : "transparent",
-                  color: active ? "var(--accent)" : "var(--text-secondary)",
-                  fontSize: 13.5, fontWeight: active ? 600 : 500,
+                  background: active ? "var(--bg-surface-2)" : "transparent",
+                  boxShadow: active ? "inset 2px 0 0 var(--accent)" : "none",
+                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                  fontSize: 13, fontWeight: active ? 600 : 500,
                   cursor: "pointer", transition: "background 150ms ease, color 150ms ease",
                   userSelect: "none",
                   letterSpacing: "-0.01em",
@@ -2009,7 +2010,7 @@ export default function Scholr() {
                         cursor: "pointer",
                         fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
                         letterSpacing: "-0.01em",
-                        boxShadow: "0 6px 18px rgba(167,139,250,0.38)",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                         transition: "transform 0.18s, box-shadow 0.18s",
                       }}
                     >
@@ -2153,23 +2154,15 @@ export default function Scholr() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
-                    fontFamily: FONT, marginBottom: 4,
-                    letterSpacing: "0.08em", textTransform: "uppercase",
-                  }}>
-                    {activeView === "dashboard" ? "Dashboard" : viewLabel}
-                  </div>
-                  <div style={{
-                    fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 700, color: "var(--text-primary)",
-                    fontFamily: FONT_HEADING, letterSpacing: "-0.01em", lineHeight: 1.15,
+                    fontSize: "clamp(19px, 4vw, 23px)", fontWeight: 650, color: "var(--text-primary)",
+                    fontFamily: FONT_HEADING, letterSpacing: "-0.021em", lineHeight: 1.2,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-                    animation: "fadeIn 0.35s ease",
                   }}>
                     {activeView === "dashboard" ? getGreeting(displayName).text : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 13.5, color: "var(--text-tertiary)",
-                    fontFamily: FONT, marginTop: 6,
+                    fontSize: 13, color: "var(--text-tertiary)",
+                    fontFamily: FONT, marginTop: 3,
                   }}>
                     {activeView === "dashboard"
                       ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
@@ -2185,7 +2178,7 @@ export default function Scholr() {
                       border: "none", borderRadius: 10, padding: "0 18px", height: 40,
                       color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
                       fontFamily: FONT, flexShrink: 0,
-                      boxShadow: "0 6px 18px rgba(167,139,250,0.36), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                       letterSpacing: "-0.01em",
                       display: "flex", alignItems: "center", gap: 6,
                     }}
@@ -2350,7 +2343,7 @@ export default function Scholr() {
                     width: 40, height: 40, borderRadius: 11, flexShrink: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
-                    boxShadow: "0 4px 14px rgba(167,139,250,0.4)",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                   }}><Layers size={19} strokeWidth={2} /></span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>

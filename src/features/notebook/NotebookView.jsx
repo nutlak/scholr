@@ -19,11 +19,11 @@ import { FeynmanPanel } from "../feynman/FeynmanPanel.jsx";
 // this to render its buttons, and ToolModal looks up title/subtitle/icon by id.
 // Adding a future tool (e.g. standalone flashcards) is a single entry here.
 const NB_TOOLS = [
-  { id: "notes",   text: "Notes",   label: "Unit notes",   title: "Unit Notes",    Icon: FileText,   subtitle: "Shared notes for everyone in this notebook" },
-  { id: "forge",   text: "Forge",   label: "The Forge",    title: "The Forge",     Icon: Hammer,     subtitle: "Generate study guides, quizzes & flashcards from your notes" },
-  { id: "flashcards", text: "Cards", label: "Flashcards", title: "Flashcards",   Icon: Layers,     subtitle: "Spaced-repetition flashcards generated from your notes" },
-  { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, subtitle: "A two-host AI audio overview of your notes" },
-  { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      subtitle: "Explain a concept in your words — Claude grades your understanding" },
+  { id: "notes",   text: "Notes",   label: "Unit notes",   title: "Unit Notes",    Icon: FileText,   tint: "#60A5FA", subtitle: "Shared notes for everyone in this notebook" },
+  { id: "forge",   text: "Forge",   label: "The Forge",    title: "The Forge",     Icon: Hammer,     tint: "#A78BFA", subtitle: "Generate study guides, quizzes & flashcards from your notes" },
+  { id: "flashcards", text: "Cards", label: "Flashcards", title: "Flashcards",   Icon: Layers,     tint: "#F472B6", subtitle: "Spaced-repetition flashcards generated from your notes" },
+  { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, tint: "#34D399", subtitle: "A two-host AI audio overview of your notes" },
+  { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      tint: "#FBBF24", subtitle: "Explain a concept in your words — Claude grades your understanding" },
 ];
 const NB_TOOL_META = Object.fromEntries(NB_TOOLS.map(x => [x.id, x]));
 
@@ -516,7 +516,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           )}
           <span className="nb-actions-divider nb-desktop-only" />
 
-          {/* Primary study tools — all open in the shared spacious ToolModal */}
+          {/* Study tools live in the Studio rail on desktop; on mobile, where the
+              rail is hidden, they stay in the header as pills. */}
+          <span className="nb-mobile-only" style={{ display: "contents" }}>
           {NB_TOOLS.map(({ id, text, label, Icon }) => {
             const active = activeTool === id;
             return (
@@ -537,6 +539,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               ><Icon size={15} strokeWidth={1.85} /> <span className="nb-action-text">{text}</span></button>
             );
           })}
+          </span>
 
           <span className="nb-actions-divider nb-desktop-only" />
 
@@ -873,6 +876,44 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           </div>
 
         </div>
+
+        {/* Studio rail — the study tools live here as persistent tiles instead
+            of five more pills in an already crowded header. Selecting one still
+            opens the shared ToolModal. */}
+        <aside className="nb-studio desktop-only">
+          <div className="panel" style={{ height: "100%" }}>
+            <div className="panel-head">
+              Studio
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)" }}>
+                {members.length} {members.length === 1 ? "member" : "members"}
+              </span>
+            </div>
+            <div className="panel-body">
+              <div className="studio-grid">
+                {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTool(activeTool === id ? null : id)}
+                    aria-label={label}
+                    className="studio-tile"
+                    style={{
+                      "--tile-color": tint,
+                      borderColor: activeTool === id
+                        ? "color-mix(in srgb, " + tint + " 55%, transparent)"
+                        : undefined,
+                    }}
+                  >
+                    <span className="studio-tile-row">
+                      <span className="studio-tile-icon"><Icon size={16} strokeWidth={1.85} /></span>
+                      <ChevronRight size={13} strokeWidth={2} style={{ color: "var(--t4)" }} />
+                    </span>
+                    <span>{text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
       {/* Scholr 2.0 — every study tool opens in one spacious, dismissible shell */}

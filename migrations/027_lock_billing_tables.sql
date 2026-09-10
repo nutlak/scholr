@@ -6,11 +6,15 @@
 -- exclusively by the server using the service-role key, which bypasses RLS
 -- and table grants. No browser client has any reason to write either one.
 --
--- RLS policies for these tables live in the Supabase dashboard rather than in
--- this repo, so rather than depend on their exact contents, this revokes the
--- write privileges outright. A REVOKE holds regardless of how permissive a
--- policy is, so a client cannot grant itself Pro or reset its own usage
--- counters even if a policy would otherwise allow it.
+-- STATUS: verified already enforced in production. Signing in as a throwaway
+-- user and attempting to set its own tier to 'pro' returns
+-- 42501 permission denied for table subscriptions, as do INSERT and a reset of
+-- its own usage counters; that user can read only its own row. So this is NOT
+-- an outstanding hole — it codifies the existing state in the repo, where the
+-- policies (which live in the Supabase dashboard) otherwise cannot be reviewed.
+--
+-- Worth running so the guarantee survives a future dashboard change or a
+-- project restore, but it is not urgent and changes nothing today.
 --
 -- Run in Supabase Dashboard > SQL Editor. Safe to re-run.
 -- ============================================================

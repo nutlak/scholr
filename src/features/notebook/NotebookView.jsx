@@ -33,8 +33,8 @@ function ToolPanelFallback() {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",
-      minHeight: 220, color: "var(--t3)", fontFamily: FONT, fontSize: 13,
-    }}>Loading…</div>
+      minHeight: 220, fontFamily: FONT, fontSize: 13,
+    }}><span className="shimmer">Loading…</span></div>
   );
 }
 
@@ -505,6 +505,15 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           ><Hammer size={16} strokeWidth={1.85} /> Forge</button>
 
           <button
+            onClick={() => setShowInvite(true)}
+            className="btn-press nb-util-btn"
+            style={{
+              background: "var(--acc-bg)", border: "1px solid var(--accent)",
+              color: "var(--acc-h)", fontWeight: 600,
+            }}
+          ><UserPlus size={15} strokeWidth={1.95} /> Invite</button>
+
+          <button
             onClick={() => setShowUpload(true)}
             className="btn-press nb-util-btn"
             style={{
@@ -688,13 +697,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                   animation: "slideInLeft 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
                 }}>
-                  <span style={{
-                    fontSize: 13, color: "var(--t2)", fontStyle: "italic",
-                    fontFamily: FONT, marginRight: 4,
-                  }}>Derek is thinking</span>
-                  <span className="dot-thinking" />
-                  <span className="dot-thinking" />
-                  <span className="dot-thinking" />
+                  <span className="shimmer" style={{
+                    fontSize: 13, fontWeight: 500, fontFamily: FONT, letterSpacing: "-0.01em",
+                  }}>Derek is thinking…</span>
                 </div>
               </div>
             )}
@@ -871,8 +876,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         >
           <SheetMenu
             items={[
-              { id: "invite", label: "Invite people", description: "Let classmates read and add to this notebook",
-                Icon: UserPlus, onSelect: () => { setSheet(null); setShowInvite(true); } },
               { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
                 Icon: Share2, onSelect: () => { setSheet(null); setShowShare(true); } },
               { id: "pdf", label: "Save as PDF", description: "Print or download these notes",

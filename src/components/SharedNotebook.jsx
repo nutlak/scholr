@@ -31,7 +31,7 @@ export default function SharedNotebook({ slug }) {
   if (state === "loading") {
     return (
       <div style={{ ...page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#808098", fontSize: 14 }}>Loading…</div>
+        <div className="shimmer" style={{ fontSize: 14 }}>Loading…</div>
       </div>
     );
   }

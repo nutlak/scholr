@@ -218,7 +218,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
           borderRadius: 8,
         }}>
           {!commentsLoaded ? (
-            <div style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT }}>Loading…</div>
+            <div className="shimmer" style={{ fontSize: 11.5, fontFamily: FONT }}>Loading…</div>
           ) : (
             <>
               {comments.map(c => {

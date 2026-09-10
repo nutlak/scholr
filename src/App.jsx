@@ -32,7 +32,7 @@ import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 import { NotebookView } from "./features/notebook/NotebookView.jsx";
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
-import { FriendsSidebarSection } from "./features/friends/FriendsSidebar.jsx";
+import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
 import { EmptyState } from "./ui/EmptyState.jsx";
 import { StatusPill } from "./ui/StatusPill.jsx";
@@ -1813,8 +1813,6 @@ export default function Scholr() {
                   }}>{dueCount > 99 ? "99+" : dueCount}</span>
                 )}
               </div>
-              {/* Friends + Best Friends sit between Starred and Settings */}
-              {id === "starred" && <FriendsSidebarSection refreshSignal={friendsVersion} />}
               </Fragment>
             );
           })}
@@ -2314,7 +2312,16 @@ export default function Scholr() {
                 </button>
               </div>
 
-              {/* Search */}
+              {/* Friends first: the reason the app exists. */}
+              {activeView === "dashboard" && (
+                <FriendsRow
+                  refreshSignal={friendsVersion}
+                  onChanged={() => setFriendsVersion(v => v + 1)}
+                />
+              )}
+
+              {/* Search — only once there are enough classes for it to earn its space. */}
+              {(activeView !== "dashboard" || classes.length > 4) && (
               <div style={{ position: "relative", marginBottom: 28 }}>
                 <span style={{
                   position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
@@ -2336,6 +2343,7 @@ export default function Scholr() {
                   onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
                 />
               </div>
+              )}
 
               {/* Dashboard: upcoming deadlines */}
               {activeView === "dashboard" && (
@@ -2812,7 +2820,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsSidebarSection refreshSignal={friendsVersion} />
+              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

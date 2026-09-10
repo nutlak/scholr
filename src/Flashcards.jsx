@@ -251,7 +251,7 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
 
       {/* List */}
       {cards === null ? (
-        <div style={{ fontSize: 13, color: "var(--text-tertiary)", padding: "8px 2px" }}>Loading…</div>
+        <div className="shimmer" style={{ fontSize: 13, padding: "8px 2px" }}>Loading…</div>
       ) : cards.length === 0 ? (
         <div style={{ fontSize: 13, color: "var(--text-tertiary)", padding: "8px 2px", lineHeight: 1.5 }}>
           No flashcards yet. Tap “Generate from notes” to create a set from this notebook’s notes.

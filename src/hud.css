@@ -94,12 +94,11 @@ html:not([data-theme="light"]) [style*="var(--bg-base)"] { background: transpare
 /* ── Hard edges. The single rule that turns soft cards into instruments.
    ponytail: circles are exempted by matching the serialized inline
    `border-radius: 50%`, which is how every round element in this app is
-   written. If a component ever expresses a circle differently, give it
-   .hud-round instead of widening this selector. ───────────────────── */
+   written. A component that expresses a circle some other way needs its own
+   exemption here. ─────────────────────────────────────────────────────── */
 *, *::before, *::after { border-radius: 0 !important; }
 [style*="border-radius: 50%"],
 [style*="border-radius:50%"],
-.hud-round,
 .forge-spinner,
 .hud-dot { border-radius: 50% !important; }
 
@@ -192,13 +191,8 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 }
 
 /* ── Small instrument label, for section headers ────────────────────── */
-.hud-label {
-  font-weight: 500; font-size: 11.5px;
-  color: var(--hud); letter-spacing: 0.28em; text-transform: uppercase;
-  display: flex; align-items: center; gap: 8px;
-  text-shadow: 0 0 8px rgba(167, 139, 250, 0.35);
-}
-.hud-label::before { content: '▶'; font-size: 8px; opacity: 0.7; }
+
+
 
 /* ── Chrome details ─────────────────────────────────────────────────── */
 html:not([data-theme="light"]) ::selection { background: rgba(167, 139, 250, 0.28); color: #fff; }
@@ -236,4 +230,39 @@ html:not([data-theme="light"]) :focus-visible {
   /* Anything tappable clears the 44px floor. */
   .mobile-tab-bar a, .mobile-tab-bar button { min-height: 48px; }
   .sidebar a, .sidebar button { min-height: 44px; }
+}
+
+/* ── Shimmer ────────────────────────────────────────────────────────
+   The oscillating purple wave Claude Code runs while it works. A
+   gradient wider than the text, clipped to the glyphs, sliding back and
+   forth. Used for every "we're waiting on something" state so they all
+   say the same thing the same way. ── */
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--text-tertiary) 0%,
+    var(--text-tertiary) 30%,
+    #C4B5FD 48%,
+    #E9E2FF 50%,
+    #C4B5FD 52%,
+    var(--text-tertiary) 70%,
+    var(--text-tertiary) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmerWave 2.4s ease-in-out infinite alternate;
+}
+@keyframes shimmerWave {
+  from { background-position: 130% 0; }
+  to   { background-position: -30% 0; }
+}
+
+/* Same wave as a bar, for skeleton/loading strips. */
+
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer, .shimmer-bar { animation: none; }
+  .shimmer { color: var(--text-secondary); background-image: none; }
 }

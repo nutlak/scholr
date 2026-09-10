@@ -1,169 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../api.js";
-import { ChevronDown, Flame, UserPlus } from "lucide-react";
-import { Avatar } from "../../ui/Avatar.jsx";
 import { FONT } from "../../lib/theme.js";
-import AddFriendModal from "../../AddFriendModal.jsx";
+import { Avatar } from "../../ui/Avatar.jsx";
 
-const BEST_FRIEND_RANKS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-
-// ── FriendsSidebarSection ─────────────────────────────────────────────────────
-// Two collapsible sidebar blocks: Friends (current friends + add button + pending
-// request badge) and Best Friends (top 5 by shared-notebook activity). Self-
-// contained: loads its own data and refreshes after request actions.
-export function FriendsSidebarSection({ refreshSignal = 0 }) {
-  const [friends, setFriends]         = useState([]);
-  const [bestFriends, setBestFriends] = useState([]);
-  const [requests, setRequests]       = useState([]);
-  const [open, setOpen]               = useState(true);
-  const [showAdd, setShowAdd]         = useState(false);
-  const [inviteFor, setInviteFor]     = useState(null); // friend whose notebook-picker is open
-  const [actionFor, setActionFor]     = useState(null); // friend whose action menu is open
-  const [myUsername, setMyUsername]   = useState(null); // own handle, shown in the header
-
-  const refresh = useCallback(async () => {
-    const [f, bf, rq] = await Promise.all([
-      api.getFriends().catch(() => []),
-      api.getBestFriends().catch(() => []),
-      api.getFriendRequests().catch(() => []),
-    ]);
-    setFriends(f ?? []);
-    setBestFriends(bf ?? []);
-    setRequests(rq ?? []);
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
-  // Re-fetch when the parent bumps the signal (e.g. a request accepted from the
-  // Recent Activity feed) — only on a real bump, not the initial 0.
-  useEffect(() => { if (refreshSignal) refresh(); }, [refreshSignal, refresh]);
-  useEffect(() => { api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => {}); }, []);
-
-  const sectionLabel = {
-    fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-    color: "var(--text-tertiary)", fontFamily: FONT,
-  };
-  const rowStyle = {
-    display: "flex", alignItems: "center", gap: 9,
-    padding: "0 12px", height: 32, borderRadius: 8,
-    color: "var(--text-secondary)", fontSize: 13, fontWeight: 500,
-    cursor: "pointer", userSelect: "none", letterSpacing: "-0.01em",
-    transition: "background 150ms ease, color 150ms ease",
-  };
-  const hoverOn = e => { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; };
-  const hoverOff = e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; };
-
-  return (
-    <>
-      {/* ── Friends header ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "12px 12px 6px" }}>
-        <div
-          onClick={() => setOpen(o => !o)}
-          style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", flex: 1, minWidth: 0 }}
-        >
-          <ChevronDown
-            size={13} strokeWidth={2}
-            style={{ color: "var(--text-tertiary)", transform: open ? "none" : "rotate(-90deg)", transition: "transform 150ms ease" }}
-          />
-          <span style={sectionLabel}>Friends</span>
-          {myUsername && (
-            <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.75 }}>@{myUsername}</span>
-          )}
-          {requests.length > 0 && (
-            <span style={{
-              minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
-              background: "#F87171", color: "#fff", fontSize: 10, fontWeight: 700,
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              fontFamily: FONT,
-            }}>{requests.length}</span>
-          )}
-        </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          title="Add friend"
-          aria-label="Add friend"
-          style={{
-            background: "transparent", border: "none", cursor: "pointer",
-            color: "var(--text-tertiary)", display: "flex", alignItems: "center",
-            padding: 2, borderRadius: 6,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; }}
-        >
-          <UserPlus size={15} strokeWidth={1.85} />
-        </button>
-      </div>
-
-      {open && (
-        <>
-          {/* Friend list */}
-          {friends.length === 0 ? (
-            <div style={{ padding: "2px 12px 8px", fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.7 }}>
-              No friends yet
-            </div>
-          ) : (
-            friends.map(f => (
-              <div
-                key={f.userId} className="friend-sidebar-row" style={rowStyle}
-                onClick={() => setActionFor(f)}
-                title={f.isOnline ? `${f.name} — active now` : f.name}
-                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-              >
-                <span style={{ position: "relative", flexShrink: 0, display: "inline-flex" }}>
-                  <Avatar name={f.name} size={22} seed={f.username || f.userId} />
-                  <span style={{
-                    position: "absolute", bottom: -1, right: -1,
-                    width: 9, height: 9, borderRadius: "50%",
-                    background: f.isOnline ? "#34D399" : "#6B7280",
-                    border: "2px solid var(--bg-base)",
-                  }} />
-                </span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-              </div>
-            ))
-          )}
-
-          {/* ── Best Friends ── */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "14px 12px 6px" }}>
-            <Flame size={13} strokeWidth={2} style={{ color: "var(--text-tertiary)" }} />
-            <span style={sectionLabel}>Best Friends</span>
-          </div>
-          {bestFriends.length === 0 ? (
-            <div style={{ padding: "2px 12px 8px", fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, opacity: 0.7, lineHeight: 1.45 }}>
-              Add friends to see your best friends
-            </div>
-          ) : (
-            bestFriends.slice(0, 5).map((f, i) => (
-              <div key={f.userId} className="friend-sidebar-row" style={rowStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-                <span style={{ width: 18, textAlign: "center", fontSize: 13, flexShrink: 0 }}>{BEST_FRIEND_RANKS[i]}</span>
-                <Avatar name={f.name} size={22} seed={f.username || f.userId} />
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-              </div>
-            ))
-          )}
-        </>
-      )}
-
-      {showAdd && (
-        <AddFriendModal onClose={() => setShowAdd(false)} onChanged={refresh} />
-      )}
-      {actionFor && (
-        <FriendActionModal
-          friend={actionFor}
-          onClose={() => setActionFor(null)}
-          onInvite={() => { setInviteFor(actionFor); setActionFor(null); }}
-          onChanged={refresh}
-        />
-      )}
-      {inviteFor && (
-        <FriendInviteModal friend={inviteFor} onClose={() => setInviteFor(null)} />
-      )}
-    </>
-  );
-}
 // ── FriendActionModal ─────────────────────────────────────────────────────────
 // Per-friend action menu: invite to a notebook, remove, or block — the last two
 // behind an inline confirm step so they aren't one-tap accidents.
-function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
+export function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
   const [view, setView] = useState("menu"); // menu | confirmRemove | confirmBlock
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -266,7 +109,7 @@ function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
 }
 // ── FriendInviteModal ─────────────────────────────────────────────────────────
 // Pick one of the current user's notebooks to add a friend to directly.
-function FriendInviteModal({ friend, onClose }) {
+export function FriendInviteModal({ friend, onClose }) {
   const [notebooks, setNotebooks] = useState(null); // null = loading
   const [state, setState] = useState({}); // notebookId → 'busy' | 'done' | 'error'
 
@@ -332,7 +175,7 @@ function FriendInviteModal({ friend, onClose }) {
 
         <div style={{ overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 6 }}>
           {notebooks === null ? (
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "8px 2px" }}>Loading…</div>
+            <div className="shimmer" style={{ fontSize: 13, fontFamily: FONT, padding: "8px 2px" }}>Loading…</div>
           ) : notebooks.length === 0 ? (
             <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "8px 2px" }}>
               You don't have any notebooks yet.

@@ -137,26 +137,6 @@
   transform: translateY(-2px);
 }
 
-/* Shimmer placeholder */
-.shimmer {
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.02) 0%,
-    rgba(255,255,255,0.06) 50%,
-    rgba(255,255,255,0.02) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
-}
-
-/* Thinking dots */
-.dot-thinking {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #A78BFA;
-  animation: blink 1.4s ease-in-out infinite both;
-}
-.dot-thinking:nth-child(2) { animation-delay: 0.15s; }
-.dot-thinking:nth-child(3) { animation-delay: 0.3s; }
 
 /* ── Activity heatmap views ──────────────────────────────────────── */
 .heatmap-fade-in {

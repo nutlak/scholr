@@ -568,8 +568,14 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/create-checkout-session`, { method: "POST", headers });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Failed to start checkout");
+      // Include the status when the body carries no message, otherwise every
+      // distinct backend failure collapses into the same opaque string.
+      const raw = await res.text().catch(() => "");
+      let data = {};
+      try { data = JSON.parse(raw); } catch { /* non-JSON body */ }
+      const detail = data.error || data.message
+        || (raw ? raw.slice(0, 120) : "no response body");
+      throw new Error(`Checkout failed (${res.status}): ${detail}`);
     }
     const { url } = await res.json();
     // A 2xx with no url would otherwise navigate to "/undefined" (or nowhere)

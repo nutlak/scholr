@@ -496,8 +496,24 @@ async function getUserTier(userId) {
   return "pro";
 }
 
+// Anthropic client factory. AI_BASE_URL points the SDK at an Anthropic-compatible
+// proxy (e.g. a local router) instead of api.anthropic.com — useful for local
+// development, where every test message otherwise spends real credits.
+//
+// Unset in production, which is deliberate: the Pro tier is sold as "Claude
+// Sonnet", so production must actually call Anthropic. Do not set this on a
+// deployment that serves paying users.
+function anthropicClient(apiKey) {
+  const baseURL = process.env.AI_BASE_URL;
+  if (baseURL) return new Anthropic({ apiKey, baseURL });
+  return new Anthropic({ apiKey });
+}
+
 function getModel(tier) {
-  return tier === "pro" ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001";
+  // Overridable only so a local proxy can serve its own model ids alongside
+  // AI_BASE_URL. Left unset in production.
+  if (tier === "pro") return process.env.AI_MODEL_PRO || "claude-sonnet-4-6";
+  return process.env.AI_MODEL_FREE || "claude-haiku-4-5-20251001";
 }
 
 async function resetUsageIfNeeded(userId) {
@@ -1720,7 +1736,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, quer
     })
     .join("\n\n---\n\n");
 
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
 
   try {
     const message = await anthropic.messages.create({
@@ -1793,7 +1809,7 @@ app.post("/api/notebooks/:id/flashcards/generate", requireAuth, requireMember, a
 
   const tier = await getUserTier(req.user.id);
   const model = getModel(tier);
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
 
   try {
     const message = await anthropic.messages.create({
@@ -2035,7 +2051,7 @@ app.post("/api/notebooks/:id/forge", requireAuth, requireMember, aiLimiter, forg
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
 
   let stream;
   req.on("close", () => { try { stream?.controller?.abort(); } catch { /* already closed */ } });
@@ -2440,7 +2456,7 @@ function formatGuidance(format) {
 
 async function generatePodcastScript({ claudeKey, model, nbTitle, nbTopic, notesContext, lengthPreset, formatPreset, focusTopic }) {
   const target = PODCAST_LENGTH_TARGETS[lengthPreset] ?? PODCAST_LENGTH_TARGETS.standard;
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
   const focusLine = focusTopic
     ? `\n\nFOCUS: The episode must center on this specific topic: "${focusTopic}". Touch other material only as it supports this focus.`
     : "";
@@ -2991,7 +3007,7 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, e
 
   const explainTier = await getUserTier(req.user.id);
   const explainModel = getModel(explainTier);
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
   try {
     const message = await anthropic.messages.create({
       model: explainModel,
@@ -3102,7 +3118,7 @@ Return ONLY this JSON shape:
 }
 Keep each array item under 18 words. Use 2-4 items per array where applicable (misconceptions may be empty).`;
 
-  const anthropic = new Anthropic({ apiKey: claudeKey });
+  const anthropic = anthropicClient(claudeKey);
   try {
     const message = await anthropic.messages.create({
       model,

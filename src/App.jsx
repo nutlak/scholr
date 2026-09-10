@@ -24,7 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import {
   Star, Bell, Plus, Search, FileText, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, BookOpen, Layers, Sun, Moon, LogOut, AlertTriangle,
-  Check, X, Menu, Notebook, Zap, Rocket, RefreshCw,
+  Check, X, Menu, Notebook, Zap, Rocket, RefreshCw, Trash2,
   UserPlus, AtSign, FolderPlus, CreditCard,
 } from "lucide-react";
 import "./App.css";
@@ -71,7 +71,7 @@ let _visitTrackedThisSession = false;
 
 
 
-function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChange }) {
+function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChange, onDelete }) {
   const [hovered, setHovered] = useState(false);
   const t = nb.color ? classTint(nb.color) : tintFor(nb.id ?? nb.title);
   return (
@@ -91,6 +91,25 @@ function NotebookCard({ nb, onClick, starred = false, onToggleStar, onStatusChan
         transition: "background 0.18s ease, border-color 0.18s ease",
       }}
     >
+
+      {onDelete && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(); }}
+          title="Delete notebook"
+          aria-label={`Delete ${nb.title}`}
+          style={{
+            position: "absolute", top: 12, right: onToggleStar ? 38 : 12, zIndex: 10,
+            background: "none", border: "none", cursor: "pointer",
+            padding: "4px 6px", color: "var(--t4)",
+            opacity: hovered ? 1 : 0,
+            transition: "color 0.18s, opacity 0.18s", lineHeight: 1,
+          }}
+          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--danger)"; }}
+          onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--t4)"; }}
+        >
+          <Trash2 size={15} strokeWidth={1.75} />
+        </button>
+      )}
 
       {onToggleStar && (
         <button
@@ -964,6 +983,8 @@ export default function Scholr() {
     notebooksUsed: 0, notebooksLimit: 15,
   });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
+  const [confirmDeleteNb, setConfirmDeleteNb] = useState(null); // notebook pending deletion
+  const [deletingNb, setDeletingNb] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -1196,6 +1217,25 @@ export default function Scholr() {
 
   // Remove notebook(s) from EVERY place notebooks are stored: all list views,
   // the starred set, the per-class unit cache, and the currently-open notebook.
+  // Deleting a notebook takes its notes with it, so this is only reached from
+  // an explicit confirmation naming the notebook.
+  async function handleDeleteNotebook(nb) {
+    setDeletingNb(true);
+    try {
+      await api.deleteNotebook(nb.id);
+      removeNotebooksByIds(new Set([nb.id]));
+      setConfirmDeleteNb(null);
+      setToast("Notebook deleted");
+      setTimeout(() => setToast(""), 2500);
+    } catch (err) {
+      console.error("deleteNotebook failed:", err);
+      setToast(err?.message || "Couldn't delete that notebook");
+      setTimeout(() => setToast(""), 3000);
+    } finally {
+      setDeletingNb(false);
+    }
+  }
+
   function removeNotebooksByIds(idSet) {
     if (!idSet || idSet.size === 0) return;
     const drop = list => list.filter(n => !idSet.has(n.id));
@@ -1569,6 +1609,58 @@ export default function Scholr() {
           onClose={() => setDeleteClassTarget(null)}
           onConfirm={() => handleDeleteClass(deleteClassTarget.id)}
         />
+      )}
+
+      {confirmDeleteNb && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget && !deletingNb) setConfirmDeleteNb(null); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 3200,
+            background: "rgba(0,0,0,0.66)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+            animation: "fadeIn 0.16s ease",
+          }}
+        >
+          <div style={{
+            width: "100%", maxWidth: 380, background: "var(--s1)",
+            border: "1px solid var(--border)", borderRadius: "var(--r-lg)",
+            padding: 22, boxShadow: "var(--sh-modal)",
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.28)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "var(--danger)", marginBottom: 14,
+            }}><Trash2 size={18} strokeWidth={1.75} /></div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 6 }}>
+              Delete this notebook?
+            </div>
+            <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, marginBottom: 20 }}>
+              <span style={{ color: "var(--t1)", fontWeight: 500 }}>{confirmDeleteNb.title}</span>{" "}
+              and all of its notes will be permanently deleted. This cannot be undone.
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setConfirmDeleteNb(null)}
+                disabled={deletingNb}
+                style={{
+                  height: 38, padding: "0 14px", borderRadius: 8, cursor: deletingNb ? "default" : "pointer",
+                  background: "transparent", border: "1px solid var(--border)",
+                  color: "var(--t2)", fontFamily: FONT, fontSize: 13.5, fontWeight: 500,
+                }}
+              >Cancel</button>
+              <button
+                onClick={() => handleDeleteNotebook(confirmDeleteNb)}
+                disabled={deletingNb}
+                style={{
+                  height: 38, padding: "0 16px", borderRadius: 8, cursor: deletingNb ? "wait" : "pointer",
+                  background: "var(--danger)", border: "none",
+                  color: "#1A0A0A", fontFamily: FONT, fontSize: 13.5, fontWeight: 650,
+                }}
+              >{deletingNb ? "Deleting…" : "Delete"}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {upgradeModal && (
@@ -2339,6 +2431,10 @@ export default function Scholr() {
                         starred={starredIds.has(nb.id)}
                         onToggleStar={() => handleToggleStar(nb)}
                         onStatusChange={status => handleSetStatus(nb, status)}
+                        // Only the owner can delete; the API returns role per
+                        // notebook, so a shared notebook shows no trash rather
+                        // than offering one that 403s.
+                        onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
                       />
                     ))}
                   </div>

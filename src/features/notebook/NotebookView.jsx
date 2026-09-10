@@ -771,20 +771,35 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             Derek is AI — responses may be inaccurate. Verify important information independently.
           </div>
 
-          {/* First-run aha: suggested prompt when the chat is empty */}
-          {messages.length === 0 && (
-            <button
-              onClick={() => ask("Summarize this note and quiz me on the key points.")}
-              disabled={loading}
-              className="btn-press"
-              style={{
-                alignSelf: "flex-start", marginBottom: 10,
-                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", border: "none",
-                borderRadius: 999, padding: "10px 18px", color: "#fff",
-                fontFamily: FONT, fontSize: 13.5, fontWeight: 700,
-                cursor: loading ? "wait" : "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-              }}
-            >✨ Ask AI about this →</button>
+          {/* Starter prompts, shown until the student has actually asked
+              something. This was previously gated on messages.length === 0,
+              but a greeting is always seeded as the first message, so the
+              condition was never true and the prompt never rendered. */}
+          {!messages.some(m => m.role === "user") && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+              {[
+                "Summarise the key points",
+                "Quiz me on this",
+                "What should I focus on?",
+                "Explain this simply",
+              ].map(label => (
+                <button
+                  key={label}
+                  onClick={() => ask(`${label} for ${nb.title}.`)}
+                  disabled={loading}
+                  className="btn-press"
+                  style={{
+                    background: "var(--s2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 999, padding: "7px 13px",
+                    color: "var(--t2)", fontFamily: FONT, fontSize: 12.5, fontWeight: 500,
+                    cursor: loading ? "wait" : "pointer",
+                  }}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; } }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--t2)"; }}
+                >{label}</button>
+              ))}
+            </div>
           )}
 
           {/* Input row */}
@@ -897,7 +912,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             <div className="panel-head">
               Studio
               <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)" }}>
-                {members.length} {members.length === 1 ? "member" : "members"}
+                {NB_TOOLS.length} tools
               </span>
             </div>
             <div className="panel-body">

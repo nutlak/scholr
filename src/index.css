@@ -848,7 +848,7 @@ select:focus:not(:focus-visible) { outline: none; }
   color: var(--t1);
   flex-shrink: 0;
 }
-.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; }
+.panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 11px; }
 
 /* Studio-style action tiles: icon, label, affordance — two up. */
 .studio-grid {
@@ -857,9 +857,9 @@ select:focus:not(:focus-visible) { outline: none; }
   gap: 8px;
 }
 .studio-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 12px;
-  min-height: 76px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 9px 10px;
+  min-height: 58px;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--tile-color, var(--acc)) 7%, var(--s2));
@@ -880,7 +880,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 /* Studio rail sits beside the conversation on desktop only; on narrow screens
    the notebook stays a single column and the tools fall back to header pills. */
-.nb-studio { width: 268px; flex-shrink: 0; padding: 0 0 0 16px; min-height: 0; }
+.nb-studio { width: 236px; flex-shrink: 0; padding: 0 0 0 14px; min-height: 0; align-self: flex-start; }
 @media (max-width: 1024px) { .nb-studio { display: none !important; } }
 /* `display: contents` on the mobile pill wrapper would defeat .mobile-only's
    display toggle, so restore an explicit override at desktop width. */

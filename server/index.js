@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
+import { clientLocalDate } from "./lib/date.js";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
@@ -1141,7 +1142,7 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
 
   // Activity log + @mention notifications — fire-and-forget
   if (role === "user") {
-    logUserActivity(userId);
+    logUserActivity(userId, req);
 
     // Shared-notebook activity log (powers Best Friends ranking) — only record
     // activity for notebooks with more than one member. Fire-and-forget.
@@ -1595,7 +1596,7 @@ app.post(
     res.status(201).json(data);
 
     // Bump daily activity for streak/heatmap
-    logUserActivity(req.user.id);
+    logUserActivity(req.user.id, req);
 
     // Fire-and-forget: notify other notebook members (unified notifications)
     (async () => {
@@ -2097,7 +2098,7 @@ app.post("/api/notebooks/:id/forge-output", requireAuth, requireMember, async (r
   }
   console.log("forge output saved:", data?.id);
   res.status(201).json(data);
-  logUserActivity(req.user.id);
+  logUserActivity(req.user.id, req);
 });
 
 // GET /api/notebooks/:id/forge-outputs — list saved Forge outputs
@@ -2205,7 +2206,7 @@ app.post("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req
     reactions: [],
     comment_count: 0,
   });
-  logUserActivity(req.user.id);
+  logUserActivity(req.user.id, req);
 });
 
 // DELETE /api/unit-notes/:id — delete a unit note (author only)
@@ -2376,12 +2377,12 @@ app.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
 });
 
 // ── Activity logging helper ───────────────────────────────────────────────
-// Bumps the user's daily_activity counter for today (server-local date).
+// Bumps the user's daily_activity counter for the user's own local date.
 // Fire-and-forget — never blocks the request.
-async function logUserActivity(userId) {
+async function logUserActivity(userId, req) {
   if (!userId) return;
   try {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = clientLocalDate(req); // YYYY-MM-DD in the user's timezone
     const { data: existing } = await supabase
       .from("daily_activity")
       .select("id, activity_count")
@@ -3732,11 +3733,13 @@ app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (re
     // Without this Checkout shows no promo-code field, so promotion codes
     // created in the dashboard or via the API are unredeemable.
     allow_promotion_codes: true,
-    // NOTE: payment_method_collection: "if_required" belongs here once a
-    // 100%-off promotion code exists — without it Checkout still demands a
-    // card on a zero-total invoice. It is left out for now because it could
-    // not be verified against a live key, and it only matters once a coupon
-    // exists. Add it back with the coupon.
+    // A 100%-off promotion code brings the first invoice to zero; without this
+    // Checkout still demands a card, which defeats the point of comping an
+    // account. Collection is only skipped when the total really is zero, so
+    // ordinary paid upgrades are unaffected. A *time-limited* free code
+    // (duration: "once") would reach its first real renewal with no card on
+    // file — Stripe asks for one then.
+    payment_method_collection: "if_required",
     success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?upgraded=true`,
     cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
   });

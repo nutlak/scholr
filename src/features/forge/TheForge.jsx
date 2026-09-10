@@ -106,7 +106,15 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
   }
 
   async function handleDeleteSaved(id) {
-    try { await api.deleteForgeOutput(id); setSavedOutputs(p => p.filter(o => o.id !== id)); } catch { /* ignore */ }
+    try {
+      await api.deleteForgeOutput(id);
+      setSavedOutputs(p => p.filter(o => o.id !== id));
+    } catch (err) {
+      // Swallowing this left the row on screen with no explanation, so the
+      // delete looked like it simply did nothing.
+      console.error("deleteForgeOutput failed:", err);
+      onToast?.("Couldn't delete that — try again.");
+    }
   }
 
   function loadSaved(o) {

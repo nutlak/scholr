@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { api } from "./api.js";
 import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
-import LandingPage from "./LandingPage.jsx";
-import LegalPage, { LegalFooter } from "./LegalPages.jsx";
+const LandingPage = lazy(() => import("./LandingPage.jsx"));
+const LegalPage = lazy(() => import("./LegalPages.jsx"));
+import { LegalFooter } from "./LegalPages.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
 import SharedNotebook from "./components/SharedNotebook.jsx";
 import UsernameSetupModal from "./UsernameSetupModal.jsx";
@@ -1495,7 +1496,7 @@ export default function Scholr() {
   const legalPage = { "/privacy": "privacy", "/terms": "terms", "/copyright": "copyright" }[
     typeof window !== "undefined" ? window.location.pathname : ""
   ];
-  if (legalPage) return <LegalPage page={legalPage} />;
+  if (legalPage) return <Suspense fallback={null}><LegalPage page={legalPage} /></Suspense>;
 
   return (
     <>
@@ -1527,12 +1528,14 @@ export default function Scholr() {
       )}
 
       {authReady && !user && !showPasswordReset && !pendingInviteToken && !showAuth && (
+        <Suspense fallback={null}>
         <LandingPage onSignIn={() => {
           // Marketing domain can't host the session → send users to the app origin to sign in.
           if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/?auth=signup`; return; }
           setAuthIntent("signup");
           setShowAuth(true);
         }} />
+        </Suspense>
       )}
 
       {authReady && !user && !showPasswordReset && (showAuth || showInviteAuth) && (

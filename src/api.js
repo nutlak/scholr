@@ -15,10 +15,20 @@ function apiError(res, data, fallback) {
   return err;
 }
 
+// The user's local calendar date, e.g. "2026-09-09". Sent on every request so
+// the server can stamp daily activity in the user's timezone rather than UTC —
+// without it, studying late in the evening counts toward the next day and
+// breaks the streak.
+function localDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 async function authHeaders(extra = {}) {
   const { data: { session } } = await supabase.auth.getSession();
   return {
     "Content-Type": "application/json",
+    "X-Client-Date": localDate(),
     Authorization: `Bearer ${session?.access_token ?? ""}`,
     ...extra,
   };

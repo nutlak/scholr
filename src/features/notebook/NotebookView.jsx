@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
 import { Brain, ChevronRight, FileText, Hammer, Headphones, Image as ImageIcon, Layers, Paperclip, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
@@ -6,13 +6,13 @@ import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { FONT, FONT_HEADING, classTint, tintFor } from "../../lib/theme.js";
 import { InviteModal } from "./InviteModal.jsx";
-import { UnitNotes } from "./UnitNotes.jsx";
+const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
-import ImageGeneratorModal from "../../ImageGeneratorModal.jsx";
-import { FlashcardsPanel } from "../../Flashcards.jsx";
-import { TheForge } from "../forge/TheForge.jsx";
-import { PodcastPanel } from "../podcast/PodcastPanel.jsx";
-import { FeynmanPanel } from "../feynman/FeynmanPanel.jsx";
+const ImageGeneratorModal = lazy(() => import("../../ImageGeneratorModal.jsx"));
+const FlashcardsPanel = lazy(() => import("../../Flashcards.jsx").then(m => ({ default: m.FlashcardsPanel })));
+const TheForge = lazy(() => import("../forge/TheForge.jsx").then(m => ({ default: m.TheForge })));
+const PodcastPanel = lazy(() => import("../podcast/PodcastPanel.jsx").then(m => ({ default: m.PodcastPanel })));
+const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => ({ default: m.FeynmanPanel })));
 
 // ── Scholr 2.0 study-tool registry ────────────────────────────────────────────
 // One source of truth for the notebook study tools. The header bar maps over
@@ -25,6 +25,18 @@ const NB_TOOLS = [
   { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, tint: "#34D399", subtitle: "A two-host AI audio overview of your notes" },
   { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      tint: "#FBBF24", subtitle: "Explain a concept in your words — Claude grades your understanding" },
 ];
+// Shown while a tool's chunk downloads. Tools are code-split because they are
+// only reachable behind a click, and together they were a large slice of a
+// single 807 kB bundle every visitor paid for up front.
+function ToolPanelFallback() {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      minHeight: 220, color: "var(--t3)", fontFamily: FONT, fontSize: 13,
+    }}>Loading…</div>
+  );
+}
+
 const NB_TOOL_META = Object.fromEntries(NB_TOOLS.map(x => [x.id, x]));
 
 function renderMessageText(text, isOwn) {
@@ -925,6 +937,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           subtitle={NB_TOOL_META[activeTool].subtitle}
           Icon={NB_TOOL_META[activeTool].Icon}
         >
+          <Suspense fallback={<ToolPanelFallback />}>
           {activeTool === "notes" && (
             <UnitNotes notebookId={nb.id} currentUserId={currentUserId} tint={t} />
           )}
@@ -940,12 +953,15 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           {activeTool === "feynman" && (
             <FeynmanPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
+          </Suspense>
         </ToolModal>
       )}
 
       {/* Image generator brings its own modal chrome, so it's gated on activeTool but rendered outside ToolModal */}
       {activeTool === "image-gen" && (
-        <ImageGeneratorModal notebookId={nb.id} onClose={() => setActiveTool(null)} />
+        <Suspense fallback={null}>
+          <ImageGeneratorModal notebookId={nb.id} onClose={() => setActiveTool(null)} />
+        </Suspense>
       )}
     </div>
   );

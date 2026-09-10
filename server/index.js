@@ -4394,10 +4394,17 @@ app.use("/api", (req, res) => {
 // Must stay last, after all routes.
 app.use((err, req, res, _next) => {
   const status = err?.statusCode || err?.status || 500;
-  console.error(`[error] ${req.method} ${req.path} ->`, err?.message || err);
+  const detail = err?.message || String(err);
+  // Always log the real thing — Railway logs are where diagnosis belongs.
+  console.error(`[error] ${req.method} ${req.path} ->`, detail);
   if (res.headersSent) return;
+  // Only surface the message for faults the caller can act on (4xx we raise
+  // ourselves). Upstream 5xx text can carry provider account ids, key
+  // fragments and internal URLs — a Stripe permission error leaked exactly
+  // that to the browser — so those are generic to the client.
+  const safe = status < 500 || process.env.DEBUG === "1";
   res.status(status).json({
-    error: err?.message || "Something went wrong. Please try again.",
+    error: safe ? detail : "Something went wrong on our end. Please try again.",
   });
 });
 

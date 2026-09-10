@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { api } from "./api.js";
+import { dropdownShiftX } from "./lib/format.js";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const PANEL_W = 300;         // panel width; also used to predict its left edge
+const VIEWPORT_MARGIN = 32;  // total horizontal room the panel leaves on narrow screens
+const EDGE_GAP = 8;          // min gap between the panel and the viewport edge
 
 function timeAgo(iso) {
   const secs = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -35,6 +39,9 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
+  // The panel hangs right-aligned off the bell. In the sidebar the bell sits
+  // ~220px from the left edge, so a 300px panel ran off-screen; nudge it back.
+  const [shiftX, setShiftX] = useState(0);
   const wrapRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -65,6 +72,12 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
 
   async function toggle() {
     const next = !open;
+    if (next) {
+      // Measure on open: the bell moves between the sidebar and the mobile
+      // friends sheet, so the overflow differs per placement and per viewport.
+      const r = wrapRef.current?.getBoundingClientRect();
+      setShiftX(r ? dropdownShiftX(r.right, window.innerWidth, PANEL_W, VIEWPORT_MARGIN, EDGE_GAP) : 0);
+    }
     setOpen(next);
     // Mark all read when opening.
     if (next && unread > 0) {
@@ -113,7 +126,9 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
 
       {open && (
         <div style={{
-          position: "absolute", top: 44, right: 0, width: 300, maxWidth: "calc(100vw - 32px)",
+          position: "absolute", top: 44, right: 0,
+          width: PANEL_W, maxWidth: `calc(100vw - ${VIEWPORT_MARGIN}px)`,
+          transform: shiftX ? `translateX(${shiftX}px)` : undefined,
           maxHeight: 380, overflowY: "auto",
           background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
           border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,

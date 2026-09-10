@@ -102,6 +102,14 @@ export function notifLine(n) {
   }
 }
 
+// A dropdown that hangs right-aligned off its trigger runs off the left edge
+// when the trigger sits near it — the notifications bell in the sidebar is only
+// ~220px in, so its 300px panel overflowed. Returns how far right to nudge it.
+export function dropdownShiftX(triggerRight, viewportW, panelW, viewportMargin = 32, edgeGap = 8) {
+  const w = Math.min(panelW, viewportW - viewportMargin);
+  return Math.max(0, edgeGap - (triggerRight - w));
+}
+
 export const NOTIF_OPENS_NOTEBOOK = new Set(["notebook_invite", "mention", "note_uploaded"]);
 
 export const NOTIF_OPENS_BILLING = new Set(["payment_failed", "renewal_reminder"]);

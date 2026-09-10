@@ -5,7 +5,7 @@ import { Avatar } from "../../ui/Avatar.jsx";
 import { FONT, MONO, REACTION_EMOJIS } from "../../lib/theme.js";
 import { timeAgo } from "../../lib/format.js";
 
-export function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
+function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
   const author = note.first_name || note.full_name || note.email?.split("@")[0] || "Member";
   const mine = note.user_id === currentUserId;
   const [commentsOpen, setCommentsOpen] = useState(false);

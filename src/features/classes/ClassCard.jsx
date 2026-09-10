@@ -6,7 +6,7 @@ import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 
-export function UnitRow({ unit, color, onClick, onStatusChange }) {
+function UnitRow({ unit, color, onClick, onStatusChange }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div

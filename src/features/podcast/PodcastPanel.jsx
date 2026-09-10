@@ -17,7 +17,7 @@ const PODCAST_LENGTHS = [
 ];
 const PODCAST_SPEEDS = [1, 1.25, 1.5, 2];
 
-export function PodcastPlayer({ podcast, onShare }) {
+function PodcastPlayer({ podcast, onShare }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);

@@ -22,7 +22,7 @@ const fmLabel = {
   letterSpacing: "0.08em", color: "var(--text-tertiary)", marginBottom: 7, fontFamily: FONT,
 };
 
-export function FeynmanScoreRing({ score }) {
+function FeynmanScoreRing({ score }) {
   const r = 34, c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score | 0));
   const offset = c - (pct / 100) * c;
@@ -44,7 +44,7 @@ export function FeynmanScoreRing({ score }) {
     </div>
   );
 }
-export function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
+function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
   if (!items || items.length === 0) return null;
   return (
     <div style={{

@@ -44,7 +44,7 @@ function renderMessageText(text, isOwn) {
     return <span key={i}>{p}</span>;
   });
 }
-export function SourcesPanel({ sources }) {
+function SourcesPanel({ sources }) {
   const [open, setOpen] = useState(false);
   if (!sources || sources.length === 0) return null;
   return (
@@ -80,7 +80,7 @@ export function SourcesPanel({ sources }) {
   );
 }
 // ── Public-share modal ───────────────────────────────────────────────────────
-export function ShareModal({ notebookId, onClose, onStateChange }) {
+function ShareModal({ notebookId, onClose, onStateChange }) {
   const [loading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);

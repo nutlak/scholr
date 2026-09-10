@@ -163,7 +163,7 @@ export function FriendsSidebarSection({ refreshSignal = 0 }) {
 // ── FriendActionModal ─────────────────────────────────────────────────────────
 // Per-friend action menu: invite to a notebook, remove, or block — the last two
 // behind an inline confirm step so they aren't one-tap accidents.
-export function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
+function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
   const [view, setView] = useState("menu"); // menu | confirmRemove | confirmBlock
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -266,7 +266,7 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged }) {
 }
 // ── FriendInviteModal ─────────────────────────────────────────────────────────
 // Pick one of the current user's notebooks to add a friend to directly.
-export function FriendInviteModal({ friend, onClose }) {
+function FriendInviteModal({ friend, onClose }) {
   const [notebooks, setNotebooks] = useState(null); // null = loading
   const [state, setState] = useState({}); // notebookId → 'busy' | 'done' | 'error'
 

@@ -194,7 +194,7 @@
 /* ══════════════════════════════════════════════════════════════════
    MOBILE UX PASS  ( < 768px only — desktop untouched )
    ══════════════════════════════════════════════════════════════════ */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   /* Prevent horizontal overflow & enable momentum scrolling everywhere */
   html, body { overflow-x: hidden; }
   body { -webkit-overflow-scrolling: touch; }
@@ -414,7 +414,7 @@
 }
 
 /* Above mobile: keep .mobile-only hidden  */
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .mobile-only { display: none !important; }
 }
 

@@ -5,7 +5,7 @@ import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
-import { FONT, FONT_HEADING, classTint, tintFor } from "../../lib/theme.js";
+import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
 import { InviteModal } from "./InviteModal.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
@@ -620,8 +620,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--text-primary)",
                     borderRadius: 14,
                     padding: "11px 14px",
-                    fontSize: 14, lineHeight: 1.6,
-                    fontFamily: FONT,
+                    fontSize: isAssistant && !m.isError ? 15 : 14,
+                    lineHeight: isAssistant && !m.isError ? 1.65 : 1.6,
+                    fontFamily: isAssistant && !m.isError ? FONT_SERIF : FONT,
                     border: !isOwn
                       ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border-default)"}`
                       : "none",

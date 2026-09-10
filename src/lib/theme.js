@@ -1,10 +1,10 @@
 // Fonts, colour palettes and status metadata shared across the app.
 
-export const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+export const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-export const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+export const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
 
-export const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+export const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
 
 export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 

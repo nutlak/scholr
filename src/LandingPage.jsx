@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from "lucide-react";
 
-const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);

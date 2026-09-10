@@ -1,8 +1,11 @@
-/* Inter across the whole product. The display face used to be Newsreader, a
+/* Anthropic-flavoured pairing: Hanken Grotesk stands in for Styrene in the
+   UI, Newsreader for Tiempos in headings and in Derek's replies — neither
+   Anthropic face is licensable, these are the closest free equivalents.
+   Historical note: the display face used to be Newsreader, a
    warm editorial serif; against a dense dark UI it read as a blog theme rather
    than an app, so headings now use the same grotesque as the body at a heavier
    weight and tighter tracking. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* ── Light theme override — warm off-white layered palette ────────── */
 html[data-theme="light"] {
@@ -63,10 +66,10 @@ html[data-theme="light"] code {
 }
 
 :root {
-  --font: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-serif: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-heading: "Newsreader", Georgia, "Times New Roman", serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
   /* Surfaces — near-black with a hint of indigo (premium reskin) */

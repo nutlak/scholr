@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { api } from "../api.js";
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 // Public, read-only notebook view (no auth, no sidebar). Viral growth surface.
 export default function SharedNotebook({ slug }) {

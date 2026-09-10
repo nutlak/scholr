@@ -278,7 +278,6 @@ input, textarea, select { font-family: var(--font); }
     flex-shrink: 0 !important; height: 32px !important;
     font-size: 12px !important; white-space: nowrap !important;
   }
-  .nb-action-text { display: none; }
   .nb-desktop-only { display: none !important; }
   .nb-mobile-only  { display: inline-flex !important; align-items: center; flex-shrink: 0; }
 }
@@ -851,37 +850,15 @@ select:focus:not(:focus-visible) { outline: none; }
 .panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 11px; }
 
 /* Studio-style action tiles: icon, label, affordance — two up. */
-.studio-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.studio-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
-  padding: 9px 10px;
-  min-height: 58px;
-  border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--tile-color, var(--acc)) 7%, var(--s2));
-  color: var(--t1);
-  font-family: var(--font);
-  font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em;
-  cursor: pointer;
-  text-align: left;
-  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
-}
-.studio-tile:hover {
-  background: color-mix(in srgb, var(--tile-color, var(--acc)) 13%, var(--s2));
-  border-color: color-mix(in srgb, var(--tile-color, var(--acc)) 38%, transparent);
-  transform: translateY(-1px);
-}
-.studio-tile .studio-tile-icon { color: var(--tile-color, var(--acc)); display: inline-flex; }
-.studio-tile-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 6px; }
+
+
+
+
+
 
 /* Studio rail sits beside the conversation on desktop only; on narrow screens
    the notebook stays a single column and the tools fall back to header pills. */
-.nb-studio { width: 236px; flex-shrink: 0; padding: 0 0 0 14px; min-height: 0; align-self: flex-start; }
-@media (max-width: 1024px) { .nb-studio { display: none !important; } }
+
 /* `display: contents` on the mobile pill wrapper would defeat .mobile-only's
    display toggle, so restore an explicit override at desktop width. */
 @media (min-width: 769px) { .nb-mobile-only[style] { display: none !important; } }

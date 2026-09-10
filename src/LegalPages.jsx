@@ -8,7 +8,7 @@
 // unchanged. Uses theme tokens (var(--…)) only.
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const SUPPORT_EMAIL = "support@scholr.dev";
 
 const linkStyle = { color: "var(--accent)", fontWeight: 600, textDecoration: "none" };

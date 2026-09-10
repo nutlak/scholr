@@ -2,11 +2,11 @@
 
 export const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-export const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+export const FONT_SERIF = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-export const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
+export const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-export const MONO = `ui-monospace, "SF Mono", Consolas, monospace`;
+export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 
 export const TINTS = [
   { hue: "#A78BFA", deep: "#8B5CF6" }, // violet

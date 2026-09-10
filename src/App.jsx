@@ -37,6 +37,7 @@ import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
 import { EmptyState } from "./ui/EmptyState.jsx";
 import { StatusPill } from "./ui/StatusPill.jsx";
 import { Avatar, AvatarStack } from "./ui/Avatar.jsx";
+import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING, MONO, tintFor, classTint,
          ACCENT_PRESETS } from "./lib/theme.js";
 import { timeAgo, formatDueDate, dueDateTone,
@@ -1709,11 +1710,19 @@ export default function Scholr() {
       )}
 
       {/* App shell */}
-      <div className={sidebarOpen ? "" : "mobile-hide-sidebar"} style={{
+      <div style={{
         height: "100vh", overflow: "hidden",
         background: "var(--bg-base)",
-        display: user ? "flex" : "none", fontFamily: FONT,
+        display: user ? "flex" : "none", flexDirection: "column", fontFamily: FONT,
       }}>
+        <HudBar
+          streak={computeStreak(heatmap)}
+          due={dueCount}
+          classes={classes.length}
+          tier={subscription?.tier ?? "free"}
+        />
+        <div className={sidebarOpen ? "" : "mobile-hide-sidebar"}
+             style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
         {sidebarOpen && (
           <div className="sidebar-backdrop mobile-only" onClick={() => setSidebarOpen(false)} />
         )}
@@ -2850,6 +2859,7 @@ export default function Scholr() {
             <Plus size={26} strokeWidth={2} />
           </button>
         )}
+        </div>
       </div>
     </>
   );

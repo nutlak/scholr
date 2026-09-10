@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { api } from "../api.js";
 
 const FONT = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
+const FONT_HEADING = `"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 const COLORS = ["#A78BFA", "#F87171", "#34D399", "#60A5FA", "#FBBF24", "#F472B6"];
 

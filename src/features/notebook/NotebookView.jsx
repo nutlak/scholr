@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, ChevronRight, FileText, Hammer, Headphones, Image as ImageIcon, Layers, Paperclip, RefreshCw, Share2, Trash2 } from "lucide-react";
+import { Brain, ChevronRight, FileDown, FileText, Hammer, Headphones, Image as ImageIcon, Layers, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
+import { SheetMenu } from "../../ui/SheetMenu.jsx";
 import { FONT, FONT_HEADING, classTint, tintFor } from "../../lib/theme.js";
 import { InviteModal } from "./InviteModal.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
@@ -177,6 +178,15 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
   // tangle; responsive behavior is now handled purely in CSS.
   const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
+  const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
+
+  // Print with the notebook's own name on the page instead of "scholr — …".
+  function exportPdf() {
+    const prev = document.title;
+    document.title = nb.title || "Scholr notes";
+    window.print();
+    setTimeout(() => { document.title = prev; }, 1000);
+  }
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [explainLevel, setExplainLevel] = useState(null); // { messageId } showing submenu
@@ -474,118 +484,46 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         )}
 
         {/* Action buttons — desktop: inline; mobile: full-width scrollable Row 2 */}
+        {/* Four targets, not ten. Everything rarely reached lives behind More,
+            and the five study tools live behind one Forge button. */}
         <div className="nb-header-actions">
-          <button
-            onClick={() => {
-              const prev = document.title;
-              document.title = nb.title || "Scholr notes";
-              window.print();
-              setTimeout(() => { document.title = prev; }, 1000);
-            }}
-            aria-label="Export PDF"
-            data-tooltip="Export as PDF"
-            className="btn-press has-tip"
-            style={{
-              background: "transparent", border: "1px solid var(--border-strong)",
-              color: "var(--text-secondary)",
-              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 14, flexShrink: 0,
-            }}
-          >📄</button>
-          <button
-            onClick={() => setShowShare(true)}
-            aria-label="Share notebook"
-            data-tooltip="Share notebook"
-            className="btn-press has-tip"
-            style={{
-              background: isShared ? "var(--acc-bg)" : "transparent",
-              border: `1px solid ${isShared ? "var(--acc)" : "var(--border-strong)"}`,
-              color: isShared ? "var(--acc-h)" : "var(--text-secondary)",
-              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 14, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6,
-            }}
-          ><Share2 size={14} strokeWidth={1.85} /></button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            aria-label="Delete notebook"
-            data-tooltip="Delete notebook"
-            className="btn-press has-tip"
-            style={{
-              background: "transparent", border: "1px solid rgba(248,113,113,0.18)",
-              color: "rgba(248,113,113,0.55)",
-              borderRadius: 10, padding: "0 12px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 14, flexShrink: 0,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.5)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; e.currentTarget.style.background = "transparent"; }}
-          ><Trash2 size={14} strokeWidth={1.75} /></button>
-
-          {/* Status + DueDate mobile-only compact variants */}
           {onSetStatus && (
             <span className="nb-mobile-only">
               <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" compact />
             </span>
           )}
-          <span className="nb-actions-divider nb-desktop-only" />
 
-          {/* Study tools live in the Studio rail on desktop; on mobile, where the
-              rail is hidden, they stay in the header as pills. */}
-          <span className="nb-mobile-only" style={{ display: "contents" }}>
-          {NB_TOOLS.map(({ id, text, label, Icon }) => {
-            const active = activeTool === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveTool(active ? null : id)}
-                aria-label={label}
-                data-tooltip={label}
-                className="btn-press has-tip nb-tool-btn"
-                style={{
-                  background: active ? "linear-gradient(135deg, color-mix(in srgb, var(--acc) 18%, transparent) 0%, var(--acc-bg) 100%)" : "transparent",
-                  border: `1px solid ${active ? "var(--acc-bg-h)" : "var(--border-strong)"}`,
-                  color: active ? "var(--acc-h)" : "var(--text-secondary)",
-                  boxShadow: active ? "0 0 0 1px rgba(167,139,250,0.18), 0 4px 14px var(--acc-bg-h)" : "none",
-                }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--border-strong)"; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-strong)"; } }}
-              ><Icon size={15} strokeWidth={1.85} /> <span className="nb-action-text">{text}</span></button>
-            );
-          })}
-          </span>
-
-          <span className="nb-actions-divider nb-desktop-only" />
+          <button
+            onClick={() => setSheet("tools")}
+            className="btn-press nb-tool-btn"
+            aria-haspopup="dialog"
+            style={{
+              background: activeTool ? "var(--acc-bg)" : "transparent",
+              border: `1px solid ${activeTool ? "var(--acc)" : "var(--border-strong)"}`,
+              color: activeTool ? "var(--acc-h)" : "var(--text-primary)",
+            }}
+          ><Hammer size={16} strokeWidth={1.85} /> Forge</button>
 
           <button
             onClick={() => setShowUpload(true)}
-            aria-label="Upload files"
-            data-tooltip="Upload files"
-            className="btn-press has-tip"
+            className="btn-press nb-util-btn"
             style={{
               background: "transparent", border: "1px solid var(--border-strong)",
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "var(--text-secondary)", letterSpacing: "-0.01em", flexShrink: 0,
+              color: "var(--text-secondary)",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--border-default)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
-          ><Paperclip size={14} strokeWidth={1.75} /> <span className="nb-action-text">Upload</span></button>
+          ><Paperclip size={15} strokeWidth={1.75} /> Upload</button>
 
           <button
-            onClick={() => setShowInvite(true)}
-            aria-label="Invite collaborators"
-            data-tooltip="Invite collaborators"
-            className="btn-press has-tip"
+            onClick={() => setSheet("more")}
+            className="btn-press nb-util-btn"
+            aria-haspopup="dialog"
+            aria-label="More actions"
             style={{
               background: "transparent", border: "1px solid var(--border-strong)",
-              borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
-              fontFamily: FONT, fontSize: 13, fontWeight: 500,
-              color: "var(--text-secondary)", letterSpacing: "-0.01em", flexShrink: 0,
+              color: "var(--text-secondary)",
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--border-default)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
-          >+ <span className="nb-action-text">Invite</span></button>
+          ><MoreHorizontal size={16} strokeWidth={1.85} /> More</button>
 
-          {/* Avatar — desktop: in actions (right-most); mobile: shown in Row 1 via nb-mobile-only above */}
           {members.length > 0 && (
             <span className="nb-desktop-only">
               <MemberAvatarStack members={members} />
@@ -903,45 +841,36 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           </div>
 
         </div>
-
-        {/* Studio rail — the study tools live here as persistent tiles instead
-            of five more pills in an already crowded header. Selecting one still
-            opens the shared ToolModal. */}
-        <aside className="nb-studio desktop-only">
-          <div className="panel" style={{ height: "100%" }}>
-            <div className="panel-head">
-              Studio
-              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)" }}>
-                {NB_TOOLS.length} tools
-              </span>
-            </div>
-            <div className="panel-body">
-              <div className="studio-grid">
-                {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
-                  <button
-                    key={id}
-                    onClick={() => setActiveTool(activeTool === id ? null : id)}
-                    aria-label={label}
-                    className="studio-tile"
-                    style={{
-                      "--tile-color": tint,
-                      borderColor: activeTool === id
-                        ? "color-mix(in srgb, " + tint + " 55%, transparent)"
-                        : undefined,
-                    }}
-                  >
-                    <span className="studio-tile-row">
-                      <span className="studio-tile-icon"><Icon size={16} strokeWidth={1.85} /></span>
-                      <ChevronRight size={13} strokeWidth={2} style={{ color: "var(--t4)" }} />
-                    </span>
-                    <span>{text}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
+
+      {sheet === "tools" && (
+        <SheetMenu
+          title="Forge"
+          subtitle="Turn these notes into something you can study from."
+          onClose={() => setSheet(null)}
+          items={NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => ({
+            id, label, description: subtitle, Icon, tint,
+            onSelect: () => setActiveTool(id),
+          }))}
+        />
+      )}
+
+      {sheet === "more" && (
+        <SheetMenu
+          title="Notebook"
+          onClose={() => setSheet(null)}
+          items={[
+            { id: "invite", label: "Invite people", description: "Let classmates read and add to this notebook",
+              Icon: UserPlus, onSelect: () => setShowInvite(true) },
+            { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
+              Icon: Share2, onSelect: () => setShowShare(true) },
+            { id: "pdf", label: "Save as PDF", description: "Print or download these notes",
+              Icon: FileDown, onSelect: exportPdf },
+            { id: "delete", label: "Delete notebook", description: "This cannot be undone",
+              Icon: Trash2, danger: true, onSelect: () => setConfirmDelete(true) },
+          ]}
+        />
+      )}
 
       {/* Scholr 2.0 — every study tool opens in one spacious, dismissible shell */}
       {activeTool && NB_TOOL_META[activeTool] && (

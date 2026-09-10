@@ -2143,7 +2143,7 @@ export default function Scholr() {
             </div>
 
           ) : (
-            <div style={{ animation: "fadeIn 0.25s ease" }}>
+            <div className="view-shell" style={{ animation: "fadeIn 0.25s ease" }}>
               {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
                 <div className="streak-banner">
                   🔥 Your streak is at risk! Study today to keep it alive.

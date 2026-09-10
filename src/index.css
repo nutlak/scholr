@@ -70,13 +70,13 @@ html[data-theme="light"] code {
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
   /* Surfaces — near-black with a hint of indigo (premium reskin) */
-  --bg:        #171719;
-  --s1:        #212124;
-  --s2:        #2A2A2E;
-  --s3:        #35353A;
+  --bg:        #070709;
+  --s1:        #141417;
+  --s2:        #1C1C21;
+  --s3:        #26262C;
 
   /* Borders */
-  --border:    rgba(255,255,255,0.11);
+  --border:    rgba(255,255,255,0.10);
   --border-h:  rgba(255,255,255,0.16);
   --border-f:  rgba(167,139,250,0.55);
 
@@ -135,7 +135,7 @@ html[data-theme="light"] code {
   /* Premium reskin additions — dark */
   --glow-accent: rgba(167,139,250,0.12);
   --glow-soft:   rgba(167,139,250,0.05);
-  --card-bg:     #212124;
+  --card-bg:     #141417;
   --card-border: rgba(255,255,255,0.09);
   --card-glow:   rgba(167,139,250,0.05);
   --ring:        rgba(167,139,250,0.45);
@@ -841,6 +841,7 @@ select:focus:not(:focus-visible) { outline: none; }
   .dash-side {
     position: sticky;
     top: 26px;
+    align-self: start;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -852,6 +853,10 @@ select:focus:not(:focus-visible) { outline: none; }
   .dash-side:empty { display: none; }
 }
 .dash-main { min-width: 0; }
+
+/* Content shell — keeps line lengths and column widths sane on wide displays
+   instead of stretching to the viewport. */
+.view-shell { max-width: 1180px; margin: 0 auto; width: 100%; }
 
 /* ── Panel workspace ──────────────────────────────────────────────────
    Notebook view reads as three panels rather than one flat page: each

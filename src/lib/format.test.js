@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   formatPodcastTime, memberLabel, getDisplayName, dueDateTone,
   computeStreak, streakAtRiskFromHeatmap, notifLine, dropdownShiftX,
+  getGreeting, greetingBand, GREETINGS, QUOTES,
 } from "./format.js";
 
 // Days back from local midnight, keyed the way computeStreak keys them.
@@ -111,4 +112,48 @@ test("dropdownShiftX never pushes the panel off the right edge", () => {
       assert.ok(left + w <= vw - 8 + 1e-9, `right ${left + w} > ${vw - 8}`);
     }
   }
+});
+
+test("greetingBand splits the day at 6/12/17/21", () => {
+  assert.equal(greetingBand(0), "night");
+  assert.equal(greetingBand(5), "night");
+  assert.equal(greetingBand(6), "morning");
+  assert.equal(greetingBand(11), "morning");
+  assert.equal(greetingBand(12), "afternoon");
+  assert.equal(greetingBand(16), "afternoon");
+  assert.equal(greetingBand(17), "evening");
+  assert.equal(greetingBand(20), "evening");
+  assert.equal(greetingBand(21), "night");
+  assert.equal(greetingBand(23), "night");
+});
+
+test("getGreeting uses the first name and the right time band", () => {
+  const at = h => { const d = new Date(); d.setHours(h, 0, 0, 0); return d; };
+  const first = arr => arr[0];
+  assert.equal(getGreeting("Noah Butlak", at(9), first).text, "Good morning, Noah");
+  assert.equal(getGreeting("Noah", at(14), first).text, "Good afternoon, Noah");
+  assert.equal(getGreeting("Noah", at(19), first).text, "Good evening, Noah");
+  assert.equal(getGreeting("Noah", at(23), first).text, "Burning the midnight oil, Noah");
+  // never render "undefined" or a bare comma at the user
+  assert.equal(getGreeting("", at(9), first).text, "Good morning, there");
+  assert.equal(getGreeting(null, at(9), first).text, "Good morning, there");
+});
+
+test("getGreeting returns an attributed quote every time", () => {
+  for (const q of QUOTES) {
+    const g = getGreeting("Noah", new Date(), arr => (arr === QUOTES ? q : arr[0]));
+    assert.equal(g.quote.text, q.text);
+    assert.ok(g.quote.author && g.quote.author.trim().length > 0, "every quote needs an attribution");
+  }
+});
+
+test("greeting and quote pools have no duplicates and offer real variety", () => {
+  for (const [band, openers] of Object.entries(GREETINGS)) {
+    assert.ok(openers.length >= 5, `${band} needs at least 5 openers, has ${openers.length}`);
+    assert.equal(new Set(openers).size, openers.length, `${band} has a duplicate opener`);
+  }
+  assert.ok(QUOTES.length >= 20, `want at least 20 quotes, have ${QUOTES.length}`);
+  assert.equal(new Set(QUOTES.map(q => q.text)).size, QUOTES.length, "duplicate quote text");
+  // quotes carry their own punctuation from the render side, not baked in
+  for (const q of QUOTES) assert.ok(!q.text.startsWith("“"), `${q.text} should not embed quote marks`);
 });

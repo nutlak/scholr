@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback, useMemo, Fragment } from "react";
 import { api } from "./api.js";
 import { supabase } from "./supabase.js";
 import AuthModal from "./AuthModal.jsx";
@@ -1516,6 +1516,9 @@ export default function Scholr() {
   }
 
   const displayName = getDisplayName(user);
+  // Rolled once per visit, not per render — otherwise any unrelated state
+  // change would reshuffle the greeting and quote mid-session.
+  const greeting = useMemo(() => getGreeting(displayName), [displayName]);
   const streakAtRisk = streakAtRiskFromHeatmap(heatmap);
 
   const filteredClasses = classes.filter(c =>
@@ -2273,15 +2276,31 @@ export default function Scholr() {
                   <button onClick={() => setStreakBannerDismissed(true)} aria-label="Dismiss">×</button>
                 </div>
               )}
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+              {/* Header. Sticky: the scroll pane's top edge sits flush under the
+                  status strip, so on any scroll this row used to be sliced
+                  through the middle of the greeting. */}
+              <div style={{
+                position: "sticky", top: 0, zIndex: 20,
+                // NOT var(--bg-base): hud.css nukes that token's background to
+                // transparent on any inline style, so the header would see-through.
+                background: "var(--bg)",
+                // Sticky anchors to the pane's content box, so its top padding
+                // (36/26/16px across breakpoints) leaves a band above the header
+                // where rows would show. A solid spread shadow covers it, and the
+                // pane's overflow clips whatever hangs past the strip.
+                boxShadow: "0 -40px 0 0 var(--bg)",
+                // Spacing below has to be padding, not margin — a margin is
+                // transparent and rows bleed through it.
+                paddingTop: 10, paddingBottom: 24,
+                display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
+              }}>
                 <div>
                   <div style={{
                     fontSize: "clamp(19px, 4vw, 23px)", fontWeight: 650, color: "var(--text-primary)",
                     fontFamily: FONT_HEADING, letterSpacing: "-0.021em", lineHeight: 1.2,
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                   }}>
-                    {activeView === "dashboard" ? getGreeting(displayName).text : viewLabel}
+                    {activeView === "dashboard" ? greeting.text : viewLabel}
                   </div>
                   <div style={{
                     fontSize: 13, color: "var(--text-tertiary)",
@@ -2291,6 +2310,15 @@ export default function Scholr() {
                       ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
                       : `${filtered.length} ${filtered.length === 1 ? "notebook" : "notebooks"}`}
                   </div>
+                  {activeView === "dashboard" && (
+                    <div style={{
+                      fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
+                      marginTop: 7, maxWidth: 640, lineHeight: 1.5,
+                    }}>
+                      “{greeting.quote.text}”
+                      <span style={{ opacity: 0.72 }}> — {greeting.quote.author}</span>
+                    </div>
+                  )}
                 </div>
                 {activeView === "dashboard" && (
                   <button

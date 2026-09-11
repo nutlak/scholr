@@ -3,8 +3,10 @@ import { api } from "../../api.js";
 import { CheckCircle } from "lucide-react";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
+import { useEscape } from "../../ui/useEscape.js";
 
 export function InviteModal({ notebookId, onClose }) {
+  useEscape(onClose);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");

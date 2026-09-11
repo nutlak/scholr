@@ -9,6 +9,7 @@ import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/th
 import { InviteModal } from "./InviteModal.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
+import { useEscape } from "../../ui/useEscape.js";
 const ImageGeneratorModal = lazy(() => import("../../ImageGeneratorModal.jsx"));
 const FlashcardsPanel = lazy(() => import("../../Flashcards.jsx").then(m => ({ default: m.FlashcardsPanel })));
 const TheForge = lazy(() => import("../forge/TheForge.jsx").then(m => ({ default: m.TheForge })));
@@ -102,6 +103,7 @@ function SourcesPanel({ sources }) {
 }
 // ── Public-share modal ───────────────────────────────────────────────────────
 function ShareModal({ notebookId, onClose, onStateChange }) {
+  useEscape(onClose);
   const [loading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);

@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "./api.js";
 import { CheckCircle, File, Folder } from "lucide-react";
+import { useEscape } from "./ui/useEscape.js";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
@@ -34,6 +35,7 @@ function blurGray(e) {
 }
 
 export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
+  useEscape(onClose);
   const [mode, setMode]       = useState("text");
   const [title, setTitle]     = useState("");
   const [content, setContent] = useState("");

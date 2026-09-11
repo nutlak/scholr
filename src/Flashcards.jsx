@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
+import { useEscape } from "./ui/useEscape.js";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
@@ -295,6 +296,7 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
 }
 
 function EditCardModal({ card, onClose, onSaved }) {
+  useEscape(onClose);
   const [front, setFront] = useState(card.front);
   const [back, setBack] = useState(card.back);
   const [saving, setSaving] = useState(false);

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "./api.js";
+import { useEscape } from "./ui/useEscape.js";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
@@ -64,6 +65,7 @@ const pillBtn = (variant = "accent", disabled = false) => {
 };
 
 export default function AddFriendModal({ onClose, onChanged }) {
+  useEscape(onClose);
   const [tab, setTab] = useState("add"); // 'add' | 'requests' | 'blocked'
 
   // Add tab

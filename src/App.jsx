@@ -47,6 +47,7 @@ import { timeAgo, formatDueDate, dueDateTone,
          streakAtRiskFromHeatmap, notifLine, NOTIF_OPENS_NOTEBOOK,
          NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
+import { useEscape } from "./ui/useEscape.js";
 
 // Module-scoped guard: only ever call /track-visit once per page load,
 // even if the auth effect re-runs (e.g. on sign-in after landing-page view).
@@ -324,6 +325,7 @@ function PasswordResetModal({ onDone }) {
 }
 
 function DeleteAccountModal({ onClose, onConfirm }) {
+  useEscape(onClose);
   const [typed, setTyped]     = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -591,6 +593,7 @@ function UpgradeSocialProof() {
 }
 
 function UpgradeModal({ limitType, onClose }) {
+  useEscape(onClose);
   const [loading, setLoading] = useState(false);
 
   // Track which limit triggered this prompt (conversion analytics).
@@ -838,6 +841,7 @@ const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 // Streak alive but at risk = yesterday had activity, today does not (yet).
 
 function StreakMilestoneModal({ day, onClose }) {
+  useEscape(onClose);
   const [copied, setCopied] = useState(false);
   async function share() {
     try {
@@ -2908,4 +2912,5 @@ export default function Scholr() {
     </>
   );
 }
+
 

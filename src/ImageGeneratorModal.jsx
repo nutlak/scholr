@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { api } from "./api.js";
+import { useEscape } from "./ui/useEscape.js";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
@@ -81,6 +82,7 @@ async function downloadImageFromUrl(url, filename) {
 }
 
 export default function ImageGeneratorModal({ notebookId, onClose }) {
+  useEscape(onClose);
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState("1024x1024");
   const [n, setN] = useState(1);

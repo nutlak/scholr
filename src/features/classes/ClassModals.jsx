@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CLASS_COLORS, FONT, FONT_HEADING, classTint } from "../../lib/theme.js";
 import { ColorSwatchPicker } from "./ClassCard.jsx";
+import { useEscape } from "../../ui/useEscape.js";
 
 // Pre-built course templates (starter notebooks + note structures).
 const CLASS_TEMPLATES = [
@@ -51,6 +52,7 @@ const CLASS_TEMPLATES = [
 ];
 
 export function NewClassModal({ onClose, onCreate }) {
+  useEscape(onClose);
   const [step, setStep] = useState(1); // 1 = template picker, 2 = name + color
   const [template, setTemplate] = useState(null);
   const [title, setTitle] = useState("");
@@ -195,6 +197,7 @@ export function NewClassModal({ onClose, onCreate }) {
   );
 }
 export function NewUnitModal({ classTitle, onClose, onCreate }) {
+  useEscape(onClose);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);

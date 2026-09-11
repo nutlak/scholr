@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react";
+import { useEscape } from "./useEscape.js";
 
 // ── ToolModal — Scholr 2.0 universal study-tool shell ─────────────────────────
 // EVERY study tool (Notes, Forge, Podcast, Feynman, future flashcards) renders
@@ -23,8 +24,12 @@ export function ToolModal({ open, onClose, title, subtitle, Icon, children }) {
     return () => cancelAnimationFrame(r);
   }, []);
 
-  // Esc closes (both modes). Scroll-lock + chat-yield only when desktop-docked is
-  // OFF (i.e. modal mode, or any mobile width — where dock is ignored entirely).
+  // Esc closes (both modes) — via the shared stack, so a dialog opened on top of
+  // a tool takes the key first instead of both closing on one press.
+  useEscape(onClose, open);
+
+  // Scroll-lock + chat-yield only when desktop-docked is OFF (i.e. modal mode,
+  // or any mobile width — where dock is ignored entirely).
   useEffect(() => {
     if (!open) return undefined;
     const mq = window.matchMedia("(max-width: 768px)");
@@ -35,15 +40,12 @@ export function ToolModal({ open, onClose, title, subtitle, Icon, children }) {
     };
     apply();
     mq.addEventListener("change", apply);
-    const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
-    window.addEventListener("keydown", onKey);
     return () => {
       mq.removeEventListener("change", apply);
-      window.removeEventListener("keydown", onKey);
       document.body.classList.remove("tool-docked");
       document.body.style.overflow = "";
     };
-  }, [open, mode, onClose]);
+  }, [open, mode]);
 
   function toggleMode() {
     setMode((m) => {

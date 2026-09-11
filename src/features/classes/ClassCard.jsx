@@ -5,6 +5,7 @@ import { ChevronRight, Trash2, X } from "lucide-react";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
+import { useEscape } from "../../ui/useEscape.js";
 
 function UnitRow({ unit, color, onClick, onStatusChange }) {
   const [hovered, setHovered] = useState(false);
@@ -328,6 +329,7 @@ export function ColorSwatchPicker({ value, onChange }) {
   );
 }
 export function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
+  useEscape(onClose);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

@@ -11,7 +11,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail, sendReferralEmail } from "./email.js";
+import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail, sendReferralEmail, unsubTokenValid } from "./email.js";
 import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
@@ -4370,6 +4370,9 @@ app.get("/api/friends/blocked", requireAuth, async (req, res) => {
 app.post("/api/friends/block", requireAuth, async (req, res) => {
   const { userId } = req.body ?? {};
   if (!userId || typeof userId !== "string") return res.status(400).json({ error: "userId is required" });
+  // Explicit UUID check so the .or() filter interpolation below can't depend on
+  // column typing / insert ordering for its safety (defense in depth).
+  if (!UUID_RE.test(userId)) return res.status(400).json({ error: "userId must be a valid id" });
   if (userId === req.user.id) return res.status(400).json({ error: "You can't block yourself" });
 
   // Insert the block (idempotent on the unique (blocker, blocked) pair).
@@ -4610,15 +4613,21 @@ app.get("/api/stats/public", async (req, res) => {
 const unsubPage = (body) => `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:-apple-system,sans-serif;background:#08080C;color:#E8E8F0;text-align:center;padding:60px 20px;"><div style="font-size:24px;font-weight:800;margin-bottom:12px;">schol<span style="color:#A78BFA;">r</span></div>${body}</body></html>`;
 app.get("/api/email/unsubscribe", (req, res) => {
   const u = encodeURIComponent(String(req.query.u || ""));
+  const t = encodeURIComponent(String(req.query.t || ""));
   res.set("Content-Type", "text/html").send(unsubPage(
     `<p style="color:#A0A0B8;">Unsubscribe from Scholr onboarding emails?</p>
-     <form method="POST" action="/api/email/unsubscribe?u=${u}">
+     <form method="POST" action="/api/email/unsubscribe?u=${u}&t=${t}">
        <button type="submit" style="background:#A78BFA;color:#0A0A0F;border:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;">Unsubscribe</button>
      </form>`));
 });
 app.post("/api/email/unsubscribe", async (req, res) => {
   const u = String(req.query?.u || req.body?.u || "");
+  const t = String(req.query?.t || req.body?.t || "");
   if (!u) return res.status(400).send(unsubPage("<p>Missing user.</p>"));
+  // Authorize on the signed token, not the bare user_id. Without this any known
+  // UUID could unsubscribe any user (IDOR/CSRF); the service-role client bypasses
+  // RLS, so there is no DB backstop. Fail closed on a bad/absent token.
+  if (!unsubTokenValid(u, t)) return res.status(403).send(unsubPage("<p>This unsubscribe link is invalid or expired.</p>"));
   try {
     await supabase.from("profiles").upsert({ user_id: u, email_unsubscribed: true }, { onConflict: "user_id" });
   } catch (e) { console.error("[unsubscribe]", e.message); }

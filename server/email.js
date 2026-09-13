@@ -1,4 +1,21 @@
 import { Resend } from "resend";
+import { createHmac, timingSafeEqual } from "crypto";
+
+// Unsubscribe links must not authorize on a bare user_id — every authenticated
+// API surface leaks other users' UUIDs, so a raw `?u=<uuid>` link let anyone
+// unsubscribe anyone (IDOR, and CSRF-able). Sign the id with an HMAC keyed off
+// a server-only secret, domain-separated by purpose, and verify it before the
+// write. No DB/schema change, one-click unsubscribe still works.
+const UNSUB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.STRIPE_SECRET_KEY || "";
+export function unsubToken(userId) {
+  return createHmac("sha256", UNSUB_KEY).update(`unsubscribe:${userId}`).digest("base64url").slice(0, 24);
+}
+export function unsubTokenValid(userId, token) {
+  if (!userId || !token) return false;
+  const a = Buffer.from(String(token));
+  const b = Buffer.from(unsubToken(userId));
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // Resend client is created lazily so that dotenv has time to load
 // process.env before this module's top-level code runs.
@@ -115,7 +132,7 @@ function unsubBase() {
 
 function emailShell(innerHtml, userId) {
   const unsub = userId
-    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}" style="color:#5b5b6b;text-decoration:underline;">Unsubscribe</a>`
+    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#5b5b6b;text-decoration:underline;">Unsubscribe</a>`
     : "";
   return `<!DOCTYPE html>
 <html>

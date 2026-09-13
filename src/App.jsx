@@ -1523,6 +1523,10 @@ export default function Scholr() {
   // Rolled once per visit, not per render — otherwise any unrelated state
   // change would reshuffle the greeting and quote mid-session.
   const greeting = useMemo(() => getGreeting(displayName), [displayName]);
+  // The dashboard header is sticky. It only needs an opaque backdrop WHILE the
+  // pane is scrolled (so rows don't bleed under it); at rest it must stay
+  // transparent, or its solid fill reads as a black card over the HUD void.
+  const [paneScrolled, setPaneScrolled] = useState(false);
   const streakAtRisk = streakAtRiskFromHeatmap(heatmap);
 
   const filteredClasses = classes.filter(c =>
@@ -2005,7 +2009,7 @@ export default function Scholr() {
         </div>
 
         {/* Main */}
-        <div className="main-pane" style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+        <div className="main-pane" onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
           <button
             onClick={() => setSidebarOpen(true)}
             title="Open menu"
@@ -2280,21 +2284,18 @@ export default function Scholr() {
                   <button onClick={() => setStreakBannerDismissed(true)} aria-label="Dismiss">×</button>
                 </div>
               )}
-              {/* Header. Sticky: the scroll pane's top edge sits flush under the
-                  status strip, so on any scroll this row used to be sliced
-                  through the middle of the greeting. */}
+              {/* Header. Sticky so the greeting isn't sliced when the pane
+                  scrolls under the status strip. The opaque backdrop (and the
+                  spread shadow that covers the pane's top-padding band) apply
+                  ONLY while scrolled — at rest the header is transparent so it
+                  doesn't read as a black card over the HUD void.
+                  var(--bg), not var(--bg-base): hud.css forces bg-base inline
+                  backgrounds transparent, which would defeat the scrolled fill. */}
               <div style={{
                 position: "sticky", top: 0, zIndex: 20,
-                // NOT var(--bg-base): hud.css nukes that token's background to
-                // transparent on any inline style, so the header would see-through.
-                background: "var(--bg)",
-                // Sticky anchors to the pane's content box, so its top padding
-                // (36/26/16px across breakpoints) leaves a band above the header
-                // where rows would show. A solid spread shadow covers it, and the
-                // pane's overflow clips whatever hangs past the strip.
-                boxShadow: "0 -40px 0 0 var(--bg)",
-                // Spacing below has to be padding, not margin — a margin is
-                // transparent and rows bleed through it.
+                background: paneScrolled ? "var(--bg)" : "transparent",
+                boxShadow: paneScrolled ? "0 -40px 0 0 var(--bg)" : "none",
+                transition: "background 120ms ease",
                 paddingTop: 10, paddingBottom: 24,
                 display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
               }}>

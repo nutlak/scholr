@@ -1,15 +1,17 @@
 
 /* ======================================================================
-   Scholr — HUD instrument layer.
+   Scholr — dark theme layer (minimalist reskin).
 
-   Same language as the P.E.N.I.S. trader and the J.A.R.V.I.S. fleet
-   console: grid backplate on void, notched clip-paths, corner brackets,
-   mono uppercase telemetry. Purple stands in for the fleet cyan.
+   Was a HUD "instrument" skin (grid backplate, corner brackets, hard
+   edges, neon glow). Reskinned to a flat NotebookLM-calm minimalism:
+   solid near-black ground, solid surfaces, quiet neutral hairlines,
+   soft corners (components keep their own inline radii), no glow. The
+   theme is unchanged — purple #A78BFA accent on near-black — only the
+   chrome is gone. The status strip is the one bit of retained structure.
 
    Loaded after index.css and overrides its tokens rather than replacing
    it, so every screen that already reads var(--acc)/var(--border) moves
-   with it. Light theme keeps its own palette; the HUD is a dark-only
-   instrument.
+   with it. Light theme keeps its own palette; this block is dark-only.
    ====================================================================== */
 
 :root {
@@ -25,35 +27,33 @@
   /* Status-strip height + its top margin. The strip is deliberately a single
      nowrap line so this stays constant and the fixed sidebar can sit under it. */
   --hud-h: 36px;
-
-  /* One typeface everywhere, including the readouts. Tabular figures keep the
-     clock from jittering as the seconds tick, without a second font. */
-  /* Card chrome: hairline, not neon. */
-  --hud-line:  rgba(167, 139, 250, 0.42);
-  --hud-hair:  rgba(167, 139, 250, 0.16);
-  --void:      #05030c;
 }
 
 /* ── Void + instrument palette (dark only) ──────────────────────────── */
 html:not([data-theme="light"]) {
-  --bg:             #05030c;
-  --bg-base:        #05030c;
-  --s1:             rgba(14, 10, 34, 0.72);
-  --s2:             rgba(22, 16, 48, 0.78);
-  --s3:             rgba(32, 24, 64, 0.82);
-  --bg-surface-1:   rgba(14, 10, 34, 0.72);
-  --bg-surface-2:   rgba(22, 16, 48, 0.78);
-  --bg-surface-3:   rgba(32, 24, 64, 0.82);
-  --card-bg:        rgba(14, 10, 34, 0.72);
+  /* Minimalist reskin (NotebookLM-calm): flat near-black ground, solid
+     surfaces with a gentle lift, quiet NEUTRAL hairlines. Purple stays the
+     accent — theme kept — but only marks actions/focus/active, not chrome. */
+  --bg:             #0a0a0f;
+  --bg-base:        #0a0a0f;
+  --s1:             #141419;
+  --s2:             #1a1a21;
+  --s3:             #22222b;
+  --bg-surface-1:   #141419;
+  --bg-surface-2:   #1a1a21;
+  --bg-surface-3:   #22222b;
+  --card-bg:        #141419;
 
-  --border:         rgba(167, 139, 250, 0.20);
-  --border-h:       rgba(167, 139, 250, 0.38);
-  --border-f:       rgba(167, 139, 250, 0.62);
-  --border-subtle:  rgba(167, 139, 250, 0.12);
-  --border-default: rgba(167, 139, 250, 0.22);
-  --border-strong:  rgba(167, 139, 250, 0.40);
-  --card-border:    rgba(167, 139, 250, 0.22);
+  --border:         rgba(255, 255, 255, 0.10);
+  --border-h:       rgba(255, 255, 255, 0.18);
+  --border-f:       rgba(167, 139, 250, 0.60);
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+  --card-border:    rgba(255, 255, 255, 0.08);
 
+  /* Text unchanged — legibility (incl. contrast for an 83-year-old) is not
+     what minimalism trims; it trims chrome, not readability. */
   --t1:             #F2EEFF;
   --t2:             rgba(242, 238, 255, 0.88);
   --t3:             rgba(242, 238, 255, 0.70);
@@ -62,79 +62,27 @@ html:not([data-theme="light"]) {
   --text-secondary: rgba(242, 238, 255, 0.88);
   --text-tertiary:  rgba(242, 238, 255, 0.70);
 
-  --glow-accent:    var(--hud-glow);
-  --glow-soft:      var(--hud-soft);
-  --card-glow:      rgba(167, 139, 250, 0.14);
-  --ring:           var(--hud-dim);
+  /* No glow bloom in a flat treatment. */
+  --glow-accent:    transparent;
+  --glow-soft:      transparent;
+  --card-glow:      transparent;
+  --ring:           rgba(167, 139, 250, 0.45);
 }
 
-/* ── Backplate: HUD grid + reactor ambient, behind everything ───────── */
-html:not([data-theme="light"]) body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(167, 139, 250, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(167, 139, 250, 0.035) 1px, transparent 1px);
-  background-size: 64px 64px, 64px 64px;
-  mask-image: radial-gradient(ellipse at 50% 34%, #000 0%, rgba(0,0,0,0.4) 62%, rgba(0,0,0,0) 100%);
-}
-html:not([data-theme="light"]) body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(820px 540px at 50% 26%, rgba(167, 139, 250, 0.075), transparent 64%),
-    radial-gradient(900px 500px at 100% 100%, rgba(251, 191, 36, 0.022), transparent 70%);
-}
+/* ── Flat ground (minimalist reskin) ─────────────────────────────────
+   The void is one calm colour: no grid backplate, no reactor glow. This
+   also drops the old `var(--bg-base) → transparent` hack that only existed
+   so the backplate could show through — surfaces are solid and flat now. ── */
 body > * { position: relative; z-index: 1; }
 
-/* The app shell paints an opaque var(--bg-base) over the whole viewport, which
-   would bury the backplate. Let the void show through it instead. */
-html:not([data-theme="light"]) [style*="var(--bg-base)"] { background: transparent !important; }
+/* Soft corners: components author their own radii inline (10/12/18px cards,
+   999 pills). The HUD layer used to crush every one to 0 with a global
+   `border-radius: 0 !important`; that rule is gone, so the authored rounding
+   returns. True circles keep their inline `border-radius: 50%` untouched.
 
-/* ── Hard edges. The single rule that turns soft cards into instruments.
-   ponytail: circles are exempted by matching the serialized inline
-   `border-radius: 50%`, which is how every round element in this app is
-   written. A component that expresses a circle some other way needs its own
-   exemption here. ─────────────────────────────────────────────────────── */
-*, *::before, *::after { border-radius: 0 !important; }
-[style*="border-radius: 50%"],
-[style*="border-radius:50%"],
-.forge-spinner,
-.hud-dot { border-radius: 50% !important; }
-
-/* ── Card mapping ───────────────────────────────────────────────────
-   Every card the app writes inline picks this up, no JSX touched. The
-   treatment is deliberately thin: a hairline top-left bracket and a cut
-   bottom-right corner, no glow bloom. Retro-futurist by restraint —
-   the strip is the only lit instrument on the page.
-
-   The corner is faked with a void-coloured triangle rather than
-   clip-path, so nothing inside a card ever gets clipped away. ── */
-html:not([data-theme="light"]) [style*="var(--card-bg)"],
-html:not([data-theme="light"]) [style*="var(--bg-surface-1)"],
-html:not([data-theme="light"]) [style*="#14141F"] {
-  position: relative;
-  background-color: rgba(9, 6, 22, 0.66) !important;
-  border-color: var(--hud-hair) !important;
-}
-html:not([data-theme="light"]) div[style*="var(--card-bg)"]::before,
-html:not([data-theme="light"]) div[style*="var(--bg-surface-1)"]::before,
-html:not([data-theme="light"]) div[style*="#14141F"]::before {
-  content: ''; position: absolute; top: -1px; left: -1px;
-  width: 10px; height: 10px; pointer-events: none; z-index: 2;
-  border-top: 1px solid var(--hud-line); border-left: 1px solid var(--hud-line);
-}
-html:not([data-theme="light"]) div[style*="var(--card-bg)"]::after,
-html:not([data-theme="light"]) div[style*="var(--bg-surface-1)"]::after,
-html:not([data-theme="light"]) div[style*="#14141F"]::after {
-  content: ''; position: absolute; bottom: -1px; right: -1px;
-  width: 13px; height: 13px; pointer-events: none; z-index: 2;
-  background:
-    linear-gradient(315deg, transparent 0 calc(50% - 0.5px),
-                    var(--hud-line) calc(50% - 0.5px) calc(50% + 0.5px),
-                    transparent calc(50% + 0.5px)),
-    linear-gradient(315deg, var(--void) 0 50%, transparent 50%);
-}
+   Flat cards: solid surface + one quiet hairline, no corner brackets, no cut
+   corner, no glow bloom. Cards render from their own inline var(--card-bg) /
+   border tokens (themed above) — no override needed. */
 
 /* ── Status strip ───────────────────────────────────────────────────── */
 .hud-bar {
@@ -183,8 +131,8 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 .hud-dot.online {
   background: var(--hud-green);
 }
-.hud-dot.warn { background: var(--hud-gold); box-shadow: 0 0 8px var(--hud-gold); }
-.hud-dot.bad  { background: var(--hud-red);  box-shadow: 0 0 8px var(--hud-red); }
+.hud-dot.warn { background: var(--hud-gold); }
+.hud-dot.bad  { background: var(--hud-red); }
 @keyframes hudPulse {
   0%, 100% { box-shadow: 0 0 6px var(--hud-green); }
   50%      { box-shadow: 0 0 12px var(--hud-green), 0 0 24px rgba(52, 211, 153, 0.55); }

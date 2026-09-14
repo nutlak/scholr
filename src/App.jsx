@@ -2315,15 +2315,15 @@ export default function Scholr() {
               }}>
                 <div>
                   <div style={{
-                    fontSize: "clamp(19px, 4vw, 23px)", fontWeight: 650, color: "var(--text-primary)",
-                    fontFamily: FONT_HEADING, letterSpacing: "-0.021em", lineHeight: 1.2,
-                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+                    fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
+                    fontFamily: FONT_HEADING, letterSpacing: "-0.022em", lineHeight: 1.15,
+                    display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
                   }}>
                     {activeView === "dashboard" ? greeting.text : viewLabel}
                   </div>
                   <div style={{
-                    fontSize: 13, color: "var(--text-tertiary)",
-                    fontFamily: FONT, marginTop: 3,
+                    fontSize: 15, color: "var(--text-tertiary)",
+                    fontFamily: FONT, marginTop: 5,
                   }}>
                     {activeView === "dashboard"
                       ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
@@ -2331,8 +2331,8 @@ export default function Scholr() {
                   </div>
                   {activeView === "dashboard" && (
                     <div style={{
-                      fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
-                      marginTop: 7, maxWidth: 640, lineHeight: 1.5,
+                      fontSize: 14.5, color: "var(--text-tertiary)", fontFamily: FONT,
+                      marginTop: 10, maxWidth: 680, lineHeight: 1.5,
                     }}>
                       “{greeting.quote.text}”
                       <span style={{ opacity: 0.72 }}> — {greeting.quote.author}</span>
@@ -2345,8 +2345,8 @@ export default function Scholr() {
                     className="btn-press desktop-only"
                     style={{
                       background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-                      border: "none", borderRadius: 10, padding: "0 18px", height: 40,
-                      color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+                      border: "none", borderRadius: 10, padding: "0 22px", height: 46,
+                      color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer",
                       fontFamily: FONT, flexShrink: 0,
                       boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                       letterSpacing: "-0.01em",

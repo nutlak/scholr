@@ -48,6 +48,7 @@ import { timeAgo, formatDueDate, dueDateTone,
          NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { useEscape } from "./ui/useEscape.js";
+import { useIncomingPresence, pingFriends } from "./lib/live.js";
 
 // Module-scoped guard: only ever call /track-visit once per page load,
 // even if the auth effect re-runs (e.g. on sign-in after landing-page view).
@@ -980,6 +981,8 @@ export default function Scholr() {
   const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | terminal status (e.g. already-handled)
   const [feedError, setFeedError] = useState({});         // notifId -> inline error shown ALONGSIDE the buttons (retryable)
   const [friendsVersion, setFriendsVersion] = useState(0); // bump to refresh FriendsSidebarSection
+  const [friendIds, setFriendIds] = useState([]); // lifted from FriendsRow, for Realtime presence fan-out
+  const friendIdsRef = useRef([]);
   const [notifVersion, setNotifVersion] = useState(0);     // bump to make NotificationsBell reload
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -1145,6 +1148,17 @@ export default function Scholr() {
     const id = setInterval(beat, 60_000);
     return () => clearInterval(id);
   }, [user, activeNb?.id]);
+
+  // Realtime presence (additive over the heartbeat): a friend nudging my topic
+  // means "someone's presence changed" — refetch the authorized friends list
+  // now instead of waiting up to 60s. And when MY presence changes (login, or
+  // switching the notebook I'm in), nudge my friends so they update in ~1s too.
+  useEffect(() => { friendIdsRef.current = friendIds; }, [friendIds]);
+  useIncomingPresence(user?.id, () => setFriendsVersion(v => v + 1));
+  const hasFriends = friendIds.length > 0;
+  useEffect(() => {
+    if (user?.id && hasFriends) pingFriends(friendIdsRef.current);
+  }, [user?.id, activeNb?.id, hasFriends]);
 
   // Unified notifications feed — reload helper + 30s polling so the dashboard
   // Recent Activity stays live (the bell polls its own copy independently).
@@ -2356,6 +2370,7 @@ export default function Scholr() {
                   refreshSignal={friendsVersion}
                   onChanged={() => setFriendsVersion(v => v + 1)}
                   onOpenNotebook={openNotebookById}
+                  onFriendIds={setFriendIds}
                 />
               )}
 
@@ -2859,7 +2874,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} onOpenNotebook={openNotebookById} />
+              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} onOpenNotebook={openNotebookById} onFriendIds={setFriendIds} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

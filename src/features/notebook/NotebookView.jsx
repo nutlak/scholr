@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
 import { Brain, ChevronRight, FileDown, FileText, Hammer, Headphones, Image as ImageIcon, Layers, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
+import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
@@ -555,6 +556,22 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           )}
         </div>
       </div>
+
+      {/* Live study room — only for shared notebooks (a solo notebook has just
+          you). Opt-in: renders a quiet "Study together" button until joined. */}
+      {members.length > 1 && (
+        <div className="no-print" style={{ marginBottom: 14 }}>
+          <StudyRoomBar
+            notebookId={nb.id}
+            me={{
+              userId: currentUserId,
+              name: members.find(m => m.user_id === currentUserId)?.first_name
+                || members.find(m => m.user_id === currentUserId)?.email?.split("@")[0]
+                || "Someone",
+            }}
+          />
+        </div>
+      )}
 
       {/* Chat + Forge split */}
       <div className="notebook-split" style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>

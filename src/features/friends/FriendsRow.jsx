@@ -11,7 +11,7 @@ import { FriendActionModal, FriendInviteModal } from "./FriendModals.jsx";
    who's online, who's waiting on an answer, and one obvious way to add
    someone. Requests are answered in place — they used to be reachable only
    from the activity feed further down the page. */
-export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook }) {
+export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFriendIds }) {
   const BEST = ["\u{1F947}", "\u{1F948}", "\u{1F949}"]; // top three, by shared-notebook activity
   const [friends, setFriends]   = useState([]);
   const [bestIds, setBestIds]   = useState({});
@@ -33,7 +33,8 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook }) {
     setRequests(rq ?? []);
     setOutgoing(out ?? []);
     setBestIds(Object.fromEntries((best ?? []).slice(0, 3).map((b, i) => [b.userId, i])));
-  }, []);
+    onFriendIds?.((f ?? []).map(x => x.userId).filter(Boolean));
+  }, [onFriendIds]);
 
   // Presence is worth showing only if it's current — match the 60s heartbeat.
   useEffect(() => {

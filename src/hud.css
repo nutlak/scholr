@@ -89,8 +89,15 @@ html:not([data-theme="light"]) body::after {
 body > * { position: relative; z-index: 1; }
 
 /* The app shell paints an opaque var(--bg-base) over the whole viewport, which
-   would bury the backplate. Let the void show through it instead. */
-html:not([data-theme="light"]) [style*="var(--bg-base)"] { background: transparent !important; }
+   would bury the backplate. Let the void show through it instead.
+   LandingPage.jsx hardcodes the same void tone as a literal #0B0B12 rather
+   than the token (it's dark-only, no theme awareness — text is hardcoded
+   near-white — so it can't safely switch to var(--bg-base), which would
+   flip light in light theme and blank the text). React normalizes an inline
+   hex color to rgb() in the DOM, so [style*="#0B0B12"] can never match —
+   use the data-hud-void marker on that element instead. */
+html:not([data-theme="light"]) [style*="var(--bg-base)"],
+html:not([data-theme="light"]) [data-hud-void] { background: transparent !important; }
 
 /* ── Hard edges. The single rule that turns soft cards into instruments.
    ponytail: circles are exempted by matching the serialized inline

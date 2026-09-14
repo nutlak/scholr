@@ -439,7 +439,7 @@ export default function LandingPage({ onSignIn }) {
   }, []);
 
   return (
-    <div style={{
+    <div data-hud-void style={{
       background: "#0B0B12", minHeight: "100vh",
       fontFamily: FONT, color: "#F5F5FA",
       overflowX: "hidden",

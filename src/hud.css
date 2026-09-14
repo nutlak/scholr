@@ -45,6 +45,7 @@ html:not([data-theme="light"]) {
   --bg-surface-2:   rgba(22, 16, 48, 0.78);
   --bg-surface-3:   rgba(32, 24, 64, 0.82);
   --card-bg:        rgba(14, 10, 34, 0.72);
+  --bubble-in:      #1e1a2e;   /* incoming chat bubble — solid, not the card token */
 
   --border:         rgba(167, 139, 250, 0.20);
   --border-h:       rgba(167, 139, 250, 0.38);
@@ -101,6 +102,12 @@ html:not([data-theme="light"]) [style*="var(--bg-base)"] { background: transpare
 [style*="border-radius:50%"],
 .forge-spinner,
 .hud-dot { border-radius: 50% !important; }
+
+/* Chat bubbles keep the iMessage shape — exempt from the hard-edge rule, with
+   one tucked corner as the tail (sent: bottom-right, received: bottom-left).
+   Theme-agnostic on purpose so the shape holds in light mode too. */
+.chat-bubble.chat-own { border-radius: 20px 20px 6px 20px !important; }
+.chat-bubble.chat-in  { border-radius: 20px 20px 20px 6px !important; }
 
 /* ── Card mapping ───────────────────────────────────────────────────
    Every card the app writes inline picks this up, no JSX touched. The

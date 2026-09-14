@@ -48,6 +48,7 @@ html[data-theme="light"] {
   --glow-accent: rgba(124,58,237,0.16);
   --glow-soft:   rgba(124,58,237,0.06);
   --card-bg:     #FFFFFF;
+  --bubble-in:   #E9E9EB;   /* incoming chat bubble (iMessage grey) */
   --card-border: rgba(0,0,0,0.08);
   --card-glow:   rgba(124,58,237,0.08);
   --ring:        rgba(124,58,237,0.35);
@@ -139,6 +140,7 @@ html[data-theme="light"] code {
   --glow-accent: rgba(167,139,250,0.12);
   --glow-soft:   rgba(167,139,250,0.05);
   --card-bg:     #141417;
+  --bubble-in:   #1e1a2e;   /* incoming chat bubble */
   --card-border: rgba(255,255,255,0.09);
   --card-glow:   rgba(167,139,250,0.05);
   --ring:        rgba(167,139,250,0.45);

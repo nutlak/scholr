@@ -557,9 +557,10 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </div>
       </div>
 
-      {/* Live study room — only for shared notebooks (a solo notebook has just
-          you). Opt-in: renders a quiet "Study together" button until joined. */}
-      {members.length > 1 && (
+      {/* Live study room. Shown on every notebook as a "Study together" CTA
+          (opt-in — nothing connects until clicked); it's how you turn a solo
+          notebook into a shared session. */}
+      {currentUserId && (
         <div className="no-print" style={{ marginBottom: 14 }}>
           <StudyRoomBar
             notebookId={nb.id}
@@ -627,18 +628,22 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       </div>
                     </div>
                   )}
-                  <div style={{
+                  <div className={"chat-bubble " + (isOwn ? "chat-own" : "chat-in")} style={{
                     maxWidth: "78%",
                     minWidth: 44,
                     textAlign: "left",
+                    // Incoming bubble background is var(--bubble-in), NOT
+                    // var(--bg-surface-1) — the latter triggers hud.css's card
+                    // chrome (corner bracket + cut corner), which is wrong on a
+                    // chat bubble.
                     background: m.isError
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
                         ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
-                        : "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+                        : "var(--bubble-in)",
                     color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--text-primary)",
-                    borderRadius: 14,
-                    padding: "11px 14px",
+                    borderRadius: 18,
+                    padding: "11px 15px",
                     fontSize: isAssistant && !m.isError ? 15 : 14,
                     lineHeight: isAssistant && !m.isError ? 1.65 : 1.6,
                     fontFamily: isAssistant && !m.isError ? FONT_SERIF : FONT,

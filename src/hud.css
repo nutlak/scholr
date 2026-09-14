@@ -74,17 +74,17 @@ html:not([data-theme="light"]) body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background-image:
-    linear-gradient(rgba(167, 139, 250, 0.16) 2px, transparent 2px),
-    linear-gradient(90deg, rgba(167, 139, 250, 0.16) 2px, transparent 2px);
+    linear-gradient(rgba(167, 139, 250, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.07) 1px, transparent 1px);
   background-size: 64px 64px, 64px 64px;
-  mask-image: radial-gradient(ellipse at 50% 34%, #000 0%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0) 100%);
+  mask-image: radial-gradient(ellipse at 50% 34%, #000 0%, rgba(0,0,0,0.45) 62%, rgba(0,0,0,0) 100%);
 }
 html:not([data-theme="light"]) body::after {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(820px 540px at 50% 26%, rgba(167, 139, 250, 0.13), transparent 64%),
-    radial-gradient(900px 500px at 100% 100%, rgba(251, 191, 36, 0.035), transparent 70%);
+    radial-gradient(820px 540px at 50% 26%, rgba(167, 139, 250, 0.09), transparent 64%),
+    radial-gradient(900px 500px at 100% 100%, rgba(251, 191, 36, 0.025), transparent 70%);
 }
 body > * { position: relative; z-index: 1; }
 

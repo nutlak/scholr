@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { Share2 } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
+import { ShareStreakCard } from "./ShareStreakCard.jsx";
 
 export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
+  const [sharing, setSharing] = useState(false);
   const [viewMode, setViewMode] = useState("week"); // 'week' | 'month' | 'year'
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
@@ -229,7 +232,7 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
 
       {/* ── Stats footer ── */}
       <div style={{
-        display: "flex", gap: 20, marginTop: 14, paddingTop: 12,
+        display: "flex", alignItems: "center", gap: 20, marginTop: 14, paddingTop: 12,
         borderTop: "1px solid var(--border)",
       }}>
         {[
@@ -242,7 +245,29 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}
+        {streak > 0 && (
+          <button
+            onClick={() => setSharing(true)}
+            title="Share your streak"
+            className="btn-press"
+            style={{
+              marginLeft: "auto", width: 32, height: 32, borderRadius: "50%",
+              background: "var(--pill-bg)", border: "1px solid var(--pill-border)",
+              color: "var(--text-secondary)", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}
+          ><Share2 size={14} strokeWidth={1.9} /></button>
+        )}
       </div>
+
+      {sharing && (
+        <ShareStreakCard
+          streak={streak}
+          longest={Math.max(longestStreak, streak)}
+          daysVisited={activeDays}
+          onClose={() => setSharing(false)}
+        />
+      )}
 
       {/* ── Friends streak leaderboard ── */}
       {leaderboard.length > 0 && (

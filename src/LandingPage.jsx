@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio } from "lucide-react";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame } from "lucide-react";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
@@ -37,6 +37,7 @@ function useFadeIn(delay = 0) {
 
 const FEATURES = [
   { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump straight into their notebook — same notes, same chat, plus a live quiz battle when you want to make review a competition." },
+  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Definitions, practice questions, summaries — just ask." },
   { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
   { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, flashcards, and summaries in a single click." },

@@ -965,6 +965,7 @@ export default function Scholr() {
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
   const [heatmap, setHeatmap] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("scholr-theme") ?? "dark"; }
     catch { return "dark"; }
@@ -1128,6 +1129,7 @@ export default function Scholr() {
     } else {
       api.getActivityHeatmap().then(setHeatmap).catch(console.error);
     }
+    api.getFriendsLeaderboard().then(setLeaderboard).catch(console.error);
 
     // Handle ?upgraded=true from Stripe success redirect
     const params = new URLSearchParams(window.location.search);
@@ -2585,7 +2587,7 @@ export default function Scholr() {
 
               {/* Dashboard: activity heatmap */}
               {activeView === "dashboard" && (
-                <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} />
+                <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} leaderboard={leaderboard} />
               )}
 
               {/* Notifications — dashboard only. Unified social_notifications feed. */}

@@ -2836,6 +2836,60 @@ app.get("/api/user/activity-heatmap", requireAuth, async (req, res) => {
   res.json((data ?? []).map(r => ({ date: r.date, count: r.activity_count ?? 0 })));
 });
 
+// Mirrors src/lib/format.js's computeStreak. Kept as a small duplicate here
+// rather than importing across the client/server boundary — server/ deploys
+// on its own (Railway), so it doesn't share a build with src/.
+function computeStreakServer(days) {
+  const map = new Map(days.map(d => [d.date, d.count]));
+  const fmtKey = dt => dt.toISOString().slice(0, 10);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let streak = 0;
+  for (let i = 0; ; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    if ((map.get(fmtKey(d)) ?? 0) > 0) streak++; else break;
+  }
+  return streak;
+}
+
+// GET /api/friends/leaderboard — the caller + their friends, ranked by current
+// study streak. Same daily_activity table as /api/user/activity-heatmap, just
+// queried for the whole friend group at once instead of one profile at a time.
+app.get("/api/friends/leaderboard", requireAuth, async (req, res) => {
+  const me = req.user.id;
+  const { data: friendships, error: fErr } = await supabase
+    .from("friendships")
+    .select("user_a, user_b")
+    .or(`user_a.eq.${me},user_b.eq.${me}`);
+  if (fErr) return res.status(500).json({ error: fErr.message });
+
+  const ids = [me, ...(friendships ?? []).map(row => (row.user_a === me ? row.user_b : row.user_a))];
+
+  const start = new Date();
+  start.setDate(start.getDate() - 365);
+  const startStr = start.toISOString().slice(0, 10);
+  const { data: activity, error: aErr } = await supabase
+    .from("daily_activity")
+    .select("user_id, date, activity_count")
+    .in("user_id", ids)
+    .gte("date", startStr);
+  if (aErr) return res.status(500).json({ error: aErr.message });
+
+  const byUser = new Map(ids.map(id => [id, []]));
+  for (const row of activity ?? []) {
+    byUser.get(row.user_id)?.push({ date: row.date, count: row.activity_count ?? 0 });
+  }
+
+  const briefs = await Promise.all(ids.map(resolveUserBrief));
+  const nameById = new Map(briefs.map(b => [b.userId, b.name]));
+
+  const board = ids
+    .map(id => ({ userId: id, name: nameById.get(id) || "User", streak: computeStreakServer(byUser.get(id) || []), isMe: id === me }))
+    .filter(row => row.streak > 0)
+    .sort((a, b) => b.streak - a.streak);
+
+  res.json(board);
+});
+
 // ── Reactions on unit notes ───────────────────────────────────────────────
 // POST /api/unit-notes/:id/react — body: { emoji }
 app.post("/api/unit-notes/:id/react", requireAuth, async (req, res) => {

@@ -461,6 +461,13 @@ export const api = {
     return res.json(); // [{ date, count }]
   },
 
+  async getFriendsLeaderboard() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/friends/leaderboard`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ userId, name, streak, isMe }] — caller included, sorted desc, zero streaks omitted
+  },
+
   // ── Track daily visit (idempotent per (user, date)) ─────────────────
   // Pass today's local YYYY-MM-DD so the server records the user's calendar
   // day, not the server's UTC day. Fire-and-forget on the client; safe to

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FONT } from "../../lib/theme.js";
 
-export function ActivityHeatmap({ data, longestStreak = 0 }) {
+export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
   const [viewMode, setViewMode] = useState("week"); // 'week' | 'month' | 'year'
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
@@ -243,6 +243,26 @@ export function ActivityHeatmap({ data, longestStreak = 0 }) {
           </div>
         ))}
       </div>
+
+      {/* ── Friends streak leaderboard ── */}
+      {leaderboard.length > 0 && (
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+            color: "var(--text-tertiary)", fontFamily: FONT, marginBottom: 8,
+          }}>Friends streak leaderboard</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {leaderboard.slice(0, 5).map((row, i) => (
+              <div key={row.userId} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: FONT }}>
+                <span style={{ color: row.isMe ? "var(--acc)" : "var(--text-secondary)", fontWeight: row.isMe ? 700 : 500 }}>
+                  {i + 1}. {row.name}{row.isMe ? " (you)" : ""}
+                </span>
+                <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "var(--text-primary)" }}>{row.streak}🔥</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

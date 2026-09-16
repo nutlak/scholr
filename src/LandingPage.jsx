@@ -41,7 +41,7 @@ const FEATURES = [
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Definitions, practice questions, summaries — just ask." },
   { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
   { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, flashcards, and summaries in a single click." },
-  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and review on the walk to class or the bus home." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes — or merge in a friend's notebook for a dual-perspective episode — and review on the walk to class." },
   { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group so everyone owns the same notebook — same uploaded notes, same AI answers, whenever they check in." },
   { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "PDFs, slides, docs, images, plain text — Scholr reads every word so Derek can reference your real material." },
 ];

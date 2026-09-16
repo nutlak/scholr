@@ -71,6 +71,8 @@ export function useStudyRoom(roomId, me, enabled) {
   const [connected, setConnected] = useState(false);
   const [battle, setBattle] = useState(null); // { battleId, cards, startsAt, roundMs } | null
   const [answers, setAnswers] = useState({}); // { [round]: { [userId]: { name, at } } }
+  const [feynmanShares, setFeynmanShares] = useState([]); // last few { id, name, concept, score, verdict, at }
+  const [feynmanReactions, setFeynmanReactions] = useState({}); // { [shareId]: { [userId]: { name, emoji } } }
   const chRef = useRef(null);
   const timerRef = useRef(null);
   useEffect(() => { timerRef.current = timer; }, [timer]);
@@ -108,6 +110,18 @@ export function useStudyRoom(roomId, me, enabled) {
       });
     });
     ch.on("broadcast", { event: "battle-end" }, () => setBattle(null));
+    // A Feynman explanation shared into the room (see shareFeynmanToRoom —
+    // the sender doesn't need to have joined this room's presence to send
+    // one, so a solo grading moment can become a shared one on demand).
+    ch.on("broadcast", { event: "feynman-share" }, ({ payload }) => {
+      setFeynmanShares(prev => [payload, ...prev].slice(0, 5));
+    });
+    ch.on("broadcast", { event: "feynman-react" }, ({ payload }) => {
+      setFeynmanReactions(prev => ({
+        ...prev,
+        [payload.shareId]: { ...prev[payload.shareId], [payload.userId]: { name: payload.name, emoji: payload.emoji } },
+      }));
+    });
 
     ch.subscribe(async (status) => {
       if (status !== "SUBSCRIBED") return;
@@ -147,5 +161,27 @@ export function useStudyRoom(roomId, me, enabled) {
     chRef.current?.send({ type: "broadcast", event: "battle-end", payload: {} });
   }, []);
 
-  return { members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle };
+  const reactToFeynman = useCallback((shareId, emoji) => {
+    if (!me?.userId) return;
+    chRef.current?.send({
+      type: "broadcast", event: "feynman-react",
+      payload: { shareId, userId: me.userId, name: me.name || "Someone", emoji },
+    });
+  }, [me]);
+
+  return {
+    members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle,
+    feynmanShares, feynmanReactions, reactToFeynman,
+  };
+}
+
+// One-shot broadcast into a study room's channel, for a moment (like a graded
+// Feynman explanation) that didn't originate from someone who has joined
+// that room's presence via useStudyRoom. Opens a channel just long enough to
+// flush the send, then tears it down — no lingering subscription.
+export async function shareFeynmanToRoom(notebookId, share) {
+  const ch = supabase.channel(roomTopic(notebookId), { config: { broadcast: { self: true } } });
+  await new Promise(resolve => ch.subscribe(status => { if (status === "SUBSCRIBED") resolve(); }));
+  await ch.send({ type: "broadcast", event: "feynman-share", payload: share });
+  supabase.removeChannel(ch);
 }

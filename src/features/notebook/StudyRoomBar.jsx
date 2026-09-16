@@ -3,6 +3,7 @@ import { Users, Play, X } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { useStudyRoom } from "../../lib/live.js";
 import { QuizBattlePanel } from "./QuizBattlePanel.jsx";
+import { FeynmanShareFeed } from "./FeynmanShareFeed.jsx";
 
 // A live study room scoped to one shared notebook (feature C). Opt-in: nobody
 // joins until they hit "Study together", so presence here is deliberate. Shows
@@ -31,7 +32,10 @@ function Countdown({ endsAt }) {
 
 export function StudyRoomBar({ notebookId, me }) {
   const [joined, setJoined] = useState(false);
-  const { members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle } = useStudyRoom(notebookId, me, joined);
+  const {
+    members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle,
+    feynmanShares, feynmanReactions, reactToFeynman,
+  } = useStudyRoom(notebookId, me, joined);
 
   // Not in the room yet — one quiet invitation to start studying together.
   if (!joined) {
@@ -114,6 +118,8 @@ export function StudyRoomBar({ notebookId, me }) {
         submitAnswer={submitAnswer}
         endBattle={endBattle}
       />
+
+      <FeynmanShareFeed me={me} shares={feynmanShares} reactions={feynmanReactions} onReact={reactToFeynman} />
     </div>
   );
 }

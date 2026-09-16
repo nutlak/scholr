@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { api } from "../../api.js";
-import { AlertTriangle, ArrowRight, CheckCircle, RotateCcw, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle, RotateCcw, Sparkles, Users2, XCircle } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { feynmanScoreColor } from "../../lib/format.js";
+import { shareFeynmanToRoom } from "../../lib/live.js";
 
 const fmField = {
   width: "100%", background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
@@ -69,12 +70,32 @@ function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
     </div>
   );
 }
-export function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
+export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
   const [concept, setConcept] = useState(nb?.topic || nb?.title || "");
   const [explanation, setExplanation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [shared, setShared] = useState(false);
+
+  async function shareToRoom() {
+    if (!me?.userId || !result) return;
+    try {
+      await shareFeynmanToRoom(nb.id, {
+        id: crypto.randomUUID(),
+        userId: me.userId,
+        name: me.name || "Someone",
+        concept: concept.trim().slice(0, 120),
+        score: result.score,
+        verdict: result.verdict,
+        at: Date.now(),
+      });
+      setShared(true);
+      onToast?.("Shared with your study room");
+    } catch {
+      onToast?.("Couldn't share — try again");
+    }
+  }
 
   const trimmed = explanation.trim();
   const words = trimmed ? trimmed.split(/\s+/).length : 0;
@@ -87,7 +108,7 @@ export function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
 
   async function grade() {
     if (!canGrade) return;
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setError(""); setResult(null); setShared(false);
     try {
       const r = await api.feynman({ concept: concept.trim(), explanation: trimmed });
       setResult(r);
@@ -100,7 +121,7 @@ export function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
     }
   }
 
-  function reset() { setResult(null); setError(""); setExplanation(""); }
+  function reset() { setResult(null); setError(""); setExplanation(""); setShared(false); }
 
   return (
     <div className="tool-content feynman-content">
@@ -222,11 +243,22 @@ export function FeynmanPanel({ nb, onToast, onUpgradeNeeded }) {
             </div>
           )}
 
-          <button onClick={reset} className="btn-press" style={{
-            alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 7,
-            background: "transparent", border: "none", color: "var(--text-secondary)",
-            cursor: "pointer", fontFamily: FONT, fontSize: 13, padding: "6px 2px",
-          }}><RotateCcw size={14} strokeWidth={2} /> Try another explanation</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <button onClick={reset} className="btn-press" style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "transparent", border: "none", color: "var(--text-secondary)",
+              cursor: "pointer", fontFamily: FONT, fontSize: 13, padding: "6px 2px",
+            }}><RotateCcw size={14} strokeWidth={2} /> Try another explanation</button>
+
+            {me?.userId && (
+              <button onClick={shareToRoom} disabled={shared} className="btn-press" style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                background: "transparent", border: "none",
+                color: shared ? "var(--success)" : "var(--accent)",
+                cursor: shared ? "default" : "pointer", fontFamily: FONT, fontSize: 13, padding: "6px 2px",
+              }}><Users2 size={14} strokeWidth={2} /> {shared ? "Shared with study room" : "Share with study room"}</button>
+            )}
+          </div>
         </div>
       )}
     </div>

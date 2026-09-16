@@ -364,6 +364,13 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         .slice(0, 6)
     : [];
 
+  const me = currentUserId ? {
+    userId: currentUserId,
+    name: members.find(m => m.user_id === currentUserId)?.first_name
+      || members.find(m => m.user_id === currentUserId)?.email?.split("@")[0]
+      || "Someone",
+  } : null;
+
   return (
     <div className="print-area" data-print-title={nb.title || "Notes"} style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
       {showShare && (
@@ -560,17 +567,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
       {/* Live study room. Shown on every notebook as a "Study together" CTA
           (opt-in — nothing connects until clicked); it's how you turn a solo
           notebook into a shared session. */}
-      {currentUserId && (
+      {me && (
         <div className="no-print" style={{ marginBottom: 14 }}>
-          <StudyRoomBar
-            notebookId={nb.id}
-            me={{
-              userId: currentUserId,
-              name: members.find(m => m.user_id === currentUserId)?.first_name
-                || members.find(m => m.user_id === currentUserId)?.email?.split("@")[0]
-                || "Someone",
-            }}
-          />
+          <StudyRoomBar notebookId={nb.id} me={me} />
         </div>
       )}
 
@@ -948,7 +947,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             <PodcastPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           {activeTool === "feynman" && (
-            <FeynmanPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+            <FeynmanPanel nb={nb} me={me} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           </Suspense>
         </ToolModal>

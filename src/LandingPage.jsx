@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check } from "lucide-react";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio } from "lucide-react";
 
 const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
@@ -36,11 +36,12 @@ function useFadeIn(delay = 0) {
 }
 
 const FEATURES = [
+  { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump straight into their notebook — one click, same notes, same chat, no scheduling." },
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Definitions, practice questions, summaries — just ask." },
-  { Icon: Brain,         title: "Feynman Mode",       tint: "#34D399", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
   { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, flashcards, and summaries in a single click." },
   { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and review on the walk to class or the bus home." },
-  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group. Everyone shares the same notes, the same chat, and the same AI answers in real time." },
+  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group so everyone owns the same notebook — same uploaded notes, same AI answers, whenever they check in." },
   { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "PDFs, slides, docs, images, plain text — Scholr reads every word so Derek can reference your real material." },
 ];
 
@@ -824,7 +825,7 @@ export default function LandingPage({ onSignIn }) {
                 "100 AI messages per month",
                 "3 Forge outputs per month",
                 "Up to 3 classes",
-                "Up to 15 notes",
+                "Up to 3 notebooks",
                 "Claude Haiku model",
               ]}
             />

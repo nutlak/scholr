@@ -988,9 +988,9 @@ export default function Scholr() {
   const profileRef = useRef(null);
   const [subscription, setSubscription] = useState({
     tier: "free",
-    messagesUsed: 0, messagesLimit: 30,
+    messagesUsed: 0, messagesLimit: 100,
     forgeUsed: 0, forgeLimit: 3,
-    notebooksUsed: 0, notebooksLimit: 15,
+    notebooksUsed: 0, notebooksLimit: 3,
   });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
   const [confirmDeleteNb, setConfirmDeleteNb] = useState(null); // notebook pending deletion

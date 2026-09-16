@@ -35,6 +35,7 @@ import { NotebookView } from "./features/notebook/NotebookView.jsx";
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
+import { PushToggle } from "./features/notifications/PushToggle.jsx";
 import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
 import { EmptyState } from "./ui/EmptyState.jsx";
 import { StatusPill } from "./ui/StatusPill.jsx";
@@ -2172,6 +2173,9 @@ export default function Scholr() {
 
               {/* ── Referrals (1D) ── */}
               <ReferralSection />
+
+              {/* ── Notifications ─────────────────────────────────────────── */}
+              <PushToggle />
 
               {/* ── Appearance ────────────────────────────────────────────── */}
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>

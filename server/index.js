@@ -13,6 +13,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOtpEmail, sendInviteEmail, sendOnboardingEmail, sendReferralEmail, unsubTokenValid } from "./email.js";
 import { rateLimit, ipKeyGenerator } from "express-rate-limit";
+import webpush from "web-push";
 
 // ── Rate limiters (applied per-route below) ───────────────────────────────────
 // Auth'd routes key by user ID; IP is the fallback (ipKeyGenerator handles IPv6 safely)
@@ -243,6 +244,17 @@ function uploadSingleFile(req, res, next) {
 
 // ── Stripe ────────────────────────────────────────────────────────────────────
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+
+// ── Web push (friends-studying-now notification) ──────────────────────────────
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || null;
+const pushEnabled = !!(VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+if (pushEnabled) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || "mailto:support@scholr.dev",
+    VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  );
+}
 
 // ── Supabase clients ──────────────────────────────────────────────────────────
 // Service-role client: bypasses RLS, used for all server-side mutations
@@ -4468,6 +4480,98 @@ app.delete("/api/friends/:friendUserId", requireAuth, async (req, res) => {
   res.status(204).end();
 });
 
+// Push a "Name is studying now" notification to friends who (a) have a push
+// subscription, (b) aren't themselves online right now (no point nudging
+// someone already in the app), and (c) haven't been pushed about this same
+// friend in the last hour (push_notify_log). Fire-and-forget from the caller.
+const PUSH_THROTTLE_MS = 60 * 60 * 1000;
+async function notifyFriendsSomeoneCameOnline(userId) {
+  if (!pushEnabled) return;
+
+  const { data: friendships } = await supabase
+    .from("friendships")
+    .select("user_a, user_b")
+    .or(`user_a.eq.${userId},user_b.eq.${userId}`);
+  const friendIds = (friendships ?? []).map(row => (row.user_a === userId ? row.user_b : row.user_a));
+  if (friendIds.length === 0) return;
+
+  const [{ data: profiles }, { data: subs }, { data: throttle }] = await Promise.all([
+    supabase.from("profiles").select("user_id, last_active").in("user_id", friendIds),
+    supabase.from("push_subscriptions").select("user_id, endpoint, p256dh, auth").in("user_id", friendIds),
+    supabase.from("push_notify_log").select("to_user_id, last_sent_at").eq("from_user_id", userId).in("to_user_id", friendIds),
+  ]);
+
+  const lastActiveById = new Map((profiles ?? []).map(p => [p.user_id, p.last_active]));
+  const throttledUntil = new Map((throttle ?? [])
+    .filter(t => Date.now() - new Date(t.last_sent_at).getTime() < PUSH_THROTTLE_MS)
+    .map(t => [t.to_user_id, true]));
+
+  const targets = friendIds.filter(id => !isOnline(lastActiveById.get(id)) && !throttledUntil.has(id));
+  if (targets.length === 0) return;
+
+  const me = await resolveUserBrief(userId);
+  const payload = JSON.stringify({
+    title: "Scholr",
+    body: `${me.name} is studying right now — join them?`,
+  });
+
+  const subsByUser = new Map();
+  for (const s of subs ?? []) {
+    if (!targets.includes(s.user_id)) continue;
+    if (!subsByUser.has(s.user_id)) subsByUser.set(s.user_id, []);
+    subsByUser.get(s.user_id).push(s);
+  }
+
+  await Promise.all([...subsByUser.entries()].map(async ([friendId, friendSubs]) => {
+    await Promise.all(friendSubs.map(async (s) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          payload,
+        );
+      } catch (err) {
+        // 404/410 = the subscription is dead (uninstalled, permission revoked); clean it up.
+        if (err?.statusCode === 404 || err?.statusCode === 410) {
+          await supabase.from("push_subscriptions").delete().eq("user_id", friendId).eq("endpoint", s.endpoint);
+        } else {
+          console.error("push send error:", err?.message || err);
+        }
+      }
+    }));
+    await supabase.from("push_notify_log")
+      .upsert({ from_user_id: userId, to_user_id: friendId, last_sent_at: new Date().toISOString() });
+  }));
+}
+
+// GET /api/push/vapid-public-key — public key the client needs for PushManager.subscribe()
+app.get("/api/push/vapid-public-key", requireAuth, (req, res) => {
+  if (!pushEnabled) return res.status(404).json({ error: "Push not configured" });
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// POST /api/push/subscribe — body: a PushSubscription (from subscription.toJSON())
+app.post("/api/push/subscribe", requireAuth, async (req, res) => {
+  const { endpoint, keys } = req.body || {};
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    return res.status(400).json({ error: "endpoint and keys.{p256dh,auth} are required" });
+  }
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    { user_id: req.user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+    { onConflict: "user_id,endpoint" },
+  );
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+// POST /api/push/unsubscribe — body: { endpoint }
+app.post("/api/push/unsubscribe", requireAuth, async (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) return res.status(400).json({ error: "endpoint is required" });
+  const { error } = await supabase.from("push_subscriptions").delete().eq("user_id", req.user.id).eq("endpoint", endpoint);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
 // POST /api/me/heartbeat — mark the current user active now (drives online status)
 app.post("/api/me/heartbeat", requireAuth, async (req, res) => {
   const now = new Date().toISOString();
@@ -4487,9 +4591,17 @@ app.post("/api/me/heartbeat", requireAuth, async (req, res) => {
     if (member) notebookId = raw;
   }
 
+  // Read the prior value before overwriting, so we can tell "just came
+  // online" (drives the push in notifyFriendsSomeoneCameOnline) apart from
+  // "still here" (fired every 60s while the app stays open).
+  const { data: prior } = await supabase.from("profiles").select("last_active").eq("user_id", req.user.id).maybeSingle();
+  const wasOffline = !isOnline(prior?.last_active ?? null);
+
   const { error } = await supabase
     .from("profiles")
     .upsert({ user_id: req.user.id, last_active: now, last_notebook_id: notebookId }, { onConflict: "user_id" });
+
+  if (wasOffline) notifyFriendsSomeoneCameOnline(req.user.id).catch(err => console.error("notifyFriendsSomeoneCameOnline error:", err));
 
   // Migration 033 may not have run yet — fall back to presence without context.
   if (error?.message?.includes("last_notebook_id")) {

@@ -1021,6 +1021,32 @@ export const api = {
     return res.json(); // { ok: true }
   },
 
+  // ── Web push (friends-studying-now notification) ─────────────────────
+  async getPushVapidKey() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/push/vapid-public-key`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // { publicKey }
+  },
+
+  async subscribePush(subscription) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/push/subscribe`, {
+      method: "POST", headers, body: JSON.stringify(subscription),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async unsubscribePush(endpoint) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/push/unsubscribe`, {
+      method: "POST", headers, body: JSON.stringify({ endpoint }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   async getSharedNotebooks(friendUserId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/${friendUserId}/shared`, { headers });

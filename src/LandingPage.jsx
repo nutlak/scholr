@@ -694,9 +694,9 @@ export default function LandingPage({ onSignIn }) {
                 fontSize: 13, fontWeight: 700, color: "#fff",
                 boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}>D</div>
-              <div style={{
-                background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 12, padding: "10px 14px", maxWidth: 480,
+              <div className="chat-bubble chat-in" style={{
+                background: "var(--bubble-in)", border: "1px solid var(--border-default)",
+                borderRadius: 18, padding: "11px 15px", maxWidth: 480,
               }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: "#A78BFA", marginBottom: 4, fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase" }}>Derek</div>
                 <div style={{ fontSize: 13, color: "rgba(245,245,250,0.82)", lineHeight: 1.6, fontFamily: FONT, textAlign: "left" }}>
@@ -706,12 +706,12 @@ export default function LandingPage({ onSignIn }) {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-              <div style={{
-                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-                borderRadius: 12,
-                padding: "10px 14px", maxWidth: 380,
+              <div className="chat-bubble chat-own" style={{
+                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                borderRadius: 18,
+                padding: "11px 15px", maxWidth: 380,
                 fontSize: 13, color: "#fff", fontFamily: FONT, fontWeight: 500,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                boxShadow: "0 2px 8px rgba(167,139,250,0.18)",
                 textAlign: "left",
               }}>
                 What's the difference between ionic and covalent bonds?
@@ -727,9 +727,9 @@ export default function LandingPage({ onSignIn }) {
                 fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
                 boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}>D</div>
-              <div style={{
-                background: "#14141F", border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 12, padding: "10px 14px",
+              <div className="chat-bubble chat-in" style={{
+                background: "var(--bubble-in)", border: "1px solid var(--border-default)",
+                borderRadius: 18, padding: "11px 15px",
                 display: "flex", gap: 5, alignItems: "center",
               }}>
                 <span style={{ fontSize: 12, color: "rgba(245,245,250,0.5)", fontStyle: "italic", fontFamily: FONT, marginRight: 4 }}>

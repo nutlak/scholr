@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Users, Play, X } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { useStudyRoom } from "../../lib/live.js";
+import { QuizBattlePanel } from "./QuizBattlePanel.jsx";
 
 // A live study room scoped to one shared notebook (feature C). Opt-in: nobody
 // joins until they hit "Study together", so presence here is deliberate. Shows
@@ -30,7 +31,7 @@ function Countdown({ endsAt }) {
 
 export function StudyRoomBar({ notebookId, me }) {
   const [joined, setJoined] = useState(false);
-  const { members, timer, startTimer, clearTimer, connected } = useStudyRoom(notebookId, me, joined);
+  const { members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle } = useStudyRoom(notebookId, me, joined);
 
   // Not in the room yet — one quiet invitation to start studying together.
   if (!joined) {
@@ -51,6 +52,7 @@ export function StudyRoomBar({ notebookId, me }) {
 
   const others = members.filter(m => m.userId !== me.userId);
   return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
     <div style={{
       display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
       padding: "10px 14px", background: "var(--card-bg)", border: "1px solid var(--card-border)",
@@ -101,6 +103,17 @@ export function StudyRoomBar({ notebookId, me }) {
         border: "1px solid var(--border-default)", color: "var(--text-tertiary)",
         fontFamily: FONT, fontSize: 13, cursor: "pointer",
       }}>Leave</button>
+    </div>
+
+      <QuizBattlePanel
+        notebookId={notebookId}
+        me={me}
+        battle={battle}
+        answers={answers}
+        startBattle={startBattle}
+        submitAnswer={submitAnswer}
+        endBattle={endBattle}
+      />
     </div>
   );
 }

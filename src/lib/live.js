@@ -58,11 +58,19 @@ export const roomTopic = (roomId) => `room:${roomId}`;
 // Join a study room: track my presence so everyone sees a live roster (join/leave
 // is automatic on connect/disconnect), and expose a shared timer synced over the
 // same channel. `me` = { userId, name }. Returns { members, timer, startTimer,
-// clearTimer, connected }.
+// clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle }.
+//
+// Quiz battles ride the same channel as the timer, same trick: whoever starts
+// one broadcasts a schedule (startsAt + roundMs + cards), and every client
+// derives "what round is it now" from the wall clock — no host bookkeeping,
+// no DB, still works if the starter leaves mid-battle. `broadcast: { self:
+// true }` so the sender also sees its own answers land in the tally.
 export function useStudyRoom(roomId, me, enabled) {
   const [members, setMembers] = useState([]);
   const [timer, setTimer] = useState(null); // { phase, endsAt, minutes } | null
   const [connected, setConnected] = useState(false);
+  const [battle, setBattle] = useState(null); // { battleId, cards, startsAt, roundMs } | null
+  const [answers, setAnswers] = useState({}); // { [round]: { [userId]: { name, at } } }
   const chRef = useRef(null);
   const timerRef = useRef(null);
   useEffect(() => { timerRef.current = timer; }, [timer]);
@@ -70,7 +78,7 @@ export function useStudyRoom(roomId, me, enabled) {
   useEffect(() => {
     if (!enabled || !roomId || !me?.userId) return undefined;
     const ch = supabase.channel(roomTopic(roomId), {
-      config: { presence: { key: me.userId } },
+      config: { presence: { key: me.userId }, broadcast: { self: true } },
     });
     chRef.current = ch;
 
@@ -91,6 +99,15 @@ export function useStudyRoom(roomId, me, enabled) {
     ch.on("broadcast", { event: "timer-req" }, () => {
       if (timerRef.current) ch.send({ type: "broadcast", event: "timer", payload: { timer: timerRef.current } });
     });
+    ch.on("broadcast", { event: "battle-start" }, ({ payload }) => { setBattle(payload); setAnswers({}); });
+    ch.on("broadcast", { event: "battle-answer" }, ({ payload }) => {
+      setAnswers(prev => {
+        const round = prev[payload.round] || {};
+        if (round[payload.userId]) return prev; // first answer per round only
+        return { ...prev, [payload.round]: { ...round, [payload.userId]: { name: payload.name, at: payload.at } } };
+      });
+    });
+    ch.on("broadcast", { event: "battle-end" }, () => setBattle(null));
 
     ch.subscribe(async (status) => {
       if (status !== "SUBSCRIBED") return;
@@ -113,5 +130,22 @@ export function useStudyRoom(roomId, me, enabled) {
     chRef.current?.send({ type: "broadcast", event: "timer", payload: { timer: null } });
   }, []);
 
-  return { members, timer, startTimer, clearTimer, connected };
+  const startBattle = useCallback((cards, roundMs = 12000) => {
+    const b = { battleId: crypto.randomUUID(), cards, startsAt: Date.now(), roundMs };
+    chRef.current?.send({ type: "broadcast", event: "battle-start", payload: b });
+  }, []);
+
+  const submitAnswer = useCallback((round) => {
+    if (!me?.userId) return;
+    chRef.current?.send({
+      type: "broadcast", event: "battle-answer",
+      payload: { round, userId: me.userId, name: me.name || "Someone", at: Date.now() },
+    });
+  }, [me]);
+
+  const endBattle = useCallback(() => {
+    chRef.current?.send({ type: "broadcast", event: "battle-end", payload: {} });
+  }, []);
+
+  return { members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle };
 }

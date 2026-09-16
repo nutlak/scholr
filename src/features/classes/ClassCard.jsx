@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronRight, Trash2, X } from "lucide-react";
+import { Calendar, ChevronRight, Trash2, X } from "lucide-react";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
@@ -70,7 +70,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
     </div>
   );
 }
-export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange }) {
+export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange, onViewSyllabus }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
@@ -133,6 +133,24 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
             </div>
           );
         })()}
+
+        {/* Syllabus view — all units, due dates, assessment types, at a glance */}
+        {onViewSyllabus && (
+          <button
+            onClick={e => { e.stopPropagation(); onViewSyllabus(); }}
+            title="View syllabus"
+            className="btn-press"
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              padding: "4px 6px", color: "var(--text-tertiary)",
+              opacity: hovered ? 1 : 0,
+              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 6,
+              display: "inline-flex", alignItems: "center",
+            }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = t.hue; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; }}
+          ><Calendar size={14} strokeWidth={1.8} /></button>
+        )}
 
         {/* Color picker swatch */}
         {onChangeColor && (

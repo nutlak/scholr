@@ -115,25 +115,35 @@ export function SyllabusImportModal({ onClose, onCreated }) {
             <input style={{ ...inp, marginBottom: 16 }} value={className} onChange={e => setClassName(e.target.value)} />
 
             <label style={lbl}>Units ({notebooks.length})</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
               {notebooks.map((n, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <FileText size={14} strokeWidth={1.8} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
-                  <input
-                    style={{ ...inp, height: 36, flex: 1 }}
-                    value={n.name}
-                    onChange={e => updateNotebook(i, { name: e.target.value })}
-                  />
-                  <input
-                    type="date"
-                    style={{ ...inp, height: 36, width: 138, padding: "0 8px" }}
-                    value={n.dueDate || ""}
-                    onChange={e => updateNotebook(i, { dueDate: e.target.value || null })}
-                  />
-                  <button type="button" onClick={() => removeNotebook(i)} className="btn-press" style={{
-                    background: "transparent", border: "none", color: "var(--text-tertiary)",
-                    cursor: "pointer", padding: 4, flexShrink: 0,
-                  }}><Trash2 size={14} strokeWidth={1.8} /></button>
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", background: "var(--s1)", borderRadius: 10 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <FileText size={14} strokeWidth={1.8} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
+                    <input
+                      style={{ ...inp, height: 34, flex: 1, background: "transparent", border: "none", padding: "0 4px" }}
+                      value={n.name}
+                      onChange={e => updateNotebook(i, { name: e.target.value })}
+                    />
+                    <button type="button" onClick={() => removeNotebook(i)} className="btn-press" style={{
+                      background: "transparent", border: "none", color: "var(--text-tertiary)",
+                      cursor: "pointer", padding: 4, flexShrink: 0,
+                    }}><Trash2 size={14} strokeWidth={1.8} /></button>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, paddingLeft: 22 }}>
+                    <input
+                      type="date"
+                      style={{ ...inp, height: 32, flex: 1, padding: "0 8px" }}
+                      value={n.dueDate || ""}
+                      onChange={e => updateNotebook(i, { dueDate: e.target.value || null })}
+                    />
+                    <input
+                      style={{ ...inp, height: 32, flex: 1, padding: "0 8px" }}
+                      placeholder="Assessment type (optional)"
+                      value={n.assessmentType || ""}
+                      onChange={e => updateNotebook(i, { assessmentType: e.target.value || null })}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

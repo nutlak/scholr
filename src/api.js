@@ -557,6 +557,30 @@ export const api = {
     return res.json();
   },
 
+  async updateNotebookDueDate(notebookId, dueDate) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/due-date`, {
+      method: "PATCH", headers, body: JSON.stringify({ due_date: dueDate }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update due date");
+    }
+    return res.json();
+  },
+
+  async updateNotebookAssessmentType(notebookId, assessmentType) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/assessment-type`, {
+      method: "PATCH", headers, body: JSON.stringify({ assessment_type: assessmentType }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error ?? "Failed to update assessment type");
+    }
+    return res.json();
+  },
+
   // ── Explain Differently ─────────────────────────────────────────────
   async explainDifferently(notebookId, messageId, level) {
     const headers = await authHeaders();

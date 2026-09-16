@@ -7,6 +7,7 @@ import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
 import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
+import { useDerekPhrase } from "../../lib/derekPhrases.js";
 import { InviteModal } from "./InviteModal.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
@@ -195,6 +196,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [loading, setLoading]       = useState(false);
+  const derekPhrase = useDerekPhrase(loading);
   const [showUpload, setShowUpload] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -759,7 +761,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 }}>
                   <span className="shimmer" style={{
                     fontSize: 13, fontWeight: 500, fontFamily: FONT, letterSpacing: "-0.01em",
-                  }}>Derek is thinking…</span>
+                  }}>{derekPhrase}</span>
                 </div>
               </div>
             )}

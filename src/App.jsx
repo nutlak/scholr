@@ -34,6 +34,7 @@ import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 import { NotebookView } from "./features/notebook/NotebookView.jsx";
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
 import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx";
+import { ClassSyllabusModal } from "./features/classes/ClassSyllabusModal.jsx";
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { PushToggle } from "./features/notifications/PushToggle.jsx";
@@ -1319,6 +1320,18 @@ export default function Scholr() {
     catch (err) { console.error(err); setToast("Couldn't update status"); setTimeout(() => setToast(""), 2500); }
   }
 
+  async function handleSetDueDate(nb, dueDate) {
+    patchNotebookEverywhere(nb.id, { due_date: dueDate });
+    try { await api.updateNotebookDueDate(nb.id, dueDate); }
+    catch (err) { console.error(err); setToast("Couldn't update due date"); setTimeout(() => setToast(""), 2500); }
+  }
+
+  async function handleSetAssessmentType(nb, assessmentType) {
+    patchNotebookEverywhere(nb.id, { assessment_type: assessmentType });
+    try { await api.updateNotebookAssessmentType(nb.id, assessmentType); }
+    catch (err) { console.error(err); setToast("Couldn't update assessment type"); setTimeout(() => setToast(""), 2500); }
+  }
+
   // Open a notebook by id (from a notification). Look across loaded lists first;
   // if not found (e.g. just invited, not yet in any list), refresh shared and retry.
   async function openNotebookById(notebookId) {
@@ -1402,6 +1415,22 @@ export default function Scholr() {
   async function handleToggleClass(classId) {
     if (expandedClassId === classId) { setExpandedClassId(null); return; }
     setExpandedClassId(classId);
+    if (classUnitsCache[classId]) return;
+    setClassUnitsCache(prev => ({ ...prev, [classId]: null }));
+    try {
+      const units = await api.listClassNotebooks(classId, getDisplayName(user));
+      setClassUnitsCache(prev => ({ ...prev, [classId]: units }));
+    } catch {
+      setClassUnitsCache(prev => ({ ...prev, [classId]: [] }));
+    }
+  }
+
+  // "Click a class, see the whole syllabus" — reuses the same units cache the
+  // inline expand uses, so opening the syllabus view for an already-expanded
+  // class is instant, and expanding it afterward doesn't re-fetch either.
+  const [syllabusClassId, setSyllabusClassId] = useState(null);
+  async function openClassSyllabus(classId) {
+    setSyllabusClassId(classId);
     if (classUnitsCache[classId]) return;
     setClassUnitsCache(prev => ({ ...prev, [classId]: null }));
     try {
@@ -1793,6 +1822,22 @@ export default function Scholr() {
           onCreated={handleImportSyllabus}
         />
       )}
+
+      {syllabusClassId && (() => {
+        const cls = classes.find(c => c.id === syllabusClassId);
+        if (!cls) return null;
+        return (
+          <ClassSyllabusModal
+            cls={cls}
+            units={classUnitsCache[syllabusClassId] ?? []}
+            onClose={() => setSyllabusClassId(null)}
+            onOpenUnit={unit => { setSyllabusClassId(null); openUnitWithClassColor(unit, cls.color); }}
+            onDueDateChange={handleSetDueDate}
+            onAssessmentTypeChange={handleSetAssessmentType}
+            onStatusChange={handleSetStatus}
+          />
+        );
+      })()}
 
       {newUnitFor && (
         <NewUnitModal
@@ -2530,6 +2575,7 @@ export default function Scholr() {
                             onToggle={() => handleToggleClass(cls.id)}
                             onChangeColor={color => handleChangeClassColor(cls.id, color)}
                             onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
+                            onViewSyllabus={() => openClassSyllabus(cls.id)}
                             onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
                             onDeleteClass={() => setDeleteClassTarget(cls)}
                             onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}

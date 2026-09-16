@@ -601,6 +601,42 @@ export const api = {
     window.location.href = url;
   },
 
+  // ── Squad plan (one subscription, Pro for the whole group) ───────────
+  async createSquadCheckoutSession() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/squad/create-checkout-session`, { method: "POST", headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw apiError(res, data, "Couldn't start squad checkout");
+    }
+    const { url } = await res.json();
+    if (!url) throw new Error("Checkout session was created without a URL");
+    window.location.href = url;
+  },
+
+  async getMySquad() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/squad/mine`, { headers });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // null | { id, name, seats, active, isOwner, members, inviteUrl }
+  },
+
+  async joinSquad(token) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/squad/join/${token}`, { method: "POST", headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw apiError(res, data, "Couldn't join that squad");
+    return data;
+  },
+
+  async leaveSquad() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/squad/leave`, { method: "POST", headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw apiError(res, data, "Couldn't leave the squad");
+    return data;
+  },
+
   async createPortalSession() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/create-portal-session`, { method: "POST", headers });

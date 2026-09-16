@@ -37,6 +37,7 @@ import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx"
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { PushToggle } from "./features/notifications/PushToggle.jsx";
+import { SquadSection } from "./features/squad/SquadSection.jsx";
 import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
 import { EmptyState } from "./ui/EmptyState.jsx";
 import { StatusPill } from "./ui/StatusPill.jsx";
@@ -965,6 +966,7 @@ export default function Scholr() {
   const [showAuth, setShowAuth] = useState(() => readAuthIntentFromUrl() !== null);
   const [authIntent, setAuthIntent] = useState(() => readAuthIntentFromUrl() || "signup"); // tab: "signup" | "login"
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
+  const [pendingSquadToken, setPendingSquadToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
   const [heatmap, setHeatmap] = useState([]);
@@ -1050,6 +1052,29 @@ export default function Scholr() {
     window.history.replaceState({}, "", "/");
     api.getInvite(token).then(setInviteInfo).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/squad-invite\/([^/]+)/);
+    if (!match) return;
+    setPendingSquadToken(match[1]);
+    window.history.replaceState({}, "", "/");
+  }, []);
+
+  useEffect(() => {
+    if (!pendingSquadToken || !user || !authReady) return;
+    const token = pendingSquadToken;
+    setPendingSquadToken(null);
+    api.joinSquad(token)
+      .then(() => {
+        setActiveView("settings");
+        setToast("You're in the squad — enjoy Pro!");
+        setTimeout(() => setToast(""), 4000);
+      })
+      .catch(err => {
+        setToast(err.message || "Couldn't join that squad.");
+        setTimeout(() => setToast(""), 4000);
+      });
+  }, [pendingSquadToken, user, authReady]);
 
   useEffect(() => {
     if (!pendingInviteToken || !user || !authReady) return;
@@ -2211,6 +2236,8 @@ export default function Scholr() {
 
               {/* ── Notifications ─────────────────────────────────────────── */}
               <PushToggle />
+
+              <SquadSection />
 
               {/* ── Appearance ────────────────────────────────────────────── */}
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>

@@ -1,0 +1,99 @@
+import { useEffect, useState } from "react";
+import { Users, Copy, Check } from "lucide-react";
+import { FONT } from "../../lib/theme.js";
+import { api } from "../../api.js";
+
+// Settings > Notifications-adjacent section for the Squad plan: one
+// subscription, Pro for up to 5 people. Mirrors ReferralSection's
+// self-contained load-on-mount pattern.
+export function SquadSection() {
+  const [squad, setSquad] = useState(undefined); // undefined = loading, null = none
+  const [starting, setStarting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.getMySquad().then(setSquad).catch(() => setSquad(null));
+  }, []);
+
+  async function startSquad() {
+    setStarting(true);
+    setError("");
+    try {
+      await api.createSquadCheckoutSession(); // navigates away on success
+    } catch (err) {
+      setError(err.message);
+      setStarting(false);
+    }
+  }
+
+  async function copyInvite() {
+    if (!squad?.inviteUrl) return;
+    try { await navigator.clipboard.writeText(squad.inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch { /* clipboard unavailable */ }
+  }
+
+  if (squad === undefined) return null;
+
+  return (
+    <>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+        Squad plan
+      </div>
+      <div style={{ padding: "14px 0", marginBottom: 32, borderBottom: "1px solid var(--border-subtle)" }}>
+        {!squad ? (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <Users size={18} strokeWidth={1.9} color="var(--text-tertiary)" />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>One subscription, Pro for up to 5</div>
+                <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
+                  Start a squad and invite your study group — everyone gets Pro while it's active.
+                </div>
+              </div>
+            </div>
+            <button onClick={startSquad} disabled={starting} className="btn-press" style={{
+              minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
+              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+              fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
+              opacity: starting ? 0.7 : 1,
+            }}>{starting ? "…" : "Start a squad"}</button>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <Users size={18} strokeWidth={1.9} color="var(--accent)" />
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>
+                {squad.name} &middot; {squad.members.length}/{squad.seats} members
+              </div>
+              {!squad.active && (
+                <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: FONT }}>inactive</span>
+              )}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+              {squad.members.map(m => (
+                <span key={m.userId} style={{
+                  fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT,
+                  background: "var(--pill-bg)", border: "1px solid var(--pill-border)",
+                  borderRadius: 999, padding: "3px 10px",
+                }}>{m.name}</span>
+              ))}
+            </div>
+            {squad.isOwner && squad.inviteUrl && (
+              <button onClick={copyInvite} className="btn-press" style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                minHeight: 34, padding: "0 14px", borderRadius: 9,
+                background: "transparent", border: "1px solid var(--border-default)",
+                color: "var(--text-secondary)", fontFamily: FONT, fontSize: 12.5, cursor: "pointer",
+              }}>
+                {copied ? <Check size={13} strokeWidth={2.2} /> : <Copy size={13} strokeWidth={1.9} />}
+                {copied ? "Copied" : "Copy invite link"}
+              </button>
+            )}
+          </>
+        )}
+        {error && <div style={{ fontSize: 12.5, color: "var(--danger)", fontFamily: FONT, marginTop: 8 }}>{error}</div>}
+      </div>
+    </>
+  );
+}

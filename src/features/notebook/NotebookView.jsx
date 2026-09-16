@@ -59,8 +59,9 @@ function renderMessageText(text, isOwn) {
     return <span key={i}>{p}</span>;
   });
 }
-function SourcesPanel({ sources }) {
+function SourcesPanel({ sources, notesById = {} }) {
   const [open, setOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
   if (!sources || sources.length === 0) return null;
   return (
     <div style={{ marginTop: 6, marginLeft: 2 }}>
@@ -84,15 +85,32 @@ function SourcesPanel({ sources }) {
           borderRadius: 8, maxWidth: 360,
         }}>
           {sources.map((s, i) => {
-            const [title, author] = String(s).split(" \u2014 ");
+            const note = s.id ? notesById[s.id] : null;
+            const isExpanded = expandedId === s.id;
             return (
-              <div key={i} style={{
-                fontSize: 11.5, color: "var(--text-secondary)",
-                fontFamily: FONT, padding: "2px 0",
-              }}>
-                &bull; {title}
-                {author && (
-                  <span style={{ color: "var(--accent)" }}> &mdash; {author}</span>
+              <div key={s.id ?? i} style={{ padding: "2px 0" }}>
+                <button
+                  onClick={() => note && setExpandedId(isExpanded ? null : s.id)}
+                  disabled={!note}
+                  style={{
+                    background: "none", border: "none", padding: 0,
+                    fontSize: 11.5, color: note ? "var(--acc-h)" : "var(--text-secondary)",
+                    fontFamily: FONT, cursor: note ? "pointer" : "default",
+                    textDecoration: note ? "underline" : "none", textAlign: "left",
+                  }}
+                >
+                  &bull; {s.title}
+                  {s.author && <span style={{ color: "var(--accent)" }}> &mdash; {s.author}</span>}
+                </button>
+                {isExpanded && note && (
+                  <div style={{
+                    marginTop: 4, marginBottom: 4, padding: "8px 10px",
+                    background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
+                    borderRadius: 6, fontSize: 12, color: "var(--text-secondary)",
+                    lineHeight: 1.5, maxHeight: 200, overflowY: "auto", whiteSpace: "pre-wrap",
+                  }}>
+                    {(note.content || "[file attachment \u2014 no text content]").slice(0, 1200)}
+                  </div>
                 )}
               </div>
             );
@@ -190,6 +208,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   // tangle; responsive behavior is now handled purely in CSS.
   const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
   const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
+  const [notesById, setNotesById] = useState({});     // id -> note, for expanding a citation inline
 
   // Print with the notebook's own name on the page instead of "scholr — …".
   function exportPdf() {
@@ -220,16 +239,20 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   useEffect(() => {
     api.getMessages(nb.id)
       .then(async (rows) => {
+        // Needed both to derive prior-message sources below and so a fresh
+        // answer's {id, title} sources can expand to full content inline —
+        // fetch once per notebook open regardless of whether there's history.
+        let notesByTitle = [];
+        try { notesByTitle = await api.listNotes(nb.id); } catch { /* ignore */ }
+        setNotesById(Object.fromEntries(notesByTitle.map(n => [n.id, n])));
+
         if (rows.length > 0) {
-          // For prior assistant messages, derive sources by matching known note titles against the content
-          let notesByTitle = [];
-          try { notesByTitle = await api.listNotes(nb.id); } catch { /* ignore */ }
           setMessages(rows.map(r => ({
             id: r.id, role: r.role, text: r.content, createdBy: r.created_by,
             sources: r.role === "assistant"
               ? notesByTitle
                   .filter(n => n.title && r.content.toLowerCase().includes(n.title.toLowerCase()))
-                  .map(n => n.title)
+                  .map(n => ({ id: n.id, title: n.title }))
               : undefined,
           })));
         } else {
@@ -662,7 +685,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   </div>
                   {/* Sources display under Derek's message */}
                   {isAssistant && !m.isError && m.sources && m.sources.length > 0 && (
-                    <SourcesPanel sources={m.sources} />
+                    <SourcesPanel sources={m.sources} notesById={notesById} />
                   )}
                   {/* Explain Differently controls */}
                   {isAssistant && !m.isError && m.id && (

@@ -1765,7 +1765,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, quer
   // Pull all text notes for this notebook
   const { data: notes, error } = await supabase
     .from("notes")
-    .select("title, content, created_at, uploader_id")
+    .select("id, title, content, created_at, uploader_id")
     .eq("notebook_id", req.params.id)
     .order("created_at", { ascending: false })
     .limit(40);
@@ -1840,12 +1840,11 @@ Everything written by the people in this notebook — the notes, the chat histor
     });
 
     const answer = message.content.find((b) => b.type === "text")?.text ?? "";
+    // { id, title, author } — id lets the client link straight back to the
+    // note instead of just naming it, which is the whole trust-building point.
     const sources = (notes ?? [])
       .filter(n => n.title && answer.toLowerCase().includes(n.title.toLowerCase()))
-      .map(n => {
-        const who = names.get(n.uploader_id);
-        return who ? `${n.title} — ${who}` : n.title;
-      });
+      .map(n => ({ id: n.id, title: n.title, author: names.get(n.uploader_id) || null }));
     trackEvent(req.user.id, "ai_message_sent", { notebookId: req.params.id });
     // Soft nudge: warn a free user once they cross FREE_MSG_WARN (pre-wall).
     const nextUsed = usageCheck.tier !== "pro" ? usageCheck.used + 1 : null;

@@ -256,6 +256,28 @@ if (pushEnabled) {
   );
 }
 
+// A push subscription's `endpoint` is a URL the *client* supplies, and the
+// server later makes an outbound request to it (webpush.sendNotification)
+// whenever a friend's presence triggers a notification — unvalidated, that's
+// an SSRF primitive fully triggerable with two attacker-controlled accounts
+// (no victim needed): register a malicious endpoint, friend a second
+// account, trigger that account's heartbeat. Real push endpoints only ever
+// come from a small set of known browser-vendor push services, so allowlist
+// by host rather than trying to block-list "internal-looking" URLs.
+const ALLOWED_PUSH_ENDPOINT_HOSTS = [
+  /(^|\.)fcm\.googleapis\.com$/,       // Chrome, Edge, other Chromium browsers
+  /(^|\.)android\.googleapis\.com$/,   // older Chrome/Android
+  /(^|\.)push\.apple\.com$/,           // Safari
+  /(^|\.)mozilla\.com$/,               // Firefox
+  /(^|\.)notify\.windows\.com$/,       // legacy Edge
+];
+function isAllowedPushEndpoint(urlStr) {
+  let url;
+  try { url = new URL(urlStr); } catch { return false; }
+  if (url.protocol !== "https:") return false;
+  return ALLOWED_PUSH_ENDPOINT_HOSTS.some(re => re.test(url.hostname));
+}
+
 // ── Supabase clients ──────────────────────────────────────────────────────────
 // Service-role client: bypasses RLS, used for all server-side mutations
 const supabase = createClient(
@@ -371,10 +393,14 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
             console.error(`[stripe] squad creation failed for user=${userId}:`, squadErr.message);
             break;
           }
-          await supabase.from("squad_members").upsert(
-            { squad_id: squad.id, user_id: userId },
-            { onConflict: "squad_id,user_id" },
-          );
+          // Same one-squad-per-user invariant POST /api/squad/join/:token
+          // enforces — without this, a member of someone else's squad who
+          // starts their own ends up with two squad_members rows, which
+          // silently breaks hasActiveSquadPro's .maybeSingle() lookup (it
+          // errors on >1 row and getUserTier swallows that as "not pro"),
+          // so a squad owner could pay and never actually get Pro.
+          await supabase.from("squad_members").delete().eq("user_id", userId);
+          await supabase.from("squad_members").insert({ squad_id: squad.id, user_id: userId });
           console.log(`[stripe] checkout.session.completed: squad ${squad.id} created for owner=${userId}, period_end=${periodEnd}`);
           trackEvent(userId, "squad_created");
           break;
@@ -560,12 +586,17 @@ async function getUserTier(userId) {
 }
 
 async function hasActiveSquadPro(userId) {
+  // .limit(1) + array read rather than .maybeSingle(): the one-squad-per-user
+  // invariant is enforced at every write site, but .maybeSingle() *errors*
+  // (not just "picks one") on an unexpected 2nd row, and that error was being
+  // swallowed here as silent "not pro" — a paying squad owner could lose
+  // access with no visible cause if that invariant were ever violated again.
   const { data } = await supabase
     .from("squad_members")
     .select("squads!inner(current_period_end)")
     .eq("user_id", userId)
-    .maybeSingle();
-  const periodEnd = data?.squads?.current_period_end;
+    .limit(1);
+  const periodEnd = data?.[0]?.squads?.current_period_end;
   return !!periodEnd && new Date(periodEnd) > new Date();
 }
 
@@ -4145,11 +4176,12 @@ app.post("/api/squad/create-checkout-session", requireAuth, checkoutLimiter, asy
 // GET /api/squad/mine — the squad the caller owns or belongs to, with member
 // names and (owner only) the invite link. null if not in one.
 app.get("/api/squad/mine", requireAuth, async (req, res) => {
-  const { data: membership } = await supabase
+  const { data: memberships } = await supabase
     .from("squad_members")
     .select("squad_id")
     .eq("user_id", req.user.id)
-    .maybeSingle();
+    .limit(1);
+  const membership = memberships?.[0];
   if (!membership) return res.json(null);
 
   const { data: squad } = await supabase
@@ -4207,6 +4239,22 @@ app.post("/api/squad/join/:token", requireAuth, async (req, res) => {
   await supabase.from("squad_members").delete().eq("user_id", req.user.id);
   const { error } = await supabase.from("squad_members").insert({ squad_id: squad.id, user_id: req.user.id });
   if (error) return res.status(500).json({ error: error.message });
+
+  // The count check above and this insert aren't atomic, so concurrent joins
+  // against the last open seat can all pass the check together. Re-verify
+  // after inserting and evict yourself if the squad ended up over capacity —
+  // bounds the overshoot to "however many joins raced," rather than leaving
+  // the cap unenforced. A true fix needs a DB-level constraint or advisory
+  // lock; this is a best-effort backstop given seats is only ever 5.
+  const { count: after } = await supabase
+    .from("squad_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("squad_id", squad.id);
+  if ((after ?? 0) > squad.seats) {
+    await supabase.from("squad_members").delete().eq("squad_id", squad.id).eq("user_id", req.user.id);
+    return res.status(403).json({ error: "squad_full", message: "This squad just filled up — try again or ask the owner for a spot." });
+  }
+
   trackEvent(req.user.id, "squad_joined", { squadId: squad.id });
   res.json({ ok: true });
 });
@@ -4857,6 +4905,9 @@ app.post("/api/push/subscribe", requireAuth, async (req, res) => {
   const { endpoint, keys } = req.body || {};
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     return res.status(400).json({ error: "endpoint and keys.{p256dh,auth} are required" });
+  }
+  if (!isAllowedPushEndpoint(endpoint)) {
+    return res.status(400).json({ error: "Unrecognized push endpoint." });
   }
   const { error } = await supabase.from("push_subscriptions").upsert(
     { user_id: req.user.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },

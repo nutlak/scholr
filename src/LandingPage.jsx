@@ -812,7 +812,7 @@ export default function LandingPage({ onSignIn }) {
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 20, maxWidth: 760, margin: "56px auto 0",
+            gap: 20, maxWidth: 980, margin: "56px auto 0",
           }}>
             {/* FREE card */}
             <PricingCard
@@ -846,6 +846,21 @@ export default function LandingPage({ onSignIn }) {
                 "Unlimited notes",
                 "Claude Sonnet (smarter AI)",
                 "Priority support",
+              ]}
+            />
+            {/* SQUAD card */}
+            <PricingCard
+              tier="Squad"
+              price="$24.99"
+              period="/ month"
+              accent="#34D399"
+              ctaLabel="Start a squad"
+              onClick={onSignIn}
+              features={[
+                "Everything in Pro",
+                "Pro for up to 5 people",
+                "One bill for the whole group",
+                "Invite your study group instantly",
               ]}
             />
           </div>

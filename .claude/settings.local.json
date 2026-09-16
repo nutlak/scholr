@@ -70,7 +70,18 @@
       "Bash(perl -0pi -e ' *)",
       "Bash(perl -0pi -e 's/<FriendsSidebarSection \\\\/>/<FriendsSidebarSection refreshSignal={friendsVersion} \\\\/>/g' src/App.jsx)",
       "Bash(perl -0pi -e 's/<NotificationsBell onOpenNotebook=\\\\{openNotebookById\\\\} onOpenBilling=\\\\{handleManageSubscription\\\\} \\\\/>/<NotificationsBell onOpenNotebook={openNotebookById} onOpenBilling={handleManageSubscription} reloadSignal={notifVersion} \\\\/>/g' src/App.jsx)",
-      "Bash(awk -F: '$1>5900')"
+      "Bash(awk -F: '$1>5900')",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npx eslint src server)",
+      "Bash(npx vite build)",
+      "Bash(curl -sf http://localhost:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s -o /dev/null -w *)",
+      "Bash(lsof -ti:*)",
+      "Bash(node *)",
+      "Bash(npx playwright *)",
+      "Bash(npx --yes playwright *)"
     ]
   }
 }

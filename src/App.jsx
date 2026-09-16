@@ -33,6 +33,7 @@ import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 import { NotebookView } from "./features/notebook/NotebookView.jsx";
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
+import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx";
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { PushToggle } from "./features/notifications/PushToggle.jsx";
@@ -955,6 +956,7 @@ export default function Scholr() {
   );
   const [classUnitsCache, setClassUnitsCache] = useState({});
   const [showNewClassModal, setShowNewClassModal] = useState(false);
+  const [showSyllabusModal, setShowSyllabusModal] = useState(false);
   const [newUnitFor, setNewUnitFor] = useState(null);
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
@@ -1421,6 +1423,32 @@ export default function Scholr() {
     }
   }
 
+  // Same underlying flow as handleCreateClass's template branch — a syllabus
+  // is just a template the user didn't have to hand-type, extracted by
+  // SyllabusImportModal and reviewed before this ever runs.
+  async function handleImportSyllabus(className, notebooks) {
+    const cls = await api.createClass(className);
+    setClasses(prev => [...prev, cls]);
+    try {
+      const result = await api.applyTemplate(cls.id, notebooks);
+      const nm = getDisplayName(user);
+      api.listNotebooks(nm).then(setNotebooks).catch(() => {});
+      api.listClasses().then(setClasses).catch(() => {});
+      if (result.firstNotebookId) {
+        const units = await api.listClassNotebooks(cls.id, nm).catch(() => []);
+        const first = units.find(u => u.id === result.firstNotebookId) || units[0];
+        if (first) { setActiveNb(first); setActiveView("dashboard"); }
+      }
+      if (result.limitHit) {
+        setToast("Some units weren't added — you've hit the free plan limit.");
+        setTimeout(() => setToast(""), 4500);
+      }
+    } catch (e) {
+      console.error("syllabus applyTemplate failed:", e);
+      throw new Error("Class created, but adding the units failed.", { cause: e });
+    }
+  }
+
   const [portalLoading, setPortalLoading] = useState(false);
   async function handleManageSubscription() {
     setPortalLoading(true);
@@ -1731,6 +1759,13 @@ export default function Scholr() {
         <NewClassModal
           onClose={() => setShowNewClassModal(false)}
           onCreate={handleCreateClass}
+        />
+      )}
+
+      {showSyllabusModal && (
+        <SyllabusImportModal
+          onClose={() => setShowSyllabusModal(false)}
+          onCreated={handleImportSyllabus}
         />
       )}
 
@@ -2346,19 +2381,32 @@ export default function Scholr() {
                   )}
                 </div>
                 {activeView === "dashboard" && (
-                  <button
-                    onClick={() => setShowNewClassModal(true)}
-                    className="btn-press desktop-only"
-                    style={{
-                      background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
-                      border: "none", borderRadius: 10, padding: "0 22px", height: 46,
-                      color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer",
-                      fontFamily: FONT, flexShrink: 0,
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                      letterSpacing: "-0.01em",
-                      display: "flex", alignItems: "center", gap: 6,
-                    }}
-                  >+ New Class</button>
+                  <>
+                    <button
+                      onClick={() => setShowSyllabusModal(true)}
+                      className="btn-press desktop-only"
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--border-default)", borderRadius: 10, padding: "0 16px", height: 46,
+                        color: "var(--text-secondary)", fontWeight: 600, fontSize: 14, cursor: "pointer",
+                        fontFamily: FONT, flexShrink: 0,
+                        letterSpacing: "-0.01em",
+                      }}
+                    >Import syllabus</button>
+                    <button
+                      onClick={() => setShowNewClassModal(true)}
+                      className="btn-press desktop-only"
+                      style={{
+                        background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                        border: "none", borderRadius: 10, padding: "0 22px", height: 46,
+                        color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer",
+                        fontFamily: FONT, flexShrink: 0,
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                        letterSpacing: "-0.01em",
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}
+                    >+ New Class</button>
+                  </>
                 )}
                 {/* Mobile-only profile avatar trigger (opens existing dropdown) */}
                 <button

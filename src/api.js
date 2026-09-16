@@ -789,6 +789,23 @@ export const api = {
     return res.json(); // { success, firstNotebookId, created, limitHit }
   },
 
+  // Upload a syllabus PDF/text file; Claude extracts a class name + unit list.
+  // Nothing is created server-side — feed the result into createClass +
+  // applyTemplate once the user has reviewed it.
+  async parseSyllabus(file) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_URL}/api/syllabus/parse`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      body: form,
+    });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) throw apiError(res, data, "Couldn't read that syllabus");
+    return data; // { className, notebooks: [{ name, dueDate }] }
+  },
+
   async getNotebookImages(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, { headers });

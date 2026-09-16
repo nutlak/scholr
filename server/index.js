@@ -2618,11 +2618,14 @@ function formatGuidance(format) {
   }
 }
 
-async function generatePodcastScript({ claudeKey, model, nbTitle, nbTopic, notesContext, lengthPreset, formatPreset, focusTopic }) {
+async function generatePodcastScript({ claudeKey, model, nbTitle, nbTopic, notesContext, lengthPreset, formatPreset, focusTopic, dualPerspective }) {
   const target = PODCAST_LENGTH_TARGETS[lengthPreset] ?? PODCAST_LENGTH_TARGETS.standard;
   const anthropic = anthropicClient(claudeKey);
   const focusLine = focusTopic
     ? `\n\nFOCUS: The episode must center on this specific topic: "${focusTopic}". Touch other material only as it supports this focus.`
+    : "";
+  const dualLine = dualPerspective
+    ? `\n\nDUAL SOURCE: the reference material below is labelled with two separate notebooks (likely two different people's notes on the same unit). Synthesize both into one coherent episode rather than covering them as two separate segments — where they overlap, treat that as confirmation; where one adds something the other doesn't, treat that as the more complete picture. Don't call out "notebook one" / "notebook two" by that name to the listener.`
     : "";
   const systemPrompt = `You are a podcast scriptwriter. Write a two-host audio dialogue based on the study notes below. The hosts are Alex (host A) and Sam (host B) — two thoughtful, curious co-hosts.
 
@@ -2632,7 +2635,7 @@ Hard requirements:
 - Stay GROUNDED in the provided notes. Don't fabricate facts that aren't in the source material. If notes are thin on a point, the hosts can acknowledge that.
 - Target length: about ${target.words} words total across all lines.
 - Open with a brief hook (one or two lines), close with a brief sign-off.
-${formatGuidance(formatPreset)}${focusLine}
+${formatGuidance(formatPreset)}${focusLine}${dualLine}
 
 OUTPUT FORMAT — RETURN STRICT JSON ONLY, no markdown, no commentary:
 {
@@ -2717,28 +2720,36 @@ async function ttsLineToBuffer(openai, text, voice) {
 // Runs the full Claude→TTS→Supabase pipeline. Updates the podcasts row with
 // status='ready' (with audio_url + transcript) or status='failed' (with msg).
 // Caller MUST have inserted a row with status='generating' first.
-async function runPodcastPipeline(podcastId, { notebookId, userId, lengthPreset, formatPreset, focusTopic }) {
+async function runPodcastPipeline(podcastId, { notebookId, userId, lengthPreset, formatPreset, focusTopic, secondNotebookId }) {
   const claudeKey = process.env.CLAUDE_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   try {
     if (!claudeKey) throw new Error("Claude key not configured");
     if (!openaiKey) throw new Error("OpenAI key not configured");
 
-    // Gather notebook context exactly like Derek does.
-    const { data: notes } = await supabase
-      .from("notes")
-      .select("title, content, created_at")
-      .eq("notebook_id", notebookId)
-      .order("created_at", { ascending: false })
-      .limit(40);
-    const { data: nb } = await supabase
-      .from("notebooks")
-      .select("title, topic")
-      .eq("id", notebookId)
-      .single();
-    const notesContext = (notes ?? [])
+    // Gather notebook context exactly like Derek does. When a second notebook
+    // is given (dual-perspective episode — typically a friend's notes on the
+    // same unit), fetch and label its notes too, and note the second owner so
+    // the script can synthesize both instead of just concatenating.
+    const fetchNotebook = async (id) => {
+      const [{ data: notes }, { data: nb }] = await Promise.all([
+        supabase.from("notes").select("title, content, created_at").eq("notebook_id", id)
+          .order("created_at", { ascending: false }).limit(40),
+        supabase.from("notebooks").select("title, topic").eq("id", id).single(),
+      ]);
+      return { notes: notes ?? [], nb };
+    };
+
+    const primary = await fetchNotebook(notebookId);
+    const secondary = secondNotebookId ? await fetchNotebook(secondNotebookId) : null;
+
+    const toContext = (notes) => notes
       .map(n => `Note: ${n.title || "Untitled"}\n${n.content || "[file attachment — no extracted text]"}`)
       .join("\n\n---\n\n");
+
+    const notesContext = secondary
+      ? `=== From "${primary.nb?.title ?? "Notebook"}" ===\n${toContext(primary.notes)}\n\n=== From "${secondary.nb?.title ?? "Notebook"}" ===\n${toContext(secondary.notes)}`
+      : toContext(primary.notes);
 
     const tier = await getUserTier(userId);
     const model = getModel(tier);
@@ -2746,10 +2757,11 @@ async function runPodcastPipeline(podcastId, { notebookId, userId, lengthPreset,
     // Stage 1: script
     const { title, lines } = await generatePodcastScript({
       claudeKey, model,
-      nbTitle: nb?.title ?? "Notebook",
-      nbTopic: nb?.topic,
+      nbTitle: primary.nb?.title ?? "Notebook",
+      nbTopic: primary.nb?.topic,
       notesContext,
       lengthPreset, formatPreset, focusTopic,
+      dualPerspective: !!secondary,
     });
 
     // Persist script + final title immediately so the UI can show transcript
@@ -2806,6 +2818,22 @@ app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, aiLi
   const focusRaw = typeof req.body?.focusTopic === "string" ? req.body.focusTopic.trim() : "";
   const focusTopic = focusRaw ? focusRaw.slice(0, 200) : null;
 
+  // Optional: a second notebook (typically a friend's, on the same unit) to
+  // draw the episode from too. Membership is checked here, same as the
+  // first notebook via requireMember — a caller can't pull in a notebook
+  // they don't already belong to.
+  let secondNotebookId = null;
+  const secondRaw = req.body?.secondNotebookId;
+  if (typeof secondRaw === "string" && UUID_RE.test(secondRaw) && secondRaw !== req.params.id) {
+    const { data: member } = await supabase
+      .from("notebook_members")
+      .select("user_id")
+      .eq("notebook_id", secondRaw)
+      .eq("user_id", req.user.id)
+      .maybeSingle();
+    if (member) secondNotebookId = secondRaw;
+  }
+
   // Insert generating row up-front so client immediately has an id to poll.
   const { data: row, error } = await supabase
     .from("podcasts")
@@ -2828,7 +2856,7 @@ app.post("/api/notebooks/:id/podcast/generate", requireAuth, requireMember, aiLi
     runPodcastPipeline(row.id, {
       notebookId: req.params.id,
       userId: req.user.id,
-      lengthPreset, formatPreset, focusTopic,
+      lengthPreset, formatPreset, focusTopic, secondNotebookId,
     }).catch(err => console.error("podcast pipeline crashed:", err));
   });
 

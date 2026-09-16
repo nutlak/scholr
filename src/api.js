@@ -623,6 +623,7 @@ export const api = {
         lengthPreset: opts?.lengthPreset ?? "standard",
         formatPreset: opts?.formatPreset ?? "casual",
         focusTopic: opts?.focusTopic ?? null,
+        secondNotebookId: opts?.secondNotebookId ?? null,
       }),
     });
     if (!res.ok) {

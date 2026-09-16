@@ -215,6 +215,10 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
   const [lengthPreset, setLengthPreset] = useState("standard");
   const [formatPreset, setFormatPreset] = useState("casual");
   const [focusTopic, setFocusTopic] = useState("");
+  const [friends, setFriends] = useState([]);
+  const [dualFriendId, setDualFriendId] = useState("");
+  const [dualNotebookId, setDualNotebookId] = useState("");
+  const [dualNotebooks, setDualNotebooks] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [pollId, setPollId] = useState(null);
   const [activePodcast, setActivePodcast] = useState(null); // currently-rendered ready episode
@@ -234,8 +238,19 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
       const firstReady = rows.find(r => r.status === "ready");
       if (firstReady) setActivePodcast(firstReady);
     }).catch(console.error);
+    api.getFriends().then(rows => { if (alive) setFriends(rows); }).catch(() => {});
     return () => { alive = false; if (pollTimer.current) clearInterval(pollTimer.current); };
   }, [nb.id]);
+
+  // When a friend is picked for a dual-perspective episode, load the
+  // notebooks the caller shares with them (already access-checked server
+  // side — every one returned is a notebook the caller is already in).
+  useEffect(() => {
+    if (!dualFriendId) { setDualNotebooks([]); setDualNotebookId(""); return; }
+    api.getSharedNotebooks(dualFriendId)
+      .then(rows => setDualNotebooks(rows.filter(r => r.id !== nb.id)))
+      .catch(() => setDualNotebooks([]));
+  }, [dualFriendId, nb.id]);
 
   // Poll a generating episode until ready/failed.
   useEffect(() => {
@@ -273,6 +288,7 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
       const { podcastId } = await api.generatePodcast(nb.id, {
         lengthPreset, formatPreset,
         focusTopic: focusTopic.trim() || null,
+        secondNotebookId: dualNotebookId || null,
       });
       setPollId(podcastId);
     } catch (e) {
@@ -438,6 +454,51 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
               opacity: isLocked ? 0.5 : 1,
             }}
           />
+
+          {friends.length > 0 && (
+            <>
+              <div style={{
+                fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT,
+                letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
+              }}>Dual-perspective (optional)</div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <select
+                  value={dualFriendId}
+                  onChange={e => setDualFriendId(e.target.value)}
+                  disabled={isLocked}
+                  style={{
+                    flex: 1, height: 40, borderRadius: 10, padding: "0 10px",
+                    background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
+                    color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                  }}
+                >
+                  <option value="">Solo episode</option>
+                  {friends.map(f => (
+                    <option key={f.userId} value={f.userId}>Combine with {f.name}'s notes…</option>
+                  ))}
+                </select>
+                {dualFriendId && (
+                  <select
+                    value={dualNotebookId}
+                    onChange={e => setDualNotebookId(e.target.value)}
+                    disabled={isLocked}
+                    style={{
+                      flex: 1, height: 40, borderRadius: 10, padding: "0 10px",
+                      background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
+                      color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                    }}
+                  >
+                    <option value="">
+                      {dualNotebooks.length === 0 ? "No shared notebooks" : "Pick their notebook…"}
+                    </option>
+                    {dualNotebooks.map(n => (
+                      <option key={n.id} value={n.id}>{n.title}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </>
+          )}
 
           <button
             onClick={handleGenerate}

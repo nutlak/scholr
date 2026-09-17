@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, Copy, Check } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
-import { api } from "../../api.js";
+import { api, serverFeatures } from "../../api.js";
 
 // Settings > Notifications-adjacent section for the Squad plan: one
 // subscription, Pro for up to 5 people. Mirrors ReferralSection's
@@ -12,8 +12,17 @@ export function SquadSection() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  // null = still asking. Fails open, so a failed check still offers the plan.
+  const [available, setAvailable] = useState(null);
+
   useEffect(() => {
     api.getMySquad().then(setSquad).catch(() => setSquad(null));
+  }, []);
+
+  // Squad checkout needs a Stripe price configured server-side. Without this
+  // the button looked live and died on click with an error.
+  useEffect(() => {
+    serverFeatures().then(f => setAvailable(f.squad !== false));
   }, []);
 
   async function startSquad() {
@@ -52,12 +61,18 @@ export function SquadSection() {
                 </div>
               </div>
             </div>
-            <button onClick={startSquad} disabled={starting} className="btn-press" style={{
-              minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
-              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
-              fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
-              opacity: starting ? 0.7 : 1,
-            }}>{starting ? "…" : "Start a squad"}</button>
+            {available === false ? (
+              <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
+                Squad plans are temporarily unavailable — check back soon.
+              </div>
+            ) : (
+              <button onClick={startSquad} disabled={starting} className="btn-press" style={{
+                minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
+                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+                fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
+                opacity: starting ? 0.7 : 1,
+              }}>{starting ? "…" : "Start a squad"}</button>
+            )}
           </>
         ) : (
           <>

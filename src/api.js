@@ -48,6 +48,21 @@ async function authHeaders(extra = {}) {
   };
 }
 
+// Which optional integrations the server actually has configured.
+//
+// Memoized: several settings sections ask, and the answer can't change
+// without a redeploy. Fails *open* — if the check itself fails we show the
+// feature rather than hiding a paid plan over a flaky request, and the user
+// still gets the friendly error from the route itself.
+let _featuresPromise = null;
+export function serverFeatures() {
+  _featuresPromise ??= fetch(`${API_URL}/api/health`)
+    .then(r => r.ok ? r.json() : null)
+    .then(d => d?.features ?? {})
+    .catch(() => ({}));
+  return _featuresPromise;
+}
+
 const COLORS = ["#A78BFA", "#60A5FA", "#34D399", "#F472B6", "#FBBF24", "#F97316"];
 
 function shapeNotebook(nb, displayName) {

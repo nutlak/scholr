@@ -835,9 +835,18 @@ async function incrementUsage(userId, type, amount = 1) {
 app.get("/healthz", (_, res) => res.json({ ok: true }));
 
 // GET /api/health — env var presence check (values never exposed)
-app.get("/api/health", (_, res) => res.json({
-  ok: true,
-  env: {
+//
+// This list had drifted: it was written before push notifications and the
+// Squad plan shipped, so the four vars those features need weren't checked.
+// Both went missing in production and /api/health still answered all-true,
+// which is exactly the blind spot that let it go unnoticed. Anything a
+// feature hard-requires belongs here, or this endpoint lies by omission.
+//
+// `features` is the derived view the client uses so the UI doesn't offer a
+// button that cannot work. Booleans only — never values, and the key names
+// stay server-side of the `env` block.
+app.get("/api/health", (_, res) => {
+  const env = {
     SUPABASE_URL:              !!process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY:         !!process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -847,9 +856,22 @@ app.get("/api/health", (_, res) => res.json({
     CLIENT_ORIGIN:             !!process.env.CLIENT_ORIGIN,
     STRIPE_SECRET_KEY:         !!process.env.STRIPE_SECRET_KEY,
     STRIPE_PRICE_ID:           !!process.env.STRIPE_PRICE_ID,
+    STRIPE_PRICE_ID_SQUAD:     !!process.env.STRIPE_PRICE_ID_SQUAD,
     STRIPE_WEBHOOK_SECRET:     !!process.env.STRIPE_WEBHOOK_SECRET,
-  },
-}));
+    VAPID_PUBLIC_KEY:          !!process.env.VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY:         !!process.env.VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT:             !!process.env.VAPID_SUBJECT,
+  };
+  res.json({
+    ok: true,
+    env,
+    features: {
+      push:  pushEnabled,
+      squad: !!(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID_SQUAD),
+      pro:   !!(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID),
+    },
+  });
+});
 
 // POST /api/notebooks/:id/images — save a generated image to the notebook.
 // REQUIRES (one-time setup in Supabase before this works):

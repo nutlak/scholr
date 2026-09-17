@@ -52,9 +52,9 @@ test("/api/health declares every env var that has no fallback", () => {
   const index = readFileSync(join(serverDir, "index.js"), "utf8");
 
   // The literal env block inside the health route.
-  const block = index.match(/app\.get\("\/api\/health"[\s\S]*?\n  \};/);
+  const block = index.match(/app\.get\("\/api\/health"[\s\S]*?\n {2}\};/);
   assert.ok(block, "could not locate the /api/health env block — did the route move?");
-  const declared = new Set([...block[0].matchAll(/^\s{4}([A-Z0-9_]+):/gm)].map(m => m[1]));
+  const declared = new Set([...block[0].matchAll(/^ {4}([A-Z0-9_]+):/gm)].map(m => m[1]));
   assert.ok(declared.size > 5, `parsed too few declared vars (${declared.size}) — the matcher is probably broken`);
 
   const required = new Set();
@@ -75,8 +75,8 @@ test("/api/health declares every env var that has no fallback", () => {
 
 test("the health route still exposes presence only, never values", () => {
   const index = readFileSync(join(serverDir, "index.js"), "utf8");
-  const block = index.match(/app\.get\("\/api\/health"[\s\S]*?\n  \};/);
-  const lines = block[0].split("\n").filter(l => /^\s{4}[A-Z0-9_]+:/.test(l));
+  const block = index.match(/app\.get\("\/api\/health"[\s\S]*?\n {2}\};/);
+  const lines = block[0].split("\n").filter(l => /^ {4}[A-Z0-9_]+:/.test(l));
   assert.ok(lines.length > 0, "no env lines parsed");
   for (const line of lines) {
     assert.match(

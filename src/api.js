@@ -243,7 +243,7 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/members`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ user_id, role, email }]
+    return res.json(); // [{ user_id, role, first_name, display_name, username, lastActive, isOnline }]
   },
 
   async listNotes(notebookId) {
@@ -271,20 +271,6 @@ export const api = {
       throw new Error(err.error ?? "Failed to upload note");
     }
     return res.json();
-  },
-
-  async getNotifications() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notifications`, { headers });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json(); // [{ id, is_read, created_at, activities: { action, description, created_at, notebooks: { title } } }]
-  },
-
-  async clearAllNotifications() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notifications/clear-all`, { method: "PATCH", headers });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json(); // { cleared: N }
   },
 
   async getStarredNotebooks(displayName) {
@@ -951,8 +937,6 @@ export const api = {
   },
 
   // ── Social notifications (friend requests / accepts / notebook invites) ──
-  // Named *Social* to avoid colliding with the existing activity-based
-  // getNotifications()/clearAllNotifications() above.
   async getSocialNotifications() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/social/notifications`, { headers });

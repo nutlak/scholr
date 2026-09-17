@@ -144,7 +144,7 @@ relevant material — for example, your notebook notes and the questions or text
 you submit — to third-party AI providers to generate a response. When you use
 these features, the relevant User Content is transmitted to Anthropic (the
 Claude API), for text-based study features, and OpenAI, for audio generation
-(text-to-speech). These providers process the content to return a result to you.
+(text-to-speech) and AI image generation. These providers process the content to return a result to you.
 We rely on these providers' standard API terms, under which API inputs and
 outputs are not used to train their models by default. AI outputs can be
 inaccurate — see our Terms of Service for the full AI disclaimer. Please do not

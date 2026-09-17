@@ -60,7 +60,7 @@ export function MemberAvatarStack({ members }) {
     >
       {visible.map((m, i) => (
         <div key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i, position: "relative" }}>
-          <Avatar name={m.email} size={28} seed={m.email} />
+          <Avatar name={memberLabel(m)} size={28} seed={m.user_id} />
           {m.isOnline && (
             <span
               aria-label="Here now"
@@ -116,7 +116,7 @@ export function MemberAvatarStack({ members }) {
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "6px 4px", borderRadius: 8,
               }}>
-                <Avatar name={m.email} size={26} seed={m.email} />
+                <Avatar name={memberLabel(m)} size={26} seed={m.user_id} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 13, fontWeight: 500, color: "var(--t1)",
@@ -134,11 +134,11 @@ export function MemberAvatarStack({ members }) {
                       {isOwner ? "Owner" : "Member"}
                     </span>
                   </div>
-                  {m.email && m.email !== label && (
+                  {m.username && `@${m.username}` !== label && (
                     <div style={{
                       fontSize: 11, color: "var(--t3)", marginTop: 1,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>{m.email}</div>
+                    }}>@{m.username}</div>
                   )}
                 </div>
               </div>

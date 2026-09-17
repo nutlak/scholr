@@ -6,7 +6,7 @@ import { FONT, MONO, REACTION_EMOJIS } from "../../lib/theme.js";
 import { timeAgo } from "../../lib/format.js";
 
 function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
-  const author = note.first_name || note.full_name || note.email?.split("@")[0] || "Member";
+  const author = note.display_name || note.first_name || note.full_name || "Member";
   const mine = note.user_id === currentUserId;
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState([]);
@@ -91,7 +91,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
       animation: "fadeIn 0.18s ease",
     }}>
       <div style={{ display: "flex", gap: 10 }}>
-        <Avatar name={note.email ?? author} size={26} seed={note.email ?? author} />
+        <Avatar name={author} size={26} seed={note.user_id ?? author} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
             <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>
@@ -136,7 +136,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                 const rows = await api.getNoteReactions(note.id);
                 const byEmoji = {};
                 for (const row of rows) {
-                  const name = row.user_id === currentUserId ? "You" : (row.first_name || row.email?.split("@")[0] || "Member");
+                  const name = row.user_id === currentUserId ? "You" : (row.first_name || "Member");
                   (byEmoji[row.emoji] ??= []).push(name);
                 }
                 setReactionUsers(byEmoji);
@@ -222,14 +222,14 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
           ) : (
             <>
               {comments.map(c => {
-                const cAuthor = c.first_name || c.full_name || c.email?.split("@")[0] || "Member";
+                const cAuthor = c.first_name || c.full_name || "Member";
                 const cMine = c.user_id === currentUserId;
                 return (
                   <div key={c.id} style={{
                     display: "flex", gap: 8, padding: "6px 0",
                     borderBottom: "1px solid var(--border-default)",
                   }}>
-                    <Avatar name={c.email ?? cAuthor} size={20} seed={c.email ?? cAuthor} />
+                    <Avatar name={cAuthor} size={20} seed={c.user_id ?? cAuthor} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t1)", fontFamily: FONT }}>

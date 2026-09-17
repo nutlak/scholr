@@ -35,6 +35,7 @@ export function formatPodcastTime(secs) {
 }
 
 export function memberLabel(m) {
+  if (m.display_name) return m.display_name;
   const first = m.first_name?.trim();
   if (first) return first;
   const local = m.email?.split("@")[0] ?? "Member";

@@ -383,17 +383,15 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   const mentionCandidates = mentionOpen
     ? members
         .filter(m => {
-          const name = (m.first_name || m.email?.split("@")[0] || "").toLowerCase();
-          return name && name !== (members.find(x => x.user_id === currentUserId)?.first_name || "").toLowerCase() && name.startsWith(mentionQuery);
+          const name = (m.display_name || "").toLowerCase();
+          return name && name !== (members.find(x => x.user_id === currentUserId)?.display_name || "").toLowerCase() && name.startsWith(mentionQuery);
         })
         .slice(0, 6)
     : [];
 
   const me = currentUserId ? {
     userId: currentUserId,
-    name: members.find(m => m.user_id === currentUserId)?.first_name
-      || members.find(m => m.user_id === currentUserId)?.email?.split("@")[0]
-      || "Someone",
+    name: members.find(m => m.user_id === currentUserId)?.display_name || "Someone",
   } : null;
 
   return (
@@ -615,9 +613,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               const senderLabel = isAssistant
                 ? "Derek"
                 : isOtherMember
-                  ? (senderInfo?.first_name?.trim() || senderInfo?.email?.split("@")[0] || "Member")
+                  ? (senderInfo?.display_name || "Member")
                   : null;
-              const senderTint = isOtherMember ? tintFor(senderInfo?.email ?? "") : null;
+              const senderTint = isOtherMember ? tintFor(senderInfo?.user_id ?? "") : null;
 
               return (
                 <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isOwn ? "flex-end" : "flex-start" }}>
@@ -822,8 +820,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   Mention a member
                 </div>
                 {mentionCandidates.map(m => {
-                  const name = m.first_name || m.email?.split("@")[0] || "Member";
-                  const tnt = tintFor(m.email ?? name);
+                  const name = m.display_name || "Member";
+                  const tnt = tintFor(m.user_id ?? name);
                   return (
                     <div
                       key={m.user_id}

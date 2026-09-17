@@ -502,7 +502,10 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
 
 // 50mb limit so /api/notebooks/:id/images can accept base64-encoded
 // generated images (a 1536x1536 PNG can be ~3–6 MB raw, ~4–8 MB as base64).
-app.use(express.json({ limit: '50mb' }));
+// File uploads go through multer (its own 10MB limit, set where `upload` is
+// defined) and never hit this parser, so JSON bodies never legitimately need
+// anywhere near 50MB — that was pure unscoped attack surface.
+app.use(express.json({ limit: '2mb' }));
 
 // Global rate limit on all /api routes. Registered AFTER the Stripe webhook
 // route (above) so Stripe's retries are never throttled, and after express.json
@@ -1258,26 +1261,35 @@ app.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req, re
 
   if (error) return res.status(500).json({ error: error.message });
 
-  // Email + first name from auth.users, plus presence, so the notebook header
-  // can show who else is in here right now — the whole point of studying together.
+  // First name + presence from auth.users/profiles, so the notebook header
+  // can show who else is in here right now — the whole point of studying
+  // together. Email itself never leaves the server: other members (who may
+  // just be classmates sharing one notebook, not friends) have no reason to
+  // see each other's raw addresses, so we resolve it down to a display name
+  // here instead.
   const results = await Promise.all(
     (members ?? []).map(async ({ user_id, role }) => {
       const [{ data }, { data: prof }] = await Promise.all([
         supabase.auth.admin.getUserById(user_id),
-        supabase.from("profiles").select("last_active").eq("user_id", user_id).maybeSingle(),
+        supabase.from("profiles").select("last_active, username").eq("user_id", user_id).maybeSingle(),
       ]);
+      const email = data?.user?.email ?? null;
+      const first_name = data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null;
+      const local = email?.split("@")[0];
       return {
         user_id,
         role,
-        email:      data?.user?.email ?? null,
-        first_name: data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
-        lastActive: prof?.last_active ?? null,
-        isOnline:   isOnline(prof?.last_active ?? null),
+        hasEmail:     !!email,
+        first_name,
+        display_name: first_name || (local ? local.charAt(0).toUpperCase() + local.slice(1) : "Member"),
+        username:     prof?.username ?? null,
+        lastActive:   prof?.last_active ?? null,
+        isOnline:     isOnline(prof?.last_active ?? null),
       };
     })
   );
 
-  res.json(results.filter(m => m.email));
+  res.json(results.filter(m => m.hasEmail).map(({ hasEmail: _hasEmail, ...m }) => m));
 });
 
 // GET /api/notebooks/:id/messages — fetch shared chat history
@@ -1368,6 +1380,13 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
         );
         if (!matched.length) return;
 
+        // A shared notebook can't hide a blocked member's messages without
+        // breaking the thread for everyone else, but a block should still
+        // stop a direct @mention notification from reaching them.
+        const blocked = await blockedUserIds(userId);
+        const notifiable = matched.filter(m => !blocked.has(m.user_id));
+        if (!notifiable.length) return;
+
         // Unified notification (social_notifications) — one per mentioned member.
         const { data: nb } = await supabase
           .from("notebooks").select("title").eq("id", notebookId).single();
@@ -1375,7 +1394,7 @@ app.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, 
         const fromUsername = meBrief.username || meBrief.name;
         const snippet = content.slice(0, 140);
 
-        await Promise.all(matched.map(m =>
+        await Promise.all(notifiable.map(m =>
           pushNotification(m.user_id, "mention", {
             fromUserId:    userId,
             fromUsername,
@@ -1836,6 +1855,10 @@ app.post(
       }
     }
 
+    if (typeof content === "string" && content.length > 300000) {
+      return res.status(400).json({ error: "Note content too long (max 300,000 characters)." });
+    }
+
     const { data, error } = await supabase
       .from("notes")
       .insert({
@@ -1893,44 +1916,6 @@ app.post(
     })();
   }
 );
-
-// GET /api/notifications — unread notifications for the current user
-app.get("/api/notifications", requireAuth, async (req, res) => {
-  console.log("fetching notifications for user:", req.user.id);
-  const { data, error } = await supabase
-    .from("notifications")
-    .select(`
-      id, is_read, created_at,
-      activities (
-        action, description, created_at,
-        notebooks ( title )
-      )
-    `)
-    .eq("user_id", req.user.id)
-    .eq("is_read", false)
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  if (error) {
-    console.error("notifications query error:", error);
-    return res.status(500).json({ error: error.message });
-  }
-  console.log("found notifications:", data?.length ?? 0);
-  res.json(data ?? []);
-});
-
-// PATCH /api/notifications/clear-all — mark all unread notifications as read
-app.patch("/api/notifications/clear-all", requireAuth, async (req, res) => {
-  const { data, error } = await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("user_id", req.user.id)
-    .eq("is_read", false)
-    .select("id");
-
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ cleared: data?.length ?? 0 });
-});
 
 // Shared notes-context builder for every Claude call that reads a notebook's
 // notes. Two jobs: (1) cap total size so one note-heavy notebook can't blow
@@ -2531,15 +2516,19 @@ app.get("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req,
     .order("created_at", { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
 
-  // Resolve display name + email per row via auth.admin
+  // Resolve a display name per row via auth.admin — never the raw email,
+  // since other notebook members may just be classmates, not friends.
   const userIds = [...new Set((rows ?? []).map(r => r.user_id))];
   const userInfo = {};
   await Promise.all(userIds.map(async (uid) => {
     const { data } = await supabase.auth.admin.getUserById(uid);
+    const email = data?.user?.email ?? null;
+    const first_name = data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null;
+    const local = email?.split("@")[0];
     userInfo[uid] = {
-      email: data?.user?.email ?? null,
-      first_name: data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+      first_name,
       full_name: data?.user?.user_metadata?.full_name ?? null,
+      display_name: first_name || (local ? local.charAt(0).toUpperCase() + local.slice(1) : "Member"),
     };
   }));
 
@@ -2566,9 +2555,9 @@ app.get("/api/notebooks/:id/unit-notes", requireAuth, requireMember, async (req,
 
   res.json((rows ?? []).map(r => ({
     ...r,
-    email: userInfo[r.user_id]?.email ?? null,
     first_name: userInfo[r.user_id]?.first_name ?? null,
     full_name: userInfo[r.user_id]?.full_name ?? null,
+    display_name: userInfo[r.user_id]?.display_name ?? "Member",
     reactions: reactionsByNote[r.id] ?? [],
     comment_count: commentCountByNote[r.id] ?? 0,
   })));
@@ -5166,7 +5155,11 @@ app.get("/api/me/username", requireAuth, async (req, res) => {
 });
 
 // POST /api/me/username — set/update the current user's username.
-const RESERVED_USERNAMES = new Set(["admin", "root", "support"]);
+const RESERVED_USERNAMES = new Set([
+  "admin", "root", "support", "help", "staff", "moderator", "mod",
+  "official", "system", "security", "billing", "abuse",
+  "webmaster", "postmaster", "scholr", "derek",
+]);
 app.post("/api/me/username", requireAuth, async (req, res) => {
   let { username } = req.body ?? {};
   if (typeof username !== "string") {

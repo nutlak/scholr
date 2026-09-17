@@ -30,6 +30,10 @@ test("memberLabel prefers first name, else capitalised email local part", () => 
   assert.equal(memberLabel({}), "Member");
 });
 
+test("memberLabel prefers a server-computed display_name over local fallback logic", () => {
+  assert.equal(memberLabel({ display_name: "Katherine", email: "kj@nasa.gov" }), "Katherine");
+});
+
 test("getDisplayName falls back through metadata, email, then default", () => {
   assert.equal(getDisplayName({ user_metadata: { full_name: "Ada L" } }), "Ada L");
   assert.equal(getDisplayName({ email: "ada@x.com" }), "ada");

@@ -500,12 +500,13 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
   }
 });
 
-// 50mb limit so /api/notebooks/:id/images can accept base64-encoded
+// 10mb limit so /api/notebooks/:id/images can accept base64-encoded
 // generated images (a 1536x1536 PNG can be ~3–6 MB raw, ~4–8 MB as base64).
 // File uploads go through multer (its own 10MB limit, set where `upload` is
-// defined) and never hit this parser, so JSON bodies never legitimately need
-// anywhere near 50MB — that was pure unscoped attack surface.
-app.use(express.json({ limit: '2mb' }));
+// defined) and never hit this parser — everything else is plain text (chat,
+// notes, Feynman explanations) and needs nowhere near this much, but images
+// are the one real JSON-body consumer that does.
+app.use(express.json({ limit: '10mb' }));
 
 // Global rate limit on all /api routes. Registered AFTER the Stripe webhook
 // route (above) so Stripe's retries are never throttled, and after express.json
@@ -644,7 +645,11 @@ async function recordProCost(userId, tier, model, usage) {
     (usage.output_tokens ?? 0) * rate.out +
     (usage.cache_creation_input_tokens ?? 0) * rate.in * 1.25 +
     (usage.cache_read_input_tokens ?? 0) * rate.in * 0.1;
-  const cents = Math.round(cost * 100);
+  // Round up, not to nearest — most individual calls cost well under a cent,
+  // and rounding to nearest would silently drop them to 0 and never
+  // accumulate, undercounting exactly the "lots of small questions" pattern
+  // this tripwire exists to catch.
+  const cents = Math.ceil(cost * 100);
   if (cents <= 0) return;
 
   await resetUsageIfNeeded(userId);

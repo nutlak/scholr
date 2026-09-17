@@ -15,6 +15,20 @@ function apiError(res, data, fallback) {
   return err;
 }
 
+// Turn a failed response into an Error carrying a *human* message.
+//
+// This used to be `throw new Error(await res.text())` at 40-odd call sites,
+// which throws the raw response body — so a route replying
+// {"error":"Push not configured"} put that literal JSON on screen in Settings.
+// Parse it, hand it to apiError, and every one of those sites gets a plain
+// sentence plus the friendly 429 handling for free.
+async function readError(res, fallback = "Something went wrong. Please try again.") {
+  const raw = await res.text().catch(() => "");
+  let data = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch { /* HTML error page, proxy timeout, empty body */ }
+  return apiError(res, data, fallback);
+}
+
 // The user's local calendar date, e.g. "2026-09-09". Sent on every request so
 // the server can stamp daily activity in the user's timezone rather than UTC —
 // without it, studying late in the evening counts toward the next day and
@@ -55,7 +69,7 @@ export const api = {
   async listNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     const data = await res.json();
     return data.map(nb => shapeNotebook(nb, displayName));
   },
@@ -63,7 +77,7 @@ export const api = {
   async listOwnedNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/owned`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     const data = await res.json();
     return data.map(nb => shapeNotebook(nb, displayName));
   },
@@ -71,7 +85,7 @@ export const api = {
   async listSharedNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/shared`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     const data = await res.json();
     return data.map(nb => shapeNotebook(nb, displayName));
   },
@@ -128,7 +142,7 @@ export const api = {
   async listClasses() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/classes`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -188,7 +202,7 @@ export const api = {
   async listClassNotebooks(classId, displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/classes/${classId}/notebooks`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     const data = await res.json();
     return data.map(nb => shapeNotebook({ ...nb, role: "owner" }, displayName));
   },
@@ -242,14 +256,14 @@ export const api = {
   async listMembers(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/members`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ user_id, role, first_name, display_name, username, lastActive, isOnline }]
   },
 
   async listNotes(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -276,7 +290,7 @@ export const api = {
   async getStarredNotebooks(displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/starred`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     const data = await res.json();
     return data.map(nb => shapeNotebook(nb, displayName));
   },
@@ -296,7 +310,7 @@ export const api = {
   async getMessages(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/messages`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ id, role, content, created_at, created_by }]
   },
 
@@ -375,7 +389,7 @@ export const api = {
   async listForgeOutputs(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/forge-outputs`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -443,14 +457,14 @@ export const api = {
   async getActivityHeatmap() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/user/activity-heatmap`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ date, count }]
   },
 
   async getFriendsLeaderboard() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/leaderboard`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ userId, name, streak, isMe }] — caller included, sorted desc, zero streaks omitted
   },
 
@@ -463,7 +477,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/track-visit`, {
       method: "POST", headers, body: JSON.stringify({ dateLabel }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { tracked: true }
   },
 
@@ -495,7 +509,7 @@ export const api = {
   async getNoteReactions(unitNoteId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/reactions`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -515,7 +529,7 @@ export const api = {
   async getNoteComments(unitNoteId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -627,7 +641,7 @@ export const api = {
   async getMySquad() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/squad/mine`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // null | { id, name, seats, active, isOwner, members, inviteUrl }
   },
 
@@ -682,14 +696,14 @@ export const api = {
   async getPodcasts(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/podcasts`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
   async getPodcast(podcastId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/podcasts/${podcastId}`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -714,7 +728,7 @@ export const api = {
   async getTermsStatus() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/user/terms-status`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { accepted: boolean }
   },
 
@@ -754,7 +768,7 @@ export const api = {
   async completeOnboarding() {
     const headers = await authHeaders({ "Content-Type": "application/json" });
     const res = await fetch(`${API_URL}/api/user/complete-onboarding`, { method: "POST", headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -771,7 +785,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/streak`, {
       method: "POST", headers, body: JSON.stringify({ current }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { longest_streak }
   },
 
@@ -780,7 +794,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/user/streak-milestone`, {
       method: "POST", headers, body: JSON.stringify({ day }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { streak_milestones_shown }
   },
 
@@ -788,7 +802,7 @@ export const api = {
   async getReferralStats() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/referral/stats`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { referralLink, invited, signedUp }
   },
 
@@ -917,7 +931,7 @@ export const api = {
   async getMyUsername() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/me/username`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { username: string | null }
   },
 
@@ -940,7 +954,7 @@ export const api = {
   async getSocialNotifications() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/social/notifications`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { notifications: [{ id, type, payload, read, created_at }], unreadCount }
   },
 
@@ -950,7 +964,7 @@ export const api = {
       method: "POST", headers,
       body: JSON.stringify({ ids: ids ?? [] }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { ok: true }
   },
 
@@ -963,7 +977,7 @@ export const api = {
   async clearSocialNotifications() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/social/notifications`, { method: "DELETE", headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { ok: true }
   },
 
@@ -1004,21 +1018,21 @@ export const api = {
   async getFriends() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ userId, name, username, isOnline, lastActive }]
   },
 
   async getFriendRequests() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/requests`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ requestId, fromUserId, fromName, fromUsername, created_at }]
   },
 
   async getOutgoingRequests() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/requests/outgoing`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ requestId, toUserId, toName, toUsername, created_at }]
   },
 
@@ -1067,7 +1081,7 @@ export const api = {
   async getBlockedUsers() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/blocked`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ userId, username, name }]
   },
 
@@ -1079,7 +1093,7 @@ export const api = {
       method: "POST", headers,
       body: JSON.stringify(notebookId ? { notebookId } : {}),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { ok: true }
   },
 
@@ -1087,7 +1101,7 @@ export const api = {
   async getPushVapidKey() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/push/vapid-public-key`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { publicKey }
   },
 
@@ -1096,7 +1110,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/push/subscribe`, {
       method: "POST", headers, body: JSON.stringify(subscription),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
@@ -1105,21 +1119,21 @@ export const api = {
     const res = await fetch(`${API_URL}/api/push/unsubscribe`, {
       method: "POST", headers, body: JSON.stringify({ endpoint }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json();
   },
 
   async getSharedNotebooks(friendUserId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/${friendUserId}/shared`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ id, title, topic, color, updated_at }]
   },
 
   async getBestFriends() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/best`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ userId, name, username, activityCount }]
   },
 
@@ -1141,7 +1155,7 @@ export const api = {
   async searchUsers(q) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/friends/search?q=${encodeURIComponent(q)}`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ userId, username, name }] — username prefix match, no email
   },
 
@@ -1161,7 +1175,7 @@ export const api = {
   async getFlashcards(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/flashcards`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // [{ id, front, back, due_date, ... }]
   },
 
@@ -1169,14 +1183,14 @@ export const api = {
     const headers = await authHeaders();
     const qs = notebookId ? `?notebookId=${encodeURIComponent(notebookId)}` : "";
     const res = await fetch(`${API_URL}/api/flashcards/due${qs}`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { cards: [{ ..., notebookTitle }], total }
   },
 
   async getDueCount() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/flashcards/due/count`, { headers });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw await readError(res);
     return res.json(); // { count }
   },
 

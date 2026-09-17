@@ -4272,7 +4272,16 @@ app.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (re
 // tags the session so the webhook creates a squad instead of a personal sub.
 app.post("/api/squad/create-checkout-session", requireAuth, checkoutLimiter, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
-  if (!process.env.STRIPE_PRICE_ID_SQUAD) return res.status(500).json({ error: "STRIPE_PRICE_ID_SQUAD not configured" });
+  if (!process.env.STRIPE_PRICE_ID_SQUAD) {
+    // Naming the env var in the response put "STRIPE_PRICE_ID_SQUAD not
+    // configured" on screen in Settings. That's infrastructure detail the user
+    // can do nothing with — log it for us, tell them something true instead.
+    console.error("[squad/checkout] STRIPE_PRICE_ID_SQUAD is not set — squad checkout is unavailable");
+    return res.status(503).json({
+      error: "squad_unavailable",
+      message: "Squad plans aren't available right now. Please try again later.",
+    });
+  }
 
   const userId = req.user.id;
   const userEmail = req.user.email;
@@ -5035,7 +5044,12 @@ async function notifyFriendsSomeoneCameOnline(userId) {
 
 // GET /api/push/vapid-public-key — public key the client needs for PushManager.subscribe()
 app.get("/api/push/vapid-public-key", requireAuth, (req, res) => {
-  if (!pushEnabled) return res.status(404).json({ error: "Push not configured" });
+  if (!pushEnabled) {
+    return res.status(503).json({
+      error: "push_unavailable",
+      message: "Push notifications aren't set up yet — check back soon.",
+    });
+  }
   res.json({ publicKey: VAPID_PUBLIC_KEY });
 });
 

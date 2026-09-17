@@ -747,7 +747,7 @@ export const api = {
   async getProfile() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/user/profile`, { headers });
-    if (!res.ok) return { onboarding_completed: true, longest_streak: 0, streak_milestones_shown: [], referral_months_earned: 0 };
+    if (!res.ok) return { onboarding_completed: true, longest_streak: 0, streak_milestones_shown: [] };
     return res.json();
   },
 
@@ -789,7 +789,7 @@ export const api = {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/referral/stats`, { headers });
     if (!res.ok) throw new Error(await res.text());
-    return res.json(); // { referralLink, invited, signedUp, monthsEarned }
+    return res.json(); // { referralLink, invited, signedUp }
   },
 
   async sendReferralInvite(referredEmail) {

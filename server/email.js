@@ -216,7 +216,7 @@ export async function sendReferralEmail(to, referrerName, refUserId) {
     <h1 style="${H}font-size:24px;margin:0 0 14px;">${name} invited you to study on Scholr</h1>
     <p style="${P}">Scholr turns your class notes into a shared AI tutor — upload notes, ask Derek anything, and quiz yourself with Feynman Mode, together with your study group.</p>
     ${ctaButton("Join Scholr free →", link)}
-    <p style="font-size:13px;color:#808098;margin:16px 0 0;">It's free to start, and ${name} gets a month of Pro when you sign up.</p>
+    <p style="font-size:13px;color:#808098;margin:16px 0 0;">It's free to start.</p>
   `);
   const { error } = await getResend().emails.send({
     from: "Scholr <support@scholr.dev>",

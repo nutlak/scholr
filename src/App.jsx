@@ -904,7 +904,7 @@ function ReferralSection() {
         <button onClick={copy} className="btn-press" style={{ ...field, width: "auto", padding: "0 16px", cursor: "pointer", color: "var(--acc)", fontWeight: 600 }}>{copied ? "Copied!" : "Copy"}</button>
       </div>
       <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 14 }}>
-        {(stats?.invited ?? 0)} friends invited · {(stats?.signedUp ?? 0)} signed up · {(stats?.monthsEarned ?? 0)} months earned
+        {(stats?.invited ?? 0)} friends invited · {(stats?.signedUp ?? 0)} signed up
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} placeholder="friend@school.edu" style={{ ...field, flex: 1 }} />
@@ -912,7 +912,7 @@ function ReferralSection() {
       </div>
       {msg && <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 6 }}>{msg}</div>}
       <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, lineHeight: 1.5 }}>
-        Your friend gets Scholr for free. You get 1 month of Pro when they sign up.
+        Studying together works better than studying alone — bring the people you already study with.
       </div>
     </div>
   );

@@ -4046,14 +4046,13 @@ app.get("/api/user/terms-status", requireAuth, async (req, res) => {
 app.get("/api/user/profile", requireAuth, async (req, res) => {
   const { data } = await supabase
     .from("profiles")
-    .select("onboarding_completed, longest_streak, streak_milestones_shown, referral_months_earned")
+    .select("onboarding_completed, longest_streak, streak_milestones_shown")
     .eq("user_id", req.user.id)
     .maybeSingle();
   res.json({
     onboarding_completed: !!data?.onboarding_completed,
     longest_streak: data?.longest_streak ?? 0,
     streak_milestones_shown: data?.streak_milestones_shown ?? [],
-    referral_months_earned: data?.referral_months_earned ?? 0,
   });
 });
 
@@ -4157,20 +4156,18 @@ app.get("/api/referral/stats", requireAuth, async (req, res) => {
   const userId = req.user.id;
   const link = `${appOriginForRef()}?ref=${userId}`;
   try {
-    const [invitedRes, signedRes, profRes] = await Promise.all([
+    const [invitedRes, signedRes] = await Promise.all([
       supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId),
       supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId).eq("status", "signed_up"),
-      supabase.from("profiles").select("referral_months_earned").eq("user_id", userId).maybeSingle(),
     ]);
     res.json({
       referralLink: link,
       invited: invitedRes.count ?? 0,
       signedUp: signedRes.count ?? 0,
-      monthsEarned: profRes.data?.referral_months_earned ?? 0,
     });
   } catch (err) {
     console.error("[referral/stats]", err.message);
-    res.json({ referralLink: link, invited: 0, signedUp: 0, monthsEarned: 0 });
+    res.json({ referralLink: link, invited: 0, signedUp: 0 });
   }
 });
 

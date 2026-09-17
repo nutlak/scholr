@@ -37,13 +37,21 @@ function sourceFiles() {
   return files;
 }
 
-// A read "has a fallback" when the same expression supplies a default.
+// A read is only safe when it falls back to a *real* value.
+//
+// `process.env.X || null` looks like a default and isn't one: the var is still
+// absent, the feature is still dead, it just fails quietly instead of loudly.
+// That exact pattern is how VAPID_PUBLIC_KEY is read, so treating any `||` as
+// safe would have let half of the 2026-09-17 outage through this guard.
+const EMPTY_FALLBACK = /^(null|undefined|""|''|``|false|0)$/;
+
 function readsWithoutFallback(src) {
   const found = new Set();
-  const re = /process\.env\.([A-Z0-9_]+)\s*(\?\?|\|\|)?/g;
+  const re = /process\.env\.([A-Z0-9_]+)\s*(?:(\?\?|\|\|)\s*([^,;)\n]+))?/g;
   let m;
   while ((m = re.exec(src))) {
-    if (!m[2]) found.add(m[1]);
+    const [, name, op, fallback] = m;
+    if (!op || EMPTY_FALLBACK.test(fallback.trim())) found.add(name);
   }
   return found;
 }

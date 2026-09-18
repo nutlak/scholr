@@ -3,7 +3,7 @@
    Scholr — HUD instrument layer.
 
    Same language as the P.E.N.I.S. trader and the J.A.R.V.I.S. fleet
-   console: grid backplate on void, notched clip-paths, corner brackets,
+   console: ambient-lit void, notched clip-paths, corner brackets,
    mono uppercase telemetry. Purple stands in for the fleet cyan.
 
    Loaded after index.css and overrides its tokens rather than replacing
@@ -69,16 +69,10 @@ html:not([data-theme="light"]) {
   --ring:           var(--hud-dim);
 }
 
-/* ── Backplate: HUD grid + reactor ambient, behind everything ───────── */
-html:not([data-theme="light"]) body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(167, 139, 250, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(167, 139, 250, 0.09) 1px, transparent 1px);
-  background-size: 64px 64px, 64px 64px;
-  mask-image: radial-gradient(ellipse at 50% 30%, #000 0%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0) 100%);
-}
+/* ── Backplate: reactor ambient, behind everything ──────────────────────
+   The 64px graph-paper grid that used to sit here is gone. It was texture
+   for its own sake — it read as a wireframe behind the content and got worse
+   the moment the ambient came up. The light stays; the paper doesn't. */
 html:not([data-theme="light"]) body::after {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;

@@ -425,22 +425,23 @@
 }
 
 /* ── Dashboard two-column layout ──────────────────────────────────────────
-   The dashboard is a stack of short rows. Given the full pane it spreads them
-   edge to edge and the page reads as scattered fragments with a dead right
-   half. On a wide window the streak calendar and the activity feed — both of
-   which want to be narrow — move into a rail, and the column you actually act
-   in (friends, deadlines, classes) keeps a readable measure. Narrower than
-   that, both wrappers are inert and the order is exactly what it was. */
+   The dashboard is a stack of short rows; given the full pane it spreads them
+   edge to edge and reads as scattered fragments with a dead right half. The
+   streak calendar and the activity feed both want to be narrow, so they move
+   into a rail and the column you act in keeps a readable measure.
+
+   A container query, not a viewport one: what decides whether a rail fits is
+   the width of the PANE, and the pane is the window minus a sidebar that can
+   be hidden. A viewport breakpoint guessed at that arithmetic and guessed
+   wrong — on a window a little under it the rail silently never appeared. */
+.dash-wrap { container-type: inline-size; }
 .dash-main { min-width: 0; }
 
-/* 1360px, not 1180: the pane is the window minus a 240px sidebar and 88px of
-   padding, so a rail costs the work column 364px. Below this the column
-   that is left is narrower than the rows it has to hold. */
-@media (min-width: 1360px) {
+@container (min-width: 820px) {
   .dash-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    column-gap: 44px;
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 26%, 330px);
+    column-gap: 36px;
     align-items: start;
   }
 }

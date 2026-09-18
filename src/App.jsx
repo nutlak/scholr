@@ -1849,6 +1849,7 @@ export default function Scholr() {
       {showNewClassModal && (
         <NewClassModal
           onClose={() => setShowNewClassModal(false)}
+          onImportSyllabus={() => { setShowNewClassModal(false); setShowSyllabusModal(true); }}
           onCreate={handleCreateClass}
         />
       )}
@@ -2452,7 +2453,7 @@ export default function Scholr() {
             // Content measure: the pane is as wide as the window, and a dashboard
             // of short rows stretched across 1600px reads as scattered debris —
             // cap it and centre it, the way Settings already does.
-            <div style={{ animation: "fadeIn 0.25s ease", width: "100%", maxWidth: 1280, margin: "0 auto" }}>
+            <div className="dash-wrap" style={{ animation: "fadeIn 0.25s ease", width: "100%", maxWidth: 1280, margin: "0 auto" }}>
               {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
                 <div className="streak-banner">
                   🔥 Your streak is at risk! Study today to keep it alive.
@@ -2502,17 +2503,6 @@ export default function Scholr() {
                 </div>
                 {activeView === "dashboard" && (
                   <>
-                    <button
-                      onClick={() => setShowSyllabusModal(true)}
-                      className="btn-press desktop-only"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid var(--border-default)", borderRadius: 10, padding: "0 16px", height: 46,
-                        color: "var(--text-secondary)", fontWeight: 600, fontSize: 14, cursor: "pointer",
-                        fontFamily: FONT, flexShrink: 0,
-                        letterSpacing: "-0.01em",
-                      }}
-                    >Import syllabus</button>
                     <button
                       onClick={() => setShowNewClassModal(true)}
                       className="btn-press desktop-only"

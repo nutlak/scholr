@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import { CLASS_COLORS, FONT, FONT_HEADING, classTint } from "../../lib/theme.js";
 import { ColorSwatchPicker } from "./ClassCard.jsx";
 import { useEscape } from "../../ui/useEscape.js";
@@ -51,7 +52,7 @@ const CLASS_TEMPLATES = [
   { id: "blank", name: "Start blank", emoji: "✨", color: "#6B7280", notebooks: [] },
 ];
 
-export function NewClassModal({ onClose, onCreate }) {
+export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
   useEscape(onClose);
   const [step, setStep] = useState(1); // 1 = template picker, 2 = name + color
   const [template, setTemplate] = useState(null);
@@ -135,7 +136,17 @@ export function NewClassModal({ onClose, onCreate }) {
                   );
                 })}
               </div>
-              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", alignItems: "center" }}>
+                {/* Building a class from a syllabus starts here now, at the
+                    moment you make the class — the dashboard header no longer
+                    carries it, and per-class import lives inside the class. */}
+                {onImportSyllabus && (
+                  <button type="button" onClick={onImportSyllabus} className="btn-press" style={{
+                    marginRight: "auto", background: "transparent", border: "none", padding: 0,
+                    color: "var(--acc)", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                    fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 6,
+                  }}><Upload size={13} strokeWidth={1.9} /> Import a syllabus instead</button>
+                )}
                 <button type="button" onClick={onClose} className="btn-press" style={{
                   background: "transparent", border: "1px solid var(--border-h)", borderRadius: 10,
                   padding: "0 16px", height: 38, color: "var(--t2)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT,

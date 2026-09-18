@@ -770,9 +770,12 @@ textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
 ::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); color: var(--t1); }
 
 /* One visible focus treatment everywhere, instead of per-component onFocus
-   handlers that only some controls had. */
+   handlers that only some controls had. !important because 28 components set
+   `outline: "none"` as an inline style, which otherwise wins over this rule and
+   leaves keyboard users with no visible focus at all. :focus-visible means the
+   ring still never shows on a mouse click. */
 :focus-visible {
-  outline: 2px solid var(--ring);
+  outline: 2px solid var(--ring) !important;
   outline-offset: 2px;
   border-radius: 4px;
 }

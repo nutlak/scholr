@@ -31,11 +31,11 @@ export function HudBar({ streak = 0, due = 0, classes = 0, tier = "free" }) {
 
       <span className="hud-sep">::</span>
       <span>
-        <b className={due > 0 ? "hud-num warn" : "hud-num"}>{due > 99 ? "99+" : due}</b> cards to review
+        <b className={due > 0 ? "hud-num warn" : "hud-num"}>{due > 99 ? "99+" : due}</b> {due === 1 ? "card" : "cards"} to review
       </span>
 
       <span className="hud-sep hud-opt">::</span>
-      <span className="hud-opt"><b className="hud-num">{classes}</b> classes</span>
+      <span className="hud-opt"><b className="hud-num">{classes}</b> {classes === 1 ? "class" : "classes"}</span>
 
       <span className="hud-spacer" />
 

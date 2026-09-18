@@ -71,16 +71,20 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
             {online} online
           </span>
         )}
-        <button
-          onClick={() => setShowAdd(true)}
-          className="btn-press"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 7,
-            height: 36, padding: "0 14px", cursor: "pointer", flexShrink: 0,
-            background: "var(--acc-bg)", border: "1px solid var(--accent)",
-            color: "var(--acc-h)", fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
-          }}
-        ><UserPlus size={15} strokeWidth={1.95} /> Add friend</button>
+        {/* The empty state below carries its own primary CTA — two "add
+            friend" buttons stacked 40px apart is a choice nobody wants. */}
+        {friends.length > 0 && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="btn-press"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              height: 36, padding: "0 14px", cursor: "pointer", flexShrink: 0,
+              background: "var(--acc-bg)", border: "1px solid var(--accent)",
+              color: "var(--acc-h)", fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
+            }}
+          ><UserPlus size={15} strokeWidth={1.95} /> Add friend</button>
+        )}
         <span style={{ flex: 1 }} />
       </div>
 
@@ -141,13 +145,49 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
       ))}
 
       {friends.length === 0 ? (
-        <p style={{
-          margin: 0, fontSize: 13.5, color: "var(--text-tertiary)",
-          fontFamily: FONT, lineHeight: 1.5,
+        /* Friends is the whole point of the app, and with none added it was the
+           quietest thing on the dashboard — one grey sentence under the single
+           loudest button ("+ New Class"). Three empty seats and a primary CTA
+           read as a slot waiting to be filled instead of a caption. */
+        <div style={{
+          display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+          padding: "16px 18px", fontFamily: FONT,
+          background: "var(--acc-bg)",
+          border: "1px dashed color-mix(in srgb, var(--accent) 40%, transparent)",
         }}>
-          Scholr works best with your study group. Add a friend to share notes and
-          quiz each other.
-        </p>
+          <div style={{ display: "flex", flexShrink: 0 }} aria-hidden="true">
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                width: 36, height: 36, borderRadius: "50%", marginLeft: i ? -11 : 0,
+                background: "var(--bg-surface-2)",
+                border: "1px dashed var(--border-strong)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--text-tertiary)", fontSize: 15, fontWeight: 500, lineHeight: 1,
+              }}>+</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{
+              fontSize: 14.5, fontWeight: 600, color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}>Study with your class</div>
+            <div style={{
+              fontSize: 13, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.45,
+            }}>
+              Share notes, quiz each other, and see who's studying right now.
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="btn-press"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              height: 44, padding: "0 18px", cursor: "pointer", flexShrink: 0,
+              background: "var(--accent)", border: "none", color: "#fff",
+              fontFamily: FONT, fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
+            }}
+          ><UserPlus size={16} strokeWidth={2} /> Add a friend</button>
+        </div>
       ) : (
         <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
           {ordered.map(f => (

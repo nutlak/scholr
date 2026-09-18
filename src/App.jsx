@@ -27,7 +27,7 @@ import {
 import {
   Star, Bell, Plus, Search, FileText, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, BookOpen, Layers, Sun, Moon, LogOut, AlertTriangle,
   Check, X, Menu, Notebook, Zap, Rocket, RefreshCw, Trash2,
-  UserPlus, AtSign, FolderPlus, CreditCard,
+  UserPlus, AtSign, FolderPlus, CreditCard, CalendarCheck,
 } from "lucide-react";
 import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
@@ -39,6 +39,7 @@ import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/C
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { PushToggle } from "./features/notifications/PushToggle.jsx";
 import { SquadSection } from "./features/squad/SquadSection.jsx";
+import { useServerFeature } from "./lib/useServerFeature.js";
 import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
 import { EmptyState } from "./ui/EmptyState.jsx";
 import { StatusPill } from "./ui/StatusPill.jsx";
@@ -518,10 +519,15 @@ function UpcomingDeadlines({ notebooks, classes, onOpen }) {
   // empty body cost ~70px of the most valuable space on the dashboard.
   if (upcoming.length === 0) {
     return (
+      // Still one line tall, but framed: as a bare sentence between two
+      // labelled sections it read like a stray string, not a status.
       <div style={{
-        marginBottom: 22, fontSize: 12.5, color: "var(--text-tertiary)",
-        fontFamily: FONT,
+        display: "flex", alignItems: "center", gap: 9,
+        marginBottom: 22, padding: "10px 12px",
+        fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
+        background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
       }}>
+        <CalendarCheck size={14} strokeWidth={1.8} style={{ flexShrink: 0, color: "var(--success)" }} />
         No deadlines in the next 7 days.
       </div>
     );
@@ -600,6 +606,10 @@ function UpgradeSocialProof() {
 function UpgradeModal({ limitType, onClose }) {
   useEscape(onClose);
   const [loading, setLoading] = useState(false);
+  // Every Pro CTA in the app funnels into this modal, so gating the button
+  // here covers all of them: with Stripe unconfigured server-side, checkout
+  // 500s and the only feedback was an error after the click.
+  const proAvailable = useServerFeature("pro");
 
   // Track which limit triggered this prompt (conversion analytics).
   useEffect(() => { api.recordUpgradeTrigger(limitType || "upgrade"); }, [limitType]);
@@ -706,21 +716,30 @@ function UpgradeModal({ limitType, onClose }) {
         </div>
 
         {/* Buttons */}
-        <button
-          onClick={handleUpgrade}
-          disabled={loading}
-          style={{
-            width: "100%", height: 46, marginBottom: 10,
-            background: loading ? "var(--acc-bg-h)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-            border: "none", borderRadius: 12,
-            color: "#fff", fontWeight: 700, fontSize: 15,
-            fontFamily: FONT, cursor: loading ? "wait" : "pointer",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-            transition: "all 0.18s",
-          }}
-        >
-          {loading ? "Redirecting…" : "Upgrade to Pro — $8.49/mo"}
-        </button>
+        {proAvailable ? (
+          <button
+            onClick={handleUpgrade}
+            disabled={loading}
+            style={{
+              width: "100%", height: 46, marginBottom: 10,
+              background: loading ? "var(--acc-bg-h)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+              border: "none", borderRadius: 12,
+              color: "#fff", fontWeight: 700, fontSize: 15,
+              fontFamily: FONT, cursor: loading ? "wait" : "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              transition: "all 0.18s",
+            }}
+          >
+            {loading ? "Redirecting…" : "Upgrade to Pro — $8.49/mo"}
+          </button>
+        ) : (
+          <div style={{
+            width: "100%", marginBottom: 10, borderRadius: 12,
+            border: "1px solid var(--border-default)", padding: "13px 14px",
+            fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT,
+            textAlign: "center", lineHeight: 1.45,
+          }}>Upgrades are temporarily unavailable — check back soon.</div>
+        )}
         {checkoutError && (
           <div role="alert" style={{
             background: "rgba(248,113,113,0.08)",
@@ -861,7 +880,7 @@ function StreakMilestoneModal({ day, onClose }) {
         <div style={{ fontSize: 52, marginBottom: 8 }}>🔥</div>
         <div style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>{day}-day streak!</div>
         <div style={{ fontFamily: FONT, fontSize: 14, color: "var(--text-secondary)", marginBottom: 24 }}>You're on fire. Keep it up.</div>
-        <button onClick={share} style={{ width: "100%", height: 44, borderRadius: 10, border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>{copied ? "Copied! ✓" : "Share my streak"}</button>
+        <button onClick={share} aria-live="polite" style={{ width: "100%", height: 44, borderRadius: 10, border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>{copied ? "Copied! ✓" : "Share my streak"}</button>
         <button onClick={onClose} style={{ width: "100%", height: 44, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Keep going →</button>
       </div>
     </div>
@@ -900,14 +919,14 @@ function ReferralSection() {
     <div style={{ marginBottom: 32 }}>
       <div style={hdr}>Referrals</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <input readOnly value={link} placeholder="loading…" onFocus={e => e.target.select()} style={{ ...field, flex: 1 }} />
-        <button onClick={copy} className="btn-press" style={{ ...field, width: "auto", padding: "0 16px", cursor: "pointer", color: "var(--acc)", fontWeight: 600 }}>{copied ? "Copied!" : "Copy"}</button>
+        <input readOnly aria-label="Your referral link" value={link} placeholder="loading…" onFocus={e => e.target.select()} style={{ ...field, flex: 1 }} />
+        <button onClick={copy} className="btn-press" aria-live="polite" style={{ ...field, width: "auto", padding: "0 16px", cursor: "pointer", color: "var(--acc)", fontWeight: 600 }}>{copied ? "Copied!" : "Copy"}</button>
       </div>
       <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 14 }}>
         {(stats?.invited ?? 0)} friends invited · {(stats?.signedUp ?? 0)} signed up
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} placeholder="friend@school.edu" style={{ ...field, flex: 1 }} />
+        <input value={email} type="email" aria-label="Friend's email address" onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} placeholder="friend@school.edu" style={{ ...field, flex: 1 }} />
         <button onClick={invite} disabled={sending || !email.includes("@")} className="btn-press" style={{ height: 40, borderRadius: 10, border: "none", padding: "0 16px", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 13.5, fontWeight: 700, cursor: sending || !email.includes("@") ? "not-allowed" : "pointer", opacity: sending || !email.includes("@") ? 0.6 : 1, whiteSpace: "nowrap" }}>{sending ? "Sending…" : "Send invite"}</button>
       </div>
       {msg && <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 6 }}>{msg}</div>}
@@ -2404,7 +2423,10 @@ export default function Scholr() {
             </div>
 
           ) : (
-            <div style={{ animation: "fadeIn 0.25s ease" }}>
+            // Content measure: the pane is as wide as the window, and a dashboard
+            // of short rows stretched across 1600px reads as scattered debris —
+            // cap it and centre it, the way Settings already does.
+            <div style={{ animation: "fadeIn 0.25s ease", width: "100%", maxWidth: 1280, margin: "0 auto" }}>
               {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
                 <div className="streak-banner">
                   🔥 Your streak is at risk! Study today to keep it alive.
@@ -2490,376 +2512,388 @@ export default function Scholr() {
                 </button>
               </div>
 
-              {/* Friends first: the reason the app exists. */}
-              {activeView === "dashboard" && (
-                <FriendsRow
-                  refreshSignal={friendsVersion}
-                  onChanged={() => setFriendsVersion(v => v + 1)}
-                  onOpenNotebook={openNotebookById}
-                  onFriendIds={setFriendIds}
-                />
-              )}
 
-              {/* Search — only once there are enough classes for it to earn its space. */}
-              {(activeView !== "dashboard" || classes.length > 4) && (
-              <div style={{ position: "relative", marginBottom: 28 }}>
-                <span style={{
-                  position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                  color: "var(--text-tertiary)", pointerEvents: "none",
-                  display: "inline-flex", alignItems: "center",
-                }}><Search size={15} strokeWidth={1.75} /></span>
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search notebooks…"
-                  style={{
-                    width: "100%", background: "var(--bg-surface-1)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: 10, padding: "0 14px 0 38px", height: 40,
-                    color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
-                    transition: "all 0.18s", letterSpacing: "-0.01em",
-                  }}
-                  onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 2px var(--accent-soft)"; }}
-                  onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
-                />
-              </div>
-              )}
+              {/* Two-column dashboard above 1180px: the work you act on stays
+                  in a readable column on the left, while the streak calendar and
+                  activity feed move into a rail that fits them. Below that it is
+                  one column, exactly as before — see .dash-grid in App.css. */}
+              <div className={activeView === "dashboard" ? "dash-grid" : undefined}>
+                <div className="dash-main">
+                  {/* Friends first: the reason the app exists. */}
+                  {activeView === "dashboard" && (
+                    <FriendsRow
+                      refreshSignal={friendsVersion}
+                      onChanged={() => setFriendsVersion(v => v + 1)}
+                      onOpenNotebook={openNotebookById}
+                      onFriendIds={setFriendIds}
+                    />
+                  )}
 
-              {/* Dashboard: upcoming deadlines */}
-              {activeView === "dashboard" && (
-                <UpcomingDeadlines
-                  notebooks={notebooks}
-                  classes={classes}
-                  onOpen={(nb, classColor) => openUnitWithClassColor(nb, classColor)}
-                />
-              )}
-
-              {/* Dashboard: class cards */}
-              {activeView === "dashboard" ? (
-                filteredClasses.length === 0 ? (
-                  <EmptyState
-                    icon={search ? <Search size={32} strokeWidth={1.5} /> : <BookOpen size={32} strokeWidth={1.5} />}
-                    title={search ? "No classes match" : "Welcome to Scholr"}
-                    body={search
-                      ? "Try a different search term."
-                      : "Create your first class to start organizing your notes and chatting with Derek."}
-                    cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
-                  />
-                ) : (
-                  // Drag-to-reorder is enabled only when not searching, since the
-                  // SortableContext items would otherwise be a filtered subset and
-                  // a persisted order would be incomplete.
-                  <>
-                    <div style={{
-                      fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
-                      fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
-                      marginBottom: 6,
-                    }}>Classes</div>
-                  <DndContext
-                    sensors={dndSensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleReorderClassesDnd}
-                  >
-                    <SortableContext
-                      items={filteredClasses.map(c => c.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 40 }}>
-                        {filteredClasses.map(cls => (
-                          <SortableClassCard
-                            key={cls.id}
-                            cls={cls}
-                            dragDisabled={!!search}
-                            expanded={expandedClassId === cls.id}
-                            units={classUnitsCache[cls.id] ?? null}
-                            onToggle={() => handleToggleClass(cls.id)}
-                            onChangeColor={color => handleChangeClassColor(cls.id, color)}
-                            onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
-                            onViewSyllabus={() => openClassSyllabus(cls.id)}
-                            onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
-                            onDeleteClass={() => setDeleteClassTarget(cls)}
-                            onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                  </>
-                )
-
-              ) : filtered.length === 0 ? (
-                <EmptyState
-                  icon={
-                    search ? <Search size={32} strokeWidth={1.5} />
-                    : activeView === "starred" ? <Star size={32} strokeWidth={1.5} />
-                    : activeView === "shared" ? <Users size={32} strokeWidth={1.5} />
-                    : <Notebook size={32} strokeWidth={1.5} />
-                  }
-                  title={
-                    search ? "No notebooks match"
-                    : activeView === "starred" ? "No starred notebooks"
-                    : activeView === "shared"  ? "Nothing shared with you yet"
-                    : "No notebooks yet"
-                  }
-                  body={
-                    search ? "Try a different search term."
-                    : activeView === "starred" ? "Tap the star on any notebook to add it here."
-                    : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
-                    : "Notebooks you create will appear in this view."
-                  }
-                />
-              ) : (
-                <>
-                  <div style={{
-                    fontSize: 11, fontWeight: 600, color: "var(--t3)",
-                    fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
-                  }}>
-                    {viewLabel}
-                  </div>
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                    gap: 12, marginBottom: 40,
-                  }}>
-                    {filtered.map(nb => (
-                      <NotebookCard
-                        key={nb.id}
-                        nb={nb}
-                        onClick={() => setActiveNb(nb)}
-                        starred={starredIds.has(nb.id)}
-                        onToggleStar={() => handleToggleStar(nb)}
-                        onStatusChange={status => handleSetStatus(nb, status)}
-                        // Only the owner can delete; the API returns role per
-                        // notebook, so a shared notebook shows no trash rather
-                        // than offering one that 403s.
-                        onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Dashboard: cards due — spaced repetition entry point */}
-              {activeView === "dashboard" && dueCount > 0 && (
-                <button
-                  onClick={startAllReview}
-                  className="btn-press"
-                  style={{
-                    width: "100%", textAlign: "left", marginBottom: 18,
-                    display: "flex", alignItems: "center", gap: 14, minHeight: 64,
-                    padding: "14px 18px", borderRadius: 14, cursor: "pointer",
-                    background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
-                    border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
-                  }}
-                >
-                  <span style={{
-                    width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                  }}><Layers size={19} strokeWidth={2} /></span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
-                      {dueCount} card{dueCount === 1 ? "" : "s"} due
-                    </span>
-                    <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
-                      Review now to keep your streak sharp
-                    </span>
-                  </span>
-                  <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
-                </button>
-              )}
-
-              {/* Dashboard: passive renewal reminder — Pro plan renewing within 3 days.
-                  No cron needed; computed from the stored current_period_end on load. */}
-              {activeView === "dashboard" && subscription.tier === "pro" && subscription.currentPeriodEnd && (() => {
-                const days = Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - Date.now()) / 86400000);
-                if (days < 0 || days > 3) return null;
-                const when = days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-                return (
-                  <button
-                    onClick={handleManageSubscription}
-                    disabled={portalLoading}
-                    className="btn-press"
-                    style={{
-                      width: "100%", textAlign: "left", marginBottom: 18,
-                      display: "flex", alignItems: "center", gap: 14, minHeight: 60,
-                      padding: "13px 18px", borderRadius: 14,
-                      cursor: portalLoading ? "wait" : "pointer",
-                      background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
-                      fontFamily: FONT,
-                    }}
-                  >
+                  {/* Search — only once there are enough classes for it to earn its space. */}
+                  {(activeView !== "dashboard" || classes.length > 4) && (
+                  <div style={{ position: "relative", marginBottom: 28 }}>
                     <span style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "var(--bg-surface-2)", color: "var(--accent)",
-                    }}><RefreshCw size={17} strokeWidth={1.9} /></span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-                        Your Pro plan renews {when}
-                      </span>
-                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
-                        Manage or cancel anytime before you're charged
-                      </span>
-                    </span>
-                    <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
-                      {portalLoading ? "Opening…" : "Manage →"}
-                    </span>
-                  </button>
-                );
-              })()}
+                      position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+                      color: "var(--text-tertiary)", pointerEvents: "none",
+                      display: "inline-flex", alignItems: "center",
+                    }}><Search size={15} strokeWidth={1.75} /></span>
+                    <input
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search notebooks…"
+                      style={{
+                        width: "100%", background: "var(--bg-surface-1)",
+                        border: "1px solid var(--border-default)",
+                        borderRadius: 10, padding: "0 14px 0 38px", height: 40,
+                        color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
+                        transition: "all 0.18s", letterSpacing: "-0.01em",
+                      }}
+                      onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 2px var(--accent-soft)"; }}
+                      onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
+                    />
+                </div>
+                )}
 
-              {/* Dashboard: activity heatmap */}
-              {activeView === "dashboard" && (
-                <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} leaderboard={leaderboard} />
-              )}
+                {/* Dashboard: upcoming deadlines */}
+                {activeView === "dashboard" && (
+                  <UpcomingDeadlines
+                    notebooks={notebooks}
+                    classes={classes}
+                    onOpen={(nb, classColor) => openUnitWithClassColor(nb, classColor)}
+                  />
+                )}
 
-              {/* Notifications — dashboard only. Unified social_notifications feed. */}
-              {activeView === "dashboard" && (
-                <>
-                  <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    marginBottom: 14, paddingTop: 20,
-                    borderTop: "1px solid var(--border-subtle)",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Dashboard: class cards */}
+                {activeView === "dashboard" ? (
+                  filteredClasses.length === 0 ? (
+                    <EmptyState
+                      icon={search ? <Search size={32} strokeWidth={1.5} /> : <BookOpen size={32} strokeWidth={1.5} />}
+                      title={search ? "No classes match" : "Welcome to Scholr"}
+                      body={search
+                        ? "Try a different search term."
+                        : "Create your first class to start organizing your notes and chatting with Derek."}
+                      cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
+                    />
+                  ) : (
+                    // Drag-to-reorder is enabled only when not searching, since the
+                    // SortableContext items would otherwise be a filtered subset and
+                    // a persisted order would be incomplete.
+                    <>
                       <div style={{
                         fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
                         fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
-                      }}>
-                        Recent Activity
-                      </div>
-                      {notifications.filter(n => !n.read).length > 0 && (
-                        <span style={{
-                          fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
-                          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
-                          padding: "1px 7px", borderRadius: 999,
-                        }}>{notifications.filter(n => !n.read).length}</span>
-                      )}
+                        marginBottom: 6,
+                      }}>Classes</div>
+                    <DndContext
+                      sensors={dndSensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleReorderClassesDnd}
+                    >
+                      <SortableContext
+                        items={filteredClasses.map(c => c.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 40 }}>
+                          {filteredClasses.map(cls => (
+                            <SortableClassCard
+                              key={cls.id}
+                              cls={cls}
+                              dragDisabled={!!search}
+                              expanded={expandedClassId === cls.id}
+                              units={classUnitsCache[cls.id] ?? null}
+                              onToggle={() => handleToggleClass(cls.id)}
+                              onChangeColor={color => handleChangeClassColor(cls.id, color)}
+                              onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
+                              onViewSyllabus={() => openClassSyllabus(cls.id)}
+                              onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
+                              onDeleteClass={() => setDeleteClassTarget(cls)}
+                              onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                    </>
+                  )
+
+                ) : filtered.length === 0 ? (
+                  <EmptyState
+                    icon={
+                      search ? <Search size={32} strokeWidth={1.5} />
+                      : activeView === "starred" ? <Star size={32} strokeWidth={1.5} />
+                      : activeView === "shared" ? <Users size={32} strokeWidth={1.5} />
+                      : <Notebook size={32} strokeWidth={1.5} />
+                    }
+                    title={
+                      search ? "No notebooks match"
+                      : activeView === "starred" ? "No starred notebooks"
+                      : activeView === "shared"  ? "Nothing shared with you yet"
+                      : "No notebooks yet"
+                    }
+                    body={
+                      search ? "Try a different search term."
+                      : activeView === "starred" ? "Tap the star on any notebook to add it here."
+                      : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
+                      : "Notebooks you create will appear in this view."
+                    }
+                  />
+                ) : (
+                  <>
+                    <div style={{
+                      fontSize: 11, fontWeight: 600, color: "var(--t3)",
+                      fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
+                    }}>
+                      {viewLabel}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      {notifications.some(n => !n.read) && (
-                        <button
-                          onClick={async () => {
-                            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                            try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
-                          }}
-                          style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                            padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                            fontWeight: 500, minHeight: 44,
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                      {notifications.length > 0 && (
-                        <button
-                          onClick={clearInbox}
-                          style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                            padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                            fontWeight: 500, minHeight: 44,
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-                        >
-                          Clear inbox
-                        </button>
-                      )}
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                      gap: 12, marginBottom: 40,
+                    }}>
+                      {filtered.map(nb => (
+                        <NotebookCard
+                          key={nb.id}
+                          nb={nb}
+                          onClick={() => setActiveNb(nb)}
+                          starred={starredIds.has(nb.id)}
+                          onToggleStar={() => handleToggleStar(nb)}
+                          onStatusChange={status => handleSetStatus(nb, status)}
+                          // Only the owner can delete; the API returns role per
+                          // notebook, so a shared notebook shows no trash rather
+                          // than offering one that 403s.
+                          onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
+                        />
+                      ))}
                     </div>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
-                      You're all caught up. Friend requests, invites, and study-group activity appear here.
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      {notifications.map(n => {
-                        const Icon = NOTIF_ICON[n.type] ?? Bell;
-                        const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
-                        const opensBilling = NOTIF_OPENS_BILLING.has(n.type);
-                        const isRequest = n.type === "friend_request";
-                        const onRowClick = opensNotebook
-                          ? () => openNotebookById(n.payload.notebookId)
-                          : opensBilling ? () => handleManageSubscription() : undefined;
-                        return (
-                          <div
-                            key={n.id}
-                            onClick={onRowClick}
-                            className="notif-row"
-                            style={{
-                              display: "flex", alignItems: "center", gap: 12,
-                              padding: "11px 8px", minHeight: 44,
-                              borderBottom: "1px solid var(--border-subtle)",
-                              borderRadius: 8,
-                              cursor: onRowClick ? "pointer" : "default",
-                              background: n.read ? "transparent" : "var(--acc-bg)",
-                            }}
-                          >
-                            <span style={{
-                              width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              background: "var(--bg-surface-2)", color: "var(--accent)",
-                            }}>
-                              <Icon size={15} strokeWidth={1.85} />
-                            </span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.45, letterSpacing: "-0.005em" }}>
-                                {notifLine(n)}
-                              </div>
-                              <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>
-                                {timeAgo(n.created_at)}
-                              </div>
-                            </div>
-                            {isRequest && (() => {
-                              const st = feedActioned[n.id];
-                              // Terminal status (e.g. "Already handled") replaces the buttons; the row clears shortly after.
-                              if (st && st !== "busy") {
-                                return (
-                                  <span style={{ flexShrink: 0, fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>{st}</span>
-                                );
-                              }
-                              const busy = st === "busy";
-                              const err = feedError[n.id];
-                              return (
-                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                  {err && <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: FONT }}>{err}</span>}
-                                  <button
-                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
-                                    disabled={busy}
-                                    style={{
-                                      background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
-                                      borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                      color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT,
-                                      cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-                                    }}
-                                  >{busy ? "…" : "Accept"}</button>
-                                  <button
-                                    onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
-                                    disabled={busy}
-                                    style={{
-                                      background: "transparent", border: "1px solid var(--border-default)",
-                                      borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                      color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT,
-                                      cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-                                    }}
-                                  >Decline</button>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })}
-                    </div>
+                  </>
+                )}
+
+                {/* Dashboard: cards due — spaced repetition entry point */}
+                {activeView === "dashboard" && dueCount > 0 && (
+                  <button
+                    onClick={startAllReview}
+                    className="btn-press"
+                    style={{
+                      width: "100%", textAlign: "left", marginBottom: 18,
+                      display: "flex", alignItems: "center", gap: 14, minHeight: 64,
+                      padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                      background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
+                      border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
+                    }}
+                  >
+                    <span style={{
+                      width: 40, height: 40, borderRadius: 11, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                    }}><Layers size={19} strokeWidth={2} /></span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
+                        {dueCount} card{dueCount === 1 ? "" : "s"} due
+                      </span>
+                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
+                        Review now to keep your streak sharp
+                      </span>
+                    </span>
+                    <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
+                  </button>
+                )}
+
+                {/* Dashboard: passive renewal reminder — Pro plan renewing within 3 days.
+                    No cron needed; computed from the stored current_period_end on load. */}
+                {activeView === "dashboard" && subscription.tier === "pro" && subscription.currentPeriodEnd && (() => {
+                  const days = Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - Date.now()) / 86400000);
+                  if (days < 0 || days > 3) return null;
+                  const when = days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+                  return (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="btn-press"
+                      style={{
+                        width: "100%", textAlign: "left", marginBottom: 18,
+                        display: "flex", alignItems: "center", gap: 14, minHeight: 60,
+                        padding: "13px 18px", borderRadius: 14,
+                        cursor: portalLoading ? "wait" : "pointer",
+                        background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
+                        fontFamily: FONT,
+                      }}
+                    >
+                      <span style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "var(--bg-surface-2)", color: "var(--accent)",
+                      }}><RefreshCw size={17} strokeWidth={1.9} /></span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+                          Your Pro plan renews {when}
+                        </span>
+                        <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
+                          Manage or cancel anytime before you're charged
+                        </span>
+                      </span>
+                      <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+                        {portalLoading ? "Opening…" : "Manage →"}
+                      </span>
+                    </button>
+                  );
+                })()}
+
+                </div>
+
+                <aside className="dash-rail">
+                  {/* Dashboard: activity heatmap */}
+                  {activeView === "dashboard" && (
+                    <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} leaderboard={leaderboard} />
                   )}
-                </>
-              )}
+
+                  {/* Notifications — dashboard only. Unified social_notifications feed. */}
+                  {activeView === "dashboard" && (
+                    <>
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        marginBottom: 14, paddingTop: 20,
+                        borderTop: "1px solid var(--border-subtle)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{
+                            fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
+                            fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
+                          }}>
+                            Recent Activity
+                          </div>
+                          {notifications.filter(n => !n.read).length > 0 && (
+                            <span style={{
+                              fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
+                              background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
+                              padding: "1px 7px", borderRadius: 999,
+                            }}>{notifications.filter(n => !n.read).length}</span>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          {notifications.some(n => !n.read) && (
+                            <button
+                              onClick={async () => {
+                                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                                try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
+                              }}
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
+                                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                                fontWeight: 500, minHeight: 44,
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
+                            >
+                              Mark all read
+                            </button>
+                          )}
+                          {notifications.length > 0 && (
+                            <button
+                              onClick={clearInbox}
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
+                                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                                fontWeight: 500, minHeight: 44,
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
+                            >
+                              Clear inbox
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {notifications.length === 0 ? (
+                        <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
+                          You're all caught up. Friend requests, invites, and study-group activity appear here.
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          {notifications.map(n => {
+                            const Icon = NOTIF_ICON[n.type] ?? Bell;
+                            const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
+                            const opensBilling = NOTIF_OPENS_BILLING.has(n.type);
+                            const isRequest = n.type === "friend_request";
+                            const onRowClick = opensNotebook
+                              ? () => openNotebookById(n.payload.notebookId)
+                              : opensBilling ? () => handleManageSubscription() : undefined;
+                            return (
+                              <div
+                                key={n.id}
+                                onClick={onRowClick}
+                                className="notif-row"
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 12,
+                                  padding: "11px 8px", minHeight: 44,
+                                  borderBottom: "1px solid var(--border-subtle)",
+                                  borderRadius: 8,
+                                  cursor: onRowClick ? "pointer" : "default",
+                                  background: n.read ? "transparent" : "var(--acc-bg)",
+                                }}
+                              >
+                                <span style={{
+                                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  background: "var(--bg-surface-2)", color: "var(--accent)",
+                                }}>
+                                  <Icon size={15} strokeWidth={1.85} />
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.45, letterSpacing: "-0.005em" }}>
+                                    {notifLine(n)}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>
+                                    {timeAgo(n.created_at)}
+                                  </div>
+                                </div>
+                                {isRequest && (() => {
+                                  const st = feedActioned[n.id];
+                                  // Terminal status (e.g. "Already handled") replaces the buttons; the row clears shortly after.
+                                  if (st && st !== "busy") {
+                                    return (
+                                      <span style={{ flexShrink: 0, fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>{st}</span>
+                                    );
+                                  }
+                                  const busy = st === "busy";
+                                  const err = feedError[n.id];
+                                  return (
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                      {err && <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: FONT }}>{err}</span>}
+                                      <button
+                                        onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
+                                        disabled={busy}
+                                        style={{
+                                          background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
+                                          borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                          color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                                          cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                                        }}
+                                      >{busy ? "…" : "Accept"}</button>
+                                      <button
+                                        onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
+                                        disabled={busy}
+                                        style={{
+                                          background: "transparent", border: "1px solid var(--border-default)",
+                                          borderRadius: 8, padding: "7px 12px", minHeight: 34,
+                                          color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                                          cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
+                                        }}
+                                      >Decline</button>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </aside>
+              </div>
             </div>
           )}
         </div>

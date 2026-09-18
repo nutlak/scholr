@@ -2013,7 +2013,7 @@ app.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, quer
   if (!usageCheck.allowed) {
     return res.status(403).json({
       error: "message_limit_reached",
-      message: "You have reached your 30 message limit for this month. Upgrade to Pro for unlimited messages.",
+      message: `You have reached your ${FREE_MSG_LIMIT} message limit for this month. Upgrade to Pro for unlimited messages.`,
     });
   }
 
@@ -3470,7 +3470,7 @@ app.post("/api/notebooks/:id/explain-differently", requireAuth, requireMember, e
   const claudeKey = process.env.CLAUDE_API_KEY;
   if (!claudeKey) return res.status(400).json({ error: "Claude API key not configured on server" });
 
-  // Meter against the shared monthly message allowance (free: 30/mo; pro: unlimited).
+  // Meter against the shared monthly message allowance (free: FREE_MSG_LIMIT/mo; pro: unlimited).
   const explainUsage = await checkUsageLimit(req.user.id, "message");
   if (!explainUsage.allowed) {
     return res.status(403).json({ error: "message_limit", message: "You've reached your monthly AI limit. Upgrade to Pro for unlimited." });
@@ -3602,7 +3602,7 @@ app.post("/api/feynman", requireAuth, feynmanLimiter, async (req, res) => {
     return res.status(400).json({ error: "explanation_too_long", message: "Explanation must be 4000 characters or fewer." });
   }
 
-  // Meter against the monthly message allowance (free: 30/mo; pro: unlimited).
+  // Meter against the monthly message allowance (free: FREE_MSG_LIMIT/mo; pro: unlimited).
   const usage = await checkUsageLimit(req.user.id, "message");
   if (!usage.allowed) {
     return res.status(403).json({
@@ -4176,20 +4176,27 @@ app.post("/api/referral/invite", requireAuth, async (req, res) => {
 
 app.get("/api/referral/stats", requireAuth, async (req, res) => {
   const userId = req.user.id;
-  const link = `${appOriginForRef()}?ref=${userId}`;
+  const uuidLink = `${appOriginForRef()}?ref=${userId}`;
   try {
+    const { data: prof } = await supabase
+      .from("profiles").select("username").eq("user_id", userId).maybeSingle();
+    const username = prof?.username ?? null;
+    // The uuid form still works forever (old links are out there), but we only
+    // ever *show* it when there's no username to use instead.
+    const link = username ? `${appOriginForRef()}/@${username}` : uuidLink;
     const [invitedRes, signedRes] = await Promise.all([
       supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId),
       supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId).eq("status", "signed_up"),
     ]);
     res.json({
       referralLink: link,
+      username,
       invited: invitedRes.count ?? 0,
       signedUp: signedRes.count ?? 0,
     });
   } catch (err) {
     console.error("[referral/stats]", err.message);
-    res.json({ referralLink: link, invited: 0, signedUp: 0 });
+    res.json({ referralLink: uuidLink, username: null, invited: 0, signedUp: 0 });
   }
 });
 
@@ -5182,6 +5189,32 @@ app.get("/api/friends/search", requireAuth, async (req, res) => {
 });
 
 // GET /api/me/username — current user's username (null if not set yet)
+// GET /api/u/:username — PUBLIC. Resolves a username to the user id a
+// referral link needs, so invites can be `scholr.dev/@noah` instead of
+// `scholr.dev?ref=<uuid>`. A link nobody can say out loud is a link nobody
+// shares, and word of mouth is how this app spreads.
+//
+// Returns only the display name — the same thing any friend list already
+// shows — and nothing that isn't needed to render "Noah invited you".
+app.get("/api/u/:username", async (req, res) => {
+  const username = String(req.params.username ?? "").trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    return res.status(404).json({ error: "not_found" });
+  }
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("username", username)
+    .maybeSingle();
+  if (!data) return res.status(404).json({ error: "not_found" });
+
+  const { data: u } = await supabase.auth.admin.getUserById(data.user_id);
+  res.json({
+    userId: data.user_id,
+    name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
+  });
+});
+
 app.get("/api/me/username", requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from("profiles")

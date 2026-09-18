@@ -92,7 +92,10 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
   };
 
   return (
-    <div style={{ marginBottom: 32 }}>
+    // Capped: every view here is a 7-column calendar that only reads as a
+    // calendar at its natural size. Stretched to a full-width pane the day
+    // circles drift 200px apart and the year grid turns into dinner plates.
+    <div style={{ marginBottom: 32, maxWidth: 380 }}>
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{

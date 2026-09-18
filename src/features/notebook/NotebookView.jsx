@@ -165,11 +165,11 @@ function ShareModal({ notebookId, onClose, onStateChange }) {
           <div style={{ fontSize: 13, color: "#F87171", marginBottom: 14 }}>{error}</div>
         ) : (
           <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-            <input readOnly value={loading ? "Generating link…" : shareUrl} onFocus={e => e.target.select()} style={{
+            <input readOnly aria-label="Share link" value={loading ? "Generating link…" : shareUrl} onFocus={e => e.target.select()} style={{
               flex: 1, height: 42, borderRadius: 10, background: "var(--s1)", border: "1px solid var(--border)",
               color: "var(--text-primary)", fontFamily: FONT, fontSize: 13.5, padding: "0 12px", outline: "none",
             }} />
-            <button onClick={copy} disabled={loading} className="btn-press" style={{
+            <button onClick={copy} disabled={loading} className="btn-press" aria-live="polite" style={{
               height: 42, borderRadius: 10, border: "none", padding: "0 16px", cursor: loading ? "wait" : "pointer",
               background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontWeight: 700, fontSize: 13.5, fontFamily: FONT, whiteSpace: "nowrap",
             }}>{copied ? "Copied! ✓" : "Copy"}</button>

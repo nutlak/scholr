@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Users, Copy, Check } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
-import { api, serverFeatures } from "../../api.js";
+import { api } from "../../api.js";
+import { useServerFeature } from "../../lib/useServerFeature.js";
 
 // Settings > Notifications-adjacent section for the Squad plan: one
 // subscription, Pro for up to 5 people. Mirrors ReferralSection's
@@ -12,17 +13,12 @@ export function SquadSection() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
-  // null = still asking. Fails open, so a failed check still offers the plan.
-  const [available, setAvailable] = useState(null);
+  // Squad checkout needs a Stripe price configured server-side. Without this
+  // the button looked live and died on click with an error.
+  const available = useServerFeature("squad");
 
   useEffect(() => {
     api.getMySquad().then(setSquad).catch(() => setSquad(null));
-  }, []);
-
-  // Squad checkout needs a Stripe price configured server-side. Without this
-  // the button looked live and died on click with an error.
-  useEffect(() => {
-    serverFeatures().then(f => setAvailable(f.squad !== false));
   }, []);
 
   async function startSquad() {
@@ -42,14 +38,23 @@ export function SquadSection() {
     catch { /* clipboard unavailable */ }
   }
 
-  if (squad === undefined) return null;
+  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 };
+  const shell = { padding: "14px 0", marginBottom: 32, borderBottom: "1px solid var(--border-subtle)" };
+
+  // Hold the space while loading rather than returning null — the section used
+  // to pop in and shove everything below it down. ReferralSection already does
+  // this with its "loading…" field.
+  if (squad === undefined) return (
+    <>
+      <div style={hdr}>Squad plan</div>
+      <div style={{ ...shell, fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>Loading…</div>
+    </>
+  );
 
   return (
     <>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-        Squad plan
-      </div>
-      <div style={{ padding: "14px 0", marginBottom: 32, borderBottom: "1px solid var(--border-subtle)" }}>
+      <div style={hdr}>Squad plan</div>
+      <div style={shell}>
         {!squad ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
@@ -61,7 +66,7 @@ export function SquadSection() {
                 </div>
               </div>
             </div>
-            {available === false ? (
+            {!available ? (
               <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
                 Squad plans are temporarily unavailable — check back soon.
               </div>
@@ -95,7 +100,7 @@ export function SquadSection() {
               ))}
             </div>
             {squad.isOwner && squad.inviteUrl && (
-              <button onClick={copyInvite} className="btn-press" style={{
+              <button onClick={copyInvite} className="btn-press" aria-live="polite" style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 minHeight: 34, padding: "0 14px", borderRadius: 9,
                 background: "transparent", border: "1px solid var(--border-default)",

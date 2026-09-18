@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { takeReferral } from "./lib/referral.js";
 import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
 import { Mail, Lock } from "lucide-react";
@@ -191,6 +192,10 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
         body.fullName = pendingName;
         body.termsAccepted = agreed;
         body.dateOfBirth = pendingDob;
+        // The server has always read this; nothing ever sent it, so every
+        // referral silently went unattributed. Consumed (and cleared) here.
+        const ref = takeReferral();
+        if (ref) body.ref = ref;
       }
       const data = await apiPost("/api/auth/verify-otp", body);
 

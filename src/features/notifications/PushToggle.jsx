@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { pushSupported, getPushSubscription, enablePush, disablePush } from "../../lib/push.js";
-import { serverFeatures } from "../../api.js";
+import { useServerFeature } from "../../lib/useServerFeature.js";
 
 // Settings row for "a friend just started studying" push notifications.
 // Opt-in only — nothing subscribes until the toggle is flipped, matching the
@@ -11,20 +11,15 @@ export function PushToggle() {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  // null = still asking. Fails open, so a failed check shows the toggle.
-  const [serverReady, setServerReady] = useState(null);
+  // The browser supporting push isn't enough — the server needs VAPID keys.
+  // Without this the toggle looked live and only failed on click.
+  const serverReady = useServerFeature("push");
   const supported = pushSupported();
 
   useEffect(() => {
     if (!supported) return;
     getPushSubscription().then(sub => setEnabled(!!sub)).catch(() => {});
   }, [supported]);
-
-  // The browser supporting push isn't enough — the server needs VAPID keys.
-  // Without this the toggle looked live and only failed on click.
-  useEffect(() => {
-    serverFeatures().then(f => setServerReady(f.push !== false));
-  }, []);
 
   const toggle = async () => {
     setBusy(true);
@@ -61,14 +56,14 @@ export function PushToggle() {
             <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
               {!supported
                 ? "Not supported in this browser."
-                : serverReady === false
+                : !serverReady
                   ? "Not available yet — we're still setting this up."
                   : "Get a push when a friend starts a study session and you're not already in the app."}
             </div>
             {error && <div style={{ fontSize: 12, color: "var(--danger)", fontFamily: FONT, marginTop: 4 }}>{error}</div>}
           </div>
         </div>
-        {supported && serverReady !== false && (
+        {supported && serverReady && (
           <button
             onClick={toggle}
             disabled={busy}

@@ -423,24 +423,3 @@
   from { transform: translateY(100%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
-
-/* ── Dashboard two-column layout ──────────────────────────────────────────
-   The dashboard is a stack of short rows. Given the full pane it spreads them
-   edge to edge and the page reads as scattered fragments with a dead right
-   half. On a wide window the streak calendar and the activity feed — both of
-   which want to be narrow — move into a rail, and the column you actually act
-   in (friends, deadlines, classes) keeps a readable measure. Narrower than
-   that, both wrappers are inert and the order is exactly what it was. */
-.dash-main { min-width: 0; }
-
-/* 1360px, not 1180: the pane is the window minus a 240px sidebar and 88px of
-   padding, so a rail costs the work column 364px. Below this the column
-   that is left is narrower than the rows it has to hold. */
-@media (min-width: 1360px) {
-  .dash-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    column-gap: 44px;
-    align-items: start;
-  }
-}

@@ -14,9 +14,23 @@ npx eslint src server   # 0 errors; ~8 pre-existing warnings are expected
 npm test                # node --test, no React testing library
 ```
 
-There is **no `server/.env`**, so the API can't run locally and the app can't
-be exercised end to end here. To check UI, mount the component temporarily in
-`App.jsx`, screenshot it, then revert. Say so when something is unverified.
+A green build is not a verified feature. `server/.env` **does** exist (it is
+gitignored, so it won't show in a file listing) and the whole app runs locally:
+
+```
+cd server && node index.js   # :3001
+npm run dev                  # :5173 — must be this port; CORS allows 5173/4173 only
+```
+
+Those are **production** credentials — live Supabase, live Resend. Anything
+written locally lands in the real database, and `DISABLE_WORKERS=1` must stay
+set or booting sends real email to real users. Stripe is deliberately absent
+locally, so `/api/health` reports `pro: false, squad: false`; billing is tested
+on scholr.dev only.
+
+So exercise the real thing: hit the endpoints with a real token, or drive the
+signed-in UI. Two payment bugs that a green build never caught were found that
+way. Say so when something is genuinely unverified — but check before claiming it.
 
 ## Styling
 

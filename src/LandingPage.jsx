@@ -47,7 +47,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload your syllabus and Derek sets up the whole class for you.", tint: "#A78BFA" },
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus — into a new class, or an existing one — and Derek sets up the units for you.", tint: "#A78BFA" },
   { n: "2", title: "Upload your notes",      body: "Drag in PDFs, lecture slides, typed notes. Scholr extracts every word for Derek.", tint: "#60A5FA" },
   { n: "3", title: "Invite your study group", body: "Send an email invite. They join in one click and see everything immediately.", tint: "#F472B6" },
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },

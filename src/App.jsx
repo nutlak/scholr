@@ -978,6 +978,7 @@ export default function Scholr() {
   const [classUnitsCache, setClassUnitsCache] = useState({});
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [showSyllabusModal, setShowSyllabusModal] = useState(false);
+  const [syllabusForClass, setSyllabusForClass] = useState(null); // import into an existing class
   const [newUnitFor, setNewUnitFor] = useState(null);
   const [toast, setToast] = useState("");
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
@@ -1522,6 +1523,23 @@ export default function Scholr() {
     }
   }
 
+  // Importing into a class that already exists: the same parse-and-review the
+  // dashboard import uses, minus createClass — the syllabus only supplies the
+  // units. Refreshes the open card's cached units so they appear in place
+  // rather than after a collapse/expand.
+  async function handleImportSyllabusIntoClass(cls, notebooks) {
+    const result = await api.applyTemplate(cls.id, notebooks);
+    const nm = getDisplayName(user);
+    api.listNotebooks(nm).then(setNotebooks).catch(() => {});
+    api.listClasses().then(setClasses).catch(() => {});
+    const units = await api.listClassNotebooks(cls.id, nm).catch(() => null);
+    if (units) setClassUnitsCache(prev => ({ ...prev, [cls.id]: units }));
+    setToast(result.limitHit
+      ? "Some units weren't added — you've hit the free plan limit."
+      : `Added ${result.created} unit${result.created === 1 ? "" : "s"} to ${cls.title}`);
+    setTimeout(() => setToast(""), 4500);
+  }
+
   const [portalLoading, setPortalLoading] = useState(false);
   async function handleManageSubscription() {
     setPortalLoading(true);
@@ -1839,6 +1857,14 @@ export default function Scholr() {
         <SyllabusImportModal
           onClose={() => setShowSyllabusModal(false)}
           onCreated={handleImportSyllabus}
+        />
+      )}
+
+      {syllabusForClass && (
+        <SyllabusImportModal
+          targetClass={syllabusForClass}
+          onClose={() => setSyllabusForClass(null)}
+          onCreated={(_name, notebooks) => handleImportSyllabusIntoClass(syllabusForClass, notebooks)}
         />
       )}
 
@@ -2449,7 +2475,7 @@ export default function Scholr() {
                 display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
               }}>
                 <div>
-                  <div style={{
+                  <div className="greeting-text" style={{
                     fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
                     fontFamily: FONT_HEADING, letterSpacing: "-0.022em", lineHeight: 1.15,
                     display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
@@ -2605,6 +2631,7 @@ export default function Scholr() {
                               onChangeColor={color => handleChangeClassColor(cls.id, color)}
                               onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
                               onViewSyllabus={() => openClassSyllabus(cls.id)}
+                            onImportSyllabus={() => setSyllabusForClass(cls)}
                               onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
                               onDeleteClass={() => setDeleteClassTarget(cls)}
                               onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, ChevronRight, Trash2, X } from "lucide-react";
+import { Calendar, ChevronRight, Trash2, Upload, X } from "lucide-react";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
@@ -70,7 +70,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
     </div>
   );
 }
-export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange, onViewSyllabus }) {
+export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange, onViewSyllabus, onImportSyllabus }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
@@ -101,8 +101,15 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           border: `1px solid ${hovered ? "var(--border-strong)" : "var(--border-default)"}`,
           borderRadius: 8,
           cursor: "pointer",
-          transition: "border-color 200ms ease, transform 200ms ease",
+          transition: "border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease",
           transform: hovered ? "translateY(-1px)" : "translateY(0)",
+          // The class row is the largest object on the dashboard and carried
+          // its colour in an 8px dot. An inset edge instead of a border-left:
+          // hud.css sets border-color !important on every card surface, so a
+          // coloured border here would be repainted hairline-violet. The
+          // second inset is the card top-highlight, which this inline
+          // box-shadow would otherwise replace.
+          boxShadow: `inset ${hovered ? 4 : 3}px 0 0 ${t.hue}, inset 0 1px 0 rgba(255,255,255,0.06)`,
         }}
       >
         {/* Color dot */}
@@ -249,7 +256,9 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               ))}
             </div>
           )}
-          <div style={{ padding: "10px 0" }}>
+          {/* Both ways to add units live together, inside the class they add
+              to: one at a time by hand, or a whole term from its syllabus. */}
+          <div style={{ padding: "10px 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
               onClick={onNewUnit}
               className="btn-press"
@@ -263,6 +272,22 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}55`; e.currentTarget.style.background = "transparent"; }}
             >+ New Unit</button>
+            {onImportSyllabus && (
+              <button
+                onClick={onImportSyllabus}
+                className="btn-press"
+                style={{
+                  background: "transparent",
+                  border: "1px dashed var(--border-default)",
+                  borderRadius: 8, padding: "7px 14px",
+                  color: "var(--text-secondary)", fontSize: 12, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.color = t.hue; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+              ><Upload size={13} strokeWidth={1.9} /> Import syllabus</button>
+            )}
           </div>
         </div>
       )}

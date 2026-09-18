@@ -141,26 +141,25 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           );
         })()}
 
-        {/* Import syllabus — labelled and always visible, not hover-gated like
-            the icons beside it. The one inside the expanded card was missed
-            twice because it only exists once the class is open; this is the
-            same action where you can see it without opening anything.
-            Desktop only: on mobile the row has no space for a label, and the
-            expanded card still carries it. */}
+        {/* Import syllabus. On the row itself, in the class's own colour, at
+            every width and without hovering or expanding anything — the two
+            quieter placements before this (inside the expanded card, then a
+            grey chip gated on desktop-only) both went unfound. */}
         {onImportSyllabus && (
           <button
             onClick={e => { e.stopPropagation(); onImportSyllabus(); }}
-            className="btn-press desktop-only"
+            className="btn-press"
+            title={`Import a syllabus into ${cls.title}`}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
-              background: "transparent", border: "1px solid var(--border-default)",
-              borderRadius: 7, padding: "0 10px", height: 28, cursor: "pointer",
-              color: "var(--text-tertiary)", fontFamily: FONT, fontSize: 11.5, fontWeight: 600,
-              letterSpacing: "-0.005em", transition: "color 0.18s, border-color 0.18s",
+              background: `${t.hue}18`, border: `1px solid ${t.hue}66`,
+              borderRadius: 7, padding: "0 11px", height: 30, cursor: "pointer",
+              color: t.hue, fontFamily: FONT, fontSize: 12, fontWeight: 700,
+              letterSpacing: "-0.005em", transition: "background 0.18s",
             }}
-            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = t.hue; e.currentTarget.style.borderColor = t.hue; }}
-            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.borderColor = "var(--border-default)"; }}
-          ><Upload size={12} strokeWidth={1.9} /> Import syllabus</button>
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.background = `${t.hue}2E`; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.background = `${t.hue}18`; }}
+          ><Upload size={13} strokeWidth={2} /> Import syllabus</button>
         )}
 
         {/* Syllabus view — all units, due dates, assessment types, at a glance */}
@@ -278,9 +277,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               ))}
             </div>
           )}
-          {/* Both ways to add units live together, inside the class they add
-              to: one at a time by hand, or a whole term from its syllabus. */}
-          <div style={{ padding: "10px 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ padding: "10px 0" }}>
             <button
               onClick={onNewUnit}
               className="btn-press"
@@ -294,22 +291,6 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}55`; e.currentTarget.style.background = "transparent"; }}
             >+ New Unit</button>
-            {onImportSyllabus && (
-              <button
-                onClick={onImportSyllabus}
-                className="btn-press"
-                style={{
-                  background: "transparent",
-                  border: "1px dashed var(--border-default)",
-                  borderRadius: 8, padding: "7px 14px",
-                  color: "var(--text-secondary)", fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
-                  display: "inline-flex", alignItems: "center", gap: 7,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.color = t.hue; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-              ><Upload size={13} strokeWidth={1.9} /> Import syllabus</button>
-            )}
           </div>
         </div>
       )}

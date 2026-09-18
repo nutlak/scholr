@@ -2628,7 +2628,7 @@ export default function Scholr() {
                               onChangeColor={color => handleChangeClassColor(cls.id, color)}
                               onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
                               onViewSyllabus={() => openClassSyllabus(cls.id)}
-                            onImportSyllabus={() => setSyllabusForClass(cls)}
+                              onImportSyllabus={() => setSyllabusForClass(cls)}
                               onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
                               onDeleteClass={() => setDeleteClassTarget(cls)}
                               onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}

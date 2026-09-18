@@ -2177,7 +2177,13 @@ export default function Scholr() {
         </div>
 
         {/* Main */}
-        <div className="main-pane" onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column", height: "100vh" }}>
+        {/* height:100vh was wrong here: this pane is a flex child of a row
+            that is already the viewport minus the 36px status strip, so a
+            100vh pane overflowed its container by exactly the strip height
+            and the notebook view — which sizes itself to 100% of it — got
+            sliced. flex:1 + minHeight:0 makes it fill what is actually
+            there. */}
+        <div className="main-pane" onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, minHeight: 0, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
           <button
             onClick={() => setSidebarOpen(true)}
             title="Open menu"

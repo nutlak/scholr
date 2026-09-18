@@ -141,6 +141,28 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           );
         })()}
 
+        {/* Import syllabus — labelled and always visible, not hover-gated like
+            the icons beside it. The one inside the expanded card was missed
+            twice because it only exists once the class is open; this is the
+            same action where you can see it without opening anything.
+            Desktop only: on mobile the row has no space for a label, and the
+            expanded card still carries it. */}
+        {onImportSyllabus && (
+          <button
+            onClick={e => { e.stopPropagation(); onImportSyllabus(); }}
+            className="btn-press desktop-only"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
+              background: "transparent", border: "1px solid var(--border-default)",
+              borderRadius: 7, padding: "0 10px", height: 28, cursor: "pointer",
+              color: "var(--text-tertiary)", fontFamily: FONT, fontSize: 11.5, fontWeight: 600,
+              letterSpacing: "-0.005em", transition: "color 0.18s, border-color 0.18s",
+            }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = t.hue; e.currentTarget.style.borderColor = t.hue; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.borderColor = "var(--border-default)"; }}
+          ><Upload size={12} strokeWidth={1.9} /> Import syllabus</button>
+        )}
+
         {/* Syllabus view — all units, due dates, assessment types, at a glance */}
         {onViewSyllabus && (
           <button

@@ -856,10 +856,13 @@ export const api = {
   },
 
   // ── Class templates ─────────────────────────────────────────────────────
-  async applyTemplate(classId, notebooks) {
+  // fromSyllabus marks the units as coming from an uploaded syllabus rather
+  // than a course template — the server stamps the class so the dashboard
+  // stops offering an import that has already happened.
+  async applyTemplate(classId, notebooks, { fromSyllabus = false } = {}) {
     const headers = await authHeaders({ "Content-Type": "application/json" });
     const res = await fetch(`${API_URL}/api/classes/${classId}/apply-template`, {
-      method: "POST", headers, body: JSON.stringify({ notebooks }),
+      method: "POST", headers, body: JSON.stringify({ notebooks, fromSyllabus }),
     });
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to set up class"); }
     return res.json(); // { success, firstNotebookId, created, limitHit }

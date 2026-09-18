@@ -1490,15 +1490,23 @@ app.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) =>
 app.get("/api/classes", requireAuth, async (req, res) => {
   // Embed the unit count so the dashboard can show it without expanding each
   // card (units themselves are still loaded lazily on expand).
-  const { data, error } = await supabase
+  const listClasses = (cols) => supabase
     .from("classes")
-    .select("id, title, color, created_at, sort_order, notebooks(count)")
+    .select(cols)
     .eq("user_id", req.user.id)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
+
+  const BASE = "id, title, color, created_at, sort_order, notebooks(count)";
+  let { data, error } = await listClasses(`${BASE}, syllabus_imported_at`);
+  // 42703 = undefined_column: migration 038 has not been run on this database
+  // yet. Fall back rather than 500 the whole dashboard over one nullable flag
+  // whose only job is to hide a button.
+  if (error?.code === "42703") ({ data, error } = await listClasses(BASE));
   if (error) return res.status(500).json({ error: error.message });
   res.json((data ?? []).map(({ notebooks, ...c }) => ({
     ...c,
+    syllabus_imported_at: c.syllabus_imported_at ?? null,
     unit_count: notebooks?.[0]?.count ?? 0,
   })));
 });
@@ -1692,6 +1700,21 @@ app.post("/api/classes/:id/apply-template", requireAuth, async (req, res) => {
       })));
     }
   }
+  // Stamp the class so the dashboard can stop offering an import it has
+  // already had. Only when the units came from a syllabus — a course template
+  // is not a syllabus, and best-effort because a failure here should never
+  // cost the caller the units that were just created.
+  if (created > 0 && req.body?.fromSyllabus === true) {
+    const { error: stampErr } = await supabase
+      .from("classes")
+      .update({ syllabus_imported_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id);
+    if (stampErr && stampErr.code !== "42703") {
+      console.warn("[apply-template] could not stamp syllabus_imported_at:", stampErr.message);
+    }
+  }
+
   res.json({ success: true, firstNotebookId, created, limitHit });
 });
 

@@ -1504,7 +1504,7 @@ export default function Scholr() {
     const cls = await api.createClass(className);
     setClasses(prev => [...prev, cls]);
     try {
-      const result = await api.applyTemplate(cls.id, notebooks);
+      const result = await api.applyTemplate(cls.id, notebooks, { fromSyllabus: true });
       const nm = getDisplayName(user);
       api.listNotebooks(nm).then(setNotebooks).catch(() => {});
       api.listClasses().then(setClasses).catch(() => {});
@@ -1528,7 +1528,7 @@ export default function Scholr() {
   // units. Refreshes the open card's cached units so they appear in place
   // rather than after a collapse/expand.
   async function handleImportSyllabusIntoClass(cls, notebooks) {
-    const result = await api.applyTemplate(cls.id, notebooks);
+    const result = await api.applyTemplate(cls.id, notebooks, { fromSyllabus: true });
     const nm = getDisplayName(user);
     api.listNotebooks(nm).then(setNotebooks).catch(() => {});
     api.listClasses().then(setClasses).catch(() => {});

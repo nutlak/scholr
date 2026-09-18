@@ -144,8 +144,14 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
         {/* Import syllabus. On the row itself, in the class's own colour, at
             every width and without hovering or expanding anything — the two
             quieter placements before this (inside the expanded card, then a
-            grey chip gated on desktop-only) both went unfound. */}
-        {onImportSyllabus && (
+            grey chip gated on desktop-only) both went unfound.
+
+            It retires once this class has actually been imported from a
+            syllabus: a one-time setup action, so leaving it on the row
+            afterwards is an offer to redo something already done. Classes
+            filled in by hand keep the button — having units is not the same
+            as having imported a syllabus. */}
+        {onImportSyllabus && !cls.syllabus_imported_at && (
           <button
             onClick={e => { e.stopPropagation(); onImportSyllabus(); }}
             className="btn-press"

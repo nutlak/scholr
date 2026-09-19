@@ -1036,7 +1036,11 @@ export default function Scholr() {
 
       {/* App shell */}
       <div style={{
-        height: "100vh", overflow: "hidden",
+        // dvh, not vh: on iOS `100vh` is the *large* viewport, which ignores
+        // Safari's toolbar, so the shell ran taller than the visible area and
+        // the bottom tab bar sat behind the chrome — unreachable once the page
+        // itself stopped scrolling.
+        height: "100dvh", overflow: "hidden",
         background: "var(--bg-base)",
         display: user ? "flex" : "none", flexDirection: "column", fontFamily: FONT,
       }}>

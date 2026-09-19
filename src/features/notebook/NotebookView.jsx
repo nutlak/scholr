@@ -627,7 +627,13 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
 
       {/* Chat + Forge split */}
       <div className="notebook-split" style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* minHeight: 0 is load-bearing. A flex item will not shrink below its
+            content without it, so this column grew to the full height of the
+            transcript (5322px inside a 780px notebook), the message list never
+            scrolled, and the chat's scroll-to-latest dragged the header — Back,
+            Invite, Upload, and the whole tool strip — off the top of the screen
+            with no way to scroll back, because the root clips its overflow. */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
           {/* Message list */}
           <div style={{
             flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",

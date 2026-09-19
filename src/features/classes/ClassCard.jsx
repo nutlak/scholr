@@ -129,6 +129,12 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           </div>
         </div>
 
+        {/* Secondary controls. `display: contents` on desktop, so this changes
+            nothing there; on a phone it becomes its own line under the title,
+            which is what stops the flexible title from being squeezed to zero
+            width by a button that never shrinks. */}
+        <div className="class-row-actions">
+
         {/* Unit count — from the loaded list once expanded, otherwise the count
             the classes endpoint embeds, so a collapsed card still says something. */}
         {(() => {
@@ -197,7 +203,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               style={{
                 width: 16, height: 16, borderRadius: 4, padding: 0,
                 border: "1.5px solid var(--border-h)",
-                background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
+                background: t.hue,
                 cursor: "pointer",
                 opacity: hovered || pickerOpen ? 1 : 0,
                 transition: "opacity 0.18s, transform 0.15s",
@@ -249,6 +255,8 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
         )}
 
         {/* Chevron */}
+        </div>
+
         <div className="class-chevron" style={{
           color: expanded ? t.hue : "var(--text-tertiary)",
           transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.18s",

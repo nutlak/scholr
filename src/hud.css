@@ -166,8 +166,14 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
    which would change its height and desync the sidebar offset. */
 @media (max-width: 768px) {
   .hud-bar .hud-opt { display: none; }
-  .hud-bar { gap: 10px; padding: 0 12px; font-size: 12.5px; }
+  .hud-bar { gap: 0; padding: 0 12px; font-size: 12.5px; }
   .hud-num { font-size: 12.5px; }
+  /* Only the two readouts that change what a student does next survive here:
+     the streak and what's due. The clock duplicates the phone's own status
+     bar, and presence/plan are ambient. */
+  .hud-bar .hud-seg-presence,
+  .hud-bar .hud-seg-clock { display: none; }
+  .hud-seg + .hud-seg::before { margin: 0 9px; }
 }
 
 .hud-title {
@@ -176,6 +182,14 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 }
 .hud-title .slash { color: var(--text-tertiary); font-weight: 500; text-shadow: none; margin: 0 6px; }
 .hud-sep    { color: rgba(167, 139, 250, 0.25); }
+/* gap, not whitespace: inline-flex makes each text node its own flex item and
+   drops the spaces between them, which rendered "Streak4days". */
+.hud-seg { display: inline-flex; align-items: center; min-width: 0; gap: 0.3em; }
+.hud-seg + .hud-seg::before {
+  content: "::"; color: rgba(167, 139, 250, 0.25); margin: 0 12px; flex: none;
+}
+/* The spacer ends the run — the segments after it start a new group. */
+.hud-spacer + .hud-seg::before { content: none; }
 .hud-spacer { flex: 1 1 auto; }
 /* Numbers stay mono so they stop jittering as the clock ticks. */
 .hud-num    { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
@@ -214,21 +228,37 @@ html:not([data-theme="light"]) :focus-visible {
    buttons. It is four labelled buttons now, so they get room to be
    tapped: 44px is the smallest target a thumb reliably hits. ── */
 @media (max-width: 768px) {
+  /* A wrapping flex row with flex:1 children put Forge/Invite/Upload on one
+     cramped line and stranded More full-width beneath — ragged, and the widths
+     changed with the label lengths. A two-column grid gives four equal targets
+     that stay put. */
   .nb-header-actions {
     overflow-x: visible !important;
-    flex-wrap: wrap;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
     gap: 8px !important;
   }
+  /* Status spans the full width above them: it is a state, not an action. */
+  .nb-header-actions > span.nb-mobile-only { grid-column: 1 / -1; }
   .nb-header-actions > button,
   .nb-header-actions > span > button {
     height: 44px !important;
-    min-width: 44px;
+    width: 100%;
+    min-width: 0;
     font-size: 14px !important;
     padding: 0 14px !important;
-    flex: 1 1 auto;
   }
   /* Labels stay visible — an icon on its own is a guessing game. */
   .nb-action-text { display: inline !important; }
+
+  /* Back was a bordered box holding a third of the header width away from the
+     notebook's own name. Same 44px target, no box. */
+  .nb-back {
+    border: none !important;
+    padding: 0 8px 0 0 !important;
+    height: 44px !important;
+    font-size: 15px !important;
+  }
 
   .sheet-row { min-height: 64px !important; }
 

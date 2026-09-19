@@ -826,3 +826,7 @@ select:focus:not(:focus-visible) { outline: none; }
 /* `display: contents` on the mobile pill wrapper would defeat .mobile-only's
    display toggle, so restore an explicit override at desktop width. */
 @media (min-width: 769px) { .nb-mobile-only[style] { display: none !important; } }
+
+/* The class row's secondary controls are inline on desktop; App.css turns this
+   into its own line on mobile. */
+.class-row-actions { display: contents; }

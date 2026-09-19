@@ -216,6 +216,12 @@
     padding: 16px 16px calc(96px + env(safe-area-inset-bottom)) !important;
     margin-left: 0 !important;
   }
+
+  /* Inside a notebook the tab bar isn't rendered, so the 96px reserved for it
+     became a dead band under the composer. */
+  .main-pane-nb {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
   /* Mobile-only / desktop-only utility (extends existing) */
   .desktop-only { display: none !important; }
   .mobile-only  { display: flex !important; }
@@ -270,6 +276,12 @@
     -webkit-tap-highlight-color: transparent;
   }
   .mobile-header-avatar:active { transform: scale(0.94); }
+  /* The header is a wrapping flex row, and on a phone the greeting block fills
+     it — so the avatar wrapped onto a line of its own and sat under the quote
+     as a bubble attached to nothing. Pin it to the header's top-right, where
+     an account button belongs, and keep the heading clear of it. */
+  .mobile-header-avatar { position: absolute; top: 4px; right: 0; }
+  .dash-heading { padding-right: 52px; }
 
   /* ── Bottom-sheet treatment for any modal that opts in ───────── */
   .mobile-sheet-overlay {
@@ -313,6 +325,35 @@
   /* ── Touch targets ───────────────────────────────────────────── */
   button { min-height: 44px; }
   a, [role="button"] { min-height: 44px; }
+  /* …except controls whose whole job is to be small. A blanket floor turned
+     the 16px class-colour swatch into a 44px slab on every class row. */
+  .class-color-swatch, .hud-bar button, .color-swatch-grid button { min-height: 0; }
+
+  /* ── Class row: the name is the point of the row ─────────────── */
+  /* It was flex:1 next to a never-shrinking "Import syllabus" button, so at
+     390px it resolved to width:0 and every class showed as a bare dot with a
+     unit count. The secondary controls get their own line instead. */
+  .class-card-header { flex-wrap: wrap; row-gap: 4px; }
+  /* Line 1 is the name and the disclosure chevron; line 2 is everything else.
+     The chevron is ordered back up to line 1 — left in source order it wrapped
+     onto a line of its own and made every class row four rows tall. */
+  .class-card-header > .class-chevron { order: 2; }
+  .class-row-actions {
+    order: 3;
+    display: flex; align-items: center; gap: 10px;
+    flex: 1 1 100%; padding-left: 19px;
+  }
+  /* Hover-reveal is meaningless on touch: these were opacity:0 yet still
+     occupying space and still tappable — including delete. */
+  .class-row-actions button { opacity: 1 !important; }
+  /* Delete sits at the far end of its line, away from the thing you actually
+     came to tap. */
+  .class-row-actions .class-delete-btn { margin-left: auto; }
+  /* Colour and the syllabus peek are desktop conveniences — on a phone they
+     cost more width than the class name can spare. Colour is still editable on
+     desktop; the syllabus is one tap away inside the expanded class. */
+  .class-row-actions .class-color-swatch,
+  .class-row-actions > button[title="View syllabus"] { display: none !important; }
 
   /* ── Replace hover with :active on touch devices ─────────────── */
   /* (Only applies when there's no hover capability) */
@@ -370,11 +411,15 @@
     min-height: 64px;
     gap: 14px !important;
   }
+  /* 44px of hit area, 20px of paint. The target has to clear the thumb floor,
+     but a 44px block of flat colour outweighed the class name next to it —
+     the inset ring paints the row's own surface back over the outer 12px. */
   .class-color-swatch {
     width: 44px !important;
     height: 44px !important;
-    border-radius: 10px !important;
+    border: none !important;
     opacity: 1 !important;
+    box-shadow: inset 0 0 0 12px var(--bg-surface-1);
   }
   .class-delete-btn {
     opacity: 1 !important;

@@ -1324,7 +1324,7 @@ export default function Scholr() {
             and the notebook view — which sizes itself to 100% of it — got
             sliced. flex:1 + minHeight:0 makes it fill what is actually
             there. */}
-        <div className="main-pane" onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, minHeight: 0, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div className={`main-pane${activeNb ? " main-pane-nb" : ""}`} onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, minHeight: 0, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
           <button
             onClick={() => setSidebarOpen(true)}
             title="Open menu"
@@ -1399,7 +1399,7 @@ export default function Scholr() {
                 paddingTop: 10, paddingBottom: 24,
                 display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
               }}>
-                <div>
+                <div className="dash-heading">
                   <div className="greeting-text" style={{
                     fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
                     fontFamily: FONT_HEADING, letterSpacing: "-0.022em", lineHeight: 1.15,

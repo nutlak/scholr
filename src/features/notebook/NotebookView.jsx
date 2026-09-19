@@ -7,6 +7,7 @@ import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
 import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
+import { useNarrow } from "../../lib/breakpoints.js";
 import { useDerekPhrase } from "../../lib/derekPhrases.js";
 import { InviteModal } from "./InviteModal.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
@@ -192,6 +193,7 @@ function ShareModal({ notebookId, onClose, onStateChange }) {
   );
 }
 export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStatus, onUpgradeNeeded }) {
+  const narrow = useNarrow();
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -484,7 +486,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         paddingBottom: 14, borderBottom: "1px solid var(--border-default)",
       }}>
         {/* Back — always Row 1 */}
-        <button onClick={onBack} className="btn-press" style={{
+        <button onClick={onBack} className="btn-press nb-back" style={{
           background: "transparent", border: "1px solid var(--border-strong)",
           color: "var(--text-secondary)",
           borderRadius: 10, padding: "0 14px", height: 36, cursor: "pointer",
@@ -499,8 +501,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
           <div style={{
             width: 8, height: 8, borderRadius: 2,
-            background: `linear-gradient(135deg, ${t.hue}, ${t.deep})`,
-            boxShadow: `0 0 12px ${t.hue}66`, flexShrink: 0,
+            background: t.hue, flexShrink: 0,
           }} />
           <div style={{ minWidth: 0 }}>
             <div style={{
@@ -535,7 +536,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         <div className="nb-header-actions">
           {onSetStatus && (
             <span className="nb-mobile-only">
-              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" compact />
+              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" />
             </span>
           )}
 
@@ -851,7 +852,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               value={query}
               onChange={onQueryChange}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && ask()}
-              placeholder={`Ask anything about ${nb.title}… (use @ to mention)`}
+              placeholder={narrow ? "Ask Derek anything…" : `Ask anything about ${nb.title}… (use @ to mention)`}
               disabled={loading}
               style={{
                 flex: 1, background: "var(--bg-surface-1)",

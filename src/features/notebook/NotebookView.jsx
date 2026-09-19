@@ -517,11 +517,26 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             )}
           </div>
           {onSetStatus && (
-            <span className="nb-desktop-only" style={{ marginLeft: 4 }}>
-              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="md" />
+            <span className="nb-status-inline" style={{ marginLeft: 4 }}>
+              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" />
             </span>
           )}
         </div>
+
+        {/* Mobile: one ⋯ in the title row replaces the Invite/Upload/More row
+            below it. Those two are in the sheet it opens — a phone cannot
+            afford 74px of buttons above a chat window. */}
+        <button
+          onClick={() => setSheet("more")}
+          className="btn-press nb-more-inline"
+          aria-haspopup="dialog"
+          aria-label="Notebook actions"
+          style={{
+            background: "transparent", border: "1px solid var(--border-strong)",
+            color: "var(--text-secondary)", cursor: "pointer", flexShrink: 0,
+            width: 44, height: 44, alignItems: "center", justifyContent: "center",
+          }}
+        ><MoreHorizontal size={18} strokeWidth={1.85} /></button>
 
         {/* Avatar — mobile: in Row 1 right; desktop: in actions */}
         {members.length > 0 && (
@@ -534,11 +549,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         {/* Four targets, not ten. Everything rarely reached lives behind More,
             and the five study tools live behind one Forge button. */}
         <div className="nb-header-actions">
-          {onSetStatus && (
-            <span className="nb-mobile-only">
-              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" />
-            </span>
-          )}
 
           <button
             onClick={() => setSheet("tools")}
@@ -586,34 +596,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             </span>
           )}
         </div>
-      </div>
-
-      {/* The five study tools, visible, on phones.
-
-          They were reachable only behind a header button labelled "Forge",
-          which opened a sheet also titled "Forge" — so Notes, Flashcards,
-          Podcast and Feynman existed but nothing on screen said so, and the
-          notebook read as a chat window with an upload button. The desktop
-          header keeps the single Forge button; a phone has no hover, no rail
-          and no room for a wrong guess. */}
-      <div className="nb-tool-strip nb-mobile-only no-print">
-        {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTool(id)}
-            className="btn-press"
-            aria-label={label}
-            style={{
-              background: activeTool === id ? "var(--acc-bg)" : "transparent",
-              border: `1px solid ${activeTool === id ? "var(--acc)" : "var(--border-default)"}`,
-              color: "var(--text-secondary)",
-              fontFamily: FONT, cursor: "pointer",
-            }}
-          >
-            <Icon size={17} strokeWidth={1.85} color={tint} />
-            <span>{text}</span>
-          </button>
-        ))}
       </div>
 
       {/* Live study room. Shown on every notebook as a "Study together" CTA
@@ -940,6 +922,34 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             </button>
           </div>
 
+        {/* The five study tools, as a bottom bar beneath the composer.
+
+            They were reachable only behind a header button labelled "Forge",
+            which opened a sheet also titled "Forge" — so Notes, Flashcards,
+            Podcast and Feynman existed but nothing on screen said so, and the
+            notebook read as a chat window with an upload button. The desktop
+            header keeps the single Forge button; a phone has no hover, no rail
+            and no room for a wrong guess. */}
+        <div className="nb-tool-strip nb-mobile-only no-print">
+          {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTool(id)}
+              className="btn-press"
+              aria-label={label}
+              style={{
+                background: activeTool === id ? "var(--acc-bg)" : "transparent",
+                border: `1px solid ${activeTool === id ? "var(--acc)" : "var(--border-default)"}`,
+                color: "var(--text-secondary)",
+                fontFamily: FONT, cursor: "pointer",
+              }}
+            >
+              <Icon size={17} strokeWidth={1.85} color={tint} />
+              <span>{text}</span>
+            </button>
+          ))}
+        </div>
+
         </div>
       </div>
 
@@ -971,6 +981,10 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         >
           <SheetMenu
             items={[
+              { id: "invite", label: "Invite a classmate", description: "Share this notebook with someone",
+                Icon: UserPlus, onSelect: () => { setSheet(null); setShowInvite(true); } },
+              { id: "upload", label: "Upload notes", description: "PDFs, slides, photos or text",
+                Icon: Paperclip, onSelect: () => { setSheet(null); setShowUpload(true); } },
               { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
                 Icon: Share2, onSelect: () => { setSheet(null); setShowShare(true); } },
               { id: "pdf", label: "Save as PDF", description: "Print or download these notes",

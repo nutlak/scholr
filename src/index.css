@@ -833,3 +833,8 @@ select:focus:not(:focus-visible) { outline: none; }
 
 /* The mobile study-tool strip; hud.css lays it out below 768px. */
 .nb-tool-strip { display: none; }
+/* The inline ⋯ and the status chip are mobile-only; desktop keeps the row. */
+.nb-more-inline { display: none; }
+/* Status sits inline with the notebook title on mobile only. */
+.nb-status-inline { display: none; }
+@media (min-width: 769px) { .nb-status-inline { display: inline-flex; } }

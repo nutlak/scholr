@@ -166,7 +166,14 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
    which would change its height and desync the sidebar offset. */
 @media (max-width: 768px) {
   .hud-bar .hud-opt { display: none; }
-  .hud-bar { gap: 0; padding: 0 12px; font-size: 12.5px; }
+  /* viewport-fit=cover puts the app under the status bar and the Dynamic
+     Island, and this strip is the first thing in the shell — so its readouts
+     were being drawn behind them. */
+  .hud-bar {
+    gap: 0; padding: 0 12px; font-size: 12.5px;
+    padding-top: env(safe-area-inset-top);
+    height: calc(36px + env(safe-area-inset-top));
+  }
   .hud-num { font-size: 12.5px; }
   /* Only the two readouts that change what a student does next survive here:
      the streak and what's due. The clock duplicates the phone's own status
@@ -232,16 +239,14 @@ html:not([data-theme="light"]) :focus-visible {
      cramped line and stranded More full-width beneath — ragged, and the widths
      changed with the label lengths. A two-column grid gives four equal targets
      that stay put. */
-  /* Three utilities left here once the five study tools moved to their own
-     strip — Invite, Upload, More — so three columns fit them on one line. */
-  .nb-header-actions {
-    overflow-x: visible !important;
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px !important;
-  }
-  /* Status spans the full width above them: it is a state, not an action. */
-  .nb-header-actions > span.nb-mobile-only { grid-column: 1 / -1; }
+  /* The utility row is gone on phones: Invite and Upload live in the sheet
+     behind the ⋯ in the title row, which costs one 44px button instead of a
+     74px row stacked above the chat. */
+  .nb-header-actions { display: none !important; }
+  .nb-more-inline { display: inline-flex !important; }
+  /* Status moved inline next to the notebook's name — it is a state, not an
+     action, and it was costing a whole 58px row of its own. */
+  .nb-status-inline { display: inline-flex !important; }
   .nb-header-actions > button,
   .nb-header-actions > span > button {
     height: 44px !important;
@@ -255,11 +260,15 @@ html:not([data-theme="light"]) :focus-visible {
 
   /* Five tools, five targets, every label spelled out. Replaces the single
      "Forge" button on phones, which is now redundant. */
+  /* Bottom bar, under the composer: the chat is the screen, the tools sit
+     where the thumb already is. */
   .nb-tool-strip {
     display: grid !important;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
-    margin-bottom: 10px;
+    margin: 10px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
   }
   /* Every row above the transcript is chrome the reader pays for: with the
      header, utilities and tools all visible, only 370px of an 844px screen was
@@ -268,7 +277,7 @@ html:not([data-theme="light"]) :focus-visible {
   .nb-tool-strip button { min-height: 52px; }
   .nb-tool-strip button {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px; min-height: 58px; padding: 6px 2px;
+    gap: 3px; min-height: 52px; padding: 5px 2px;
     font-size: 10.5px; font-weight: 600; letter-spacing: -0.005em;
     -webkit-tap-highlight-color: transparent;
   }

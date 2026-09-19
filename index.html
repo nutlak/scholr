@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/scholr-logo-final.png?v=4" />
     <link rel="apple-touch-icon" href="/scholr-logo-final.png?v=4" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- user-scalable=no is a deliberate product decision, not an oversight: the
+         app is meant to behave like an app, not a page you can drag and pinch.
+         It costs pinch-to-zoom as a magnification aid — the in-app type scale
+         and the OS-level Display Zoom / Larger Text settings are the remaining
+         paths. Revert by deleting maximum-scale and user-scalable here and
+         removing the gesture handler in src/main.jsx. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#070709" />
 
     <!-- iOS only delivers web push to a site installed to the home screen, and

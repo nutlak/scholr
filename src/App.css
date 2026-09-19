@@ -195,12 +195,25 @@
    MOBILE UX PASS  ( < 768px only — desktop untouched )
    ══════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Prevent horizontal overflow & enable momentum scrolling everywhere */
-  html, body { overflow-x: hidden; }
-  body { -webkit-overflow-scrolling: touch; }
-  * { -webkit-overflow-scrolling: touch; }
-  /* iOS bounce containment for fixed-bottom UI */
-  body { overscroll-behavior-y: contain; }
+  /* The page itself does not move. Only the panes inside it scroll.
+
+     `position: fixed` on body is what stops the whole document being dragged
+     around and rubber-banding at the top and bottom; `overscroll-behavior:
+     none` stops a scrolled-to-the-end pane handing the gesture back to the
+     page; `touch-action: manipulation` kills double-tap-to-zoom while leaving
+     taps and scrolls alone. */
+  html, body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* Momentum stays inside the scrollers. */
+  .main-pane, .tool-modal-card, .forge-panel { -webkit-overflow-scrolling: touch; }
+  .main-pane { overscroll-behavior: contain; }
 
   /* Drag handles hidden on touch — drag isn't a great mobile interaction */
   .class-drag-handle { display: none !important; }

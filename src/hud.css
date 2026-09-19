@@ -232,10 +232,12 @@ html:not([data-theme="light"]) :focus-visible {
      cramped line and stranded More full-width beneath — ragged, and the widths
      changed with the label lengths. A two-column grid gives four equal targets
      that stay put. */
+  /* Three utilities left here once the five study tools moved to their own
+     strip — Invite, Upload, More — so three columns fit them on one line. */
   .nb-header-actions {
     overflow-x: visible !important;
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px !important;
   }
   /* Status spans the full width above them: it is a state, not an action. */
@@ -250,6 +252,22 @@ html:not([data-theme="light"]) :focus-visible {
   }
   /* Labels stay visible — an icon on its own is a guessing game. */
   .nb-action-text { display: inline !important; }
+
+  /* Five tools, five targets, every label spelled out. Replaces the single
+     "Forge" button on phones, which is now redundant. */
+  .nb-tool-strip {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .nb-tool-strip button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; min-height: 58px; padding: 6px 2px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: -0.005em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nb-header-actions > .nb-tool-btn { display: none !important; }
 
   /* Back was a bordered box holding a third of the header width away from the
      notebook's own name. Same 44px target, no box. */

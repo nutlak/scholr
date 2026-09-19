@@ -588,6 +588,34 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </div>
       </div>
 
+      {/* The five study tools, visible, on phones.
+
+          They were reachable only behind a header button labelled "Forge",
+          which opened a sheet also titled "Forge" — so Notes, Flashcards,
+          Podcast and Feynman existed but nothing on screen said so, and the
+          notebook read as a chat window with an upload button. The desktop
+          header keeps the single Forge button; a phone has no hover, no rail
+          and no room for a wrong guess. */}
+      <div className="nb-tool-strip nb-mobile-only no-print">
+        {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTool(id)}
+            className="btn-press"
+            aria-label={label}
+            style={{
+              background: activeTool === id ? "var(--acc-bg)" : "transparent",
+              border: `1px solid ${activeTool === id ? "var(--acc)" : "var(--border-default)"}`,
+              color: "var(--text-secondary)",
+              fontFamily: FONT, cursor: "pointer",
+            }}
+          >
+            <Icon size={17} strokeWidth={1.85} color={tint} />
+            <span>{text}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Live study room. Shown on every notebook as a "Study together" CTA
           (opt-in — nothing connects until clicked); it's how you turn a solo
           notebook into a shared session. */}

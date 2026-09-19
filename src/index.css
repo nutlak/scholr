@@ -830,3 +830,6 @@ select:focus:not(:focus-visible) { outline: none; }
 /* The class row's secondary controls are inline on desktop; App.css turns this
    into its own line on mobile. */
 .class-row-actions { display: contents; }
+
+/* The mobile study-tool strip; hud.css lays it out below 768px. */
+.nb-tool-strip { display: none; }

@@ -29,10 +29,17 @@ const OPERATIONAL = new Set([
   "AI_BASE_URL",       // test-harness override, guarded by `if (baseURL)`
 ]);
 
-function sourceFiles() {
-  const files = [join(serverDir, "index.js"), join(serverDir, "email.js")];
-  for (const f of readdirSync(join(serverDir, "lib"))) {
-    if (f.endsWith(".js") && !f.endsWith(".test.js")) files.push(join(serverDir, "lib", f));
+// Walks the whole server tree rather than a hand-listed set of directories.
+// The list version silently stopped covering anything new: splitting index.js
+// into routes/ moved 20 env reads outside it in one commit, which is exactly
+// the blind spot this test exists to close.
+function sourceFiles(dir = serverDir) {
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...sourceFiles(full));
+    else if (entry.name.endsWith(".js") && !entry.name.endsWith(".test.js")) files.push(full);
   }
   return files;
 }

@@ -156,3 +156,6 @@ export function dropdownShiftX(triggerRight, viewportW, panelW, viewportMargin =
 export const NOTIF_OPENS_NOTEBOOK = new Set(["notebook_invite", "mention", "note_uploaded"]);
 
 export const NOTIF_OPENS_BILLING = new Set(["payment_failed", "renewal_reminder"]);
+
+// ── Streak helpers (1F) ────────────────────────────────────────────────────
+export const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];

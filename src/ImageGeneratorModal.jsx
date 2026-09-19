@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+import { FONT } from "./lib/theme.js";
 
 const inputStyle = {
   width: "100%",

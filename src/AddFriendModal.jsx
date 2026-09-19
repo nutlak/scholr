@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+import { FONT } from "./lib/theme.js";
 
 // Deterministic avatar tint by seed — mirrors the Avatar palette in App.jsx so
 // initials look consistent across the app.

@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame } from "lucide-react";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
+import { FONT, FONT_HEADING, FONT_SERIF } from "./lib/theme.js";
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);

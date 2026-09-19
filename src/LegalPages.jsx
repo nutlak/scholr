@@ -8,9 +8,7 @@
 // unchanged. Uses theme tokens (var(--…)) only.
 
 import { LegalFooter, SUPPORT_EMAIL } from "./LegalFooter.jsx";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+import { FONT, FONT_SERIF } from "./lib/theme.js";
 
 const linkStyle = { color: "var(--accent)", fontWeight: 600, textDecoration: "none" };
 

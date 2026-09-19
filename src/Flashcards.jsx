@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+import { FONT } from "./lib/theme.js";
 
 // Rating buttons → SM-2 quality. Again=1, Hard=3, Good=4, Easy=5.
 const RATINGS = [

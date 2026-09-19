@@ -1,8 +1,8 @@
+import { FONT } from "./lib/theme.js";
 // Split out of LegalPages.jsx so App.jsx can import the footer without dragging
 // the verbatim legal text (DOCS) into the main bundle — LegalPages.jsx is lazy,
 // and a static import of any of its exports defeats that.
 
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 export const SUPPORT_EMAIL = "support@scholr.dev";
 
 export function LegalFooter({ compact = false }) {

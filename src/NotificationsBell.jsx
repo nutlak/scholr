@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { api } from "./api.js";
 import { dropdownShiftX } from "./lib/format.js";
+import { FONT } from "./lib/theme.js";
 
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const PANEL_W = 300;         // panel width; also used to predict its left edge
 const VIEWPORT_MARGIN = 32;  // total horizontal room the panel leaves on narrow screens
 const EDGE_GAP = 8;          // min gap between the panel and the viewport edge

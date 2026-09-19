@@ -1,6 +1,5 @@
 import { useRef } from "react";
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+import { FONT } from "./lib/theme.js";
 
 export default function OtpInput({ value = "", onChange, disabled = false }) {
   const refs = useRef([]);

@@ -3,11 +3,9 @@ import { takeReferral } from "./lib/referral.js";
 import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
 import { Mail, Lock } from "lucide-react";
+import { FONT, FONT_HEADING } from "./lib/theme.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
-
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
-const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
 
 const inputStyle = {
   width: "100%",

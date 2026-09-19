@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import { api } from "./api.js";
 import { CheckCircle, File, Folder } from "lucide-react";
 import { useEscape } from "./ui/useEscape.js";
+import { FONT } from "./lib/theme.js";
 
-const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
 
 const labelStyle = {

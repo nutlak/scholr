@@ -444,4 +444,14 @@
     column-gap: 36px;
     align-items: start;
   }
+
+  /* Tinted only while it is actually a side rail. Stacked under the content
+     on a narrow window it would be a full-width band, which reads as a
+     section break that isn't there. */
+  .dash-rail {
+    background: var(--bg-chrome);
+    border-left: 1px solid var(--border-subtle);
+    padding: 18px 16px;
+    margin-right: -16px;
+  }
 }

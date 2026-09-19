@@ -1054,7 +1054,7 @@ export default function Scholr() {
         {/* Sidebar */}
         <div className="sidebar" style={{
           width: 240,
-          background: "var(--bg-base)",
+          background: "var(--bg-chrome)",
           borderRight: "1px solid var(--border-subtle)",
           display: "flex", flexDirection: "column",
           flexShrink: 0, overflow: "hidden",

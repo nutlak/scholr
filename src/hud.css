@@ -38,6 +38,7 @@
 html:not([data-theme="light"]) {
   --bg:             #0C0819;
   --bg-base:        #0C0819;
+  --bg-chrome:      #140E28;
   --s1:             rgba(28, 21, 56, 0.72);
   --s2:             rgba(38, 28, 74, 0.78);
   --s3:             rgba(50, 37, 94, 0.82);
@@ -69,19 +70,12 @@ html:not([data-theme="light"]) {
   --ring:           var(--hud-dim);
 }
 
-/* ── Backplate: reactor ambient, behind everything ──────────────────────
-   The 64px graph-paper grid that used to sit here is gone. It was texture
-   for its own sake — it read as a wireframe behind the content and got worse
-   the moment the ambient came up. The light stays; the paper doesn't. */
-html:not([data-theme="light"]) body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(900px 620px at 8% -6%, rgba(167, 139, 250, 0.22), transparent 62%),
-    radial-gradient(820px 560px at 96% 4%, rgba(96, 165, 250, 0.10), transparent 64%),
-    radial-gradient(900px 620px at 78% 104%, rgba(244, 114, 182, 0.075), transparent 66%),
-    radial-gradient(760px 520px at 0% 100%, rgba(251, 191, 36, 0.035), transparent 68%);
-}
+/* ── Backplate ──────────────────────────────────────────────────────────
+   The graph-paper grid went first, then the ambient light that replaced it.
+   Four coloured radials washing violet, blue, pink and amber across a fixed
+   layer meant the page tinted differently depending on where a panel sat —
+   surfaces couldn't read as the same surface. The void is flat now, and the
+   separation between shell and content comes from --bg-chrome instead. */
 body > * { position: relative; z-index: 1; }
 
 /* The app shell paints an opaque var(--bg-base) over the whole viewport, which
@@ -279,13 +273,9 @@ html:not([data-theme="light"]) :focus-visible {
 }
 
 /* ── The greeting reads as the page's one display line ──────────────────
-   Same violet-to-white sweep the landing page's headline uses, so the app
-   doesn't feel like a different product from the page that sold it.
-   Dark only: on the light theme a lavender gradient on white is a smudge. */
+   Flat, not a gradient: a swept fill on a display line is the sort of
+   flourish that reads as decoration rather than hierarchy, and it dimmed
+   the tail of the sentence to lavender-on-void. One colour, full contrast. */
 html:not([data-theme="light"]) .greeting-text {
-  background-image: linear-gradient(104deg, #FFFFFF 0%, #EDE6FF 46%, #B9A3FB 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: #F2EEFF;
 }

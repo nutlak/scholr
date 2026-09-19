@@ -10,7 +10,7 @@ import { Moon, Sun } from "lucide-react";
 
 export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
   return (
-              <div style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
+              <div className="settings-pane" style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
                 <div style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.025em", marginBottom: 32 }}>
                   Settings
                 </div>

@@ -329,6 +329,15 @@
      the 16px class-colour swatch into a 44px slab on every class row. */
   .class-color-swatch, .hud-bar button, .color-swatch-grid button { min-height: 0; }
 
+  /* ── Settings: desktop rhythm on a phone ─────────────────────── */
+  /* Section gaps of 32px plus 14px block padding meant one section filled
+     more than half the screen and you scrolled past three to reach Squad.
+     Attribute selectors reach the inline values without touching the JSX —
+     the same technique the card chrome uses. */
+  .settings-pane [style*="margin-bottom: 32px"] { margin-bottom: 18px !important; }
+  .settings-pane [style*="padding: 14px 0"] { padding: 10px 0 !important; }
+  .settings-pane > div:first-child { margin-bottom: 14px !important; }
+
   /* ── Class row: the name is the point of the row ─────────────── */
   /* It was flex:1 next to a never-shrinking "Import syllabus" button, so at
      390px it resolved to width:0 and every class showed as a bare dot with a

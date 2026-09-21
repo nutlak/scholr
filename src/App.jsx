@@ -346,12 +346,16 @@ export default function Scholr() {
   // swallows its own failure. Say so and send them back to sign in.
   useEffect(() => {
     const onExpired = () => {
+      // Only meaningful to someone who had a session. A 401 can also come from
+      // a call made while signed out, and telling a first-time visitor on the
+      // marketing page that their session expired is both false and alarming.
+      if (!user) return;
       setToast("Your session expired — please sign in again.");
       setTimeout(() => { supabase.auth.signOut().catch(() => {}); }, 1800);
     };
     window.addEventListener("scholr:session-expired", onExpired);
     return () => window.removeEventListener("scholr:session-expired", onExpired);
-  }, []);
+  }, [user]);
 
   // The mobile freeze in App.css pins html/body with position:fixed so the
   // document cannot be dragged and only the inner panes scroll. That is right

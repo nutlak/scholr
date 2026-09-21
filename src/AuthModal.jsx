@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { takeReferral } from "./lib/referral.js";
 import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -77,6 +77,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [dob, setDob]             = useState(""); // date of birth (YYYY-MM-DD)
   const [agreed, setAgreed]       = useState(false);
 
@@ -521,12 +522,36 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
 
         <div>
           <label style={labelStyle}>Password</label>
-          <input
-            type="password" required
-            value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Min 6 characters"
-            style={inputStyle} onFocus={focusPurple} onBlur={blurGray}
-          />
+          {/* The reveal sits inside the field. Typing a password blind on a
+              phone keyboard is how people end up locked out of an account they
+              actually know the password to, and a failed sign-in is far more
+              annoying than a character being visible for a second. */}
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"} required
+              value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Min 6 characters"
+              style={{ ...inputStyle, paddingRight: 46 }}
+              onFocus={focusPurple} onBlur={blurGray}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              style={{
+                position: "absolute", top: 0, right: 0,
+                height: "100%", width: 44,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "transparent", border: "none", cursor: "pointer",
+                color: "var(--text-tertiary)", padding: 0,
+              }}
+            >
+              {showPassword
+                ? <EyeOff size={17} strokeWidth={1.85} />
+                : <Eye size={17} strokeWidth={1.85} />}
+            </button>
+          </div>
           {tab === "login" && (
             <button
               type="button"

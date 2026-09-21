@@ -505,29 +505,28 @@ export default function LandingPage({ onSignIn }) {
           font-size: 13px; font-weight: 600;
           cursor: pointer; font-family: ${FONT};
           white-space: nowrap;
-          box-shadow: 0 4px 14px rgba(167,139,250,0.32), 0 0 0 1px rgba(167,139,250,0.4);
-          transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s ease, opacity 0.18s ease;
+          transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), background 0.18s ease, opacity 0.18s ease;
           letter-spacing: -0.01em;
         }
         .btn-primary:hover {
           transform: translateY(-1px);
-          box-shadow: 0 8px 28px rgba(167,139,250,0.48), 0 0 0 1px rgba(167,139,250,0.55);
+          background: var(--acc-h);
         }
         .btn-primary:active { transform: translateY(0); }
 
         .btn-primary-lg {
           padding: 0 28px; height: 50px; font-size: 15px;
           border-radius: 12px;
-          box-shadow: 0 10px 30px rgba(167,139,250,0.4), 0 0 0 1px rgba(167,139,250,0.42);
+          box-shadow: none;
         }
         .btn-primary-lg:hover {
-          box-shadow: 0 14px 40px rgba(167,139,250,0.55), 0 0 0 1px rgba(167,139,250,0.6);
+          background: var(--acc-h);
         }
 
         .btn-ghost {
           display: inline-flex; align-items: center; gap: 6px;
           background: transparent;
-          color: rgba(245,245,250,0.75);
+          color: var(--t2);
           border: 1px solid rgba(255,255,255,0.12);
           border-radius: 10px;
           padding: 0 18px; height: 38px;
@@ -538,7 +537,7 @@ export default function LandingPage({ onSignIn }) {
           letter-spacing: -0.01em;
         }
         .btn-ghost:hover {
-          color: #F5F5FA;
+          color: var(--t1);
           border-color: rgba(255,255,255,0.22);
           background: rgba(255,255,255,0.04);
         }
@@ -551,30 +550,17 @@ export default function LandingPage({ onSignIn }) {
       {/* Ambient gradient mesh */}
       <div style={{
         position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        /* One wash, low. Violet, blue and pink bleeding across the page was
+           the same "every colour at once" problem the app had, at full size —
+           and it put a haze over text that has to be read. */
         background: `
-          radial-gradient(circle at 18% 12%, rgba(167,139,250,0.16) 0%, transparent 45%),
-          radial-gradient(circle at 82% 30%, rgba(96,165,250,0.10) 0%, transparent 42%),
-          radial-gradient(circle at 50% 100%, rgba(244,114,182,0.08) 0%, transparent 50%)
+          radial-gradient(circle at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 55%)
         `,
       }} />
 
-      {/* Animated orbs */}
-      <div style={{
-        position: "absolute", top: 80, left: "10%",
-        width: 320, height: 320, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
-        filter: "blur(40px)",
-        animation: "orbit-slow 18s ease-in-out infinite",
-        pointerEvents: "none", zIndex: 0,
-      }} />
-      <div style={{
-        position: "absolute", top: 200, right: "8%",
-        width: 240, height: 240, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(96,165,250,0.12) 0%, transparent 70%)",
-        filter: "blur(40px)",
-        animation: "orbit-slow-2 22s ease-in-out infinite",
-        pointerEvents: "none", zIndex: 0,
-      }} />
+      {/* Two blurred violet orbs used to drift here on 18s and 22s loops.
+          Drifting blobs are the single most recognisable "generated landing
+          page" signature there is, and they were animating behind body copy. */}
 
       {/* Nav */}
       {/* The insets matter in the iOS app, where viewport-fit=cover puts this

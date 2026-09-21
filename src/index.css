@@ -28,8 +28,10 @@ html[data-theme="light"] {
   --acc-bg:    rgba(124,58,237,0.08);
   --acc-bg-h:  rgba(124,58,237,0.14);
   --acc-glow:  rgba(124,58,237,0.10);
-  --sh-card:   0 1px 2px rgba(0,0,0,0.04);
-  --sh-card-h: 0 2px 6px rgba(0,0,0,0.07);
+  /* Flat here too, so the two themes agree on what a card is: a surface with
+     a hairline. The modal keeps its shadow — it is genuinely above the page. */
+  --sh-card:   none;
+  --sh-card-h: none;
   --sh-modal:  0 24px 64px rgba(0,0,0,0.14);
   /* Semantic aliases — light overrides */
   --bg-base:        #FBFBFA;
@@ -47,13 +49,14 @@ html[data-theme="light"] {
   --border-strong:  rgba(0,0,0,0.14);
   --accent:         #7C3AED;
   --accent-soft:    rgba(124,58,237,0.08);
-  /* Premium reskin additions — light */
-  --glow-accent: rgba(124,58,237,0.16);
-  --glow-soft:   rgba(124,58,237,0.06);
+  /* Glow tokens stay defined because components reference them, and resolve
+     to nothing in both themes. */
+  --glow-accent: transparent;
+  --glow-soft:   transparent;
   --card-bg:     #FFFFFF;
   --bubble-in:   #E9E9EB;   /* incoming chat bubble (iMessage grey) */
   --card-border: rgba(0,0,0,0.08);
-  --card-glow:   rgba(124,58,237,0.08);
+  --card-glow:   transparent;
   --ring:        rgba(124,58,237,0.35);
   --pill-bg:     rgba(0,0,0,0.035);
   --pill-border: rgba(0,0,0,0.08);

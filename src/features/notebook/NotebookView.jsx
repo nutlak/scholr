@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, ChevronRight, FileDown, FileText, Hammer, Headphones, Image as ImageIcon, Layers, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus } from "lucide-react";
+import { Brain, ChevronRight, FileDown, FileText, Hammer, Headphones, Image as ImageIcon, Layers, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
@@ -201,6 +201,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   const derekPhrase = useDerekPhrase(loading);
   const [showUpload, setShowUpload] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [studyRoomJoined, setStudyRoomJoined] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [isShared, setIsShared] = useState(!!nb.is_public);
@@ -598,12 +599,18 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </div>
       </div>
 
-      {/* Live study room. Shown on every notebook as a "Study together" CTA
-          (opt-in — nothing connects until clicked); it's how you turn a solo
-          notebook into a shared session. */}
-      {me && (
+      {/* Live study room — the roster, shared pomodoro, quiz battle and Feynman
+          feed. Opt-in from the ⋯ menu ("Study together"); until then this
+          renders nothing and the chat keeps the space. Note this is a different
+          thing from "Invite a classmate", which shares the notebook itself. */}
+      {me && studyRoomJoined && (
         <div className="no-print" style={{ marginBottom: 14 }}>
-          <StudyRoomBar notebookId={nb.id} me={me} />
+          <StudyRoomBar
+            notebookId={nb.id}
+            me={me}
+            joined={studyRoomJoined}
+            onJoinedChange={setStudyRoomJoined}
+          />
         </div>
       )}
 
@@ -981,6 +988,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         >
           <SheetMenu
             items={[
+              { id: "studyroom", label: studyRoomJoined ? "Leave the study room" : "Study together",
+                description: studyRoomJoined ? "Close the live room for yourself" : "Live room: who's here, a shared timer, quiz battles",
+                Icon: Users, onSelect: () => { setSheet(null); setStudyRoomJoined(v => !v); } },
               { id: "invite", label: "Invite a classmate", description: "Share this notebook with someone",
                 Icon: UserPlus, onSelect: () => { setSheet(null); setShowInvite(true); } },
               { id: "upload", label: "Upload notes", description: "PDFs, slides, photos or text",

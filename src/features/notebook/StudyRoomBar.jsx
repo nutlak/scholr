@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Users, Play, X } from "lucide-react";
+import { Play, X } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { useStudyRoom } from "../../lib/live.js";
 import { QuizBattlePanel } from "./QuizBattlePanel.jsx";
 import { FeynmanShareFeed } from "./FeynmanShareFeed.jsx";
 
 // A live study room scoped to one shared notebook (feature C). Opt-in: nobody
-// joins until they hit "Study together", so presence here is deliberate. Shows
+// joins until they pick "Study together" from the notebook's ⋯ menu, so
+// presence here is deliberate. `joined` is owned by NotebookView because that
+// menu is what turns it on; this renders nothing at all until then, which is
+// the point — the chat gets the room back. Shows
 // a live roster (join/leave in real time via Supabase Presence) and a shared
 // pomodoro timer synced over the same channel — start it and everyone in the
 // room sees the same countdown. ponytail: presence + one broadcast, no server,
@@ -30,29 +33,14 @@ function Countdown({ endsAt }) {
   );
 }
 
-export function StudyRoomBar({ notebookId, me }) {
-  const [joined, setJoined] = useState(false);
+export function StudyRoomBar({ notebookId, me, joined, onJoinedChange }) {
   const {
     members, timer, startTimer, clearTimer, connected, battle, answers, startBattle, submitAnswer, endBattle,
     feynmanShares, feynmanReactions, reactToFeynman,
   } = useStudyRoom(notebookId, me, joined);
 
-  // Not in the room yet — one quiet invitation to start studying together.
-  if (!joined) {
-    return (
-      <button
-        onClick={() => setJoined(true)}
-        className="btn-press"
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 14px",
-          background: "var(--pill-bg)", border: "1px solid var(--pill-border)", color: "var(--text-secondary)",
-          fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: "pointer",
-        }}
-      >
-        <Users size={15} strokeWidth={1.9} /> Study together
-      </button>
-    );
-  }
+  // Not in the room yet — render nothing. The way in is the ⋯ menu.
+  if (!joined) return null;
 
   const others = members.filter(m => m.userId !== me.userId);
   return (
@@ -102,7 +90,7 @@ export function StudyRoomBar({ notebookId, me }) {
         </button>
       )}
 
-      <button onClick={() => setJoined(false)} className="btn-press" style={{
+      <button onClick={() => onJoinedChange(false)} className="btn-press" style={{
         minHeight: 36, padding: "0 12px", background: "transparent",
         border: "1px solid var(--border-default)", color: "var(--text-tertiary)",
         fontFamily: FONT, fontSize: 13, cursor: "pointer",

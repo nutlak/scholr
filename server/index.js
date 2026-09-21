@@ -201,6 +201,12 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
           .update({
             tier: isActive ? "pro" : "free",
             current_period_end: periodEnd,
+            // Cancelling in the portal leaves status "active" until the period
+            // ends — correct, the period is paid for — so this flag is the only
+            // way the app can tell "renews" from "ends". Without it Settings
+            // said "Next billing on <date>" for a subscription that will never
+            // bill again.
+            cancel_at_period_end: !!sub.cancel_at_period_end,
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", sub.id);
@@ -211,7 +217,7 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
         await supabase.from("squads")
           .update({ current_period_end: isActive ? periodEnd : null })
           .eq("stripe_subscription_id", sub.id);
-        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status} tier=${isActive ? "pro" : "free"}`);
+        console.log(`[stripe] subscription.updated: id=${sub.id} status=${sub.status} tier=${isActive ? "pro" : "free"} cancelAtPeriodEnd=${!!sub.cancel_at_period_end}`);
         break;
       }
       case "customer.subscription.deleted": {

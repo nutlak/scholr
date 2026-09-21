@@ -7,8 +7,15 @@ import { SquadSection } from "../squad/SquadSection.jsx";
 import { ACCENT_PRESETS, FONT } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { Moon, Sun } from "lucide-react";
+import { useServerFeature } from "../../lib/useServerFeature.js";
 
 export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
+  // Billing needs Stripe configured server-side. Without this the Manage
+  // subscription button looks live and dies on click — which is the exact
+  // problem SquadSection already solved for Squad, and the reason /api/health
+  // reports a features block at all. It shows up on any environment without
+  // Stripe keys, which is every local one: they live only on Railway.
+  const billingReady = useServerFeature("pro");
   return (
               <div className="settings-pane" style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
                 <div style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.025em", marginBottom: 32 }}>
@@ -47,11 +54,17 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         {subscription.tier === "pro" && (
                           <span style={{
                             fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                            color: "#fff", fontFamily: FONT,
-                            background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+                            color: subscription.cancelAtPeriodEnd ? "var(--warning)" : "#fff",
+                            fontFamily: FONT,
+                            background: subscription.cancelAtPeriodEnd
+                              ? "color-mix(in srgb, var(--warning) 16%, transparent)"
+                              : "var(--acc)",
+                            border: subscription.cancelAtPeriodEnd
+                              ? "1px solid color-mix(in srgb, var(--warning) 38%, transparent)"
+                              : "none",
                             padding: "2px 8px", borderRadius: 999,
                           }}>
-                            Active
+                            {subscription.cancelAtPeriodEnd ? "Cancelling" : "Active"}
                           </span>
                         )}
                       </div>
@@ -65,8 +78,12 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         ) : "scholr Free"}
                       </div>
                       {subscription.tier === "pro" && subscription.currentPeriodEnd && (
+                        // "Next billing" on a cancelled subscription is a lie —
+                        // nothing bills, it ends. Same date, opposite meaning.
                         <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
-                          Next billing on {new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          {subscription.cancelAtPeriodEnd ? "Pro ends on " : "Next billing on "}
+                          {new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          {subscription.cancelAtPeriodEnd && " — you keep Pro until then."}
                         </div>
                       )}
                       {subscription.tier !== "pro" && (
@@ -75,7 +92,14 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         </div>
                       )}
                     </div>
-                    {subscription.tier === "pro" ? (
+                    {subscription.tier === "pro" && !billingReady ? (
+                      <div style={{
+                        fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
+                        lineHeight: 1.5, maxWidth: 220, flexShrink: 0,
+                      }}>
+                        Billing isn't available in this environment.
+                      </div>
+                    ) : subscription.tier === "pro" ? (
                       <button
                         onClick={handleManageSubscription}
                         disabled={portalLoading}

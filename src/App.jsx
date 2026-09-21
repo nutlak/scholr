@@ -43,6 +43,7 @@ import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak,
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
+import { useServerFeature } from "./lib/useServerFeature.js";
 
 import { useIncomingPresence, pingFriends } from "./lib/live.js";
 
@@ -736,6 +737,8 @@ export default function Scholr() {
   }
 
   const [portalLoading, setPortalLoading] = useState(false);
+  // Same gate as SettingsView: the portal 500s without Stripe server-side.
+  const billingReady = useServerFeature("pro");
   async function handleManageSubscription() {
     setPortalLoading(true);
     try {
@@ -1719,7 +1722,7 @@ export default function Scholr() {
                   return (
                     <button
                       onClick={handleManageSubscription}
-                      disabled={portalLoading}
+                      disabled={portalLoading || (subscription.tier === "pro" && !billingReady)}
                       className="btn-press"
                       style={{
                         width: "100%", textAlign: "left", marginBottom: 18,
@@ -2144,10 +2147,10 @@ export default function Scholr() {
               <button
                 onClick={() => {
                   setShowMobileFriends(false);
-                  if (subscription.tier === "pro") handleManageSubscription();
-                  else setUpgradeModal({ limitType: "upgrade" });
+                  if (subscription.tier !== "pro") { setUpgradeModal({ limitType: "upgrade" }); return; }
+                  handleManageSubscription();
                 }}
-                disabled={portalLoading}
+                disabled={portalLoading || (subscription.tier === "pro" && !billingReady)}
                 style={{
                   width: "100%", minHeight: 48, marginTop: 12, borderRadius: 12,
                   display: "flex", alignItems: "center", gap: 10, padding: "0 14px",

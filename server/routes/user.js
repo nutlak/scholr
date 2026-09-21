@@ -210,7 +210,7 @@ router.get("/api/user/subscription", requireAuth, async (req, res) => {
       .eq("user_id", userId)
       .maybeSingle(),
     supabase.from("subscriptions")
-      .select("current_period_end")
+      .select("current_period_end, cancel_at_period_end")
       .eq("user_id", userId)
       .maybeSingle(),
     countOwnedNotebooks(userId),
@@ -226,5 +226,6 @@ router.get("/api/user/subscription", requireAuth, async (req, res) => {
     notebooksLimit: tier === "pro" ? null : 3,
     resetAt:        usageRow?.reset_at ?? null,
     currentPeriodEnd: sub?.current_period_end ?? null,
+    cancelAtPeriodEnd: sub?.cancel_at_period_end ?? false,
   });
 });

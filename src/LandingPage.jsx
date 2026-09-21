@@ -470,6 +470,14 @@ export default function LandingPage({ onSignIn }) {
           transition: color 0.15s, background 0.15s;
         }
         .nav-link:hover { color: #F5F5FA; background: rgba(255,255,255,0.05); }
+        /* The bar holds the wordmark, two links and the CTA. At 390px that is
+           about 3px too wide and "Sign in" breaks across two lines, which is
+           what it did in the iOS app. Pricing is the one that can go: the
+           section it scrolls to is still right there on the page. */
+        .nav-link, .btn-primary { white-space: nowrap; }
+        @media (max-width: 480px) {
+          .nav-link-pricing { display: none; }
+        }
 
         .btn-primary {
           display: inline-flex; align-items: center; gap: 8px;
@@ -552,9 +560,16 @@ export default function LandingPage({ onSignIn }) {
       }} />
 
       {/* Nav */}
+      {/* The insets matter in the iOS app, where viewport-fit=cover puts this
+          bar under the status bar and the Dynamic Island — without them the
+          logo and "Sign in" sit behind the clock and the battery. They resolve
+          to 0 in a browser, so the web nav is unchanged. */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: 60, padding: "0 24px",
+        height: "calc(60px + env(safe-area-inset-top))",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingLeft: "max(24px, env(safe-area-inset-left))",
+        paddingRight: "max(24px, env(safe-area-inset-right))",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         background: scrolled ? "rgba(11,11,18,0.78)" : "transparent",
         backdropFilter: scrolled ? "blur(16px)" : "none",
@@ -572,7 +587,7 @@ export default function LandingPage({ onSignIn }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
-            className="nav-link"
+            className="nav-link nav-link-pricing"
             onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
           >Pricing</button>
           <button className="nav-link" onClick={onSignIn}>Sign in</button>
@@ -586,7 +601,8 @@ export default function LandingPage({ onSignIn }) {
         minHeight: "100vh",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        textAlign: "center", padding: "120px 24px 64px",
+        textAlign: "center",
+        padding: "calc(120px + env(safe-area-inset-top)) 24px 64px",
       }}>
         <div style={{
           width: "100%", maxWidth: 920,

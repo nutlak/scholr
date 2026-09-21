@@ -78,7 +78,7 @@ export function PushToggle() {
             className="btn-press"
             style={{
               minHeight: 36, padding: "0 16px",
-              background: enabled ? "transparent" : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+              background: enabled ? "transparent" : "var(--acc)",
               border: enabled ? "1px solid var(--border-default)" : 0,
               color: enabled ? "var(--text-secondary)" : "#fff",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,

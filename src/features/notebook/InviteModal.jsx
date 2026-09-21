@@ -128,7 +128,7 @@ export function InviteModal({ notebookId, onClose }) {
                   disabled={status === "sending"}
                   className="btn-press"
                   style={{
-                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                    background: "var(--acc)",
                     border: "none", borderRadius: 10,
                     padding: "0 20px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
                     cursor: status === "sending" ? "not-allowed" : "pointer",
@@ -240,7 +240,7 @@ export function InviteLanding({ inviteInfo, onSignIn }) {
       <button
         onClick={onSignIn}
         style={{
-          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+          background: "var(--acc)",
           border: "none", borderRadius: 12,
           padding: "0 24px", height: 44, color: "#fff", fontWeight: 600,
           fontSize: 14, cursor: "pointer", fontFamily: FONT,

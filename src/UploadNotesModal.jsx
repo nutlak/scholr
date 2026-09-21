@@ -284,7 +284,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                   type="submit"
                   disabled={!canSubmit}
                   style={{
-                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                    background: "var(--acc)",
                     border: "none",
                     borderRadius: 10, padding: "0 20px", height: 38,
                     color: "#fff", fontWeight: 600, fontSize: 13,

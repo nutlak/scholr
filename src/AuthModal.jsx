@@ -24,7 +24,7 @@ const inputStyle = {
 
 const btnPrimary = {
   width: "100%",
-  background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+  background: "var(--acc)",
   border: "none",
   borderRadius: 10,
   height: 42,

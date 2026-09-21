@@ -665,7 +665,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       {isAssistant ? (
                         <div style={{
                           width: 16, height: 16, borderRadius: "50%",
-                          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                          background: "var(--acc)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 9, fontWeight: 700, color: "#fff",
                           boxShadow: "0 2px 6px var(--acc-bg-h)",
@@ -699,7 +699,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     background: m.isError
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
-                        ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
+                        ? "var(--acc)"
                         : "var(--bubble-in)",
                     color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--text-primary)",
                     borderRadius: 18,
@@ -777,7 +777,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 }}>
                   <div style={{
                     width: 16, height: 16, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                    background: "var(--acc)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 9, fontWeight: 700, color: "#fff",
                     boxShadow: "0 2px 6px var(--acc-bg-h)",
@@ -918,7 +918,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               className="btn-press"
               style={{
                 background: query.trim() && !loading
-                  ? "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)"
+                  ? "var(--acc)"
                   : "var(--s2)",
                 border: query.trim() && !loading ? "none" : "1px solid var(--border)",
                 borderRadius: 12,
@@ -944,7 +944,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             header keeps the single Forge button; a phone has no hover, no rail
             and no room for a wrong guess. */}
         <div className="nb-tool-strip nb-mobile-only no-print">
-          {NB_TOOLS.map(({ id, text, label, Icon, tint }) => (
+          {NB_TOOLS.map(({ id, text, label, Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTool(id)}
@@ -953,11 +953,17 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               style={{
                 background: activeTool === id ? "var(--acc-bg)" : "transparent",
                 border: `1px solid ${activeTool === id ? "var(--acc)" : "var(--border-default)"}`,
-                color: "var(--text-secondary)",
+                color: activeTool === id ? "var(--acc)" : "var(--text-secondary)",
                 fontFamily: FONT, cursor: "pointer",
               }}
             >
-              <Icon size={17} strokeWidth={1.85} color={tint} />
+              {/* Neutral, not the tool's tint. Five tints side by side in the
+                  one persistent row on a phone was the loudest colour in the
+                  app, and none of it told you anything — the labels do that.
+                  The accent marks which tool is open, which is the only state
+                  here worth a colour. */}
+              <Icon size={17} strokeWidth={1.85}
+                    color={activeTool === id ? "var(--acc)" : "currentColor"} />
               <span>{text}</span>
             </button>
           ))}

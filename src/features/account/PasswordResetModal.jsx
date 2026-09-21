@@ -83,7 +83,7 @@ export function PasswordResetModal({ onDone }) {
             }}>{error}</div>
           )}
           <button type="submit" disabled={loading} style={{
-            width: "100%", background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            width: "100%", background: "var(--acc)",
             border: "none", borderRadius: 10, height: 42, color: "#fff",
             fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer",
             fontFamily: FONT, opacity: loading ? 0.65 : 1, marginTop: 4,

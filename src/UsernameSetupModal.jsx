@@ -109,7 +109,7 @@ export default function UsernameSetupModal({ onDone }) {
               disabled={!valid || saving}
               style={{
                 width: "100%", minHeight: 44,
-                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                background: "var(--acc)",
                 border: "none", borderRadius: 10,
                 color: "#fff", fontWeight: 600, fontSize: 14, fontFamily: FONT,
                 cursor: !valid || saving ? "not-allowed" : "pointer",

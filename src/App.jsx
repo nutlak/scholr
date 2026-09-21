@@ -1454,7 +1454,7 @@ export default function Scholr() {
                       onClick={() => setShowNewClassModal(true)}
                       className="btn-press desktop-only"
                       style={{
-                        background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                        background: "var(--acc)",
                         border: "none", borderRadius: 10, padding: "0 22px", height: 46,
                         color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer",
                         fontFamily: FONT, flexShrink: 0,
@@ -1648,7 +1648,7 @@ export default function Scholr() {
                     <span style={{
                       width: 40, height: 40, borderRadius: 11, flexShrink: 0,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+                      background: "var(--acc)", color: "#fff",
                       boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                     }}><Layers size={19} strokeWidth={2} /></span>
                     <span style={{ flex: 1, minWidth: 0 }}>

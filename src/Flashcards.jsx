@@ -94,7 +94,7 @@ export function FlashcardReview({ cards, onDone }) {
             onClick={onDone}
             style={{
               marginTop: 8, minHeight: 48, padding: "0 28px",
-              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+              background: "var(--acc)",
               border: "none", borderRadius: 12, color: "#fff", fontWeight: 600, fontSize: 15,
               cursor: "pointer", fontFamily: FONT, boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             }}
@@ -231,7 +231,7 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
           className="btn-press"
           style={{
             minHeight: 44, padding: "0 16px", borderRadius: 10,
-            background: generating ? "var(--bg-surface-2)" : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            background: generating ? "var(--bg-surface-2)" : "var(--acc)",
             border: "none", color: "#fff", fontWeight: 600, fontSize: 13.5, fontFamily: FONT,
             cursor: generating ? "default" : "pointer", opacity: generating ? 0.7 : 1,
             boxShadow: generating ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
@@ -343,7 +343,7 @@ function EditCardModal({ card, onClose, onSaved }) {
             disabled={saving || !front.trim() || !back.trim()}
             style={{
               minHeight: 44, padding: "0 20px", borderRadius: 10,
-              background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", border: "none",
+              background: "var(--acc)", border: "none",
               color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT,
               opacity: saving || !front.trim() || !back.trim() ? 0.6 : 1,
             }}

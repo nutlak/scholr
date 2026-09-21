@@ -175,7 +175,7 @@ export function SyllabusImportModal({ onClose, onCreated, targetClass = null }) 
               className="btn-press"
               style={{
                 minHeight: 40, padding: "0 18px", borderRadius: 10, border: 0,
-                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", color: "#fff",
+                background: "var(--acc)", color: "#fff",
                 fontFamily: FONT, fontSize: 13.5, fontWeight: 600, cursor: "pointer",
               }}
             >{targetClass ? `Add ${notebooks.length} unit${notebooks.length === 1 ? "" : "s"}` : "Create class"}</button>

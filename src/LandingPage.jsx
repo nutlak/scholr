@@ -498,7 +498,7 @@ export default function LandingPage({ onSignIn }) {
 
         .btn-primary {
           display: inline-flex; align-items: center; gap: 8px;
-          background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+          background: var(--acc);
           color: #fff;
           border: none; border-radius: 10px;
           padding: 0 18px; height: 38px;
@@ -762,7 +762,7 @@ export default function LandingPage({ onSignIn }) {
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
               <div className="chat-bubble chat-own" style={{
-                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                background: "var(--acc)",
                 borderRadius: 18,
                 padding: "11px 15px", maxWidth: 380,
                 fontSize: 13, color: "#fff", fontFamily: FONT, fontWeight: 500,

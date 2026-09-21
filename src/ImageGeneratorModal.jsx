@@ -342,7 +342,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                 type="submit"
                 disabled={loading || prompt.trim().length < 3}
                 style={{
-                  background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                  background: "var(--acc)",
                   border: "none",
                   borderRadius: 10, padding: "0 20px", height: 38,
                   color: "#fff", fontWeight: 600, fontSize: 13,

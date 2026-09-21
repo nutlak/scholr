@@ -291,7 +291,7 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t2)"; }}
               >Cancel</button>
               <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
-                background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                background: "var(--acc)",
                 border: "none", borderRadius: 10, padding: "0 20px", height: 38,
                 color: "#fff", fontWeight: 600, fontSize: 13,
                 cursor: loading || !title.trim() ? "not-allowed" : "pointer",

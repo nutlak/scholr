@@ -27,7 +27,7 @@ export function EmptyState({ icon, title, body, cta }) {
           className="btn-press"
           style={{
             marginTop: 8,
-            background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            background: "var(--acc)",
             border: "none", borderRadius: 10, padding: "0 20px", height: 40,
             color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
             fontFamily: FONT,

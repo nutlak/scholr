@@ -508,7 +508,7 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
               width: "100%", minHeight: 48, borderRadius: 10,
               background: isLocked
                 ? "var(--bg-surface-2)"
-                : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+                : "var(--acc)",
               border: "none", color: "#fff", fontWeight: 700, fontSize: 14,
               fontFamily: FONT, cursor: isLocked ? "not-allowed" : "pointer",
               boxShadow: isLocked ? "none" : "0 1px 2px rgba(0,0,0,0.3)",

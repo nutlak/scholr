@@ -88,7 +88,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <button onClick={handleStart} disabled={starting} className="btn-press" style={{
           display: "inline-flex", alignItems: "center", gap: 7, minHeight: 36, padding: "0 14px",
-          background: "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)", border: 0, color: "#fff",
+          background: "var(--acc)", border: 0, color: "#fff",
           fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
           opacity: starting ? 0.7 : 1,
         }}>
@@ -148,7 +148,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
           className="btn-press"
           style={{
             alignSelf: "flex-start", minHeight: 36, padding: "0 16px",
-            background: myAnswered ? "var(--pill-bg)" : "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
+            background: myAnswered ? "var(--pill-bg)" : "var(--acc)",
             border: myAnswered ? "1px solid var(--pill-border)" : 0,
             color: myAnswered ? "var(--text-secondary)" : "#fff",
             fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: myAnswered ? "default" : "pointer",

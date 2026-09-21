@@ -1052,8 +1052,9 @@ export default function Scholr() {
         />
       )}
 
-      {/* App shell */}
-      <div style={{
+      {/* App shell. nb-open lets the phone reclaim the status strip's height
+          while a notebook is open — see the rule in hud.css. */}
+      <div className={activeNb ? "nb-open" : ""} style={{
         // dvh, not vh: on iOS `100vh` is the *large* viewport, which ignores
         // Safari's toolbar, so the shell ran taller than the visible area and
         // the bottom tab bar sat behind the chrome — unreachable once the page

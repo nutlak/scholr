@@ -176,6 +176,16 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 }
 
 @media (max-width: 699px) {
+  /* Inside a notebook the strip is 36px of ambient readouts sitting on top of
+     the chat, which is the screen that needs the height most — and the streak
+     and due count are already on the dashboard you came from. Dropping it also
+     has to zero --hud-h, or the sidebar keeps offsetting itself by a strip that
+     is no longer there, and hand the notch inset to the pane, because the strip
+     is what was absorbing it. */
+  .nb-open .hud-bar { display: none; }
+  .nb-open { --hud-h: 0px; }
+  .nb-open .main-pane { padding-top: calc(16px + env(safe-area-inset-top)) !important; }
+
   /* viewport-fit=cover puts the app under the status bar and the Dynamic
      Island, and this strip is the first thing in the shell — so its readouts
      were being drawn behind them. */

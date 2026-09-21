@@ -155,7 +155,7 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 
 /* Anything fixed at top:0 has to be told about the strip, or it covers it. */
 .sidebar { top: var(--hud-h) !important; }
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .tool-mode-dock .tool-modal-card {
     top: var(--hud-h) !important;
     height: calc(100dvh - var(--hud-h)) !important;
@@ -163,9 +163,19 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
 }
 
 /* Narrow screens drop the optional readouts rather than wrapping the strip,
-   which would change its height and desync the sidebar offset. */
-@media (max-width: 768px) {
+   which would change its height and desync the sidebar offset. The full strip
+   needs ~820px: that's iPad 11" portrait, where it fits with room to spare.
+   iPad mini portrait (744) is the one that clips, and it gets the desktop
+   layout, so this threshold is wider than the mobile boundary on purpose. */
+@media (max-width: 819px) {
   .hud-bar .hud-opt { display: none; }
+  /* Without its "Online" label the presence dot is a bare colour between two
+     separators, so it goes with the label rather than sitting there alone. The
+     clock stays — unlike on a phone there's no OS status bar duplicating it. */
+  .hud-bar .hud-seg-presence { display: none; }
+}
+
+@media (max-width: 699px) {
   /* viewport-fit=cover puts the app under the status bar and the Dynamic
      Island, and this strip is the first thing in the shell — so its readouts
      were being drawn behind them. */
@@ -234,7 +244,7 @@ html:not([data-theme="light"]) :focus-visible {
    The notebook header used to be a scrolling row of ten 32px icon
    buttons. It is four labelled buttons now, so they get room to be
    tapped: 44px is the smallest target a thumb reliably hits. ── */
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   /* A wrapping flex row with flex:1 children put Forge/Invite/Upload on one
      cramped line and stranded More full-width beneath — ragged, and the widths
      changed with the label lengths. A two-column grid gives four equal targets

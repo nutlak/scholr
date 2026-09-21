@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-// The one mobile boundary, matching the `@media (max-width: 768px)` blocks in
+// The one mobile boundary, matching the `@media (max-width: 699px)` blocks in
 // index.css and App.css — breakpoints.test.js keeps those two agreeing, and
 // anything reading the viewport from JS has to agree with them too.
-export const MOBILE_QUERY = "(max-width: 768px)";
+export const MOBILE_QUERY = "(max-width: 699px)";
 
 // For the handful of places where a *string* has to change on a phone, not
 // just a style — a placeholder that gets cut mid-word at 390px can't be fixed

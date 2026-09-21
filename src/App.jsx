@@ -41,6 +41,7 @@ import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING, ACCENT_PRESETS } from "./lib/theme.js";
 import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
+import { MOBILE_QUERY } from "./lib/breakpoints.js";
 
 import { useIncomingPresence, pingFriends } from "./lib/live.js";
 
@@ -186,7 +187,7 @@ export default function Scholr() {
     // Mobile renders its own profile sheet (outside profileRef) which dismisses via
     // its backdrop. Without this guard the mousedown below closes the sheet before
     // click lands, killing every button inside it.
-    if (window.matchMedia("(max-width: 768px)").matches) return;
+    if (window.matchMedia(MOBILE_QUERY).matches) return;
     function handleOutsideClick(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
     }

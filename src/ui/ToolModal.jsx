@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, X } from "lucide-react";
 import { useEscape } from "./useEscape.js";
+import { MOBILE_QUERY } from "../lib/breakpoints.js";
 
 // ── ToolModal — Scholr 2.0 universal study-tool shell ─────────────────────────
 // EVERY study tool (Notes, Forge, Podcast, Feynman, future flashcards) renders
@@ -32,7 +33,7 @@ export function ToolModal({ open, onClose, title, subtitle, Icon, children }) {
   // or any mobile width — where dock is ignored entirely).
   useEffect(() => {
     if (!open) return undefined;
-    const mq = window.matchMedia("(max-width: 768px)");
+    const mq = window.matchMedia(MOBILE_QUERY);
     const apply = () => {
       const docked = mode === "dock" && !mq.matches;
       document.body.classList.toggle("tool-docked", docked);

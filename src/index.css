@@ -248,7 +248,7 @@ input, textarea, select { font-family: var(--font); }
 }
 
 /* ── Desktop: offset main content for fixed sidebar ──────────────── */
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .main-pane { margin-left: 240px; }
 }
 
@@ -256,11 +256,16 @@ input, textarea, select { font-family: var(--font); }
 .nb-header { flex-wrap: wrap; row-gap: 0; }
 .nb-header-actions {
   display: flex; align-items: center; gap: 8px; margin-left: auto;
+  /* margin-left:auto parks this row's right edge exactly on .print-area's, and
+     .print-area clips overflow — so the last child here (the member avatar,
+     which draws a presence ring outside its 28px box) lost that ring at every
+     desktop width. A few px keeps anything flush off the clip edge. */
+  padding-right: 4px;
 }
 .nb-desktop-only { display: inline-flex; align-items: center; }
 .nb-mobile-only  { display: none; }
 
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   .nb-header { row-gap: 8px; }
   .nb-header-actions {
     order: 99; width: 100%; margin-left: 0;
@@ -278,7 +283,7 @@ input, textarea, select { font-family: var(--font); }
 }
 
 /* ── Mobile responsive ────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   :root { font-size: 13px; }
   .mobile-hide-sidebar > .sidebar {
     transform: translateX(-100%);
@@ -314,7 +319,7 @@ input, textarea, select { font-family: var(--font); }
   }
   .notes-section { padding: 10px 12px 12px !important; max-height: none !important; }
 }
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .mobile-only { display: none !important; }
   .mobile-menu-btn { display: none !important; }
 }
@@ -325,7 +330,7 @@ input, textarea, select { font-family: var(--font); }
    every breakpoint; the visual tooltip is desktop-only (hover is a
    pointer affordance) and never affects layout. */
 .has-tip { position: relative; }
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .has-tip[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -441,7 +446,7 @@ input, textarea, select { font-family: var(--font); }
 .tool-mode-modal .tool-modal-card.is-wide { width: min(1180px, 95vw); }
 
 /* Chat column gracefully yields / reclaims space as a tool docks / undocks */
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .main-pane { transition: padding-right 360ms cubic-bezier(0.22, 1, 0.36, 1); }
   body.tool-docked .main-pane { padding-right: calc(380px + 44px) !important; }
 }
@@ -541,7 +546,7 @@ input, textarea, select { font-family: var(--font); }
 
 
 /* Mobile / split-screen: dock mode is ignored — always a full-screen sheet */
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   .tool-modal-backdrop {
     background: var(--bg-base);
     opacity: 1;
@@ -678,7 +683,7 @@ textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
   from { opacity: 0; transform: translateX(24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   /* full-screen on mobile: no rounded corners, fill the viewport */
   .onboarding-overlay { padding: 0 !important; }
   .onboarding-card {
@@ -727,8 +732,8 @@ textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
   .onboarding-overlay, .streak-banner, .tool-modal-overlay, .no-print, nav, aside { display: none !important; }
 }
 
-/* ── Mobile audit (1G) — behind max-width:768px only, never touches desktop ─ */
-@media (max-width: 768px) {
+/* ── Mobile audit (1G) — behind max-width: 699px only, never touches desktop ─ */
+@media (max-width: 699px) {
   /* kill horizontal scroll */
   html, body, #root { overflow-x: hidden; max-width: 100%; }
   /* bigger tap targets */
@@ -798,7 +803,7 @@ select:focus:not(:focus-visible) { outline: none; }
 
 /* Tighter page rhythm. 36px/44px of padding around an already-narrow column
    was most of the empty space in the dashboard screenshots. */
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .main-pane { padding: 26px 32px !important; }
 }
 
@@ -825,16 +830,16 @@ select:focus:not(:focus-visible) { outline: none; }
 
 /* `display: contents` on the mobile pill wrapper would defeat .mobile-only's
    display toggle, so restore an explicit override at desktop width. */
-@media (min-width: 769px) { .nb-mobile-only[style] { display: none !important; } }
+@media (min-width: 700px) { .nb-mobile-only[style] { display: none !important; } }
 
 /* The class row's secondary controls are inline on desktop; App.css turns this
    into its own line on mobile. */
 .class-row-actions { display: contents; }
 
-/* The mobile study-tool strip; hud.css lays it out below 768px. */
+/* The mobile study-tool strip; hud.css lays it out below 700px. */
 .nb-tool-strip { display: none; }
 /* The inline ⋯ and the status chip are mobile-only; desktop keeps the row. */
 .nb-more-inline { display: none; }
 /* Status sits inline with the notebook title on mobile only. */
 .nb-status-inline { display: none; }
-@media (min-width: 769px) { .nb-status-inline { display: inline-flex; } }
+@media (min-width: 700px) { .nb-status-inline { display: inline-flex; } }

@@ -192,9 +192,9 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   MOBILE UX PASS  ( < 768px only — desktop untouched )
+   MOBILE UX PASS  ( < 700px only — desktop untouched )
    ══════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
+@media (max-width: 699px) {
   /* The page itself does not move. Only the panes inside it scroll.
 
      `position: fixed` on body is what stops the whole document being dragged
@@ -481,7 +481,7 @@
 }
 
 /* Above mobile: keep .mobile-only hidden  */
-@media (min-width: 769px) {
+@media (min-width: 700px) {
   .mobile-only { display: none !important; }
 }
 

@@ -62,6 +62,30 @@ router.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async 
   if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
   if (!process.env.STRIPE_PRICE_ID) return res.status(500).json({ error: "STRIPE_PRICE_ID not configured" });
 
+  // Squad checkout has refused a second subscription since it shipped
+  // ("squad_exists"); personal Pro never did. So reaching the upgrade CTA again
+  // while already on Pro opened a second checkout and created a second
+  // subscription against the same customer — which is how one account ended up
+  // with two live scholr Pro subscriptions on the same card. It only stayed
+  // free because a 100% off code was on both; at list price that is $16.98/mo
+  // for one plan. It also breaks our own bookkeeping: subscriptions has one row
+  // per user, so the second checkout overwrote the first's id and orphaned it,
+  // leaving a subscription live in Stripe that the app no longer tracks.
+  //
+  // A cancelling subscription is still a subscription: the way back is "Don't
+  // cancel" in the portal, not buying a second one.
+  const { data: existingSub } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id, tier")
+    .eq("user_id", req.user.id)
+    .maybeSingle();
+  if (existingSub?.tier === "pro" && existingSub?.stripe_subscription_id) {
+    return res.status(400).json({
+      error: "already_subscribed",
+      message: "You're already on Pro. Use Manage subscription to change or cancel it.",
+    });
+  }
+
   const userId = req.user.id;
   const userEmail = req.user.email;
 

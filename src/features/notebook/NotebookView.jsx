@@ -628,6 +628,20 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             flex: 1, overflowY: "auto", display: "flex", flexDirection: "column",
             gap: 12, marginBottom: 14, paddingRight: 4,
           }}>
+            {/* AI disclaimer — Derek is a study aid, not an authoritative
+                source. It sits at the top of the transcript rather than pinned
+                above the composer: there it was on screen forever and cost ~36px
+                of a phone's chat height, which is the most valuable space in the
+                app. Here it is the first thing above Derek's greeting, so it is
+                read when the notebook is new and scrolls away once there is a
+                conversation. flexShrink keeps the flex column from squashing it. */}
+            <div style={{
+              flexShrink: 0,
+              fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
+              textAlign: "center", lineHeight: 1.4, padding: "2px 8px",
+            }}>
+              Derek is AI — responses may be inaccurate. Verify important information independently.
+            </div>
             {messages.map((m, i) => {
               const isOwn = m.role === "user" && (m.createdBy === currentUserId || (!m.createdBy && m.role === "user"));
               const isOtherMember = m.role === "user" && m.createdBy && m.createdBy !== currentUserId;
@@ -788,14 +802,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               </div>
             )}
             <div ref={bottomRef} />
-          </div>
-
-          {/* AI disclaimer — Derek is a study aid, not an authoritative source */}
-          <div style={{
-            fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
-            marginBottom: 8, textAlign: "center", lineHeight: 1.4,
-          }}>
-            Derek is AI — responses may be inaccurate. Verify important information independently.
           </div>
 
           {/* Starter prompts, shown until the student has actually asked

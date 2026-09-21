@@ -48,6 +48,15 @@ const ALLOWED_ORIGINS = [
   "https://www.scholr.dev",
   "https://getscholr.com",      // marketing domain (landing page fetches /api/stats/public)
   "https://www.getscholr.com",
+  // The iOS app. Capacitor serves the bundled build from a local scheme, so
+  // every request out of the native webview carries one of these as Origin
+  // rather than an https:// host. `scholr` is what capacitor.config.json sets
+  // as iosScheme; `capacitor` is the framework default, kept so a config slip
+  // shows up as a working app rather than the opaque connection error a
+  // rejected origin produces. Neither is forgeable from a web page — browsers
+  // set Origin from the document, so only our own binary can send these.
+  "scholr://localhost",
+  "capacitor://localhost",
 ].filter(Boolean);
 
 // ── Security headers ─────────────────────────────────────────────────────────

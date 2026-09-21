@@ -1,0 +1,13 @@
+{
+  "appId": "dev.scholr.app",
+  "appName": "scholr",
+  "webDir": "dist",
+  "server": {
+    "iosScheme": "scholr"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

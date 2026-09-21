@@ -8,9 +8,18 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.js\" \"server/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\" \"server/**/*.test.js\"",
+    "ios:sync": "npm run build && cap sync ios",
+    "ios": "npm run ios:sync && cap open ios"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/camera": "^8.2.4",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -20,6 +29,7 @@
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

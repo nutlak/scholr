@@ -5,7 +5,10 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // 'ios' holds the generated Xcode project; ios/App/App/public is a copy of
+  // the built bundle that `cap sync` drops there, so linting it reports the
+  // minified output as ~170 errors that no one can act on.
+  globalIgnores(['dist', 'ios']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

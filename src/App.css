@@ -302,12 +302,25 @@
     -webkit-tap-highlight-color: transparent;
   }
   .mobile-header-avatar:active { transform: scale(0.94); }
-  /* The header is a wrapping flex row, and on a phone the greeting block fills
-     it — so the avatar wrapped onto a line of its own and sat under the quote
-     as a bubble attached to nothing. Pin it to the header's top-right, where
-     an account button belongs, and keep the heading clear of it. */
-  .mobile-header-avatar { position: absolute; top: 4px; right: 0; }
-  .dash-heading { padding-right: 52px; }
+  /* The header is a flex row, and on a phone the greeting block fills it — so
+     the avatar used to wrap onto a line of its own and sit under the quote as
+     a bubble attached to nothing. It was pinned with position:absolute to stop
+     that, which worked but made its position depend on .pane-heading being a
+     positioning context; the moment that changed, the avatar drifted up behind
+     the status strip and showed as a sliver.
+
+     Keeping it in flow removes that whole class of bug: nowrap stops the wrap,
+     min-width:0 lets the greeting block shrink instead of pushing it out, and
+     align-self puts it on the greeting's own line, which is where it belongs
+     and where it now cannot move from. */
+  .pane-heading { flex-wrap: nowrap !important; }
+  .dash-heading { min-width: 0; }
+  .mobile-header-avatar {
+    position: static;
+    align-self: flex-start;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
 
   /* ── Bottom-sheet treatment for any modal that opts in ───────── */
   .mobile-sheet-overlay {

@@ -56,7 +56,17 @@ export function MemberAvatarStack({ members }) {
     <div
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      style={{ display: "flex", alignItems: "center", position: "relative", cursor: "default" }}
+      // Each Avatar paints a 6px-blur glow outside its own box, and this stack
+      // is usually the last thing in a right-aligned row — so it lands flush on
+      // the edge of an ancestor that clips overflow (.print-area does, in the
+      // notebook header, on both phone and desktop) and the glow gets sliced
+      // off. The padding keeps the avatars themselves off that edge. It does
+      // not move the hover panel below: `right: 0` resolves against this
+      // element's padding box, whose right edge is unchanged.
+      style={{
+        display: "flex", alignItems: "center", position: "relative",
+        cursor: "default", paddingRight: 6,
+      }}
     >
       {visible.map((m, i) => (
         <div key={m.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: visible.length - i, position: "relative" }}>

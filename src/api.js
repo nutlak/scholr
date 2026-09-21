@@ -1253,3 +1253,43 @@ export const api = {
     }
   },
 };
+
+
+// ── Expired session, handled once, centrally ────────────────────────────────
+// Supabase refreshes tokens on its own until the refresh token itself expires.
+// After that every call 401s, and because each caller swallows its own failure
+// the app kept rendering: streak 0, plan Free, referral link stuck on
+// "loading…", no friends. All of it wrong, none of it flagged — the UI looked
+// working and was telling the user things that were not true. That is also
+// what put a first-run "Choose a username" modal over a signed-in account.
+//
+// So: on a 401, try one refresh and replay the call. If the refresh fails the
+// session is genuinely gone, and the app is told once so it can stop pretending.
+// Wrapping the object here rather than at ~100 call sites keeps it in one place;
+// a regular function, not an arrow, because one method calls a sibling via
+// `this`.
+let sessionExpiryAnnounced = false;
+
+function announceSessionExpired() {
+  if (sessionExpiryAnnounced) return;      // one event, not one per request
+  sessionExpiryAnnounced = true;
+  window.dispatchEvent(new CustomEvent("scholr:session-expired"));
+}
+
+for (const [name, fn] of Object.entries(api)) {
+  if (typeof fn !== "function") continue;
+  api[name] = async function (...args) {
+    try {
+      return await fn.apply(this, args);
+    } catch (err) {
+      if (err?.status !== 401) throw err;
+      const { data, error } = await supabase.auth.refreshSession().catch(e => ({ error: e }));
+      if (!error && data?.session) {
+        sessionExpiryAnnounced = false;     // recovered
+        return await fn.apply(this, args);
+      }
+      announceSessionExpired();
+      throw err;
+    }
+  };
+}

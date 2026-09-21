@@ -340,6 +340,19 @@ export default function Scholr() {
     }
   }, [user, authReady]);
 
+  // api.js fires this once when a 401 survives a refresh attempt: the session
+  // is genuinely gone. Without it the app carries on rendering a plausible,
+  // entirely false UI — streak 0, plan Free, no friends — because each caller
+  // swallows its own failure. Say so and send them back to sign in.
+  useEffect(() => {
+    const onExpired = () => {
+      setToast("Your session expired — please sign in again.");
+      setTimeout(() => { supabase.auth.signOut().catch(() => {}); }, 1800);
+    };
+    window.addEventListener("scholr:session-expired", onExpired);
+    return () => window.removeEventListener("scholr:session-expired", onExpired);
+  }, []);
+
   // The mobile freeze in App.css pins html/body with position:fixed so the
   // document cannot be dragged and only the inner panes scroll. That is right
   // for the app shell and fatal for the landing page, which is an ordinary

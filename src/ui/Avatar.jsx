@@ -125,7 +125,7 @@ export function MemberAvatarStack({ members }) {
                 <Avatar name={memberLabel(m)} size={26} seed={m.user_id} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 13, fontWeight: 500, color: "var(--t1)",
+                    fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--t1)",
                     letterSpacing: "-0.01em",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     display: "flex", alignItems: "center", gap: 6,
@@ -133,7 +133,7 @@ export function MemberAvatarStack({ members }) {
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
                     <span style={{ color: "var(--t4)", flexShrink: 0 }}>•</span>
                     <span style={{
-                      fontSize: 11, fontWeight: 600,
+                      fontSize: "var(--fs-micro)", fontWeight: 600,
                       color: isOwner ? "var(--acc)" : "var(--t3)",
                       letterSpacing: "-0.005em", flexShrink: 0,
                     }}>
@@ -142,7 +142,7 @@ export function MemberAvatarStack({ members }) {
                   </div>
                   {m.username && `@${m.username}` !== label && (
                     <div style={{
-                      fontSize: 11, color: "var(--t3)", marginTop: 1,
+                      fontSize: "var(--fs-micro)", color: "var(--t3)", marginTop: 1,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>@{m.username}</div>
                   )}

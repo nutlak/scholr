@@ -46,7 +46,7 @@ export function StatusPill({ status, onChange, size = "sm", compact = false }) {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "8px 10px", borderRadius: 7, cursor: "pointer",
-                  fontSize: 12.5, color: m.color, fontFamily: FONT, fontWeight: 500,
+                  fontSize: "var(--fs-xs)", color: m.color, fontFamily: FONT, fontWeight: 500,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = "var(--s2)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}

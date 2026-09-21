@@ -38,7 +38,7 @@ export function SheetMenu({ items }) {
             </span>
             {description && (
               <span style={{
-                display: "block", fontSize: 12.5, fontWeight: 400, marginTop: 2,
+                display: "block", fontSize: "var(--fs-xs)", fontWeight: 400, marginTop: 2,
                 color: "var(--text-tertiary)", lineHeight: 1.35,
               }}>{description}</span>
             )}

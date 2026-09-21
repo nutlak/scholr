@@ -167,16 +167,28 @@ html[data-theme="light"] code {
   --r-2xl:       22px;
 
   /* ── Type scale ────────────────────────────────────────────────────────
-     Eight steps, so a screen picks one instead of inventing 14.5px. Display
-     and h1 are Newsreader; everything from h2 down is Hanken. */
-  --fs-display: 34px;
-  --fs-h1:      26px;
-  --fs-h2:      20px;
-  --fs-h3:      17px;
-  --fs-body:    15px;
-  --fs-sm:      13.5px;
-  --fs-xs:      12px;
-  --fs-micro:   11px;
+     These are the sizes the app already uses, counted rather than invented:
+     13 appears 115 times, 11 75 times, 12.5 72, 14 66. An aspirational scale
+     that disagreed with 600 existing call sites would only have meant every
+     one of them was "wrong", so the scale describes reality and new code has
+     something to reference instead of guessing.
+
+     Two pairs are near-duplicates that predate having a scale at all — 12.5
+     against 12, and 13.5 against 13. They are kept because collapsing them
+     moves type on screens that were tuned by eye, which is a judgement call
+     for a design pass, not a find-and-replace. Prefer the listed steps below
+     for anything new.
+
+     Display and h1 are Newsreader; h2 down is Hanken. */
+  --fs-display: 34px;   /* greeting, hero */
+  --fs-h1:      26px;   /* pane titles */
+  --fs-h2:      20px;   /* section headings */
+  --fs-h3:      17px;   /* card titles */
+  --fs-body:    15px;   /* reading text */
+  --fs-md:      14px;   /* dense body, buttons */
+  --fs-sm:      13px;   /* the app's workhorse */
+  --fs-xs:      12.5px; /* secondary/meta */
+  --fs-micro:   11px;   /* eyebrow labels, letterspaced */
 
   /* ── Spacing scale ─────────────────────────────────────────────────────
      4px base. The editorial half of this design is mostly sp-5 and up. */

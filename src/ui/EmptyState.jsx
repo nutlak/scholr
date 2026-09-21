@@ -15,10 +15,10 @@ export function EmptyState({ icon, title, body, cta }) {
         marginBottom: 6, color: "var(--accent)",
         boxShadow: "0 0 32px var(--acc-bg)",
       }}>{icon}</div>
-      <div style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, fontSize: 26, color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1.15 }}>
+      <div style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, fontSize: "var(--fs-h1)", color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1.15 }}>
         {title}
       </div>
-      <div style={{ fontSize: 14, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>
+      <div style={{ fontSize: "var(--fs-md)", color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>
         {body}
       </div>
       {cta && (

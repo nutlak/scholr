@@ -183,6 +183,28 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
      is no longer there, and hand the notch inset to the pane, because the strip
      is what was absorbing it. */
   .nb-open .hud-bar { display: none; }
+
+  /* The strip is transparent by design so it does not read as a black card at
+     rest. That is what forced .pane-heading to be sticky: anything scrolling
+     underneath showed through and sliced the greeting. Give the strip a real
+     background at phone width and the heading no longer has to hold its seat —
+     it can scroll away like any other content, which on the dashboard is 148px
+     of greeting and quote that was pinned to a 844px screen, and 94px on Notes,
+     Shared and Starred. The scrolled backdrop and its shadow go with it; both
+     existed only to fake an opaque strip. */
+  .hud-bar {
+    background: var(--bg-base);
+    /* .pane-heading carries z-index: 20 for its sticky-scrolled backdrop. Once
+       it scrolls rather than sticks, that z-index paints its contents — most
+       visibly the profile avatar — on top of this strip on the way past. The
+       strip is chrome and outranks scrolling content. */
+    z-index: 30;
+  }
+  .pane-heading {
+    position: static !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
   .nb-open { --hud-h: 0px; }
   .nb-open .main-pane { padding-top: calc(16px + env(safe-area-inset-top)) !important; }
 

@@ -1414,7 +1414,7 @@ export default function Scholr() {
                   doesn't read as a black card over the HUD void.
                   var(--bg), not var(--bg-base): hud.css forces bg-base inline
                   backgrounds transparent, which would defeat the scrolled fill. */}
-              <div style={{
+              <div className="pane-heading" style={{
                 position: "sticky", top: 0, zIndex: 20,
                 background: paneScrolled ? "var(--bg)" : "transparent",
                 boxShadow: paneScrolled ? "0 -40px 0 0 var(--bg)" : "none",

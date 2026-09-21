@@ -350,7 +350,7 @@ export default function Scholr() {
       // a call made while signed out, and telling a first-time visitor on the
       // marketing page that their session expired is both false and alarming.
       if (!user) return;
-      setToast("Your session expired — please sign in again.");
+      setToast({ text: "Your session expired — please sign in again.", tone: "error" });
       setTimeout(() => { supabase.auth.signOut().catch(() => {}); }, 1800);
     };
     window.addEventListener("scholr:session-expired", onExpired);
@@ -532,19 +532,19 @@ export default function Scholr() {
   async function handleSetStatus(nb, status) {
     patchNotebookEverywhere(nb.id, { status });
     try { await api.updateNotebookStatus(nb.id, status); }
-    catch (err) { console.error(err); setToast("Couldn't update status"); setTimeout(() => setToast(""), 2500); }
+    catch (err) { console.error(err); setToast({ text: "Couldn't update status", tone: "error" }); setTimeout(() => setToast(""), 2500); }
   }
 
   async function handleSetDueDate(nb, dueDate) {
     patchNotebookEverywhere(nb.id, { due_date: dueDate });
     try { await api.updateNotebookDueDate(nb.id, dueDate); }
-    catch (err) { console.error(err); setToast("Couldn't update due date"); setTimeout(() => setToast(""), 2500); }
+    catch (err) { console.error(err); setToast({ text: "Couldn't update due date", tone: "error" }); setTimeout(() => setToast(""), 2500); }
   }
 
   async function handleSetAssessmentType(nb, assessmentType) {
     patchNotebookEverywhere(nb.id, { assessment_type: assessmentType });
     try { await api.updateNotebookAssessmentType(nb.id, assessmentType); }
-    catch (err) { console.error(err); setToast("Couldn't update assessment type"); setTimeout(() => setToast(""), 2500); }
+    catch (err) { console.error(err); setToast({ text: "Couldn't update assessment type", tone: "error" }); setTimeout(() => setToast(""), 2500); }
   }
 
   // Open a notebook by id (from a notification). Look across loaded lists first;
@@ -569,7 +569,7 @@ export default function Scholr() {
       const { cards } = await api.getDueFlashcards();
       if (cards.length) setReviewSession(cards);
       else { setToast("No cards due — you're caught up"); setTimeout(() => setToast(""), 2500); }
-    } catch { setToast("Couldn't load due cards"); setTimeout(() => setToast(""), 2500); }
+    } catch { setToast({ text: "Couldn't load due cards", tone: "error" }); setTimeout(() => setToast(""), 2500); }
   }
 
   async function endReviewSession() {
@@ -678,7 +678,7 @@ export default function Scholr() {
           }
         } catch (e) {
           console.error("applyTemplate failed:", e);
-          setToast("Class created, but template setup failed.");
+          setToast({ text: "Class created, but template setup failed.", tone: "error" });
           setTimeout(() => setToast(""), 3500);
         }
       }
@@ -743,7 +743,7 @@ export default function Scholr() {
       await api.createPortalSession();
     } catch (err) {
       console.error("Portal session error:", err);
-      setToast("Could not open subscription management. Please try again.");
+      setToast({ text: "Could not open subscription management. Please try again.", tone: "error" });
       setTimeout(() => setToast(""), 3500);
       setPortalLoading(false);
     }
@@ -758,7 +758,7 @@ export default function Scholr() {
     } catch (err) {
       console.error("updateClassColor failed:", err);
       setClasses(prevClasses);
-      setToast("Could not update color");
+      setToast({ text: "Could not update color", tone: "error" });
       setTimeout(() => setToast(""), 2500);
     }
   }
@@ -777,7 +777,7 @@ export default function Scholr() {
     } catch (err) {
       console.error("reorderClasses failed:", err);
       setClasses(prev);                        // revert
-      setToast("Could not reorder classes");
+      setToast({ text: "Could not reorder classes", tone: "error" });
       setTimeout(() => setToast(""), 2500);
     }
   }
@@ -1018,28 +1018,39 @@ export default function Scholr() {
         />
       )}
 
-      {toast && (
-        <div style={{
-          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-          border: "1px solid rgba(52,211,153,0.3)",
-          borderRadius: 12, padding: "0 18px", height: 42,
-          fontSize: 13.5, color: "#34D399", fontWeight: 600,
-          fontFamily: FONT,
-          boxShadow: "0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(52,211,153,0.15), 0 0 24px rgba(52,211,153,0.2)",
-          zIndex: 2000, animation: "slideInUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-          display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
-          letterSpacing: "-0.01em",
-        }}>
-          <span style={{
-            width: 18, height: 18, borderRadius: "50%",
-            background: "rgba(52,211,153,0.15)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--success)",
-          }}><Check size={12} strokeWidth={2.5} /></span>
-          {toast}
-        </div>
-      )}
+      {/* The toast was green with a tick regardless of what it said, so
+          "Your session expired" and "Couldn't update color" both arrived
+          looking like good news. setToast still takes a plain string — all 39
+          existing callers are untouched — and an object when the tone matters. */}
+      {toast && (() => {
+        const text = typeof toast === "string" ? toast : toast.text;
+        const tone = (typeof toast === "object" && toast.tone) || "success";
+        const c = tone === "error" ? "var(--danger)" : "var(--success)";
+        const ToneIcon = tone === "error" ? AlertTriangle : Check;
+        return (
+          <div style={{
+            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+            background: "var(--s2)",
+            border: `1px solid color-mix(in srgb, ${c} 32%, transparent)`,
+            borderRadius: "var(--r-md)", padding: "0 18px", height: 42,
+            fontSize: "var(--fs-sm)", color: c, fontWeight: 600,
+            fontFamily: FONT,
+            boxShadow: "var(--sh-modal)",
+            zIndex: 2000, animation: "slideInUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+            letterSpacing: "-0.01em",
+            maxWidth: "calc(100vw - 32px)", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            <span style={{
+              width: 18, height: 18, borderRadius: "50%",
+              background: `color-mix(in srgb, ${c} 16%, transparent)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: c, flexShrink: 0,
+            }}><ToneIcon size={12} strokeWidth={2.5} /></span>
+            {text}
+          </div>
+        );
+      })()}
 
       {showNewClassModal && (
         <NewClassModal

@@ -78,6 +78,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [dob, setDob]             = useState(""); // date of birth (YYYY-MM-DD)
   const [agreed, setAgreed]       = useState(false);
 
@@ -374,17 +375,35 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
         <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={labelStyle}>New password</label>
-            <input
-              type="password" required autoFocus
-              value={newPassword} onChange={e => setNewPassword(e.target.value)}
-              placeholder="Min 6 characters"
-              style={inputStyle} onFocus={focusPurple} onBlur={blurGray}
-            />
+            {/* One reveal for both fields — they have to match, so reading them
+                together is the point. Choosing a new password blind, twice, is
+                how a reset ends in the lockout it was meant to fix. */}
+            <div style={{ position: "relative" }}>
+              <input
+                type={showNewPassword ? "text" : "password"} required autoFocus
+                value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min 6 characters"
+                style={{ ...inputStyle, paddingRight: 46 }}
+                onFocus={focusPurple} onBlur={blurGray}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(v => !v)}
+                aria-label={showNewPassword ? "Hide password" : "Show password"}
+                aria-pressed={showNewPassword}
+                style={{
+                  position: "absolute", top: 0, right: 0, height: "100%", width: 44,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "transparent", border: "none", cursor: "pointer",
+                  color: "var(--text-tertiary)", padding: 0,
+                }}
+              >{showNewPassword ? <EyeOff size={17} strokeWidth={1.85} /> : <Eye size={17} strokeWidth={1.85} />}</button>
+            </div>
           </div>
           <div>
             <label style={labelStyle}>Confirm password</label>
             <input
-              type="password" required
+              type={showNewPassword ? "text" : "password"} required
               value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
               placeholder="Same password again"
               style={inputStyle} onFocus={focusPurple} onBlur={blurGray}

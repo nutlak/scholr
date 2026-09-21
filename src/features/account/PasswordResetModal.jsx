@@ -1,9 +1,11 @@
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { supabase } from "../../supabase.js";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function PasswordResetModal({ onDone }) {
   const [password, setPassword]   = useState("");
+  const [reveal, setReveal] = useState(false);
   const [confirm, setConfirm]     = useState("");
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
@@ -58,18 +60,35 @@ export function PasswordResetModal({ onDone }) {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={label}>New password</label>
-            <input
-              type="password" required autoFocus
-              value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="Min 6 characters" style={inputBase}
-              onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
-              onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={reveal ? "text" : "password"} required autoFocus
+                value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="Min 6 characters" style={{ ...inputBase, paddingRight: 46 }}
+                onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
+                onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
+              />
+              {/* One control for both fields — they have to match, so being
+                  able to read them together is the whole point. Choosing a new
+                  password blind, twice, is how a reset ends in a lockout. */}
+              <button
+                type="button"
+                onClick={() => setReveal(v => !v)}
+                aria-label={reveal ? "Hide password" : "Show password"}
+                aria-pressed={reveal}
+                style={{
+                  position: "absolute", top: 0, right: 0, height: "100%", width: 44,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "transparent", border: "none", cursor: "pointer",
+                  color: "var(--text-tertiary)", padding: 0,
+                }}
+              >{reveal ? <EyeOff size={17} strokeWidth={1.85} /> : <Eye size={17} strokeWidth={1.85} />}</button>
+            </div>
           </div>
           <div>
             <label style={label}>Confirm password</label>
             <input
-              type="password" required
+              type={reveal ? "text" : "password"} required
               value={confirm} onChange={e => setConfirm(e.target.value)}
               placeholder="Same password again" style={inputBase}
               onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}

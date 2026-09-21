@@ -24,6 +24,7 @@ html[data-theme="light"] {
   --t4:        rgba(26,26,24,0.32);
   --acc:       #7C3AED;
   --acc-h:     #6D28D9;
+  --on-acc:    #FFFFFF;
   --acc-d:     #5B21B6;
   --acc-bg:    rgba(124,58,237,0.08);
   --acc-bg-h:  rgba(124,58,237,0.14);
@@ -103,6 +104,11 @@ html[data-theme="light"] code {
   /* Brand */
   --acc:       #A78BFA;
   --acc-h:     #C4B5FD;
+  /* Text on the accent. White on #A78BFA is 2.72:1 — under AA at any size, on
+     the app's most-clicked surface. The accent is a *light* colour, so dark
+     text belongs on it: 7.23:1. Light theme's accent is the deep violet, where
+     white is right at 5.70:1, so this flips there. */
+  --on-acc:    #14121A;
   --acc-d:     #7C3AED;
   --acc-bg:    rgba(167,139,250,0.08);
   --acc-bg-h:  rgba(167,139,250,0.14);

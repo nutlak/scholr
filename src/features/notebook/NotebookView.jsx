@@ -692,16 +692,19 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     maxWidth: "78%",
                     minWidth: 44,
                     textAlign: "left",
-                    // Incoming bubble background is var(--bubble-in), NOT
-                    // var(--bg-surface-1) — the latter triggers hud.css's card
-                    // chrome (corner bracket + cut corner), which is wrong on a
-                    // chat bubble.
+                    // Incoming bubble keeps var(--bubble-in) rather than a
+                    // surface token: it is a bubble, not a card, and wants its
+                    // own slightly warmer tone.
+                    //
+                    // Sent bubbles take var(--on-acc), not white. The accent is
+                    // a light violet and white on it is 2.72:1 — under AA — and
+                    // this is the text people reread most: their own question.
                     background: m.isError
                       ? "rgba(248,113,113,0.08)"
                       : isOwn
                         ? "var(--acc)"
                         : "var(--bubble-in)",
-                    color: m.isError ? "#F87171" : isOwn ? "#fff" : "var(--text-primary)",
+                    color: m.isError ? "var(--danger)" : isOwn ? "var(--on-acc)" : "var(--text-primary)",
                     borderRadius: 18,
                     padding: "11px 15px",
                     fontSize: isAssistant && !m.isError ? 15 : 14,

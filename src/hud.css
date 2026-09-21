@@ -77,6 +77,7 @@ html:not([data-theme="light"]) {
   --glow-soft:      transparent;
   --card-glow:      transparent;
   --ring:           rgba(167, 139, 250, 0.45);
+  --on-acc:         #14121A;
 }
 
 /* ── Backplate ──────────────────────────────────────────────────────────

@@ -93,7 +93,7 @@ export function SquadSection() {
             ) : (
               <button onClick={startSquad} disabled={starting} className="btn-press" style={{
                 minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
-                background: "var(--acc)", color: "#fff",
+                background: "var(--acc)", color: "var(--on-acc)",
                 fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
                 opacity: starting ? 0.7 : 1,
               }}>{starting ? "…" : "Start a squad"}</button>

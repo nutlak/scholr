@@ -1698,7 +1698,7 @@ export default function Scholr() {
                     <span style={{
                       width: 40, height: 40, borderRadius: 11, flexShrink: 0,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "var(--acc)", color: "#fff",
+                      background: "var(--acc)", color: "var(--on-acc)",
                       boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                     }}><Layers size={19} strokeWidth={2} /></span>
                     <span style={{ flex: 1, minWidth: 0 }}>

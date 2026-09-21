@@ -137,7 +137,7 @@ export function ShareStreakCard({ streak, longest, daysVisited, onClose }) {
           }}><Download size={15} strokeWidth={1.9} /> Download</button>
           <button onClick={share} disabled={!ready} className="btn-press" style={{
             flex: 1, minHeight: 42, borderRadius: 10, border: 0,
-            background: "var(--acc)", color: "#fff",
+            background: "var(--acc)", color: "var(--on-acc)",
             fontFamily: FONT, fontSize: 13.5, fontWeight: 600, cursor: "pointer",
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
           }}><Share2 size={15} strokeWidth={1.9} /> Share</button>

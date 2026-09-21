@@ -442,11 +442,33 @@ export default function LandingPage({ onSignIn }) {
   }, []);
 
   return (
-    <div data-hud-void style={{
+    // The marketing page is designed dark and says so in hardcoded colours —
+    // #0B0B12 behind #F5F5FA text. It also reads a dozen tokens, and those flip
+    // in light theme while the hardcoded half does not, which put near-white
+    // text on near-white cards: 19 elements below 3:1, some at 1.12. Reachable
+    // by setting light in Settings and signing out.
+    //
+    // Pinning the tokens it uses to their dark values here keeps the page
+    // self-consistent in either theme, without forcing the whole document to
+    // dark and flipping the theme under someone who chose light.
+    <div data-hud-void className="landing-root" style={{
       background: "#0B0B12", minHeight: "100vh",
       fontFamily: FONT, color: "#F5F5FA",
       overflowX: "hidden",
       position: "relative",
+      "--text-primary": "#F0EDE7",
+      "--text-secondary": "rgba(240,237,231,0.76)",
+      "--text-tertiary": "rgba(240,237,231,0.56)",
+      "--t1": "#F0EDE7",
+      "--t2": "rgba(240,237,231,0.76)",
+      "--border-subtle": "rgba(240,237,231,0.07)",
+      "--border-default": "rgba(240,237,231,0.12)",
+      "--card-bg": "#151517",
+      "--card-border": "rgba(240,237,231,0.09)",
+      "--bubble-in": "#1A181E",
+      "--acc": "#A78BFA",
+      "--acc-h": "#C4B5FD",
+      "--on-acc": "#14121A",
     }}>
       <style>{`
         @keyframes orbit-slow {
@@ -499,7 +521,7 @@ export default function LandingPage({ onSignIn }) {
         .btn-primary {
           display: inline-flex; align-items: center; gap: 8px;
           background: var(--acc);
-          color: #fff;
+          color: var(--on-acc);
           border: none; border-radius: 10px;
           padding: 0 18px; height: 38px;
           font-size: 13px; font-weight: 600;
@@ -751,8 +773,7 @@ export default function LandingPage({ onSignIn }) {
                 background: "var(--acc)",
                 borderRadius: 18,
                 padding: "11px 15px", maxWidth: 380,
-                fontSize: 13, color: "#fff", fontFamily: FONT, fontWeight: 500,
-                boxShadow: "0 2px 8px rgba(167,139,250,0.18)",
+                fontSize: 13, color: "var(--on-acc)", fontFamily: FONT, fontWeight: 500,
                 textAlign: "left",
               }}>
                 What's the difference between ionic and covalent bonds?

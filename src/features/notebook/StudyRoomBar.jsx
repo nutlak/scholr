@@ -83,7 +83,7 @@ export function StudyRoomBar({ notebookId, me, joined, onJoinedChange }) {
       ) : (
         <button onClick={() => startTimer(25)} className="btn-press" style={{
           display: "inline-flex", alignItems: "center", gap: 7, minHeight: 36, padding: "0 14px",
-          background: "var(--acc)", border: 0, color: "#fff",
+          background: "var(--acc)", border: 0, color: "var(--on-acc)",
           fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: "pointer",
         }}>
           <Play size={14} strokeWidth={2.2} /> Start 25-min focus

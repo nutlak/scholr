@@ -88,7 +88,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <button onClick={handleStart} disabled={starting} className="btn-press" style={{
           display: "inline-flex", alignItems: "center", gap: 7, minHeight: 36, padding: "0 14px",
-          background: "var(--acc)", border: 0, color: "#fff",
+          background: "var(--acc)", border: 0, color: "var(--on-acc)",
           fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
           opacity: starting ? 0.7 : 1,
         }}>

@@ -4,14 +4,21 @@ import { FONT, FONT_HEADING, FONT_SERIF } from "../lib/theme.js";
 
 // Public, read-only notebook view (no auth, no sidebar). Viral growth surface.
 export default function SharedNotebook({ slug }) {
-  const [state, setState] = useState("loading"); // loading | ready | notfound
+  const [state, setState] = useState("loading"); // loading | ready | notfound | error
   const [data, setData] = useState(null);
 
   useEffect(() => {
     let alive = true;
     api.getSharedNotebook(slug)
       .then(d => { if (alive) { setData(d); setState("ready"); } })
-      .catch(() => { if (alive) setState("notfound"); });
+      // Only the server actually saying no means "not found". Any other
+      // failure — offline, a 500, a proxy timeout — used to tell whoever
+      // followed this link that the notebook does not exist, on the one screen
+      // that is shown to people who are not users yet.
+      .catch(err => {
+        if (!alive) return;
+        setState([403, 404, 410].includes(err?.status) ? "notfound" : "error");
+      });
     return () => { alive = false; };
   }, [slug]);
 
@@ -29,6 +36,20 @@ export default function SharedNotebook({ slug }) {
     return (
       <div style={{ ...page, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="shimmer" style={{ fontSize: 14 }}>Loading…</div>
+      </div>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <div style={{ ...page, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 16 }}>
+        {wordmark}
+        <div style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 700 }}>Couldn't load this notebook</div>
+        <div style={{ color: "#808098", fontSize: 14, maxWidth: 360, lineHeight: 1.6 }}>
+          Something went wrong on our side, or your connection dropped. The
+          notebook is still there.
+        </div>
+        <button onClick={() => window.location.reload()} style={ctaBtn}>Try again</button>
       </div>
     );
   }

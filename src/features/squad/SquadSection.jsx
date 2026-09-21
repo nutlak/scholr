@@ -9,6 +9,7 @@ import { useServerFeature } from "../../lib/useServerFeature.js";
 // self-contained load-on-mount pattern.
 export function SquadSection() {
   const [squad, setSquad] = useState(undefined); // undefined = loading, null = none
+  const [loadFailed, setLoadFailed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +19,16 @@ export function SquadSection() {
   const available = useServerFeature("squad");
 
   useEffect(() => {
-    api.getMySquad().then(setSquad).catch(() => setSquad(null));
+    // null here renders the "start a squad" pitch, so a failed lookup used to
+    // offer a paying Squad member the chance to buy the squad they are already
+    // in. undefined keeps the section quiet until we actually know.
+    api.getMySquad()
+      .then(setSquad)
+      .catch(err => {
+        if (err?.status === 404) { setSquad(null); return; }
+        console.warn("getMySquad failed:", err?.message);
+        setLoadFailed(true);
+      });
   }, []);
 
   async function startSquad() {
@@ -44,6 +54,16 @@ export function SquadSection() {
   // Hold the space while loading rather than returning null — the section used
   // to pop in and shove everything below it down. ReferralSection already does
   // this with its "loading…" field.
+  // Say so, rather than spinning forever or pitching a squad they may own.
+  if (loadFailed) return (
+    <>
+      <div style={hdr}>Squad plan</div>
+      <div style={{ ...shell, fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>
+        Couldn't load your squad. Reload to try again.
+      </div>
+    </>
+  );
+
   if (squad === undefined) return (
     <>
       <div style={hdr}>Squad plan</div>

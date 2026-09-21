@@ -233,7 +233,11 @@
   /* Inside a notebook the tab bar isn't rendered, so the 96px reserved for it
      became a dead band under the composer. */
   .main-pane-nb {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    /* Just the home-indicator inset, no padding on top of it. That inset has to
+       stay — a tappable control under the indicator cannot be reliably hit —
+       but the extra 12px on top of it read as a dead band under the tool strip
+       on a real phone, where the inset is already ~34px. */
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
   /* Mobile-only / desktop-only utility (extends existing) */
   .desktop-only { display: none !important; }
@@ -261,6 +265,15 @@
     -webkit-tap-highlight-color: transparent;
     min-height: 44px;
   }
+  /* A full-screen sheet owns the screen, and the tab bar and FAB are chrome
+     for a screen the person is no longer looking at. On the share-streak card
+     they land directly under its Download and Share buttons — the card's
+     z-index wins so the tap does land, but it reads as broken and the targets
+     are pinned against the bottom edge. Hiding them is what makes sharing
+     feel like sharing. */
+  body:has(.mobile-sheet-overlay) .mobile-tab-bar,
+  body:has(.mobile-sheet-overlay) .mobile-fab { display: none !important; }
+
   .mobile-tab.active { color: var(--accent); font-weight: 600; }
   .mobile-tab:active { transform: scale(0.94); }
 

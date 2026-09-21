@@ -201,7 +201,13 @@ html:not([data-theme="light"]) div[style*="#14141F"]::after {
     z-index: 30;
   }
   .pane-heading {
-    position: static !important;
+    /* relative, not static: .mobile-header-avatar is position:absolute against
+       this element (App.css pins it top-right of the heading). Making this
+       static took its containing block away, so the avatar resolved against an
+       ancestor near the viewport top and got drawn behind the status strip and
+       clipped by .main-pane. relative scrolls identically and keeps the
+       containing block. */
+    position: relative !important;
     background: transparent !important;
     box-shadow: none !important;
   }

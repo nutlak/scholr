@@ -3,6 +3,7 @@ import { Bell, BellOff } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { pushSupported, getPushSubscription, enablePush, disablePush } from "../../lib/push.js";
 import { useServerFeature } from "../../lib/useServerFeature.js";
+import { isIOS, isStandalone } from "../../lib/install.js";
 
 // Settings row for "a friend just started studying" push notifications.
 // Opt-in only — nothing subscribes until the toggle is flipped, matching the
@@ -15,6 +16,11 @@ export function PushToggle() {
   // Without this the toggle looked live and only failed on click.
   const serverReady = useServerFeature("push");
   const supported = pushSupported();
+  // iOS exposes PushManager only to a site installed to the home screen, so in
+  // Safari pushSupported() is false and the row used to read "Not supported in
+  // this browser" — which is wrong, and a dead end. It is supported; it needs
+  // installing first, and that is something the person can actually act on.
+  const needsInstallFirst = !supported && isIOS() && !isStandalone();
 
   useEffect(() => {
     if (!supported) return;
@@ -54,7 +60,9 @@ export function PushToggle() {
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>Friends studying now</div>
             <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
-              {!supported
+              {needsInstallFirst
+                ? "Add scholr to your home screen first — tap Share in Safari, then Add to Home Screen. iPhone only delivers notifications to installed apps."
+                : !supported
                 ? "Not supported in this browser."
                 : !serverReady
                   ? "Not available yet — we're still setting this up."

@@ -42,6 +42,7 @@ import { FONT, FONT_HEADING, ACCENT_PRESETS } from "./lib/theme.js";
 import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
+import { onCheckoutReturn } from "./lib/native.js";
 
 import { useIncomingPresence, pingFriends } from "./lib/live.js";
 
@@ -330,6 +331,22 @@ export default function Scholr() {
       setTimeout(() => setToast(""), 4000);
     }
   }, [user, authReady]);
+
+  // Coming back from Stripe in the iOS app. Checkout runs in the system
+  // browser, so unlike the web's ?upgraded=true redirect the webview never
+  // navigates and nothing refetches on its own — the app was simply in the
+  // background. No-op on web, where onCheckoutReturn returns an empty
+  // unsubscribe. The webhook is what actually grants the plan, so a refetch
+  // that lands ahead of it just shows the old tier until the next load.
+  useEffect(() => {
+    if (!user) return undefined;
+    return onCheckoutReturn(status => {
+      if (status !== "success") return;
+      api.getSubscription().then(setSubscription).catch(console.error);
+      setToast("Welcome to scholr Pro!");
+      setTimeout(() => setToast(""), 4000);
+    });
+  }, [user]);
 
   // Online presence: heartbeat on mount + every 60s while the app is open. It
   // carries the notebook currently open so friends see "Noah is in Bio 101"

@@ -9,6 +9,50 @@ import { resolveUserBrief } from "../lib/users.js";
 
 export const router = Router();
 
+// ── Where Stripe sends the customer back to ──────────────────────────────────
+// On the web that is just the app. In the iOS app, checkout deliberately runs
+// in the system browser and not in the webview (Apple's rules, and it is also
+// the only way to take the money without Apple's cut), so Stripe lands the
+// customer in Safari with the native app still sitting in the background. The
+// way home is a custom scheme — `scholr://` is registered by the app's
+// Info.plist. Stripe will not accept a non-http(s) success_url, so this bounces
+// through a page we serve instead of handing Stripe the scheme directly.
+//
+// Universal Links would be nicer (no visible bounce, no "Open in scholr?"
+// prompt) but they need an apple-app-site-association file signed against a
+// Team ID, which needs the Apple Developer account. Swap this out once that
+// exists; nothing else has to change.
+const webOrigin = () => process.env.CLIENT_ORIGIN || "https://scholr.dev";
+const isNativeReq = (req) => req.body?.platform === "ios";
+const nativeReturn = (req, status) =>
+  `${req.protocol}://${req.get("host")}/api/billing/return?status=${status}`;
+
+const returnUrls = (req, { okPath, cancelPath }) => isNativeReq(req)
+  ? { success_url: nativeReturn(req, "success"), cancel_url: nativeReturn(req, "cancelled") }
+  : { success_url: `${webOrigin()}${okPath}`, cancel_url: `${webOrigin()}${cancelPath}` };
+
+// GET /api/billing/return — the bounce. Public on purpose: Stripe redirects the
+// browser here with no session of ours attached. It carries no user data and
+// grants nothing; the subscription is applied by the webhook, not by this page.
+router.get("/api/billing/return", (req, res) => {
+  const status = req.query.status === "success" ? "success" : "cancelled";
+  const deepLink = `scholr://checkout-return?status=${status}`;
+  const heading = status === "success" ? "You're all set." : "No charge was made.";
+  res.set("Content-Type", "text/html; charset=utf-8");
+  // Some in-app browsers block an immediate scheme redirect, so there is a
+  // visible link behind it rather than a dead end.
+  res.send(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="0;url=${deepLink}">
+<title>Returning to scholr…</title></head>
+<body style="font-family:-apple-system,sans-serif;background:#08080C;color:#E8E8F0;text-align:center;padding:60px 20px;">
+<div style="font-size:24px;font-weight:800;margin-bottom:12px;">schol<span style="color:#A78BFA;">r</span></div>
+<p style="color:#A0A0B0;">${heading}</p>
+<p><a href="${deepLink}" style="color:#A78BFA;font-weight:600;">Back to scholr</a></p>
+<script>location.replace(${JSON.stringify(deepLink)});</script>
+</body></html>`);
+});
+
 // POST /api/create-checkout-session — create a Stripe checkout session
 router.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async (req, res) => {
   if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
@@ -55,8 +99,7 @@ router.post("/api/create-checkout-session", requireAuth, checkoutLimiter, async 
     // (duration: "once") would reach its first real renewal with no card on
     // file — Stripe asks for one then.
     payment_method_collection: "if_required",
-    success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?upgraded=true`,
-    cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
+    ...returnUrls(req, { okPath: "/app?upgraded=true", cancelPath: "/pricing" }),
   });
 
   res.json({ url: session.url });
@@ -111,8 +154,7 @@ router.post("/api/squad/create-checkout-session", requireAuth, checkoutLimiter, 
     metadata: { type: "squad" },
     allow_promotion_codes: true,
     payment_method_collection: "if_required",
-    success_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app?squad=true`,
-    cancel_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/pricing`,
+    ...returnUrls(req, { okPath: "/app?squad=true", cancelPath: "/pricing" }),
   });
 
   res.json({ url: session.url });
@@ -232,7 +274,7 @@ router.post("/api/create-portal-session", requireAuth, async (req, res) => {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: sub.stripe_customer_id,
-    return_url: `${process.env.CLIENT_ORIGIN || "https://scholr.dev"}/app`,
+    return_url: isNativeReq(req) ? nativeReturn(req, "success") : `${webOrigin()}/app`,
   });
 
   res.json({ url: session.url });

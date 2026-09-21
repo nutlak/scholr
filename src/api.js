@@ -1,4 +1,5 @@
 import { supabase } from "./supabase.js";
+import { openExternal, platformTag } from "./lib/native.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -46,6 +47,16 @@ async function authHeaders(extra = {}) {
     Authorization: `Bearer ${session?.access_token ?? ""}`,
     ...extra,
   };
+}
+
+
+// Stripe's redirect target differs between the web app and the iOS app (see
+// server/routes/billing.js). Sending the platform with the request is what lets
+// the server decide; on web this is an empty body and nothing changes.
+async function billingInit() {
+  const tag = platformTag();
+  const headers = await authHeaders();
+  return { method: "POST", headers, ...(tag ? { body: JSON.stringify({ platform: tag }) } : {}) };
 }
 
 // Which optional integrations the server actually has configured.
@@ -621,8 +632,7 @@ export const api = {
   },
 
   async createCheckoutSession() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/create-checkout-session`, { method: "POST", headers });
+    const res = await fetch(`${API_URL}/api/create-checkout-session`, await billingInit());
     if (!res.ok) {
       // Include the status when the body carries no message, otherwise every
       // distinct backend failure collapses into the same opaque string.
@@ -637,20 +647,19 @@ export const api = {
     // A 2xx with no url would otherwise navigate to "/undefined" (or nowhere)
     // while the caller's spinner span forever. Fail loudly instead.
     if (!url) throw new Error("Checkout session was created without a URL");
-    window.location.href = url;
+    await openExternal(url);
   },
 
   // ── Squad plan (one subscription, Pro for the whole group) ───────────
   async createSquadCheckoutSession() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/squad/create-checkout-session`, { method: "POST", headers });
+    const res = await fetch(`${API_URL}/api/squad/create-checkout-session`, await billingInit());
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw apiError(res, data, "Couldn't start squad checkout");
     }
     const { url } = await res.json();
     if (!url) throw new Error("Checkout session was created without a URL");
-    window.location.href = url;
+    await openExternal(url);
   },
 
   async getMySquad() {
@@ -677,14 +686,13 @@ export const api = {
   },
 
   async createPortalSession() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/create-portal-session`, { method: "POST", headers });
+    const res = await fetch(`${API_URL}/api/create-portal-session`, await billingInit());
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error ?? "Failed to open billing portal");
     }
     const { url } = await res.json();
-    window.location.href = url;
+    await openExternal(url);
   },
 
   // ── Podcast Mode ─────────────────────────────────────────────────────

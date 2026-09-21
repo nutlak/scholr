@@ -23,11 +23,15 @@ export const router = Router();
 // Team ID, which needs the Apple Developer account. Swap this out once that
 // exists; nothing else has to change.
 const webOrigin = () => process.env.CLIENT_ORIGIN || "https://scholr.dev";
-const isNativeReq = (req) => req.body?.platform === "ios";
+export const isNativeReq = (req) => req.body?.platform === "ios";
 const nativeReturn = (req, status) =>
   `${req.protocol}://${req.get("host")}/api/billing/return?status=${status}`;
 
-const returnUrls = (req, { okPath, cancelPath }) => isNativeReq(req)
+// Exported for billing.test.js. Which URL Stripe sends the customer back to is
+// the one piece of this file where a silent mistake costs a real payment, and
+// the 2026-09-16 outage was exactly that shape — a price id that did not
+// resolve, caught only by running a real checkout.
+export const returnUrls = (req, { okPath, cancelPath }) => isNativeReq(req)
   ? { success_url: nativeReturn(req, "success"), cancel_url: nativeReturn(req, "cancelled") }
   : { success_url: `${webOrigin()}${okPath}`, cancel_url: `${webOrigin()}${cancelPath}` };
 

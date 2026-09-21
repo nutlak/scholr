@@ -332,6 +332,17 @@ export default function Scholr() {
     }
   }, [user, authReady]);
 
+  // The mobile freeze in App.css pins html/body with position:fixed so the
+  // document cannot be dragged and only the inner panes scroll. That is right
+  // for the app shell and fatal for the landing page, which is an ordinary
+  // 5,600px document with no inner scroller — every phone visitor to scholr.dev
+  // got the hero and nothing below it. Scope the freeze to when the shell is
+  // actually the thing on screen.
+  useEffect(() => {
+    document.documentElement.classList.toggle("app-shell-active", !!user);
+    return () => document.documentElement.classList.remove("app-shell-active");
+  }, [user]);
+
   // Coming back from Stripe in the iOS app. Checkout runs in the system
   // browser, so unlike the web's ?upgraded=true redirect the webview never
   // navigates and nothing refetches on its own — the app was simply in the

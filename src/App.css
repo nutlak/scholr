@@ -201,7 +201,8 @@
      none` stops a scrolled-to-the-end pane handing the gesture back to the
      page; `touch-action: manipulation` kills double-tap-to-zoom while leaving
      taps and scrolls alone. */
-  html, body {
+  html.app-shell-active,
+  html.app-shell-active body {
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: manipulation;
@@ -210,6 +211,9 @@
     width: 100%;
     height: 100dvh;
   }
+  /* Without the class — the landing page, the legal pages, the invite and
+     password-reset screens — the document scrolls like a document. */
+  html:not(.app-shell-active) body { touch-action: manipulation; }
   /* Momentum stays inside the scrollers. */
   .main-pane, .tool-modal-card, .forge-panel { -webkit-overflow-scrolling: touch; }
   .main-pane { overscroll-behavior: contain; }

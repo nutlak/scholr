@@ -151,15 +151,23 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
            read as a slot waiting to be filled instead of a caption. */
         <div style={{
           display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
-          padding: "16px 18px", fontFamily: FONT,
-          background: "var(--acc-bg)",
-          border: "1px dashed color-mix(in srgb, var(--accent) 40%, transparent)",
+          padding: "var(--sp-5) var(--sp-5)", fontFamily: FONT,
+          // A card, not a dropzone. The accent wash plus a dashed accent border
+          // made the app's single most important empty state look like a
+          // placeholder that had failed to load. The three empty seats below
+          // are what say "this is waiting for people"; the container just holds
+          // them.
+          background: "var(--card-bg)",
+          border: "1px solid var(--card-border)",
+          borderRadius: "var(--r-lg)",
         }}>
           <div style={{ display: "flex", flexShrink: 0 }} aria-hidden="true">
             {[0, 1, 2].map(i => (
               <span key={i} style={{
                 width: 36, height: 36, borderRadius: "50%", marginLeft: i ? -11 : 0,
                 background: "var(--bg-surface-2)",
+                // Dashed here is correct: an empty seat. It was the container
+                // being dashed as well that made the whole thing read as unbuilt.
                 border: "1px dashed var(--border-strong)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "var(--text-tertiary)", fontSize: 15, fontWeight: 500, lineHeight: 1,

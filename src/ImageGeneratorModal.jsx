@@ -184,7 +184,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
         borderRadius: 18, width: "100%", maxWidth: 560,
         maxHeight: "92vh", overflowY: "auto",
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
       }}>
         <div style={{
@@ -350,7 +350,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                   fontFamily: FONT,
                   opacity: loading || prompt.trim().length < 3 ? 0.55 : 1,
                   transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
-                  boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                  boxShadow: "none",
                   letterSpacing: "-0.01em",
                 }}
               >

@@ -52,7 +52,7 @@ export default function UsernameSetupModal({ onDone }) {
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{

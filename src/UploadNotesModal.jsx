@@ -96,7 +96,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 18, width: "100%", maxWidth: 480,
         padding: "28px 26px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
         overflow: "hidden",
       }}>
@@ -292,7 +292,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                     fontFamily: FONT,
                     opacity: canSubmit ? 1 : 0.55,
                     transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
-                    boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+                    boxShadow: "none",
                     letterSpacing: "-0.01em",
                   }}
                   onMouseEnter={e => { if (canSubmit) e.currentTarget.style.transform = "translateY(-1px)"; }}

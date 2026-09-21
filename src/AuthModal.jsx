@@ -34,7 +34,7 @@ const btnPrimary = {
   cursor: "pointer",
   fontFamily: FONT,
   transition: "transform 0.15s, box-shadow 0.2s, opacity 0.18s",
-  boxShadow: "0 4px 14px rgba(167,139,250,0.34), 0 0 0 1px rgba(167,139,250,0.4)",
+  boxShadow: "none",
   letterSpacing: "-0.01em",
 };
 
@@ -251,7 +251,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 18, width: "100%", maxWidth: 420,
         padding: "32px 28px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
         overflow: "hidden",
       }}>

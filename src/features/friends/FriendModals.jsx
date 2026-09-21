@@ -55,7 +55,7 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
         background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
         border: "1px solid rgba(255,255,255,0.09)", borderRadius: 18,
         width: "100%", maxWidth: 380, padding: "22px 20px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 18 }}>
@@ -191,7 +191,7 @@ export function FriendInviteModal({ friend, onClose }) {
         borderRadius: 18, width: "100%", maxWidth: 420,
         maxHeight: "80vh", display: "flex", flexDirection: "column",
         padding: "24px 22px",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08)",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>

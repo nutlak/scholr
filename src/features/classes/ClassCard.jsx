@@ -147,10 +147,15 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           );
         })()}
 
-        {/* Import syllabus. On the row itself, in the class's own colour, at
-            every width and without hovering or expanding anything — the two
-            quieter placements before this (inside the expanded card, then a
-            grey chip gated on desktop-only) both went unfound.
+        {/* Import syllabus. On the row itself at every width, without hovering
+            or expanding anything — the two quieter placements before this
+            (inside the expanded card, then a grey chip gated on desktop-only)
+            both went unfound, so it has to stay loud.
+
+            Loud in the accent, though, not in the class's own colour. The class
+            colour is identity — which class this is, carried by the dot and the
+            rail — and putting an action in it implied the action belonged to
+            that colour system. One accent, used for things you can do.
 
             It retires once this class has actually been imported from a
             syllabus: a one-time setup action, so leaving it on the row
@@ -164,13 +169,14 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
             title={`Import a syllabus into ${cls.title}`}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
-              background: `${t.hue}18`, border: `1px solid ${t.hue}66`,
-              borderRadius: 7, padding: "0 11px", height: 30, cursor: "pointer",
-              color: t.hue, fontFamily: FONT, fontSize: 12, fontWeight: 700,
+              background: "var(--acc-bg)",
+              border: "1px solid color-mix(in srgb, var(--acc) 38%, transparent)",
+              borderRadius: "var(--r-sm)", padding: "0 11px", height: 30, cursor: "pointer",
+              color: "var(--acc)", fontFamily: FONT, fontSize: "var(--fs-xs)", fontWeight: 650,
               letterSpacing: "-0.005em", transition: "background 0.18s",
             }}
-            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.background = `${t.hue}2E`; }}
-            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.background = `${t.hue}18`; }}
+            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.background = "var(--acc-bg-h)"; }}
+            onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.background = "var(--acc-bg)"; }}
           ><Upload size={13} strokeWidth={2} /> Import syllabus</button>
         )}
 

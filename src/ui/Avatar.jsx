@@ -11,8 +11,7 @@ export function Avatar({ name, size = 28, seed }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.4, fontWeight: 700, color: "#fff",
       fontFamily: FONT, flexShrink: 0,
-      border: "2px solid #0B0B12",
-      boxShadow: `0 2px 6px ${t.hue}40`,
+      border: "2px solid var(--bg)",
       letterSpacing: "-0.02em",
     }}>
       {(name?.[0] ?? "?").toUpperCase()}
@@ -56,13 +55,10 @@ export function MemberAvatarStack({ members }) {
     <div
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      // Each Avatar paints a 6px-blur glow outside its own box, and this stack
-      // is usually the last thing in a right-aligned row — so it lands flush on
-      // the edge of an ancestor that clips overflow (.print-area does, in the
-      // notebook header, on both phone and desktop) and the glow gets sliced
-      // off. The padding keeps the avatars themselves off that edge. It does
-      // not move the hover panel below: `right: 0` resolves against this
-      // element's padding box, whose right edge is unchanged.
+      // The avatars no longer paint a glow, but the padding stays: this stack
+      // is usually the last thing in a right-aligned row, and it used to land
+      // flush on the edge of an ancestor that clips overflow (.print-area, in
+      // the notebook header). A few px keeps it off that edge either way.
       style={{
         display: "flex", alignItems: "center", position: "relative",
         cursor: "default", paddingRight: 6,

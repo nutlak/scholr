@@ -50,22 +50,21 @@
   pointer-events: none;
 }
 .forge-action-btn:hover:not(:disabled) {
-  background: #1C1C2A;
+  background: var(--s2);
   border-color: color-mix(in srgb, var(--btn-color, #A78BFA) 32%, transparent);
-  color: #F5F5FA;
+  color: var(--t1);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 0 1px color-mix(in srgb, var(--btn-color, #A78BFA) 18%, transparent);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 .forge-action-btn:hover:not(:disabled)::before { opacity: 0.06; }
 .forge-action-btn:active:not(:disabled) {
   transform: translateY(0px);
 }
 .forge-action-btn.forge-active {
-  background: color-mix(in srgb, var(--btn-color, #A78BFA) 8%, #14141F);
+  background: color-mix(in srgb, var(--btn-color, #A78BFA) 8%, var(--s1));
   border-color: color-mix(in srgb, var(--btn-color, #A78BFA) 45%, transparent);
   color: var(--btn-color, #A78BFA);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--btn-color, #A78BFA) 30%, transparent),
-              0 8px 24px color-mix(in srgb, var(--btn-color, #A78BFA) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--btn-color, #A78BFA) 30%, transparent);
 }
 .forge-action-btn.forge-active::before { opacity: 0.08; }
 .forge-action-btn:disabled {
@@ -286,8 +285,9 @@
     background: var(--accent); color: #fff;
     border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent),
-                0 2px 6px rgba(0,0,0,0.15);
+    /* Elevation, not a halo. The accent-tinted bloom is what made this read
+       as a toy button rather than a control. */
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
     transition: transform 120ms ease;
     -webkit-tap-highlight-color: transparent;
   }

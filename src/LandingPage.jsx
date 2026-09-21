@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame } from "lucide-react";
+import { useInstall } from "./lib/install.js";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download } from "lucide-react";
 import { FONT, FONT_HEADING, FONT_SERIF } from "./lib/theme.js";
 
 function useScrolled(threshold = 16) {
@@ -293,6 +294,7 @@ const FAQS = [
   { q: "Is my data private?", a: "Your notebooks are invite-only — no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
   { q: "Can I study with my class?", a: "Yes. Invite classmates to a shared notebook and everyone sees the same notes, chat, and AI answers in real time." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
+  { q: "Can I get Scholr on my phone?", a: "Yes — install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
 ];
 
 function TestimonialCard({ quote, name, role, idx }) {
@@ -432,6 +434,8 @@ function SocialProofBar() {
 export default function LandingPage({ onSignIn }) {
   const scrolled = useScrolled();
   const [heroVisible, setHeroVisible] = useState(false);
+  const { installed, canPrompt, needsIOSInstructions, install } = useInstall();
+  const [showIOSHelp, setShowIOSHelp] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 50);
     return () => clearTimeout(t);
@@ -475,6 +479,19 @@ export default function LandingPage({ onSignIn }) {
            what it did in the iOS app. Pricing is the one that can go: the
            section it scrolls to is still right there on the page. */
         .nav-link, .btn-primary { white-space: nowrap; }
+
+        .install-cta {
+          display: inline-flex; align-items: center; gap: 8px;
+          min-height: 44px; padding: 0 16px; border-radius: 10px;
+          background: transparent; color: rgba(245,245,250,0.72);
+          border: 1px solid rgba(255,255,255,0.14);
+          font-family: ${FONT}; font-size: 14px; font-weight: 600;
+          cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .install-cta:hover {
+          color: #F5F5FA; border-color: rgba(167,139,250,0.5);
+          background: rgba(167,139,250,0.08);
+        }
         @media (max-width: 480px) {
           .nav-link-pricing { display: none; }
         }
@@ -671,6 +688,30 @@ export default function LandingPage({ onSignIn }) {
               Sign in
             </button>
           </div>
+
+          {/* Install to the home screen. Chrome can do it in one tap; iOS has
+              no API for it and never has, so there it is an instruction rather
+              than a button that would do nothing. Hidden entirely once scholr
+              is already running installed. */}
+          {!installed && (canPrompt || needsIOSInstructions) && (
+            <div style={{ marginBottom: 18 }}>
+              <button
+                className="install-cta"
+                onClick={() => (canPrompt ? install() : setShowIOSHelp(v => !v))}
+              >
+                <Download size={15} strokeWidth={1.9} />
+                {canPrompt ? "Install scholr" : "Add scholr to your home screen"}
+              </button>
+              {showIOSHelp && (
+                <div style={{
+                  marginTop: 10, fontSize: 13, lineHeight: 1.6,
+                  color: "rgba(245,245,250,0.6)", fontFamily: FONT,
+                }}>
+                  Tap the Share button in Safari, then <strong style={{ color: "rgba(245,245,250,0.85)" }}>Add to Home Screen</strong>.
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
 

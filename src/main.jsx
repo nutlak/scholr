@@ -11,6 +11,18 @@ import { captureReferral } from './lib/referral.js'
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')
 captureReferral(API_URL).catch(() => {})
 
+// The worker was only ever registered from enablePush(), so anyone who had not
+// turned on notifications had no worker at all — and without an active worker
+// Chrome will not offer to install scholr, and there is no offline page. Push
+// still calls register() itself and that is fine: it is idempotent for the same
+// URL. Failure here is not worth surfacing; it costs the install prompt, not
+// the app.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 // iOS Safari has ignored `user-scalable=no` since iOS 10, on purpose, so the
 // viewport meta alone does not hold there — pinch arrives as these three
 // Safari-only gesture events instead. Blocking them is what actually stops the

@@ -5,7 +5,7 @@ import { FONT } from "./lib/theme.js";
 // Mirrors the server-side rule: 3–20 chars, lowercase letters/numbers/underscore.
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
-export default function UsernameSetupModal({ onDone }) {
+export default function UsernameSetupModal({ onDone, onSignOut }) {
   const [value, setValue] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -48,8 +48,8 @@ export default function UsernameSetupModal({ onDone }) {
     >
       <div className="mobile-sheet" style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "var(--s1)",
+        border: "1px solid var(--card-border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
@@ -120,6 +120,25 @@ export default function UsernameSetupModal({ onDone }) {
             >
               {saving ? "Saving…" : "Set username"}
             </button>
+
+            {/* The way out. This modal covers the whole app and has no dismiss
+                — by design, since the app needs a username before friends work
+                — but that makes it a trap the moment saving fails for a reason
+                the person cannot fix from here, an expired session being the
+                obvious one. Signing out and back in is the fix for exactly that
+                case, so it has to be reachable from inside the trap. */}
+            {onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                style={{
+                  width: "100%", minHeight: 44, marginTop: 10,
+                  background: "transparent", border: "none",
+                  color: "var(--text-tertiary)", fontSize: 13, fontFamily: FONT,
+                  cursor: "pointer", letterSpacing: "-0.01em",
+                }}
+              >Sign out</button>
+            )}
           </form>
         </div>
       </div>

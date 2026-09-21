@@ -304,7 +304,15 @@ export default function Scholr() {
     api.listClasses().then(setClasses).catch(console.error);
     api.getSocialNotifications().then(d => setNotifications(d?.notifications ?? [])).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
-    api.getMyUsername().then(d => setMyUsername(d?.username ?? null)).catch(() => setMyUsername(null));
+    // A failed request is not the same as "this person has no username". The
+    // catch used to collapse both to null, which is the state that opens the
+    // first-run username modal — so an expired token showed a brand-new user a
+    // blocking setup prompt, whose own save then failed with the same 401, with
+    // no dismiss and no way to reach Sign out. Stay in the loading state on
+    // failure: no modal, and the session refresh gets a chance to land.
+    api.getMyUsername()
+      .then(d => setMyUsername(d?.username ?? null))
+      .catch(err => { console.warn("getMyUsername failed:", err?.message); setMyUsername(undefined); });
     api.getDueCount().then(d => setDueCount(d?.count ?? 0)).catch(() => {});
 
     // Mark today as an "active" day for the streak. Fire-and-forget; we still
@@ -2129,7 +2137,7 @@ export default function Scholr() {
 
         {/* First-run username prompt — gates friends features until set */}
         {user && myUsername === null && (
-          <UsernameSetupModal onDone={uname => setMyUsername(uname)} />
+          <UsernameSetupModal onDone={uname => setMyUsername(uname)} onSignOut={handleLogout} />
         )}
 
         {/* All-notebooks flashcard review (launched from the dashboard) */}

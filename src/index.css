@@ -20,8 +20,15 @@ html[data-theme="light"] {
   --border-f:  rgba(0,0,0,0.2);
   --t1:        #1A1A18;
   --t2:        #5C5C57;
-  --t3:        #8A8A82;
-  --t4:        rgba(26,26,24,0.32);
+  /* The dark theme's secondary steps were pitched up long ago for exactly this
+     reason; the light theme never got the same pass. #8A8A82 was 3.36:1 on the
+     page, 3.48 on a card and 3.07 on the nav rail — under AA on all three, and
+     it is what every caption, every meter label, every readout in the status
+     strip and the whole legal footer were set in: 64 failing elements from one
+     token. #6B6B63 is the first warm grey that clears 4.5:1 against all three
+     light grounds (5.19 / 5.37 / 4.75) rather than just against the page. */
+  --t3:        #6B6B63;
+  --t4:        rgba(26,26,24,0.45);
   --acc:       #7C3AED;
   --acc-h:     #6D28D9;
   --on-acc:    #FFFFFF;
@@ -44,7 +51,7 @@ html[data-theme="light"] {
   --bg-surface-3:   #ECECE9;
   --text-primary:   #1A1A18;
   --text-secondary: #5C5C57;
-  --text-tertiary:  #8A8A82;
+  --text-tertiary:  #6B6B63;
   --border-subtle:  rgba(0,0,0,0.05);
   --border-default: rgba(0,0,0,0.09);
   --border-strong:  rgba(0,0,0,0.14);

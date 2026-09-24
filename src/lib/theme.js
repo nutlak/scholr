@@ -40,13 +40,23 @@ export function classTint(color) {
   return CLASS_COLORS.find(c => c.hue.toLowerCase() === lower) ?? CLASS_COLORS[0];
 }
 
+/* Each preset carries BOTH themes' accents, because one hue cannot serve both
+   grounds. `color` is the 400 shade: light enough to read on near-black, and
+   far too light on white — #A78BFA on a white card is 2.4:1, so every accent
+   label in the light theme was failing AA. `light` is the 700 shade, which
+   clears 4.5:1 against white both as text and behind white text, so the same
+   value works for a label and for a filled button.
+
+   `--on-acc` does not need a per-preset value: every 400 shade is light enough
+   for the dark theme's dark --on-acc, and every 700 shade is dark enough for
+   the light theme's white one. */
 export const ACCENT_PRESETS = [
-  { color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", name: "Purple" },
-  { color: "#60A5FA", hover: "#93C5FD", deep: "#3B82F6", name: "Blue" },
-  { color: "#34D399", hover: "#6EE7B7", deep: "#10B981", name: "Emerald" },
-  { color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", name: "Amber" },
-  { color: "#F472B6", hover: "#F9A8D4", deep: "#EC4899", name: "Pink" },
-  { color: "#FB7185", hover: "#FDA4AF", deep: "#F43F5E", name: "Rose" },
+  { name: "Purple",  color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", light: "#6D28D9", lightHover: "#5B21B6" },
+  { name: "Blue",    color: "#60A5FA", hover: "#93C5FD", deep: "#3B82F6", light: "#1D4ED8", lightHover: "#1E40AF" },
+  { name: "Emerald", color: "#34D399", hover: "#6EE7B7", deep: "#10B981", light: "#047857", lightHover: "#065F46" },
+  { name: "Amber",   color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", light: "#B45309", lightHover: "#92400E" },
+  { name: "Pink",    color: "#F472B6", hover: "#F9A8D4", deep: "#EC4899", light: "#BE185D", lightHover: "#9D174D" },
+  { name: "Rose",    color: "#FB7185", hover: "#FDA4AF", deep: "#F43F5E", light: "#BE123C", lightHover: "#9F1239" },
 ];
 
 export const STATUS_META = {

@@ -211,7 +211,13 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         aria-label={`${p.name} accent`}
                         style={{
                           width: 32, height: 32, minWidth: 32, borderRadius: 8, padding: 0, cursor: "pointer",
-                          background: `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
+                          // Show the hue this preset will actually apply in the
+                          // theme you are in — the light theme uses the deep
+                          // shades, so previewing the pale ones was a swatch
+                          // that did not match what you got.
+                          background: theme === "light"
+                            ? `linear-gradient(135deg, ${p.light} 0%, ${p.lightHover} 100%)`
+                            : `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
                           border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
                           outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
                           outlineOffset: "1px",

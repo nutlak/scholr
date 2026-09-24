@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useInstall } from "./lib/install.js";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download } from "lucide-react";
-import { FONT, FONT_HEADING, FONT_SERIF } from "./lib/theme.js";
+import { FONT, FONT_HEADING, FONT_SERIF, MONO } from "./lib/theme.js";
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -259,9 +259,12 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
         display: "inline-flex", alignItems: "center", gap: 6,
         background: `${accent}14`, border: `1px solid ${accent}30`,
         borderRadius: 999, padding: "5px 12px",
+        // Mono, tracked out, small. The label type of a technical page rather
+        // than a marketing one — the thing that reads as precision in the
+        // reference site's nav and section marks.
         fontSize: 11, fontWeight: 600, color: accent,
-        marginBottom: 18, letterSpacing: "0.08em", textTransform: "uppercase",
-        fontFamily: FONT,
+        marginBottom: 18, letterSpacing: "0.14em", textTransform: "uppercase",
+        fontFamily: MONO,
       }}>
         {pill}
       </div>
@@ -572,12 +575,19 @@ export default function LandingPage({ onSignIn }) {
       {/* Ambient gradient mesh */}
       <div style={{
         position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        /* One wash, low. Violet, blue and pink bleeding across the page was
-           the same "every colour at once" problem the app had, at full size —
-           and it put a haze over text that has to be read. */
+        /* A measured field rather than a haze. One violet wash for depth, and a
+           fine grid that fades out before it reaches the copy — the grid is
+           what reads as technical; a coloured fog just reads as a gradient.
+           40px cells, hairline, masked to the top third so nothing sits behind
+           body text. */
         background: `
-          radial-gradient(circle at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 55%)
+          radial-gradient(circle at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 55%),
+          linear-gradient(to right, rgba(240,237,231,0.035) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(240,237,231,0.035) 1px, transparent 1px)
         `,
+        backgroundSize: "100% 100%, 40px 40px, 40px 40px",
+        maskImage: "linear-gradient(to bottom, #000 0%, #000 38%, transparent 72%)",
+        WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 38%, transparent 72%)",
       }} />
 
       {/* Two blurred violet orbs used to drift here on 18s and 22s loops.
@@ -643,13 +653,12 @@ export default function LandingPage({ onSignIn }) {
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: "linear-gradient(135deg, rgba(167,139,250,0.16), rgba(167,139,250,0.06))",
-            border: "1px solid rgba(167,139,250,0.28)",
+            background: "var(--acc-bg)",
+            border: "1px solid color-mix(in srgb, var(--acc) 26%, transparent)",
             borderRadius: 999, padding: "6px 14px",
-            fontSize: 12, fontWeight: 500, color: "#C4B5FD",
-            marginBottom: 28, letterSpacing: "-0.005em",
-            fontFamily: FONT,
-            boxShadow: "0 4px 14px rgba(167,139,250,0.12)",
+            fontSize: 11, fontWeight: 600, color: "#C4B5FD",
+            fontFamily: MONO, textTransform: "uppercase",
+            marginBottom: 28, letterSpacing: "0.14em",
           }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", boxShadow: "0 0 8px #A78BFA" }} />
             AI-powered collaborative studying

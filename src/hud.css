@@ -122,12 +122,15 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
 /* ── Status strip ───────────────────────────────────────────────────── */
 .hud-bar {
   position: relative; flex: none; overflow: hidden;
+  /* Uppercase, tracked out, small — the label style of an instrument panel
+     rather than a sentence. */
+  text-transform: uppercase;
   display: flex; align-items: center; gap: 12px; flex-wrap: nowrap;
   white-space: nowrap; height: 36px; padding: 0 16px; margin: 0;
   background: transparent;
   border: 0; border-bottom: 1px solid var(--border-subtle);
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 13px; letter-spacing: 0.01em; font-weight: 500;
+  font-size: 11px; letter-spacing: 0.10em; font-weight: 600;
   color: var(--text-tertiary);
 }
 
@@ -225,7 +228,19 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
 .hud-spacer + .hud-seg::before { content: none; }
 .hud-spacer { flex: 1 1 auto; }
 /* Numbers stay mono so they stop jittering as the clock ticks. */
-.hud-num    { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+/* Instrument numerals. The strip is the one readout in the app, and a readout
+   is the place monospace earns its keep: tabular figures do not jitter as the
+   clock ticks or a count changes, and the mono face reads as measurement
+   rather than prose. The --mono token has been defined since the beginning and
+   used almost nowhere. */
+.hud-num    {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
 .hud-num.warn { color: var(--hud-gold); }
 
 .hud-dot {

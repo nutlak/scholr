@@ -3,9 +3,11 @@ import { Share2 } from "lucide-react";
 import { FONT, MONO } from "../../lib/theme.js";
 import { ShareStreakCard } from "./ShareStreakCard.jsx";
 
+const VIEW_MODES = ["week", "month", "year"];
+
 export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
   const [sharing, setSharing] = useState(false);
-  const [viewMode, setViewMode] = useState("week"); // 'week' | 'month' | 'year'
+  const [viewMode, setViewMode] = useState("week");
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d;
   });
@@ -104,16 +106,17 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
         }}>
           Study Streak
         </div>
-        <div style={{ display: "flex", gap: 3 }}>
-          {["week", "month", "year"].map(mode => (
-            <button key={mode} onClick={() => setViewMode(mode)} style={{
-              padding: "3px 10px", borderRadius: 8, cursor: "pointer",
-              border: "1px solid",
-              borderColor: viewMode === mode ? "color-mix(in srgb, var(--acc) 45%, transparent)" : "var(--border)",
-              background: viewMode === mode ? "var(--acc-bg)" : "transparent",
-              color: viewMode === mode ? "var(--acc)" : "var(--t3)",
-              fontSize: 11, fontWeight: 600, fontFamily: FONT, transition: "all 0.15s",
-            }}>
+        {/* One control, not three buttons. Three separately-bordered boxes make
+            the reader compare three things; a segmented control says these are
+            one choice with three positions, and the pill sliding between them
+            says which. --seg-n keeps the CSS honest about how many there are. */}
+        <div className="seg-control" role="radiogroup" aria-label="Streak range"
+             style={{ "--seg-n": VIEW_MODES.length }}>
+          <span className="seg-pill" aria-hidden="true"
+                style={{ transform: `translateX(${VIEW_MODES.indexOf(viewMode) * 100}%)` }} />
+          {VIEW_MODES.map(mode => (
+            <button key={mode} className="seg-option" onClick={() => setViewMode(mode)}
+                    role="radio" aria-checked={viewMode === mode}>
               {mode[0].toUpperCase() + mode.slice(1)}
             </button>
           ))}

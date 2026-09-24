@@ -4,6 +4,7 @@ import './index.css'
 import './hud.css'
 import App from './App.jsx'
 import { captureReferral } from './lib/referral.js'
+import { installSheetDrag } from './lib/sheetDrag.js'
 
 // Runs before render so a /@username or ?ref= link is banked (and stripped
 // from the URL) no matter which screen the app lands on. Never blocks the
@@ -31,6 +32,10 @@ if ('serviceWorker' in navigator) {
 for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
   document.addEventListener(type, e => e.preventDefault(), { passive: false })
 }
+
+// One delegated listener for every bottom sheet in the app, rather than a
+// gesture prop threaded through fourteen components.
+installSheetDrag()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -665,3 +665,44 @@
   height: 1px;
   background: var(--border-subtle);
 }
+
+/* ── Continuous corners ───────────────────────────────────────────────────
+   A circular corner arc meets the straight edge at a sudden change of
+   curvature; Apple's squircle blends into it, which is why their rounded
+   rectangles look softer at the same nominal radius. `corner-shape` does this
+   natively — no SVG masks, no clip-path, no library — so it goes behind
+   @supports and browsers without it keep the plain arc. Nothing else changes.
+
+   It is superellipse(4), NOT the `squircle` keyword. In Chrome 153
+   `corner-shape: squircle` computes to superellipse(2) — which is the plain
+   round default — so the keyword draws nothing, while
+   CSS.supports('corner-shape', 'squircle') still answers true. A feature query
+   written on the keyword therefore passes and silently does nothing, which is
+   how the first version of this shipped a no-op. Every other keyword maps
+   correctly (bevel→0, scoop→-1), so it is specific to `squircle`; the explicit
+   exponent is unambiguous and renders today.
+
+   Only surfaces in the 8–18px range: below that the difference is invisible,
+   and above it lives the pills, avatars and status dots, where a squircle
+   would turn a circle into a rounded square. Verified against the rendered
+   page — 27 surfaces matched, no round element caught.
+
+   Styles here are inline by convention, so the attribute selector is how you
+   reach them all at once, the same trick the card chrome uses. */
+@supports (corner-shape: superellipse(4)) {
+  .ins-group,
+  .seg-control,
+  .seg-pill,
+  .mobile-sheet,
+  .sheet-row,
+  [style*="border-radius: 8px"],
+  [style*="border-radius: 9px"],
+  [style*="border-radius: 10px"],
+  [style*="border-radius: 11px"],
+  [style*="border-radius: 12px"],
+  [style*="border-radius: 14px"],
+  [style*="border-radius: 16px"],
+  [style*="border-radius: 18px"] {
+    corner-shape: superellipse(4);
+  }
+}

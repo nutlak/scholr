@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNarrow } from "../lib/breakpoints.js";
 
 /* Fleet-console status strip: identity on the left, live telemetry on the
    right, sweep animation riding across it. Same instrument the trader and
@@ -10,6 +11,12 @@ import { useEffect, useState } from "react";
    it was 456px wide and silently cut the clock in half. */
 export function HudBar({ view = "", streak = 0, due = 0, classes = 0, tier = "free" }) {
   const [clock, setClock] = useState(() => new Date());
+  // The strip is nowrap and overflow:hidden, so anything too wide is silently
+  // cut rather than wrapped. Adding the collapsing view title spent the last of
+  // the room at 390px: content came to 396px and "cards to review" lost its
+  // tail. "to review" says the same thing in 55 fewer pixels — the word the
+  // number needs is the verb, not the noun.
+  const narrow = useNarrow();
 
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
@@ -41,7 +48,8 @@ export function HudBar({ view = "", streak = 0, due = 0, classes = 0, tier = "fr
       <span className="hud-seg">Streak <b className="hud-num">{streak}</b> {streak === 1 ? "day" : "days"}</span>
 
       <span className="hud-seg">
-        <b className={due > 0 ? "hud-num warn" : "hud-num"}>{due > 99 ? "99+" : due}</b> {due === 1 ? "card" : "cards"} to review
+        <b className={due > 0 ? "hud-num warn" : "hud-num"}>{due > 99 ? "99+" : due}</b>{" "}
+        {narrow ? "to review" : `${due === 1 ? "card" : "cards"} to review`}
       </span>
 
       <span className="hud-seg hud-opt"><b className="hud-num">{classes}</b> {classes === 1 ? "class" : "classes"}</span>

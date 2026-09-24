@@ -546,8 +546,11 @@ input, textarea, select { font-family: var(--font); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-d) 100%);
+  /* Flat accent, like every other filled surface. The gradient ran from the
+     light accent to the deep one, so a white glyph was legible at one end of
+     it and not the other. */
+  color: var(--on-acc);
+  background: var(--acc);
   box-shadow: 0 4px 12px var(--acc-bg-h);
 }
 .tool-modal-title {
@@ -709,9 +712,11 @@ input, textarea, select { font-family: var(--font); }
 }
 .btn:active { transform: translateY(1px); }
 .btn-primary {
-  color: #fff;
-  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-d) 100%);
-  box-shadow: 0 6px 20px var(--acc-bg-h), 0 0 0 1px rgba(167,139,250,0.30);
+  color: var(--on-acc);
+  background: var(--acc);
+  /* The ring was a hardcoded violet, so it stayed purple whatever accent you
+     picked and sat on top of a gradient that already failed contrast. */
+  box-shadow: 0 6px 20px var(--acc-bg-h), 0 0 0 1px var(--acc-glow);
 }
 .btn-primary:hover { box-shadow: 0 8px 28px var(--glow-accent), 0 0 0 1px rgba(167,139,250,0.45); }
 .btn-ghost {

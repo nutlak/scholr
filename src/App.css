@@ -299,7 +299,9 @@
     bottom: calc(76px + env(safe-area-inset-bottom));
     z-index: 290;
     width: 56px; height: 56px; border-radius: 50%;
-    background: var(--accent); color: #fff;
+    /* The glyph is a graphical object, so its floor is 3:1 — white on the
+       accent was 2.72, which fails it even at that looser bar. */
+    background: var(--accent); color: var(--on-acc);
     border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     /* Elevation, not a halo. The accent-tinted bloom is what made this read

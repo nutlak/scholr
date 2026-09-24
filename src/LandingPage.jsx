@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { HeroMesh } from "./ui/HeroMesh.jsx";
 import { useInstall } from "./lib/install.js";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download } from "lucide-react";
 import { FONT, FONT_HEADING, FONT_SERIF, MONO } from "./lib/theme.js";
@@ -647,8 +648,26 @@ export default function LandingPage({ onSignIn }) {
           transform: heroVisible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
-          {/* Logo */}
-          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 20, objectFit: "cover" }} />
+          {/* Logo, sitting inside a slowly rotating wireframe. The mesh is
+              drawn by hand into a canvas rather than pulled from a 3D engine —
+              twelve vertices do not justify 150kb on the page a first-time
+              visitor waits for. It stops when scrolled away or the tab is
+              hidden, and holds a fixed angle under prefers-reduced-motion. */}
+          <div style={{
+            position: "relative", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            width: 340, height: 340, marginBottom: -40, marginTop: -60,
+          }}>
+            <HeroMesh size={340} />
+            <img
+              src="/scholr-logo-final.png"
+              alt="scholr"
+              style={{
+                width: 64, height: 64, borderRadius: 16, objectFit: "cover",
+                position: "relative", zIndex: 1,
+              }}
+            />
+          </div>
 
           {/* Badge */}
           <div style={{

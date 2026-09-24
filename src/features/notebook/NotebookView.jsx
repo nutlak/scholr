@@ -172,7 +172,7 @@ function ShareModal({ notebookId, onClose, onStateChange }) {
             }} />
             <button onClick={copy} disabled={loading} className="btn-press" aria-live="polite" style={{
               height: 42, borderRadius: 10, border: "none", padding: "0 16px", cursor: loading ? "wait" : "pointer",
-              background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontWeight: 700, fontSize: 13.5, fontFamily: FONT, whiteSpace: "nowrap",
+              background: "var(--acc)", color: "var(--on-acc)", fontWeight: 700, fontSize: 13.5, fontFamily: FONT, whiteSpace: "nowrap",
             }}>{copied ? "Copied! ✓" : "Copy"}</button>
           </div>
         )}
@@ -926,7 +926,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 border: query.trim() && !loading ? "none" : "1px solid var(--border)",
                 borderRadius: 12,
                 width: 48, height: 48, fontSize: 18, fontWeight: 600,
-                color: "#fff",
+                color: query.trim() && !loading ? "var(--on-acc)" : "var(--t2)",
                 cursor: loading || !query.trim() ? "not-allowed" : "pointer",
                 opacity: loading || !query.trim() ? 0.5 : 1,
                 boxShadow: query.trim() && !loading ? "0 4px 14px color-mix(in srgb, var(--acc) 35%, transparent)" : "none",

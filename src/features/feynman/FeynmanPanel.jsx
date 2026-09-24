@@ -180,7 +180,7 @@ export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
             display: "inline-flex", alignItems: "center", gap: 7,
             borderRadius: 10, padding: "0 16px", height: 38, border: "none",
             background: canGrade ? "var(--acc)" : "var(--bg-surface-3)",
-            color: canGrade ? "#fff" : "var(--text-tertiary)",
+            color: canGrade ? "var(--on-acc)" : "var(--text-tertiary)",
             fontFamily: FONT, fontSize: 13, fontWeight: 600,
             cursor: canGrade ? "pointer" : "not-allowed",
             boxShadow: canGrade ? "0 4px 14px var(--acc-bg-h)" : "none",

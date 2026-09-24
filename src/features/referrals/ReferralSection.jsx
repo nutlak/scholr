@@ -27,12 +27,15 @@ export function ReferralSection() {
     setSending(false);
   }
 
-  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 };
+  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, marginLeft: 16 };
   const field = { height: 40, borderRadius: 10, background: "var(--bg-subtle, rgba(255,255,255,0.04))", border: "1px solid var(--border)", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, padding: "0 12px", outline: "none", boxSizing: "border-box" };
 
   return (
-    <div style={{ marginBottom: 32 }}>
+    <div>
       <div style={hdr}>Referrals</div>
+      {/* A form rather than a list of rows, so it takes the group card without
+          internal separators — there are no rows to separate. */}
+      <div className="ins-group ins-row">
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <input readOnly aria-label="Your referral link" value={link} placeholder="loading…" onFocus={e => e.target.select()} style={{ ...field, flex: 1 }} />
         <button onClick={copy} className="btn-press" aria-live="polite" style={{ ...field, width: "auto", padding: "0 16px", cursor: "pointer", color: "var(--acc)", fontWeight: 600 }}>{copied ? "Copied!" : "Copy"}</button>
@@ -42,11 +45,12 @@ export function ReferralSection() {
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input value={email} type="email" aria-label="Friend's email address" onChange={e => setEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} placeholder="friend@school.edu" style={{ ...field, flex: 1 }} />
-        <button onClick={invite} disabled={sending || !email.includes("@")} className="btn-press" style={{ height: 40, borderRadius: 10, border: "none", padding: "0 16px", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 13.5, fontWeight: 700, cursor: sending || !email.includes("@") ? "not-allowed" : "pointer", opacity: sending || !email.includes("@") ? 0.6 : 1, whiteSpace: "nowrap" }}>{sending ? "Sending…" : "Send invite"}</button>
+        <button onClick={invite} disabled={sending || !email.includes("@")} className="btn-press" style={{ height: 40, borderRadius: 10, border: "none", padding: "0 16px", background: "var(--acc)", color: "var(--on-acc)", fontFamily: FONT, fontSize: 13.5, fontWeight: 700, cursor: sending || !email.includes("@") ? "not-allowed" : "pointer", opacity: sending || !email.includes("@") ? 0.6 : 1, whiteSpace: "nowrap" }}>{sending ? "Sending…" : "Send invite"}</button>
       </div>
       {msg && <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 6 }}>{msg}</div>}
       <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, lineHeight: 1.5 }}>
         Studying together works better than studying alone — bring the people you already study with.
+      </div>
       </div>
     </div>
   );

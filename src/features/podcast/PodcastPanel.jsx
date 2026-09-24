@@ -326,8 +326,8 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
             className="btn-press"
             style={{
               width: "100%", minHeight: 40, borderRadius: 10,
-              background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-              border: "none", color: "#fff", fontWeight: 700, fontSize: 13.5,
+              background: "var(--acc)",
+              border: "none", color: "var(--on-acc)", fontWeight: 700, fontSize: 13.5,
               cursor: "pointer", fontFamily: FONT,
             }}
           >Upgrade to Pro</button>
@@ -509,7 +509,7 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
               background: isLocked
                 ? "var(--bg-surface-2)"
                 : "var(--acc)",
-              border: "none", color: "#fff", fontWeight: 700, fontSize: 14,
+              border: "none", color: isLocked ? "var(--t2)" : "var(--on-acc)", fontWeight: 700, fontSize: 14,
               fontFamily: FONT, cursor: isLocked ? "not-allowed" : "pointer",
               boxShadow: isLocked ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
               letterSpacing: "-0.01em",

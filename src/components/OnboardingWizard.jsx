@@ -287,8 +287,8 @@ const linkBtn = { background: "none", border: "none", color: "var(--text-seconda
 function primaryBtn(disabled) {
   return {
     width: "100%", height: 46, marginTop: 20, borderRadius: 10, border: "none",
-    background: disabled ? "var(--border-strong, rgba(167,139,250,0.4))" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-    color: "#fff", fontFamily: FONT, fontSize: 15, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer",
+    background: disabled ? "var(--border-strong, rgba(167,139,250,0.4))" : "var(--acc)",
+    color: disabled ? "var(--t2)" : "var(--on-acc)", fontFamily: FONT, fontSize: 15, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.6 : 1, transition: "opacity 0.18s, transform 0.15s",
   };
 }

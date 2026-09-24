@@ -20,7 +20,7 @@ export function StreakMilestoneModal({ day, onClose }) {
         <div style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>{day}-day streak!</div>
         <div style={{ fontFamily: FONT, fontSize: 14, color: "var(--text-secondary)", marginBottom: 24 }}>You're on fire. Keep it up.</div>
         <button onClick={share} aria-live="polite" style={{ width: "100%", height: 44, borderRadius: 10, border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-primary)", fontFamily: FONT, fontSize: 14, fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>{copied ? "Copied! ✓" : "Share my streak"}</button>
-        <button onClick={onClose} style={{ width: "100%", height: 44, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #A78BFA, #8B5CF6)", color: "#fff", fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Keep going →</button>
+        <button onClick={onClose} style={{ width: "100%", height: 44, borderRadius: 10, border: "none", background: "var(--acc)", color: "var(--on-acc)", fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Keep going →</button>
       </div>
     </div>
   );

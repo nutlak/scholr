@@ -153,9 +153,9 @@ export function UpgradeModal({ limitType, onClose }) {
             disabled={loading}
             style={{
               width: "100%", height: 46, marginBottom: 10,
-              background: loading ? "var(--acc-bg-h)" : "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+              background: loading ? "var(--acc-bg-h)" : "var(--acc)",
               border: "none", borderRadius: 12,
-              color: "#fff", fontWeight: 700, fontSize: 15,
+              color: "var(--on-acc)", fontWeight: 700, fontSize: 15,
               fontFamily: FONT, cursor: loading ? "wait" : "pointer",
               boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               transition: "all 0.18s",

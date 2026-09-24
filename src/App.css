@@ -630,3 +630,38 @@
 @media (prefers-reduced-motion: reduce) {
   .seg-pill { transition: none; }
 }
+
+/* ── Grouped inset list ───────────────────────────────────────────────────
+   iOS Settings' organising device: a caption naming the group, then the rows
+   inside one rounded card, with hairlines *between* them rather than under
+   each. It is the inset that does the work — a full-bleed rule under every row
+   reads as an endless ledger, while a card with internal dividers reads as a
+   finite set of related things, which is what a settings section is.
+
+   The separator starts where the row's text starts, so the eye follows one
+   left edge down the group instead of two. */
+.ins-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px 16px;
+}
+.ins-group {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 26px;
+}
+.ins-row {
+  position: relative;
+  padding: 14px 16px;
+}
+.ins-row:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 16px; right: 0; bottom: 0;
+  height: 1px;
+  background: var(--border-subtle);
+}

@@ -48,8 +48,9 @@ export function SquadSection() {
     catch { /* clipboard unavailable */ }
   }
 
-  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 };
-  const shell = { padding: "14px 0", marginBottom: 32, borderBottom: "1px solid var(--border-subtle)" };
+  // The caption and the row now carry their chrome as classes, so this section
+  // groups the same way as the rest of Settings whichever branch renders.
+  const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, marginLeft: 16 };
 
   // Hold the space while loading rather than returning null — the section used
   // to pop in and shove everything below it down. ReferralSection already does
@@ -58,7 +59,7 @@ export function SquadSection() {
   if (loadFailed) return (
     <>
       <div style={hdr}>Squad plan</div>
-      <div style={{ ...shell, fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>
+      <div className="ins-group ins-row" style={{ fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>
         Couldn't load your squad. Reload to try again.
       </div>
     </>
@@ -67,14 +68,14 @@ export function SquadSection() {
   if (squad === undefined) return (
     <>
       <div style={hdr}>Squad plan</div>
-      <div style={{ ...shell, fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>Loading…</div>
+      <div className="ins-group ins-row" style={{ fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT }}>Loading…</div>
     </>
   );
 
   return (
     <>
       <div style={hdr}>Squad plan</div>
-      <div style={shell}>
+      <div className="ins-group ins-row">
         {!squad ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>

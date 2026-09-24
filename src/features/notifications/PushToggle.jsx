@@ -47,13 +47,11 @@ export function PushToggle() {
 
   return (
     <>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-        Notifications
-      </div>
-      <div style={{
+      <div className="ins-caption">Notifications</div>
+      <div className="ins-group">
+      <div className="ins-row" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 16, flexWrap: "wrap", padding: "14px 0", marginBottom: 32,
-        borderBottom: "1px solid var(--border-subtle)",
+        gap: 16, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {enabled ? <Bell size={18} strokeWidth={1.9} color="var(--accent)" /> : <BellOff size={18} strokeWidth={1.9} color="var(--text-tertiary)" />}
@@ -77,15 +75,16 @@ export function PushToggle() {
             disabled={busy}
             className="btn-press"
             style={{
-              minHeight: 36, padding: "0 16px",
+              minHeight: 36, padding: "0 16px", borderRadius: 10,
               background: enabled ? "transparent" : "var(--acc)",
               border: enabled ? "1px solid var(--border-default)" : 0,
-              color: enabled ? "var(--text-secondary)" : "#fff",
+              color: enabled ? "var(--text-secondary)" : "var(--on-acc)",
               fontFamily: FONT, fontSize: 13, fontWeight: 600,
               cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
             }}
           >{busy ? "…" : enabled ? "Turn off" : "Turn on"}</button>
         )}
+      </div>
       </div>
     </>
   );

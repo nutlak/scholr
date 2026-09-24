@@ -22,39 +22,32 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                   Settings
                 </div>
 
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Account
-                </div>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "14px 0", marginBottom: 32,
-                  borderBottom: "1px solid var(--border-subtle)",
-                }}>
+                <div className="ins-caption">Account</div>
+                <div className="ins-group">
+                <div className="ins-row" style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <Avatar name={displayName} size={42} seed={user?.email ?? displayName} />
                   <div>
                     <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginBottom: 3, fontWeight: 500 }}>Signed in as</div>
                     <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{user?.email}</div>
                   </div>
                 </div>
+                </div>
 
                 {/* ── Subscription ──────────────────────────────────────────── */}
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Subscription
-                </div>
-                <div style={{
-                  background: subscription.tier === "pro" ? "var(--accent-soft)" : "transparent",
-                  borderRadius: subscription.tier === "pro" ? 10 : 0,
-                  padding: subscription.tier === "pro" ? "16px 18px" : "14px 0",
-                  marginBottom: 32,
-                  borderBottom: subscription.tier === "pro" ? "none" : "1px solid var(--border-subtle)",
-                }}>
+                <div className="ins-caption">Subscription</div>
+                {/* Pro tints the whole group rather than a card inside a card —
+                    two nested rounded surfaces was the thing that read as
+                    stacked chrome. */}
+                <div className="ins-group"
+                     style={subscription.tier === "pro" ? { background: "var(--accent-soft)" } : undefined}>
+                <div className="ins-row">
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                     <div style={{ flex: "1 1 220px", minWidth: 200 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                         {subscription.tier === "pro" && (
                           <span style={{
                             fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                            color: subscription.cancelAtPeriodEnd ? "var(--warning)" : "#fff",
+                            color: subscription.cancelAtPeriodEnd ? "var(--warning)" : "var(--on-acc)",
                             fontFamily: FONT,
                             background: subscription.cancelAtPeriodEnd
                               ? "color-mix(in srgb, var(--warning) 16%, transparent)"
@@ -126,10 +119,10 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         onClick={() => setUpgradeModal({ limitType: "upgrade" })}
                         className="btn-press"
                         style={{
-                          background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
+                          background: "var(--acc)",
                           border: "none",
                           borderRadius: 10, padding: "0 18px", height: 38,
-                          color: "#fff",
+                          color: "var(--on-acc)",
                           fontSize: 13, fontWeight: 700,
                           cursor: "pointer",
                           fontFamily: FONT, whiteSpace: "nowrap", flexShrink: 0,
@@ -143,6 +136,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                     )}
                   </div>
                 </div>
+                </div>
 
                 {/* ── Referrals (1D) ── */}
                 <ReferralSection />
@@ -153,16 +147,13 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 <SquadSection />
 
                 {/* ── Appearance ────────────────────────────────────────────── */}
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Appearance
-                </div>
+                <div className="ins-caption">Appearance</div>
+                <div className="ins-group">
 
                 {/* Theme row */}
-                <div style={{
+                <div className="ins-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: 16, flexWrap: "wrap",
-                  padding: "14px 0",
-                  borderBottom: "1px solid var(--border-subtle)",
                 }}>
                   <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
@@ -199,12 +190,9 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 </div>
 
                 {/* Accent color row */}
-                <div style={{
+                <div className="ins-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: 16, flexWrap: "wrap",
-                  padding: "14px 0",
-                  borderBottom: "1px solid var(--border-subtle)",
-                  marginBottom: 32,
                 }}>
                   <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
@@ -236,17 +224,14 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                     ))}
                   </div>
                 </div>
+                </div>
 
                 {/* Delete account — self-service deletion (satisfies the deletion
                     right + the Privacy Policy/ToS promise that users can delete
                     their account from settings). Backed by DELETE /api/auth/delete-account. */}
-                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(248,113,113,0.75)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
-                  Danger zone
-                </div>
-                <div style={{
-                  background: "var(--bg-surface-1)",
-                  border: "1px solid rgba(248,113,113,0.2)",
-                  borderRadius: 14, padding: "18px 20px",
+                <div className="ins-caption" style={{ color: "rgba(248,113,113,0.75)" }}>Danger zone</div>
+                <div className="ins-group" style={{ borderColor: "rgba(248,113,113,0.28)" }}>
+                <div className="ins-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
                 }}>
                   <div>
@@ -268,6 +253,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                     onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.10)"; e.currentTarget.style.borderColor = "var(--danger)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.4)"; }}
                   >Delete account</button>
+                </div>
                 </div>
               </div>
   );

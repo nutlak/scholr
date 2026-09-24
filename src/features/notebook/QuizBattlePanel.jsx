@@ -150,7 +150,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
             alignSelf: "flex-start", minHeight: 36, padding: "0 16px",
             background: myAnswered ? "var(--pill-bg)" : "var(--acc)",
             border: myAnswered ? "1px solid var(--pill-border)" : 0,
-            color: myAnswered ? "var(--text-secondary)" : "#fff",
+            color: myAnswered ? "var(--text-secondary)" : "var(--on-acc)",
             fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: myAnswered ? "default" : "pointer",
           }}
         >{myAnswered ? "Answered" : "Got it!"}</button>

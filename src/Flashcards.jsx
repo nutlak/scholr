@@ -232,7 +232,7 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
           style={{
             minHeight: 44, padding: "0 16px", borderRadius: 10,
             background: generating ? "var(--bg-surface-2)" : "var(--acc)",
-            border: "none", color: "#fff", fontWeight: 600, fontSize: 13.5, fontFamily: FONT,
+            border: "none", color: "var(--on-acc)", fontWeight: 600, fontSize: 13.5, fontFamily: FONT,
             cursor: generating ? "default" : "pointer", opacity: generating ? 0.7 : 1,
             boxShadow: generating ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
           }}

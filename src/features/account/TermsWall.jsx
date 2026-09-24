@@ -42,9 +42,9 @@ export function TermsWall({ onAccepted }) {
       }}>
         <div style={{
           width: 36, height: 36, borderRadius: 9,
-          background: "linear-gradient(135deg, var(--acc) 0%, var(--acc-d) 100%)",
+          background: "var(--acc)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", marginBottom: 16,
+          color: "var(--on-acc)", marginBottom: 16,
         }}><FileText size={18} strokeWidth={2} /></div>
 
         <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, letterSpacing: "-0.02em", marginBottom: 8 }}>

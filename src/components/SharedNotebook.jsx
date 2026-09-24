@@ -124,8 +124,8 @@ export default function SharedNotebook({ slug }) {
 
 const ctaBtn = {
   display: "inline-block",
-  background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-  color: "#fff", fontWeight: 700, fontSize: 15, fontFamily: FONT,
+  background: "var(--acc)",
+  color: "var(--on-acc)", fontWeight: 700, fontSize: 15, fontFamily: FONT,
   padding: "13px 28px", borderRadius: 12, textDecoration: "none",
   boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
 };

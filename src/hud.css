@@ -227,6 +227,17 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
      bar, and presence/plan are ambient. */
   .hud-bar .hud-seg-presence,
   .hud-bar .hud-seg-clock { display: none; }
+
+  /* One slot, two labels stacked in the same grid cell, so the strip's width
+     never jumps mid-crossfade. Without the brand beside it the separator has
+     nothing to separate.
+     .hud-bar, not .hud-title alone: .hud-seg sets display later in this file
+     at the same specificity, and a media query adds none of its own, so the
+     bare class loses and the two labels stay side by side. */
+  .hud-bar .hud-title { display: grid; grid-template-areas: "title"; align-items: center; }
+  .hud-bar .hud-brand, .hud-bar .hud-view-title { grid-area: title; }
+  .hud-bar .hud-brand { opacity: calc(1 - var(--pane-scroll)); }
+  .hud-bar .hud-view-title .slash { display: none; }
   .hud-seg + .hud-seg::before { margin: 0 9px; }
 }
 
@@ -235,6 +246,37 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
   letter-spacing: 0.01em; white-space: nowrap;
 }
 .hud-title .slash { color: var(--text-tertiary); font-weight: 500; text-shadow: none; margin: 0 6px; }
+
+/* ── Large-title collapse ──────────────────────────────────────────────
+   The heading is content, not chrome: it scrolls away with the page, and
+   the compact title in the strip rises to take its place. One value drives
+   both halves, written to the root by the pane's scroll handler, so the
+   crossfade is a compositor job and React never sees a scroll frame.
+
+   The large title shrinks slightly rather than only fading — it is the same
+   text arriving at its small size, and scale says that where a fade alone
+   just says "gone". transform-origin sits at the left edge so it collapses
+   toward the strip's title, not toward the middle of nowhere. */
+.dash-heading {
+  opacity: calc(1 - var(--pane-scroll));
+  transform: scale(calc(1 - 0.09 * var(--pane-scroll)));
+  transform-origin: left top;
+  will-change: transform, opacity;
+}
+.hud-view-title {
+  display: inline-flex; align-items: center;
+  opacity: var(--pane-scroll);
+  transform: translateY(calc((1 - var(--pane-scroll)) * 6px));
+  will-change: transform, opacity;
+}
+/* A title that has faded out must not still be under the pointer. */
+.dash-heading { pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) {
+  /* The crossfade stays — it is what tells you the title moved — but nothing
+     travels or scales. */
+  .dash-heading { transform: none; }
+  .hud-view-title { transform: none; }
+}
 .hud-sep    { color: rgba(167, 139, 250, 0.25); }
 /* gap, not whitespace: inline-flex makes each text node its own flex item and
    drops the spaces between them, which rendered "Streak4days". */

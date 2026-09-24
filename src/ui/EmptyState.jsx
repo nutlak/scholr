@@ -29,7 +29,7 @@ export function EmptyState({ icon, title, body, cta }) {
             marginTop: 8,
             background: "var(--acc)",
             border: "none", borderRadius: 10, padding: "0 20px", height: 40,
-            color: "#fff", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
+            color: "var(--on-acc)", fontWeight: 600, fontSize: 13.5, cursor: "pointer",
             fontFamily: FONT,
             boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             letterSpacing: "-0.01em",

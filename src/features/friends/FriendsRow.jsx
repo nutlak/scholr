@@ -127,7 +127,7 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
             className="btn-press"
             style={{
               height: 36, padding: "0 16px", cursor: "pointer", flexShrink: 0,
-              background: "var(--accent)", border: "none", color: "#fff",
+              background: "var(--accent)", border: "none", color: "var(--on-acc)",
               fontFamily: FONT, fontSize: 13.5, fontWeight: 700,
             }}
           >Accept</button>
@@ -190,8 +190,8 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
             className="btn-press"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              height: 44, padding: "0 18px", cursor: "pointer", flexShrink: 0,
-              background: "var(--accent)", border: "none", color: "#fff",
+              height: 44, padding: "0 18px", cursor: "pointer", flexShrink: 0, borderRadius: 10,
+              background: "var(--accent)", border: "none", color: "var(--on-acc)",
               fontFamily: FONT, fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em",
             }}
           ><UserPlus size={16} strokeWidth={2} /> Add a friend</button>

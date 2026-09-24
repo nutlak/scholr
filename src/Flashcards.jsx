@@ -95,7 +95,7 @@ export function FlashcardReview({ cards, onDone }) {
             style={{
               marginTop: 8, minHeight: 48, padding: "0 28px",
               background: "var(--acc)",
-              border: "none", borderRadius: 12, color: "#fff", fontWeight: 600, fontSize: 15,
+              border: "none", borderRadius: 12, color: "var(--on-acc)", fontWeight: 600, fontSize: 15,
               cursor: "pointer", fontFamily: FONT, boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
             }}
           >Done</button>
@@ -344,7 +344,7 @@ function EditCardModal({ card, onClose, onSaved }) {
             style={{
               minHeight: 44, padding: "0 20px", borderRadius: 10,
               background: "var(--acc)", border: "none",
-              color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT,
+              color: "var(--on-acc)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT,
               opacity: saving || !front.trim() || !back.trim() ? 0.6 : 1,
             }}
           >{saving ? "Saving…" : "Save"}</button>

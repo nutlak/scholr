@@ -28,7 +28,7 @@ const btnPrimary = {
   border: "none",
   borderRadius: 10,
   height: 42,
-  color: "#fff",
+  color: "var(--on-acc)",
   fontWeight: 600,
   fontSize: 14,
   cursor: "pointer",

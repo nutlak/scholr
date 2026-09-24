@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
    between adjacent segments, so hiding a segment on a narrow screen can't
    strand its separator. The strip is nowrap and overflow:hidden — at 390px
    it was 456px wide and silently cut the clock in half. */
-export function HudBar({ streak = 0, due = 0, classes = 0, tier = "free" }) {
+export function HudBar({ view = "", streak = 0, due = 0, classes = 0, tier = "free" }) {
   const [clock, setClock] = useState(() => new Date());
 
   useEffect(() => {
@@ -20,8 +20,15 @@ export function HudBar({ streak = 0, due = 0, classes = 0, tier = "free" }) {
 
   return (
     <div className="hud-bar" role="status" aria-label="Study status">
+      {/* The identity slot doubles as the nav-bar title. Scrolling the pane
+          hands off from the big heading down in the content to this compact
+          one — on a wide window it appends after the brand, on a phone it
+          takes the brand's place, because a 390px strip has room for one of
+          them and the title is the half that tells you where you are. Both
+          are always in the DOM; --pane-scroll crossfades them. */}
       <span className="hud-seg hud-title">
-        Scholr<span className="slash hud-opt">/</span><span className="hud-opt">Study Deck</span>
+        <span className="hud-brand">Scholr</span>
+        <span className="hud-view-title"><span className="slash">/</span>{view}</span>
       </span>
 
       {/* Presence, the plan and the clock are desk furniture: the phone already

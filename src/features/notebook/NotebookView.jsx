@@ -667,7 +667,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                           width: 16, height: 16, borderRadius: "50%",
                           background: "var(--acc)",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 9, fontWeight: 700, color: "#fff",
+                          fontSize: 9, fontWeight: 700, color: "var(--on-acc)",
                           boxShadow: "0 2px 6px var(--acc-bg-h)",
                         }}>D</div>
                       ) : senderTint && (
@@ -782,7 +782,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     width: 16, height: 16, borderRadius: "50%",
                     background: "var(--acc)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 9, fontWeight: 700, color: "#fff",
+                    fontSize: 9, fontWeight: 700, color: "var(--on-acc)",
                     boxShadow: "0 2px 6px var(--acc-bg-h)",
                   }}>D</div>
                   <div style={{

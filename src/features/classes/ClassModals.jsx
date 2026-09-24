@@ -293,7 +293,7 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
               <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
                 background: "var(--acc)",
                 border: "none", borderRadius: 10, padding: "0 20px", height: 38,
-                color: "#fff", fontWeight: 600, fontSize: 13,
+                color: "var(--on-acc)", fontWeight: 600, fontSize: 13,
                 cursor: loading || !title.trim() ? "not-allowed" : "pointer",
                 fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
                 boxShadow: "0 1px 2px rgba(0,0,0,0.3)",

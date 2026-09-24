@@ -287,7 +287,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                     background: "var(--acc)",
                     border: "none",
                     borderRadius: 10, padding: "0 20px", height: 38,
-                    color: "#fff", fontWeight: 600, fontSize: 13,
+                    color: "var(--on-acc)", fontWeight: 600, fontSize: 13,
                     cursor: canSubmit ? "pointer" : "not-allowed",
                     fontFamily: FONT,
                     opacity: canSubmit ? 1 : 0.55,

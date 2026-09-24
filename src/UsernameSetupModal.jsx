@@ -111,7 +111,7 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
                 width: "100%", minHeight: 44,
                 background: "var(--acc)",
                 border: "none", borderRadius: 10,
-                color: "#fff", fontWeight: 600, fontSize: 14, fontFamily: FONT,
+                color: "var(--on-acc)", fontWeight: 600, fontSize: 14, fontFamily: FONT,
                 cursor: !valid || saving ? "not-allowed" : "pointer",
                 opacity: !valid || saving ? 0.55 : 1,
                 boxShadow: "0 1px 2px rgba(0,0,0,0.3)",

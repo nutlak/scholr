@@ -345,7 +345,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                   background: "var(--acc)",
                   border: "none",
                   borderRadius: 10, padding: "0 20px", height: 38,
-                  color: "#fff", fontWeight: 600, fontSize: 13,
+                  color: "var(--on-acc)", fontWeight: 600, fontSize: 13,
                   cursor: loading || prompt.trim().length < 3 ? "not-allowed" : "pointer",
                   fontFamily: FONT,
                   opacity: loading || prompt.trim().length < 3 ? 0.55 : 1,

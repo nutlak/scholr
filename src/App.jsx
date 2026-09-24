@@ -857,10 +857,18 @@ export default function Scholr() {
   // Rolled once per visit, not per render — otherwise any unrelated state
   // change would reshuffle the greeting and quote mid-session.
   const greeting = useMemo(() => getGreeting(displayName), [displayName]);
-  // The dashboard header is sticky. It only needs an opaque backdrop WHILE the
-  // pane is scrolled (so rows don't bleed under it); at rest it must stay
-  // transparent, or its solid fill reads as a black card over the HUD void.
-  const [paneScrolled, setPaneScrolled] = useState(false);
+  // Large-title collapse. The pane's scroll position drives two things that
+  // have to move together — the big heading falling away and the compact title
+  // rising into the status strip — so it is published as one 0..1 custom
+  // property on the root rather than component state: at 57 useState hooks in
+  // this component, a scroll frame that re-renders is a scroll frame that
+  // drops. CSS reads it from anywhere in the tree, which the strip needs,
+  // since it is not inside the pane.
+  useEffect(() => {
+    // A view change resets the pane's scrollTop without firing a scroll event,
+    // which would otherwise leave the compact title stuck on screen.
+    document.documentElement.style.setProperty("--pane-scroll", "0");
+  }, [activeView, activeNb]);
   const streakAtRisk = streakAtRiskFromHeatmap(heatmap);
 
   const filteredClasses = classes.filter(c =>
@@ -1114,6 +1122,7 @@ export default function Scholr() {
         display: user ? "flex" : "none", flexDirection: "column", fontFamily: FONT,
       }}>
         <HudBar
+          view={viewLabel}
           streak={computeStreak(heatmap)}
           due={dueCount}
           classes={classes.length}
@@ -1206,7 +1215,7 @@ export default function Scholr() {
                 {id === "dashboard" && dueCount > 0 && (
                   <span style={{
                     marginLeft: "auto", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9,
-                    background: "var(--accent)", color: "#fff", fontSize: 10.5, fontWeight: 700,
+                    background: "var(--accent)", color: "var(--on-acc)", fontSize: 10.5, fontWeight: 700,
                     display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: FONT,
                   }}>{dueCount > 99 ? "99+" : dueCount}</span>
                 )}
@@ -1397,7 +1406,12 @@ export default function Scholr() {
             and the notebook view — which sizes itself to 100% of it — got
             sliced. flex:1 + minHeight:0 makes it fill what is actually
             there. */}
-        <div className={`main-pane${activeNb ? " main-pane-nb" : ""}`} onScroll={e => setPaneScrolled(e.currentTarget.scrollTop > 4)} style={{ flex: 1, minHeight: 0, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div className={`main-pane${activeNb ? " main-pane-nb" : ""}`} onScroll={e => document.documentElement.style.setProperty(
+          "--pane-scroll",
+          // 44px of travel: long enough not to trip on a stray wheel tick,
+          // short enough that the handoff is over before you have read it.
+          Math.min(e.currentTarget.scrollTop / 44, 1).toFixed(3),
+        )} style={{ flex: 1, minHeight: 0, padding: "36px 44px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
           <button
             onClick={() => setSidebarOpen(true)}
             title="Open menu"
@@ -1409,7 +1423,7 @@ export default function Scholr() {
               border: "none",
               borderRadius: "50%", width: 44, height: 44,
               alignItems: "center", justifyContent: "center",
-              color: "#fff", cursor: "pointer",
+              color: "var(--on-acc)", cursor: "pointer",
               boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             }}
           ><Menu size={20} strokeWidth={1.75} /></button>
@@ -1465,10 +1479,7 @@ export default function Scholr() {
                   var(--bg), not var(--bg-base): hud.css forces bg-base inline
                   backgrounds transparent, which would defeat the scrolled fill. */}
               <div className="pane-heading" style={{
-                position: "sticky", top: 0, zIndex: 20,
-                background: paneScrolled ? "var(--bg)" : "transparent",
-                boxShadow: paneScrolled ? "0 -40px 0 0 var(--bg)" : "none",
-                transition: "background 120ms ease",
+                position: "relative",
                 paddingTop: 10, paddingBottom: 24,
                 display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
               }}>
@@ -1507,7 +1518,7 @@ export default function Scholr() {
                       style={{
                         background: "var(--acc)",
                         border: "none", borderRadius: 10, padding: "0 22px", height: 46,
-                        color: "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer",
+                        color: "var(--on-acc)", fontWeight: 600, fontSize: 15, cursor: "pointer",
                         fontFamily: FONT, flexShrink: 0,
                         boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
                         letterSpacing: "-0.01em",
@@ -1999,7 +2010,7 @@ export default function Scholr() {
                     <span style={{
                       position: "absolute", top: 4, right: "50%", marginRight: -22,
                       minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
-                      background: "var(--accent)", color: "#fff", fontSize: 9.5, fontWeight: 700,
+                      background: "var(--accent)", color: "var(--on-acc)", fontSize: 9.5, fontWeight: 700,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontFamily: FONT, border: "2px solid var(--bg-surface-1)",
                     }}>{dueCount > 9 ? "9+" : dueCount}</span>

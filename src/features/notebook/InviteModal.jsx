@@ -130,7 +130,7 @@ export function InviteModal({ notebookId, onClose }) {
                   style={{
                     background: "var(--acc)",
                     border: "none", borderRadius: 10,
-                    padding: "0 20px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
+                    padding: "0 20px", height: 38, color: "var(--on-acc)", fontWeight: 600, fontSize: 13,
                     cursor: status === "sending" ? "not-allowed" : "pointer",
                     fontFamily: FONT, opacity: status === "sending" ? 0.65 : 1,
                     boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
@@ -242,7 +242,7 @@ export function InviteLanding({ inviteInfo, onSignIn }) {
         style={{
           background: "var(--acc)",
           border: "none", borderRadius: 12,
-          padding: "0 24px", height: 44, color: "#fff", fontWeight: 600,
+          padding: "0 24px", height: 44, color: "var(--on-acc)", fontWeight: 600,
           fontSize: 14, cursor: "pointer", fontFamily: FONT,
           transition: "transform 0.15s, box-shadow 0.2s",
           boxShadow: "0 8px 24px var(--acc-bg-h), 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent)",

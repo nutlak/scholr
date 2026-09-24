@@ -205,6 +205,12 @@ html[data-theme="light"] code {
   --tr-xs:       0.004em;
   --tr-micro:    0.016em;
 
+  /* How far the main pane is scrolled, 0 at the top and 1 once the large
+     title has fully handed off to the compact one in the status strip. The
+     pane's scroll handler writes it; hud.css reads it. Declared here so the
+     first paint has a value and nothing starts out invisible. */
+  --pane-scroll: 0;
+
   /* ── Leading, inverse to size ──────────────────────────────────────────
      Tight on headlines, open on body. */
   --lh-display: 1.04;

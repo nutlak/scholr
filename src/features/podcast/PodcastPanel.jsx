@@ -95,7 +95,7 @@ function PodcastPlayer({ podcast, onShare }) {
           className="btn-press"
           style={{
             width: 44, height: 44, minWidth: 44, borderRadius: "50%",
-            background: "var(--accent)", border: "none", color: "#fff",
+            background: "var(--accent)", border: "none", color: "var(--on-acc)",
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}

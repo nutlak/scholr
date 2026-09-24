@@ -128,7 +128,7 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
   display: flex; align-items: center; gap: 12px; flex-wrap: nowrap;
   white-space: nowrap; height: 36px; padding: 0 16px; margin: 0;
   background: transparent;
-  border: 0; border-bottom: 1px solid var(--border-subtle);
+  border: 0;
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 11px; letter-spacing: 0.10em; font-weight: 600;
   color: var(--text-tertiary);
@@ -174,12 +174,30 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
      Shared and Starred. The scrolled backdrop and its shadow go with it; both
      existed only to fake an opaque strip. */
   .hud-bar {
-    background: var(--bg-base);
+    /* A material, not a painted bar. Content does pass under this strip, and
+       the first fix for that was to make it opaque — which works, but reads as
+       a lid sitting on the page. Translucency plus blur keeps the sense that
+       there is one continuous surface underneath, which is the whole point of
+       the treatment: chrome that floats over content rather than replacing it.
+       The saturate is what stops blurred colour going muddy. */
+    background: color-mix(in srgb, var(--bg-base) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     /* .pane-heading carries z-index: 20 for its sticky-scrolled backdrop. Once
        it scrolls rather than sticks, that z-index paints its contents — most
        visibly the profile avatar — on top of this strip on the way past. The
        strip is chrome and outranks scrolling content. */
     z-index: 30;
+  }
+  /* A scroll edge rather than a rule. A hard 1px line under floating chrome
+     draws a border where there is no boundary; a short fade says "this is the
+     edge of the material" and disappears when nothing is under it. */
+  .hud-bar::after {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 100%;
+    height: 12px; pointer-events: none;
+    background: linear-gradient(to bottom,
+      color-mix(in srgb, var(--bg-base) 55%, transparent), transparent);
   }
   .pane-heading {
     /* relative, not static: .mobile-header-avatar is position:absolute against

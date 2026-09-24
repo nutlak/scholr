@@ -120,10 +120,23 @@
 }
 
 /* ── Generic interactive helpers ──────────────────────────────────── */
+/* Press feedback is asymmetric on purpose: instant going down, settled coming
+   back up. Easing *into* the press puts 120ms between the finger and the
+   response, which is the exact latency that makes an interface stop feeling
+   direct — the press should already have happened by the time you notice it.
+   The release can afford to be smooth, because nobody is waiting on it.
+
+   Scale rather than translate: a button pushed into the surface reads as
+   physical; one nudged down a pixel reads as a layout shift. */
 .btn-press {
-  transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+  transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.18s ease, background 0.18s ease,
+              border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
 }
-.btn-press:active:not(:disabled) { transform: translateY(1px); }
+.btn-press:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 0ms;
+}
 
 .lift-card {
   transition:

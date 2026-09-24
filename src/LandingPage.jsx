@@ -686,8 +686,8 @@ export default function LandingPage({ onSignIn }) {
           {/* Headline — single line at widescreen */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 72px)",
-            fontWeight: 700, lineHeight: 1.05,
-            fontFamily: FONT_HEADING, letterSpacing: "-0.025em",
+            fontWeight: 700, lineHeight: "var(--lh-display)",
+            fontFamily: FONT_HEADING, letterSpacing: "var(--tr-display)",
             marginBottom: 22,
             maxWidth: "100%",
             whiteSpace: "normal",

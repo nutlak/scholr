@@ -190,6 +190,28 @@ html[data-theme="light"] code {
   --fs-xs:      12.5px; /* secondary/meta */
   --fs-micro:   11px;   /* eyebrow labels, letterspaced */
 
+  /* ── Tracking, paired to the size above ────────────────────────────────
+     Letters read further apart as type grows, so display sizes need negative
+     tracking and small sizes need a touch of positive. One letter-spacing
+     value reused across a scale is wrong at both ends — it is either loose on
+     the headline or tight on the caption. Each step carries its own. */
+  --tr-display: -0.032em;
+  --tr-h1:      -0.026em;
+  --tr-h2:      -0.020em;
+  --tr-h3:      -0.015em;
+  --tr-body:    -0.006em;
+  --tr-md:       0em;
+  --tr-sm:       0em;
+  --tr-xs:       0.004em;
+  --tr-micro:    0.016em;
+
+  /* ── Leading, inverse to size ──────────────────────────────────────────
+     Tight on headlines, open on body. */
+  --lh-display: 1.04;
+  --lh-h1:      1.12;
+  --lh-body:    1.55;
+  --lh-dense:   1.35;
+
   /* ── Spacing scale ─────────────────────────────────────────────────────
      4px base. The editorial half of this design is mostly sp-5 and up. */
   --sp-1:  4px;
@@ -897,3 +919,44 @@ select:focus:not(:focus-visible) { outline: none; }
 /* Status sits inline with the notebook title on mobile only. */
 .nb-status-inline { display: none; }
 @media (min-width: 700px) { .nb-status-inline { display: inline-flex; } }
+
+/* ── Reduced transparency ──────────────────────────────────────────────────
+   Turning chrome into a material assumes the person wants a material. Some
+   don't — blur behind text is exactly what this setting exists to switch off.
+   Make the surfaces solid and drop the blur rather than ignoring it. */
+@media (prefers-reduced-transparency: reduce) {
+  .hud-bar,
+  .mobile-tab-bar,
+  .mobile-sheet-overlay,
+  .mobile-sheet {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .hud-bar        { background: var(--bg-base) !important; }
+  .mobile-tab-bar { background: var(--bg-surface-1) !important; }
+  .mobile-sheet-overlay { background: rgba(6, 6, 8, 0.96) !important; }
+  .hud-bar::after { display: none; }
+}
+
+/* ── Increased contrast ────────────────────────────────────────────────────
+   Near-solid surfaces with a defined border, and text at full strength. The
+   secondary text steps exist to create hierarchy; when someone asks for
+   contrast, hierarchy is the thing they are willing to trade. */
+@media (prefers-contrast: more) {
+  :root {
+    --t2: rgba(240, 237, 231, 0.94);
+    --t3: rgba(240, 237, 231, 0.82);
+    --t4: rgba(240, 237, 231, 0.70);
+    --text-secondary: rgba(240, 237, 231, 0.94);
+    --text-tertiary:  rgba(240, 237, 231, 0.82);
+    --border:         rgba(240, 237, 231, 0.34);
+    --border-default: rgba(240, 237, 231, 0.34);
+    --border-subtle:  rgba(240, 237, 231, 0.22);
+    --card-border:    rgba(240, 237, 231, 0.30);
+  }
+  .hud-bar, .mobile-tab-bar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--bg-base);
+  }
+}

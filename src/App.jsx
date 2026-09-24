@@ -1475,7 +1475,8 @@ export default function Scholr() {
                 <div className="dash-heading">
                   <div className="greeting-text" style={{
                     fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
-                    fontFamily: FONT_HEADING, letterSpacing: "-0.022em", lineHeight: 1.15,
+                    fontFamily: FONT_HEADING,
+                    letterSpacing: "var(--tr-display)", lineHeight: "var(--lh-display)",
                     display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
                   }}>
                     {activeView === "dashboard" ? greeting.text : viewLabel}

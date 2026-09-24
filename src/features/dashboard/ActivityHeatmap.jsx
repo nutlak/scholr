@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Share2 } from "lucide-react";
-import { FONT } from "../../lib/theme.js";
+import { FONT, MONO } from "../../lib/theme.js";
 import { ShareStreakCard } from "./ShareStreakCard.jsx";
 
 export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
@@ -244,7 +244,13 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
-            <div style={{ fontSize: 16, fontWeight: 600, color, fontFamily: FONT, lineHeight: 1 }}>{val}</div>
+            {/* The figure is a readout, so it takes the strip's voice: mono and
+                tabular, steady as the streak ticks over. Its caption stays in
+                the UI face — mono is for things you measure, not for words. */}
+            <div style={{
+              fontSize: 17, fontWeight: 600, color, fontFamily: MONO, lineHeight: 1,
+              fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+            }}>{val}</div>
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
           </div>
         ))}

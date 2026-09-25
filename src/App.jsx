@@ -12,16 +12,19 @@ import NotificationsBell from "./NotificationsBell.jsx";
 // Lazy: only renders during an active review session. A static import here also
 // defeated NotebookView's lazy() of FlashcardsPanel from this same module.
 const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { Star, Bell, Plus, Search, FileText, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, BookOpen, Layers, LogOut, AlertTriangle, Check, X, Menu, Notebook, RefreshCw, Trash2, UserPlus, AtSign, FolderPlus, CreditCard } from "lucide-react";
 import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
-import { NotebookView } from "./features/notebook/NotebookView.jsx";
+// Lazy: 52kB of source that only matters once a notebook is open, and never
+// for anyone still on the landing page.
+const NotebookView = lazy(() => import("./features/notebook/NotebookView.jsx").then(m => ({ default: m.NotebookView })));
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
 import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx";
 import { ClassSyllabusModal } from "./features/classes/ClassSyllabusModal.jsx";
-import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
+import { ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
+// Lazy: the only thing that needs the drag library, and reordering classes is
+// not something anyone does in their first second on the page.
+const SortableClassList = lazy(() => import("./features/classes/SortableClassList.jsx").then(m => ({ default: m.SortableClassList })));
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { MobileTabBar } from "./features/shell/MobileTabBar.jsx";
 import { MobileProfileSheet } from "./features/shell/MobileProfileSheet.jsx";
@@ -41,7 +44,7 @@ import { EmptyState } from "./ui/EmptyState.jsx";
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
-import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
+import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, sameUser, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
@@ -120,9 +123,6 @@ export default function Scholr() {
   const [expandedClassId, setExpandedClassId] = useState(null);
   // Require a 4px drag before activating so taps/clicks on the card body
   // don't accidentally start drags from the handle press.
-  const dndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
-  );
   const [classUnitsCache, setClassUnitsCache] = useState({});
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [showSyllabusModal, setShowSyllabusModal] = useState(false);
@@ -174,17 +174,32 @@ export default function Scholr() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [profileOpen]);
 
+  // Supabase hands back a NEW object for the same person on every auth event,
+  // and this component sets the user from both getSession() and
+  // onAuthStateChange — which both fire on a single sign-in. Every effect keyed
+  // on `user` therefore ran twice for one identity, and with StrictMode's
+  // double-invoke on top that was 52 API requests to paint one dashboard
+  // against a six-connection browser limit: the last of them landed seven
+  // seconds in, and the streak rail shifted the layout at 2.5s.
+  //
+  // Fixed here rather than by keying eight effects on user?.id, which would
+  // have made every one of their dependency lists a lie. Hold the previous
+  // object when it describes the same person, and `user` is simply stable.
+  const setUserStable = useCallback(next => {
+    setUser(prev => (sameUser(prev, next) ? prev : next));
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      setUserStable(session?.user ?? null);
       setAuthReady(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") { setShowPasswordReset(true); return; }
-      setUser(session?.user ?? null);
+      setUserStable(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [setUserStable]);
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/invite\/([^/]+)/);
@@ -238,6 +253,8 @@ export default function Scholr() {
       .catch(console.error);
   }, [pendingInviteToken, user, authReady]);
 
+  // Fourteen requests, keyed on `user`. See setUserStable: the identity of that
+  // object is what decides whether this runs once or three times.
   useEffect(() => {
     if (!user || !authReady) return;
     const name = getDisplayName(user);
@@ -293,9 +310,17 @@ export default function Scholr() {
       .catch(err => { console.warn("getMyUsername failed:", err?.message); setMyUsername(undefined); });
     api.getDueCount().then(d => setDueCount(d?.count ?? 0)).catch(() => {});
 
-    // Mark today as an "active" day for the streak. Fire-and-forget; we still
-    // refresh the heatmap *after* this resolves so today shows immediately.
-    // Module-scoped flag prevents duplicate calls on auth state churn.
+    // Mark today as an "active" day for the streak, then re-read the heatmap so
+    // today's square is filled in.
+    //
+    // The re-read used to be the ONLY read, chained off trackVisit's .finally —
+    // two round trips in series for the panel that sits at the top of the rail,
+    // which is why the streak arrived 2.5s in and shifted the layout under it.
+    // Fetch it straight away as well: the first response paints the streak
+    // immediately and is correct in every case except today's own square, and
+    // the second overwrites it a moment later. Module-scoped flag keeps
+    // trackVisit itself to once per session.
+    api.getActivityHeatmap().then(setHeatmap).catch(console.error);
     if (!_visitTrackedThisSession) {
       _visitTrackedThisSession = true;
       const dateLabel = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
@@ -304,8 +329,6 @@ export default function Scholr() {
         .finally(() => {
           api.getActivityHeatmap().then(setHeatmap).catch(console.error);
         });
-    } else {
-      api.getActivityHeatmap().then(setHeatmap).catch(console.error);
     }
     api.getFriendsLeaderboard().then(setLeaderboard).catch(console.error);
 
@@ -708,14 +731,10 @@ export default function Scholr() {
     }
   }
 
-  async function handleReorderClassesDnd(event) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = classes.findIndex(c => c.id === active.id);
-    const newIndex = classes.findIndex(c => c.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return;
+  // Takes the reordered array, not a drag event: the library lives behind a
+  // lazy boundary and this side does not need to know it exists.
+  async function handleReorderClasses(next) {
     const prev = classes;
-    const next = arrayMove(classes, oldIndex, newIndex);
     setClasses(next);                          // optimistic
     try {
       await api.reorderClasses(next.map(c => c.id));
@@ -881,7 +900,7 @@ export default function Scholr() {
 
       {authReady && !user && !showPasswordReset && (showAuth || showInviteAuth) && (
         <AuthModal initialTab={authIntent} onAuth={(u) => {
-          setShowAuth(false); setShowInviteAuth(false); setUser(u);
+          setShowAuth(false); setShowInviteAuth(false); setUserStable(u);
           // Land the freshly-authed user in the app. On the app origin this is just a
           // URL tidy-up; the marketing-host branch is a defensive fallback (shouldn't fire).
           if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/app`; return; }
@@ -1371,6 +1390,7 @@ export default function Scholr() {
           ><Menu size={20} strokeWidth={1.75} /></button>
           {activeNb ? (
             <div style={{ height: "100%", animation: "fadeIn 0.3s ease" }}>
+              <Suspense fallback={null}>
               <NotebookView
                 nb={activeNb}
                 currentUserId={user?.id}
@@ -1385,6 +1405,7 @@ export default function Scholr() {
                   setTimeout(() => setToast(""), 3000);
                 }}
               />
+              </Suspense>
             </div>
 
           ) : activeView === "settings" ? (
@@ -1551,36 +1572,25 @@ export default function Scholr() {
                         fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
                         marginBottom: 6,
                       }}>Classes</div>
-                    <DndContext
-                      sensors={dndSensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleReorderClassesDnd}
-                    >
-                      <SortableContext
-                        items={filteredClasses.map(c => c.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 40 }}>
-                          {filteredClasses.map(cls => (
-                            <SortableClassCard
-                              key={cls.id}
-                              cls={cls}
-                              dragDisabled={!!search}
-                              expanded={expandedClassId === cls.id}
-                              units={classUnitsCache[cls.id] ?? null}
-                              onToggle={() => handleToggleClass(cls.id)}
-                              onChangeColor={color => handleChangeClassColor(cls.id, color)}
-                              onOpenUnit={unit => openUnitWithClassColor(unit, cls.color)}
-                              onViewSyllabus={() => openClassSyllabus(cls.id)}
-                              onImportSyllabus={() => setSyllabusForClass(cls)}
-                              onNewUnit={() => setNewUnitFor({ classId: cls.id, classTitle: cls.title })}
-                              onDeleteClass={() => setDeleteClassTarget(cls)}
-                              onUnitStatusChange={(unit, status) => handleSetStatus(unit, status)}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
+                    <Suspense fallback={<div style={{ minHeight: 120 }} />}>
+                      <SortableClassList
+                        classes={filteredClasses}
+                        dragDisabled={!!search}
+                        onReorder={handleReorderClasses}
+                        cardProps={cls => ({
+                          expanded: expandedClassId === cls.id,
+                          units: classUnitsCache[cls.id] ?? null,
+                          onToggle: () => handleToggleClass(cls.id),
+                          onChangeColor: color => handleChangeClassColor(cls.id, color),
+                          onOpenUnit: unit => openUnitWithClassColor(unit, cls.color),
+                          onViewSyllabus: () => openClassSyllabus(cls.id),
+                          onImportSyllabus: () => setSyllabusForClass(cls),
+                          onNewUnit: () => setNewUnitFor({ classId: cls.id, classTitle: cls.title }),
+                          onDeleteClass: () => setDeleteClassTarget(cls),
+                          onUnitStatusChange: (unit, status) => handleSetStatus(unit, status),
+                        })}
+                      />
+                    </Suspense>
                     </>
                   )
 

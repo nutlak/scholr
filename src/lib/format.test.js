@@ -1,11 +1,7 @@
 // Run with: npm test   (node:test — no framework, no config)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  formatPodcastTime, memberLabel, getDisplayName, dueDateTone,
-  computeStreak, streakAtRiskFromHeatmap, notifLine, dropdownShiftX,
-  getGreeting, greetingBand, GREETINGS, QUOTES,
-} from "./format.js";
+import { formatPodcastTime, memberLabel, getDisplayName, dueDateTone, computeStreak, streakAtRiskFromHeatmap, notifLine, dropdownShiftX, getGreeting, greetingBand, GREETINGS, QUOTES, sameUser } from "./format.js";
 
 // Days back from local midnight, keyed the way computeStreak keys them.
 function daysAgo(n) {
@@ -160,4 +156,45 @@ test("greeting and quote pools have no duplicates and offer real variety", () =>
   assert.equal(new Set(QUOTES.map(q => q.text)).size, QUOTES.length, "duplicate quote text");
   // quotes carry their own punctuation from the render side, not baked in
   for (const q of QUOTES) assert.ok(!q.text.startsWith("“"), `${q.text} should not embed quote marks`);
+});
+
+// ── sameUser ────────────────────────────────────────────────────────────────
+// Supabase mints a fresh object for the same person on every auth event, and
+// the app sets the user from two places that both fire on one sign-in. If this
+// says "different", every effect keyed on `user` re-runs and the dashboard
+// refetches everything it already has.
+test("sameUser: a fresh object for the same person is the same person", () => {
+  const a = { id: "u1", email: "a@b.c", user_metadata: { full_name: "Ada L" } };
+  const b = { id: "u1", email: "a@b.c", user_metadata: { full_name: "Ada L" } };
+  assert.notEqual(a, b, "the two objects really are distinct");
+  assert.equal(sameUser(a, b), true);
+});
+
+test("sameUser: identical reference short-circuits", () => {
+  const a = { id: "u1" };
+  assert.equal(sameUser(a, a), true);
+});
+
+test("sameUser: a different id is a different person", () => {
+  assert.equal(sameUser({ id: "u1" }, { id: "u2" }), false);
+});
+
+test("sameUser: fields the UI actually reads still count as a change", () => {
+  const base = { id: "u1", email: "a@b.c", user_metadata: { full_name: "Ada L" } };
+  assert.equal(sameUser(base, { ...base, email: "new@b.c" }), false, "email is rendered");
+  assert.equal(sameUser(base, { ...base, user_metadata: { full_name: "Ada Lovelace" } }), false,
+    "full_name drives getDisplayName");
+});
+
+test("sameUser: signing out and in are both changes", () => {
+  const u = { id: "u1", email: "a@b.c" };
+  assert.equal(sameUser(u, null), false);
+  assert.equal(sameUser(null, u), false);
+  assert.equal(sameUser(null, null), true, "still signed out is no change");
+});
+
+test("sameUser: metadata absent on one side is still a change", () => {
+  const withName = { id: "u1", email: "a@b.c", user_metadata: { full_name: "Ada" } };
+  const without  = { id: "u1", email: "a@b.c" };
+  assert.equal(sameUser(withName, without), false);
 });

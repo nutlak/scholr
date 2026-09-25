@@ -7,14 +7,26 @@ import { unsubTokenValid } from "../email.js";
 export const router = Router();
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-// ── Public aggregate stats (landing-page social proof) — cached 5 min ─────────
+// ── Public aggregate stats (landing-page social proof) ───────────────────────
+// Three aggregates over growing tables: two `count: "exact"` scans plus an
+// admin listUsers. Measured cold at 4.8 SECONDS, and it only gets slower as the
+// tables grow. It was already cached for 5 minutes, which hid it from everyone
+// except whoever arrived first after an expiry — and that person is exactly the
+// one you care about, because this feeds the landing page.
+//
+// So the cache is stale-while-revalidate: an expired entry is still served
+// immediately and a refresh runs behind it. And a single in-flight promise is
+// shared, because "cache expired" is a thundering herd — every visitor who
+// arrives during those 4.8s used to start their own copy of the same three
+// queries.
+const STATS_TTL_MS = 5 * 60 * 1000;
 let statsCache = { data: null, at: 0 };
+let statsInFlight = null;
 
-router.get("/api/stats/public", async (req, res) => {
-  try {
-    if (statsCache.data && Date.now() - statsCache.at < 5 * 60 * 1000) {
-      return res.json(statsCache.data);
-    }
+async function refreshStats() {
+  // One refresh at a time, whoever asks.
+  if (statsInFlight) return statsInFlight;
+  statsInFlight = (async () => {
     const [usersRes, nbRes, notesRes] = await Promise.all([
       supabase.auth.admin.listUsers({ page: 1, perPage: 1 }),
       supabase.from("notebooks").select("*", { count: "exact", head: true }),
@@ -26,12 +38,32 @@ router.get("/api/stats/public", async (req, res) => {
       noteCount:     notesRes.count ?? 0,
     };
     statsCache = { data, at: Date.now() };
-    res.json(data);
+    return data;
+  })().finally(() => { statsInFlight = null; });
+  return statsInFlight;
+}
+
+router.get("/api/stats/public", async (req, res) => {
+  const fresh = statsCache.data && Date.now() - statsCache.at < STATS_TTL_MS;
+  if (statsCache.data) {
+    // Serve what we have, now. If it has gone stale, start the refresh behind
+    // this response rather than in front of it — a five-minute-old visitor
+    // count is social proof, not a readout, and nobody should wait on it.
+    if (!fresh) refreshStats().catch(err => console.error("[stats/public] refresh", err.message));
+    return res.json(statsCache.data);
+  }
+  // Cold start only: nothing to serve yet, so this one request does wait.
+  try {
+    res.json(await refreshStats());
   } catch (err) {
     console.error("[stats/public]", err.message);
     res.json({ userCount: 0, notebookCount: 0, noteCount: 0, fallback: true });
   }
 });
+
+// Warm it at boot so even that first visitor gets a cached answer. Failure is
+// fine — the request path still falls back to computing it on demand.
+refreshStats().catch(() => {});
 
 router.get("/api/email/unsubscribe", (req, res) => {
   const u = encodeURIComponent(String(req.query.u || ""));

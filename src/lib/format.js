@@ -42,6 +42,19 @@ export function memberLabel(m) {
   return local.charAt(0).toUpperCase() + local.slice(1);
 }
 
+// Whether two auth-user objects describe the same person AS THIS APP SEES THEM.
+// Supabase mints a fresh object on every auth event, so identity comparison is
+// useless for deciding whether anything actually changed. The id settles who it
+// is; email and full_name are the only other fields the UI reads, so a change
+// to either still counts as different and still propagates.
+export function sameUser(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.id === b.id
+    && a.email === b.email
+    && a.user_metadata?.full_name === b.user_metadata?.full_name;
+}
+
 export function getDisplayName(user) {
   return user?.user_metadata?.full_name
     || user?.email?.split("@")[0]

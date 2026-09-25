@@ -1,6 +1,4 @@
 import { useRef, useState } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Calendar, ChevronRight, Trash2, Upload, X } from "lucide-react";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
@@ -317,52 +315,9 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
     </div>
   );
 }
-// Wraps ClassCard with dnd-kit sortable behavior. The drag listeners are
-// bound to the handle (not the wrapper) so clicking the card body still
-// opens it. While dragging: slight scale, drop shadow, lifted z-index.
-export function SortableClassCard({ cls, dragDisabled, ...rest }) {
-  const {
-    attributes, listeners, setNodeRef, transform, transition, isDragging,
-  } = useSortable({ id: cls.id, disabled: dragDisabled });
-
-  // Compose the transform with a small scale while dragging.
-  const scaled = isDragging && transform
-    ? { ...transform, scaleX: 1.02, scaleY: 1.02 }
-    : transform;
-
-  const style = {
-    position: "relative",
-    transform: CSS.Transform.toString(scaled),
-    transition,
-    opacity: isDragging ? 0.85 : 1,
-    zIndex: isDragging ? 10 : "auto",
-    boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.35)" : "none",
-    borderRadius: isDragging ? 6 : 0,
-    background: isDragging ? "var(--bg-surface-1)" : "transparent",
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`sortable-class-row${isDragging ? " is-dragging" : ""}`}
-    >
-      {!dragDisabled && (
-        <button
-          type="button"
-          className="class-drag-handle"
-          aria-label="Drag to reorder class"
-          title="Drag to reorder"
-          {...attributes}
-          {...listeners}
-        >
-          ⠿
-        </button>
-      )}
-      <ClassCard cls={cls} {...rest} />
-    </div>
-  );
-}
+// SortableClassCard used to live here. It moved to SortableClassList.jsx so
+// that this module — which ClassModals.jsx and App.jsx both import — no longer
+// pulls the drag library into the entry chunk.
 export function ColorSwatchPicker({ value, onChange }) {
   return (
     <div className="color-swatch-grid" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

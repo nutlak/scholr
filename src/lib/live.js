@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "../supabase.js";
+import { api } from "../api.js";
 
 // Supabase Realtime, built into supabase-js — no new dependency, and the CSP
 // already allows wss://…supabase.co. Two live primitives sit here:
@@ -38,6 +39,48 @@ export function useIncomingPresence(myUserId, onPing) {
 // Tell my friends my presence changed. One fire-and-forget REST broadcast for
 // the whole fan-out (no per-friend channel juggling). Best-effort by design —
 // a dropped ping just means a friend updates on their next poll instead.
+/* The whole friend-presence loop as one hook: the 60s heartbeat that says
+ * "I'm here, in this notebook", the realtime ping that says a friend's presence
+ * changed, and the outgoing ping that tells them mine did.
+ *
+ * `friendsVersion` is the refresh signal — bump it and FriendsRow and the
+ * sidebar refetch the AUTHORIZED endpoints. It is a counter rather than the
+ * data itself precisely so no presence state is cached client-side: every
+ * filter stays server-side.
+ *
+ * The ref exists because pingFriends needs the CURRENT ids from inside an
+ * effect that must not re-run when they change — depending on the array would
+ * ping every time the list is refetched, which is every ping.
+ */
+export function useFriendPresence(userId, activeNotebookId) {
+  const [friendIds, setFriendIds] = useState([]);
+  const [friendsVersion, setFriendsVersion] = useState(0);
+  const friendIdsRef = useRef([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const beat = () => api.sendHeartbeat(activeNotebookId).catch(() => {});
+    beat();
+    const id = setInterval(beat, 60_000);
+    return () => clearInterval(id);
+  }, [userId, activeNotebookId]);
+
+  useEffect(() => { friendIdsRef.current = friendIds; }, [friendIds]);
+  useIncomingPresence(userId, () => setFriendsVersion(v => v + 1));
+
+  const hasFriends = friendIds.length > 0;
+  useEffect(() => {
+    if (userId && hasFriends) pingFriends(friendIdsRef.current);
+  }, [userId, activeNotebookId, hasFriends]);
+
+  return {
+    friendIds,
+    setFriendIds,
+    friendsVersion,
+    bumpFriendsVersion: useCallback(() => setFriendsVersion(v => v + 1), []),
+  };
+}
+
 export async function pingFriends(friendIds) {
   const ids = (friendIds || []).filter(Boolean);
   if (!ids.length) return;

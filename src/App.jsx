@@ -23,6 +23,8 @@ import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx"
 import { ClassSyllabusModal } from "./features/classes/ClassSyllabusModal.jsx";
 import { SortableClassCard, ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
+import { MobileTabBar } from "./features/shell/MobileTabBar.jsx";
+import { MobileProfileSheet } from "./features/shell/MobileProfileSheet.jsx";
 
 import { SettingsView } from "./features/settings/SettingsView.jsx";
 import { NotebookCard } from "./features/dashboard/NotebookCard.jsx";
@@ -38,14 +40,16 @@ import { EmptyState } from "./ui/EmptyState.jsx";
 
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
-import { FONT, FONT_HEADING, ACCENT_PRESETS } from "./lib/theme.js";
+import { FONT, FONT_HEADING } from "./lib/theme.js";
 import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
 import { useServerFeature } from "./lib/useServerFeature.js";
 
-import { useIncomingPresence, pingFriends } from "./lib/live.js";
+import { useFriendPresence } from "./lib/live.js";
+import { useAppearance } from "./lib/useAppearance.js";
+import { useCanonicalUrl } from "./lib/useCanonicalUrl.js";
 
 // Module-scoped guard: only ever call /track-visit once per page load,
 // even if the auth effect re-runs (e.g. on sign-in after landing-page view).
@@ -136,14 +140,7 @@ export default function Scholr() {
   const [showInviteAuth, setShowInviteAuth] = useState(false);
   const [heatmap, setHeatmap] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
-  const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem("scholr-theme") ?? "dark"; }
-    catch { return "dark"; }
-  });
-  const [accentColor, setAccentColor] = useState(() => {
-    try { return localStorage.getItem("scholr-accent") ?? "#A78BFA"; }
-    catch { return "var(--acc)"; }
-  });
+  const { theme, setTheme, accentColor, setAccentColor } = useAppearance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
@@ -151,9 +148,6 @@ export default function Scholr() {
   const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
   const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | terminal status (e.g. already-handled)
   const [feedError, setFeedError] = useState({});         // notifId -> inline error shown ALONGSIDE the buttons (retryable)
-  const [friendsVersion, setFriendsVersion] = useState(0); // bump to refresh FriendsSidebarSection
-  const [friendIds, setFriendIds] = useState([]); // lifted from FriendsRow, for Realtime presence fan-out
-  const friendIdsRef = useRef([]);
   const [notifVersion, setNotifVersion] = useState(0);     // bump to make NotificationsBell reload
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -166,35 +160,6 @@ export default function Scholr() {
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
   const [confirmDeleteNb, setConfirmDeleteNb] = useState(null); // notebook pending deletion
   const [deletingNb, setDeletingNb] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    try { localStorage.setItem("scholr-theme", theme); } catch { /* ignore */ }
-  }, [theme]);
-
-  // Depends on `theme` as well as the colour. These land as inline properties
-  // on <html>, which outrank html[data-theme="light"] — so before this, picking
-  // an accent pinned the dark-theme hue into the light theme and there was no
-  // way for the stylesheet to take it back. Every accent-coloured label in
-  // light mode sat at about 2.4:1 as a result.
-  useEffect(() => {
-    const preset = ACCENT_PRESETS.find(p => p.color === accentColor) ?? ACCENT_PRESETS[0];
-    const light = theme === "light";
-    const acc = light ? preset.light : preset.color;
-    const root = document.documentElement;
-    root.style.setProperty("--acc", acc);
-    root.style.setProperty("--acc-h", light ? preset.lightHover : preset.hover);
-    root.style.setProperty("--acc-d", light ? preset.lightHover : preset.deep);
-    root.style.setProperty("--acc-bg", `${acc}14`);
-    root.style.setProperty("--acc-bg-h", `${acc}24`);
-    root.style.setProperty("--acc-glow", `${acc}38`);
-    // The aliases too. Components use --accent and --acc interchangeably, and
-    // only --acc was being written — so choosing any non-purple accent left
-    // half the app still purple, in both themes.
-    root.style.setProperty("--accent", acc);
-    root.style.setProperty("--accent-soft", `${acc}14`);
-    try { localStorage.setItem("scholr-accent", accentColor); } catch { /* ignore */ }
-  }, [accentColor, theme]);
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -400,24 +365,13 @@ export default function Scholr() {
   // Online presence: heartbeat on mount + every 60s while the app is open. It
   // carries the notebook currently open so friends see "Noah is in Bio 101"
   // rather than a bare green dot — that's what turns presence into company.
-  useEffect(() => {
-    if (!user) return;
-    const beat = () => api.sendHeartbeat(activeNb?.id).catch(() => {});
-    beat();
-    const id = setInterval(beat, 60_000);
-    return () => clearInterval(id);
-  }, [user, activeNb?.id]);
-
-  // Realtime presence (additive over the heartbeat): a friend nudging my topic
-  // means "someone's presence changed" — refetch the authorized friends list
-  // now instead of waiting up to 60s. And when MY presence changes (login, or
-  // switching the notebook I'm in), nudge my friends so they update in ~1s too.
-  useEffect(() => { friendIdsRef.current = friendIds; }, [friendIds]);
-  useIncomingPresence(user?.id, () => setFriendsVersion(v => v + 1));
-  const hasFriends = friendIds.length > 0;
-  useEffect(() => {
-    if (user?.id && hasFriends) pingFriends(friendIdsRef.current);
-  }, [user?.id, activeNb?.id, hasFriends]);
+  // Heartbeat + realtime presence + the refresh counter, all in one place:
+  // additive over the 60s poll so a friend coming online shows in ~1s, with
+  // polling left as the safety net if Realtime is unavailable.
+  // friendIds itself stays inside the hook — FriendsRow owns the list and
+  // hands it up via onFriendIds purely so presence can fan out to it.
+  const { setFriendIds, friendsVersion, bumpFriendsVersion } =
+    useFriendPresence(user?.id, activeNb?.id);
 
   // Unified notifications feed — reload helper + 30s polling so the dashboard
   // Recent Activity stays live (the bell polls its own copy independently).
@@ -434,31 +388,7 @@ export default function Scholr() {
     return () => clearInterval(id);
   }, [user, refreshNotifications]);
 
-  // The AuthModal's initial open state + tab are derived from ?auth=… in the
-  // useState initializers above (so it paints open immediately). Here we only
-  // strip the param from the URL on mount, so a later refresh won't reopen it.
-  // No setState → no cascading re-render.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!new URLSearchParams(window.location.search).get("auth")) return;
-    window.history.replaceState({}, "", (window.location.pathname + window.location.hash) || "/");
-  }, []);
-
-  // Canonical app URL: the logged-in app lives at /app, the landing/auth at /.
-  // Keep the address bar consistent with auth state once it's known. This is a
-  // cosmetic replaceState — the app renders by `user`, not by path, and the
-  // public routes (/s/:slug, /privacy, /terms, /copyright) return earlier — so
-  // matching ONLY the exact root and /app leaves every other route untouched.
-  useEffect(() => {
-    if (!authReady || IS_MARKETING_HOST) return;
-    const path = window.location.pathname;
-    const tail = window.location.search + window.location.hash;
-    if (user && path === "/") {
-      window.history.replaceState({}, "", "/app" + tail);   // logged-in at root → /app
-    } else if (!user && path === "/app") {
-      window.history.replaceState({}, "", "/" + tail);      // logged-out at /app → /
-    }
-  }, [authReady, user]);
+  useCanonicalUrl(authReady, user);
 
   // Streak gamification: bump longest streak + fire one-time milestone modals.
   // All setState happens inside async callbacks (never synchronously in the
@@ -623,13 +553,13 @@ export default function Scholr() {
       // and the feed re-fetched (the server deleted this notification, so it
       // won't come back).
       dropRow();
-      setFriendsVersion(v => v + 1);
+      bumpFriendsVersion();
       refreshNotifications();
     } catch (err) {
       if (err.status === 409 || err.code === "already_actioned") {
         // Already handled elsewhere — show a brief terminal note, then clear.
         setFeedActioned(s => ({ ...s, [notifId]: err.message || "Already handled" }));
-        setFriendsVersion(v => v + 1);
+        bumpFriendsVersion();
         setTimeout(() => { dropRow(); refreshNotifications(); }, 1400);
       } else {
         // Generic failure — restore the actionable buttons and show an inline
@@ -1560,7 +1490,7 @@ export default function Scholr() {
                   {activeView === "dashboard" && (
                     <FriendsRow
                       refreshSignal={friendsVersion}
-                      onChanged={() => setFriendsVersion(v => v + 1)}
+                      onChanged={() => bumpFriendsVersion()}
                       onOpenNotebook={openNotebookById}
                       onFriendIds={setFriendIds}
                     />
@@ -1999,138 +1929,25 @@ export default function Scholr() {
 
         {/* ── Mobile bottom tab bar (mobile-only, hidden on desktop via CSS) ── */}
         {user && !activeNb && (
-          <nav className="mobile-tab-bar mobile-only" aria-label="Primary">
-            {[
-              { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-              { id: "my-notes",  label: "Notes",     Icon: FileText },
-              { id: "shared",    label: "Shared",    Icon: Users },
-              { id: "starred",   label: "Starred",   Icon: Star },
-            ].map(({ id, label, Icon }) => {
-              const active = activeView === id;
-              return (
-                <button
-                  key={id}
-                  className={`mobile-tab ${active ? "active" : ""}`}
-                  onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); }}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={label}
-                  style={{ position: "relative" }}
-                >
-                  <Icon size={22} strokeWidth={active ? 2 : 1.75} />
-                  <span>{label}</span>
-                  {id === "dashboard" && dueCount > 0 && (
-                    <span style={{
-                      position: "absolute", top: 4, right: "50%", marginRight: -22,
-                      minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
-                      background: "var(--accent)", color: "var(--on-acc)", fontSize: 9.5, fontWeight: 700,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontFamily: FONT, border: "2px solid var(--bg-surface-1)",
-                    }}>{dueCount > 9 ? "9+" : dueCount}</span>
-                  )}
-                </button>
-              );
-            })}
-            {/* Friends opens a bottom sheet (sidebar is hidden on mobile) */}
-            <button
-              className="mobile-tab"
-              onClick={() => setShowMobileFriends(true)}
-              aria-label="Friends"
-            >
-              <UserPlus size={22} strokeWidth={1.75} />
-              <span>Friends</span>
-            </button>
-          </nav>
+          <MobileTabBar
+            activeView={activeView}
+            dueCount={dueCount}
+            onSelect={id => { setActiveView(id); setActiveNb(null); setSearch(""); }}
+            onOpenFriends={() => setShowMobileFriends(true)}
+          />
         )}
 
-        {/* ── Mobile profile sheet ──────────────────────────────────────────
-            The desktop profile dropdown lives inside .sidebar, and .sidebar is
-            display:none at phone width — so tapping the avatar toggled a menu
-            that rendered into a hidden subtree. Settings and Sign out were
-            unreachable on a phone entirely: no theme, no notification toggle,
-            no Squad, no delete account, and no way to log out.
-
-            Same profileOpen state, a second presentation. mobile-only keeps the
-            two from ever showing at once, so desktop is untouched. The legal
-            links come along because they live in that same hidden sidebar. */}
+        {/* The phone's account menu — same profileOpen state as the desktop
+            dropdown, a second presentation. mobile-only keeps them from ever
+            showing at once. */}
         {profileOpen && (
-          <div
-            className="mobile-sheet-overlay mobile-only"
-            onClick={e => { if (e.target === e.currentTarget) setProfileOpen(false); }}
-            style={{
-              position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
-              backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-              justifyContent: "center", zIndex: 1000,
-            }}
-          >
-            <div className="mobile-sheet" style={{
-              background: "var(--bg-base)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: 18, width: "100%", maxWidth: 440,
-              padding: "8px 12px 20px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 4px 10px" }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 15, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT,
-                    letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>{displayName}</div>
-                  <div style={{
-                    fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 1,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>{user?.email}</div>
-                </div>
-                <button
-                  onClick={() => setProfileOpen(false)}
-                  aria-label="Close"
-                  style={{
-                    marginLeft: "auto", background: "transparent",
-                    border: "1px solid var(--border-default)", borderRadius: 8,
-                    width: 44, height: 44, cursor: "pointer",
-                    color: "var(--text-secondary)", fontSize: 16,
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  }}
-                >✕</button>
-              </div>
-
-              <button
-                onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
-                style={{
-                  width: "100%", minHeight: 52, borderRadius: 12, marginBottom: 8,
-                  display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
-                  background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
-                  color: "var(--text-primary)", fontSize: 14, fontWeight: 600,
-                  fontFamily: FONT, cursor: "pointer",
-                }}
-              >
-                <Settings size={17} strokeWidth={1.85} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                Settings
-              </button>
-
-              <button
-                onClick={() => { setProfileOpen(false); handleLogout(); }}
-                style={{
-                  width: "100%", minHeight: 52, borderRadius: 12,
-                  display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
-                  background: "transparent", border: "1px solid var(--border-default)",
-                  color: "var(--danger)", fontSize: 14, fontWeight: 600,
-                  fontFamily: FONT, cursor: "pointer",
-                }}
-              >
-                <LogOut size={17} strokeWidth={1.85} style={{ flexShrink: 0 }} />
-                Sign out
-              </button>
-
-              <div style={{
-                display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center",
-                marginTop: 16, fontSize: 12, fontFamily: FONT,
-              }}>
-                <a href="/privacy" style={{ color: "var(--text-tertiary)" }}>Privacy</a>
-                <a href="/terms" style={{ color: "var(--text-tertiary)" }}>Terms</a>
-                <a href="/copyright" style={{ color: "var(--text-tertiary)" }}>Copyright</a>
-                <a href="mailto:support@scholr.dev" style={{ color: "var(--text-tertiary)" }}>Contact</a>
-              </div>
-            </div>
-          </div>
+          <MobileProfileSheet
+            displayName={displayName}
+            email={user?.email}
+            onClose={() => setProfileOpen(false)}
+            onSettings={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
+            onSignOut={() => { setProfileOpen(false); handleLogout(); }}
+          />
         )}
 
         {/* ── Mobile friends sheet (sidebar Friends/Best Friends, in a bottom sheet) ── */}
@@ -2164,7 +1981,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsRow refreshSignal={friendsVersion} onChanged={() => setFriendsVersion(v => v + 1)} onOpenNotebook={openNotebookById} onFriendIds={setFriendIds} />
+              <FriendsRow refreshSignal={friendsVersion} onChanged={() => bumpFriendsVersion()} onOpenNotebook={openNotebookById} onFriendIds={setFriendIds} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

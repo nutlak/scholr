@@ -5,6 +5,7 @@ import './hud.css'
 import App from './App.jsx'
 import { captureReferral } from './lib/referral.js'
 import { installSheetDrag } from './lib/sheetDrag.js'
+import { installNoStickyHover } from './lib/noStickyHover.js'
 
 // Runs before render so a /@username or ?ref= link is banked (and stripped
 // from the URL) no matter which screen the app lands on. Never blocks the
@@ -36,6 +37,11 @@ for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
 // One delegated listener for every bottom sheet in the app, rather than a
 // gesture prop threaded through fourteen components.
 installSheetDrag()
+
+// Touch fakes a hover on first tap and leaves it applied. ~50 onMouseEnter
+// handlers in this app set inline styles that no media query can reach, so the
+// synthetic events are swallowed once, here, before React sees them.
+installNoStickyHover()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

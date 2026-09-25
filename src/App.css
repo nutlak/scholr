@@ -708,3 +708,42 @@
     corner-shape: superellipse(4);
   }
 }
+
+/* ── Mobile platform baseline ─────────────────────────────────────────────
+   The handful of declarations that decide whether a phone reads this as an
+   installed app or as a web page. Each is here for one specific tell. */
+
+html {
+  /* The translucent grey box iOS and Android paint over anything tappable —
+     the loudest "this is a website" signal there is. It was set on four
+     individual components; it belongs once, at the root, because every
+     tappable element in the app has its own :active feedback already. */
+  -webkit-tap-highlight-color: transparent;
+  /* Safari inflates font sizes when a phone is turned to landscape, which
+     silently breaks a type scale that was chosen deliberately. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* A long press on a native control never selects its label, and never pops the
+   copy/share callout. Controls only — body text, error messages and anything
+   with an id or a code in it must stay selectable, so this deliberately does
+   not go on body. */
+button,
+a[role="button"],
+[role="button"],
+.mobile-tab,
+.seg-option,
+.class-drag-handle {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Scroll inside a sheet must not hand the gesture back to whatever is behind
+   it once it reaches the end — `contain` keeps the sheet's own bounce, which
+   feels right, and stops the page underneath moving, which does not. */
+.mobile-sheet,
+.tool-modal-card {
+  overscroll-behavior: contain;
+}

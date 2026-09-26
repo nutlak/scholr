@@ -31,11 +31,16 @@ function FeynmanScoreRing({ score }) {
   return (
     <div style={{ position: "relative", width: 88, height: 88, flexShrink: 0 }}>
       <svg width="88" height="88" viewBox="0 0 80 80" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--bg-surface-3)" strokeWidth="7" />
+        {/* stroke goes through style, not the bare attribute: a CSS variable
+            (color here is a literal "var(--success)" etc.) doesn't reliably
+            resolve inside an SVG presentation attribute in Safari, so this
+            ring could render with an invisible track and an invisible
+            progress arc there while looking correct in Chrome. */}
+        <circle cx="40" cy="40" r={r} strokeWidth="7" style={{ fill: "none", stroke: "var(--bg-surface-3)" }} />
         <circle
-          cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+          cx="40" cy="40" r={r} strokeWidth="7" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1s cubic-bezier(.2,.7,.3,1)" }}
+          style={{ fill: "none", stroke: color, transition: "stroke-dashoffset 1s cubic-bezier(.2,.7,.3,1)" }}
         />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>

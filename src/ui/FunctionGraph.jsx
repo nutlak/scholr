@@ -31,6 +31,27 @@ import {
  * throwing — this sits inside model-generated content, and a malformed graph
  * spec must degrade to "no graph here", never to a broken notebook page.
  */
+// Every colour and font here is a CSS custom property, and it goes through
+// `style`, never a bare presentation attribute (`fill="var(--acc)"`). Chrome
+// resolves var() in a plain SVG attribute fine, which is exactly why this
+// shipped once already looking correct — but Safari has a long-standing,
+// still-live WebKit bug where a CSS variable inside a presentation attribute
+// does not reliably resolve, so the same markup can render with invisible
+// axes and an invisible curve there while looking perfect in Chrome. The
+// `style` prop is the one path every engine agrees on, and it is already the
+// house convention CLAUDE.md documents for the rest of the app — this file
+// just didn't follow it the first time.
+const plotBg     = { fill: "var(--bg-surface-2, var(--s2))", stroke: "var(--border)" };
+const gridLine   = { stroke: "var(--border-subtle)" };
+const tickLabel  = { fontFamily: "var(--mono)", fill: "var(--text-tertiary)" };
+const axisLine   = { stroke: "var(--text-tertiary)" };
+const midlineSty = { stroke: "var(--text-tertiary)" };
+const asymptote  = { stroke: "var(--danger)" };
+const guideSty   = { stroke: "var(--text-tertiary)" };
+const curveSty   = { stroke: "var(--acc)" };
+const pointDot   = { fill: "var(--text-primary)" };
+const pointLabel = { fontFamily: "var(--mono)", fill: "var(--text-primary)", stroke: "var(--bg-surface-2, var(--s2))" };
+
 export function FunctionGraph({ spec }) {
   const built = useMemo(() => buildGraph(spec), [spec]);
   if (!built) return null;
@@ -61,17 +82,15 @@ export function FunctionGraph({ spec }) {
           </clipPath>
         </defs>
 
-        <rect x={pxLeft} y={pxTop} width={pxRight - pxLeft} height={pxBottom - pxTop}
-              fill="var(--bg-surface-2, var(--s2))" stroke="var(--border)" />
+        <rect x={pxLeft} y={pxTop} width={pxRight - pxLeft} height={pxBottom - pxTop} style={plotBg} />
 
         {/* Gridlines + tick labels */}
         {xTicks.map((t, i) => {
           const [px] = toPx(t.value, 0);
           return (
             <g key={`xt${i}`}>
-              <line x1={px} y1={pxTop} x2={px} y2={pxBottom} stroke="var(--border-subtle)" strokeWidth={1} />
-              <text x={px} y={pxBottom + 18} textAnchor="middle" fontSize={12}
-                    fontFamily="var(--mono)" fill="var(--text-tertiary)">{t.label}</text>
+              <line x1={px} y1={pxTop} x2={px} y2={pxBottom} strokeWidth={1} style={gridLine} />
+              <text x={px} y={pxBottom + 18} textAnchor="middle" fontSize={12} style={tickLabel}>{t.label}</text>
             </g>
           );
         })}
@@ -79,50 +98,48 @@ export function FunctionGraph({ spec }) {
           const [, py] = toPx(0, v);
           return (
             <g key={`yt${i}`}>
-              <line x1={pxLeft} y1={py} x2={pxRight} y2={py} stroke="var(--border-subtle)" strokeWidth={1} />
-              <text x={pxLeft - 8} y={py + 4} textAnchor="end" fontSize={12}
-                    fontFamily="var(--mono)" fill="var(--text-tertiary)">{fmtNum(v)}</text>
+              <line x1={pxLeft} y1={py} x2={pxRight} y2={py} strokeWidth={1} style={gridLine} />
+              <text x={pxLeft - 8} y={py + 4} textAnchor="end" fontSize={12} style={tickLabel}>{fmtNum(v)}</text>
             </g>
           );
         })}
 
         {/* Axes, only where they actually fall inside the visible range */}
         {yMin <= 0 && 0 <= yMax && (
-          <line x1={pxLeft} y1={toPx(0, 0)[1]} x2={pxRight} y2={toPx(0, 0)[1]} stroke="var(--text-tertiary)" strokeWidth={1.3} />
+          <line x1={pxLeft} y1={toPx(0, 0)[1]} x2={pxRight} y2={toPx(0, 0)[1]} strokeWidth={1.3} style={axisLine} />
         )}
         {xMin <= 0 && 0 <= xMax && (
-          <line x1={toPx(0, 0)[0]} y1={pxTop} x2={toPx(0, 0)[0]} y2={pxBottom} stroke="var(--text-tertiary)" strokeWidth={1.3} />
+          <line x1={toPx(0, 0)[0]} y1={pxTop} x2={toPx(0, 0)[0]} y2={pxBottom} strokeWidth={1.3} style={axisLine} />
         )}
 
         {midlineY != null && (
           <line x1={pxLeft} y1={toPx(0, midlineY)[1]} x2={pxRight} y2={toPx(0, midlineY)[1]}
-                stroke="var(--text-tertiary)" strokeWidth={1} strokeDasharray="5 5" />
+                strokeWidth={1} strokeDasharray="5 5" style={midlineSty} />
         )}
 
         {asymptoteXs.map((x, i) => (
           <line key={`asym${i}`} x1={toPx(x, 0)[0]} y1={pxTop} x2={toPx(x, 0)[0]} y2={pxBottom}
-                stroke="var(--danger)" strokeWidth={1.3} strokeDasharray="6 5" />
+                strokeWidth={1.3} strokeDasharray="6 5" style={asymptote} />
         ))}
 
         {guidePath && (
-          <path d={guidePath} clipPath={`url(#${clipId})`} fill="none"
-                stroke="var(--text-tertiary)" strokeWidth={1.4} strokeDasharray="3 4" />
+          <path d={guidePath} clipPath={`url(#${clipId})`}
+                strokeWidth={1.4} strokeDasharray="3 4" style={{ ...guideSty, fill: "none" }} />
         )}
 
         {mainPaths.map((d, i) => (
-          <path key={i} d={d} clipPath={`url(#${clipId})`} fill="none"
-                stroke="var(--acc)" strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" />
+          <path key={i} d={d} clipPath={`url(#${clipId})`}
+                strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" style={{ ...curveSty, fill: "none" }} />
         ))}
 
         {points.map((p, i) => {
           const [px, py] = toPx(p.x, p.y);
           return (
             <g key={i}>
-              <circle cx={px} cy={py} r={3.6} fill="var(--text-primary)" />
+              <circle cx={px} cy={py} r={3.6} style={pointDot} />
               {p.label && (
                 <text x={px} y={py - 10} textAnchor="middle" fontSize={12.5}
-                      fontFamily="var(--mono)" fill="var(--text-primary)"
-                      paintOrder="stroke" stroke="var(--bg-surface-2, var(--s2))" strokeWidth={4}>
+                      paintOrder="stroke" strokeWidth={4} style={pointLabel}>
                   {p.label}
                 </text>
               )}

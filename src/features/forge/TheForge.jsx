@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { ArrowLeft, BookOpen, Check, ChevronRight, ClipboardList, File, HelpCircle, Layers, RefreshCw, Sparkles, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, ChevronRight, ClipboardList, File, HelpCircle, Layers, LineChart, RefreshCw, Sparkles, X } from "lucide-react";
 import { FONT, MONO } from "../../lib/theme.js";
+import { WorksheetView } from "./WorksheetView.jsx";
 
 const FORGE_ACTIONS = [
   { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "#34D399", desc: "Comprehensive review" },
   { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "#FBBF24", desc: "Practice questions"  },
   { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "#F472B6", desc: "Quick recall cards"  },
   { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "#60A5FA", desc: "Concise overview"    },
+  { id: "worksheet",   label: "Worksheet",   Icon: LineChart,      color: "#22D3EE", desc: "Worked problems + graphs" },
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
@@ -23,6 +25,10 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
   const [isFlipped, setIsFlipped]         = useState(false);
   const [shuffledOrder, setShuffledOrder] = useState(null);
   const [learned, setLearned]             = useState(new Set());
+
+  // Worksheet state — parsed { title, problems: [...] }, same "structured
+  // JSON alongside plain text" split as flashcards above.
+  const [worksheet, setWorksheet] = useState(null);
 
   // UI
   const [copied, setCopied]             = useState(false);
@@ -51,7 +57,7 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
 
   async function generate(selectedAction) {
     setAction(selectedAction);
-    setContent(""); setFlashcards(null);
+    setContent(""); setFlashcards(null); setWorksheet(null);
     setCardIdx(0); setIsFlipped(false); setShuffledOrder(null); setLearned(new Set());
     setGenerating(true);
 
@@ -68,6 +74,18 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
                 const cards = JSON.parse(m[0]);
                 setFlashcards(cards);
                 setShuffledOrder(cards.map((_, i) => i));
+              } else { setContent(full); }
+            } catch { setContent(full); }
+          } else if (selectedAction === "worksheet") {
+            // Same object-shaped extraction as the array-shaped one above —
+            // the model occasionally wraps JSON in a sentence despite being
+            // told not to, so pulling out the {...} rather than trusting the
+            // whole response to parse is what makes that harmless.
+            try {
+              const m = full.match(/\{[\s\S]*\}/);
+              const parsed = m && JSON.parse(m[0]);
+              if (parsed && Array.isArray(parsed.problems)) {
+                setWorksheet(parsed);
               } else { setContent(full); }
             } catch { setContent(full); }
           } else {
@@ -122,10 +140,16 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
     if (o.type === "flashcards") {
       try {
         const m = o.content.match(/\[[\s\S]*\]/);
-        if (m) { const cards = JSON.parse(m[0]); setFlashcards(cards); setShuffledOrder(cards.map((_, i) => i)); setCardIdx(0); setIsFlipped(false); setLearned(new Set()); return; }
+        if (m) { const cards = JSON.parse(m[0]); setFlashcards(cards); setShuffledOrder(cards.map((_, i) => i)); setCardIdx(0); setIsFlipped(false); setLearned(new Set()); setWorksheet(null); return; }
+      } catch { /* not JSON — fall through to the plain-text branch */ }
+    } else if (o.type === "worksheet") {
+      try {
+        const m = o.content.match(/\{[\s\S]*\}/);
+        const parsed = m && JSON.parse(m[0]);
+        if (parsed && Array.isArray(parsed.problems)) { setWorksheet(parsed); setFlashcards(null); return; }
       } catch { /* not JSON — fall through to the plain-text branch */ }
     }
-    setFlashcards(null);
+    setFlashcards(null); setWorksheet(null);
   }
 
   const currentOrder = shuffledOrder ?? (flashcards?.map((_, i) => i) ?? []);
@@ -144,6 +168,7 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
   function toggleLearned() { setLearned(p => { const n = new Set(p); n.has(realIdx) ? n.delete(realIdx) : n.add(realIdx); return n; }); }
 
   const showCards = action === "flashcards" && flashcards && !generating;
+  const showWorksheet = action === "worksheet" && worksheet && !generating;
   const activeColor = action ? FORGE_BY_ID[action]?.color ?? "var(--acc)" : "var(--acc)";
 
   return (
@@ -372,6 +397,8 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
             }}><ChevronRight size={16} strokeWidth={1.75} /></button>
           </div>
         </div>
+      ) : showWorksheet ? (
+        <WorksheetView worksheet={worksheet} />
       ) : (
         <>
           <div ref={contentRef} style={{

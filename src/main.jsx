@@ -6,6 +6,8 @@ import App from './App.jsx'
 import { captureReferral } from './lib/referral.js'
 import { installSheetDrag } from './lib/sheetDrag.js'
 import { installNoStickyHover } from './lib/noStickyHover.js'
+import { installGlobalErrorReporting } from './lib/reportError.js'
+import { ErrorBoundary } from './ui/ErrorBoundary.jsx'
 
 // Runs before render so a /@username or ?ref= link is banked (and stripped
 // from the URL) no matter which screen the app lands on. Never blocks the
@@ -34,6 +36,12 @@ for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
   document.addEventListener(type, e => e.preventDefault(), { passive: false })
 }
 
+// React's error boundary only sees errors thrown during render. Handlers,
+// timers, async code and unhandled rejections never reach it, and those are
+// most real failures — so they are caught here instead. Installed before
+// render so a crash during the first paint is still recorded.
+installGlobalErrorReporting()
+
 // One delegated listener for every bottom sheet in the app, rather than a
 // gesture prop threaded through fourteen components.
 installSheetDrag()
@@ -45,6 +53,8 @@ installNoStickyHover()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

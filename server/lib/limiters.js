@@ -15,7 +15,7 @@ import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 100,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "rate_limited", message: "Too many requests, please slow down." },
 });
@@ -26,7 +26,7 @@ export const globalLimiter = rateLimit({
 export const aiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 20,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "rate_limited", message: "Too many requests, please slow down." },
 });
@@ -34,28 +34,28 @@ export const aiLimiter = rateLimit({
 export const queryLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many requests. Please try again later." },
 });
 export const forgeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many Forge requests. Please try again later." },
 });
 export const checkoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 5,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many checkout attempts. Please wait a moment." },
 });
 export const webhookLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 1000,
-  keyGenerator: req => ipKeyGenerator(req),
+  keyGenerator: req => ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
 });
 
@@ -66,12 +66,12 @@ export const webhookLimiter = rateLimit({
 // brute-forcing. send-otp also gets a separate per-IP limiter chained in front.
 export const otpEmailKey = (req) => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-  return email ? `email:${email}` : ipKeyGenerator(req);
+  return email ? `email:${email}` : ipKeyGenerator(req.ip);
 };
 export const otpIpLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 15,
-  keyGenerator: req => ipKeyGenerator(req),
+  keyGenerator: req => ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many requests from this network. Please wait and try again." },
 });
@@ -92,7 +92,7 @@ export const otpVerifyLimiter = rateLimit({
 export const resetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
-  keyGenerator: req => ipKeyGenerator(req), // reset-password body has no email; key by IP
+  keyGenerator: req => ipKeyGenerator(req.ip), // reset-password body has no email; key by IP
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many reset attempts. Please wait before trying again." },
 });
@@ -101,21 +101,34 @@ export const resetLimiter = rateLimit({
 export const feynmanLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 60,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many grading requests. Please slow down." },
 });
 export const explainLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 60,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many requests. Please slow down." },
 });
 export const podcastLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req),
+  keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
   message: { error: "Too many podcast generations this hour. Please try again later." },
+});
+
+// Client crash reports. Unauthenticated by design — a render error that happens
+// on the landing page or before a session resolves is exactly the one worth
+// hearing about — so the global 100/min is far too generous for a write
+// endpoint anyone can reach. A browser that is genuinely broken sends one
+// report per load; ten a minute is already an app in a crash loop.
+export const errorReportLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: req => ipKeyGenerator(req.ip),
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: "rate_limited" },
 });

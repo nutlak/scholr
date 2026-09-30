@@ -3,6 +3,8 @@ import { Router } from "express";
 import { supabase } from "../lib/supabase.js";
 import { unsubPage } from "../lib/urls.js";
 import { unsubTokenValid } from "../email.js";
+import { relayJarvis } from "../lib/analytics.js";
+import { errorReportLimiter } from "../lib/limiters.js";
 
 export const router = Router();
 
@@ -87,4 +89,41 @@ router.post("/api/email/unsubscribe", async (req, res) => {
     await supabase.from("profiles").upsert({ user_id: u, email_unsubscribed: true }, { onConflict: "user_id" });
   } catch (e) { console.error("[unsubscribe]", e.message); }
   res.set("Content-Type", "text/html").send(unsubPage(`<p style="color:#A0A0B8;">You're unsubscribed. You won't get onboarding emails anymore.</p>`));
+});
+
+// ── Client crash reports ─────────────────────────────────────────────────────
+// Before this existed, an unhandled render error white-screened the app and the
+// only record of it was a console nobody reads. This is deliberately
+// first-party: the reports land in scholr's own jarvis_events table, so there
+// is no third-party processor in the path and nothing to add to the privacy
+// policy for a product with under-18 users.
+//
+// Unauthenticated, because the crashes worth hearing about include the ones
+// that happen before a session resolves. That makes every field below
+// attacker-controlled: nothing is trusted, everything is a truncated string,
+// and no field is ever interpolated anywhere. errorReportLimiter caps it.
+const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : null);
+
+router.post("/api/client-error", errorReportLimiter, (req, res) => {
+  const b = req.body ?? {};
+  const message = str(b.message, 500);
+  // Nothing useful to store without a message, and an empty report is the
+  // shape a scanner sends.
+  if (!message) return res.status(400).json({ error: "message_required" });
+
+  relayJarvis("client_error", {
+    message,
+    kind:           str(b.kind, 40),          // "render" | "window" | "promise"
+    stack:          str(b.stack, 4000),
+    componentStack: str(b.componentStack, 4000),
+    path:           str(b.path, 300),         // pathname only — the client strips query/hash
+    userAgent:      str(req.get("user-agent"), 300),
+    appVersion:     str(b.appVersion, 60),
+    userId:         str(b.userId, 64),        // claimed, not verified — for grouping only
+    at:             new Date().toISOString(),
+  });
+
+  // 204 whatever happened: the client is already broken and must never retry
+  // or branch on this.
+  res.status(204).end();
 });

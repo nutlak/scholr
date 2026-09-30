@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, ChevronRight, FileDown, FileText, Hammer, Headphones, Image as ImageIcon, Layers, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, Hammer, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
@@ -23,12 +23,28 @@ const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => 
 // One source of truth for the notebook study tools. The header bar maps over
 // this to render its buttons, and ToolModal looks up title/subtitle/icon by id.
 // Adding a future tool (e.g. standalone flashcards) is a single entry here.
+//
+// Flat by design — this used to be five tools, one of which ("The Forge") was
+// itself a second five-item picker one level in, so reaching Worksheet was
+// two consecutive "pick one of five" screens behind a button that was ALSO
+// labelled "Forge". Noah's own words, after two rounds of screenshots trying
+// to find it: "put everything in the forge so its in one place." Every Forge
+// generation action is now its own row here, same level as Notes, Podcast and
+// Feynman — one list, one click. `panel: "forge"` + `forgeAction` is what a
+// row needs to open TheForge already generating; the review-mode Flashcards
+// deck and the Forge one-off "make me a set" are genuinely different features
+// that happen to share a name, so their subtitles say which is which rather
+// than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "notes",   text: "Notes",   label: "Unit notes",   title: "Unit Notes",    Icon: FileText,   tint: "#60A5FA", subtitle: "Shared notes for everyone in this notebook" },
-  { id: "forge",   text: "Forge",   label: "The Forge",    title: "The Forge",     Icon: Hammer,     tint: "#A78BFA", subtitle: "Generate study guides, quizzes & flashcards from your notes" },
-  { id: "flashcards", text: "Cards", label: "Flashcards", title: "Flashcards",   Icon: Layers,     tint: "#F472B6", subtitle: "Spaced-repetition flashcards generated from your notes" },
-  { id: "podcast", text: "Podcast", label: "Podcast Mode", title: "Podcast",       Icon: Headphones, tint: "#34D399", subtitle: "A two-host AI audio overview of your notes" },
-  { id: "feynman", text: "Feynman", label: "Feynman Mode", title: "Feynman Mode",  Icon: Brain,      tint: "#FBBF24", subtitle: "Explain a concept in your words — Claude grades your understanding" },
+  { id: "notes",             text: "Notes",     label: "Unit notes",         title: "Unit Notes",         Icon: FileText,      tint: "#60A5FA", subtitle: "Shared notes for everyone in this notebook" },
+  { id: "forge:study_guide", text: "Guide",     label: "Study Guide",        title: "Study Guide",        Icon: BookOpen,      tint: "#34D399", subtitle: "A comprehensive review of your notes",        panel: "forge", forgeAction: "study_guide" },
+  { id: "forge:questions",   text: "Questions", label: "Questions",          title: "Questions",          Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions from your notes",          panel: "forge", forgeAction: "questions" },
+  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",          title: "Worksheet",          Icon: LineChart,     tint: "#22D3EE", subtitle: "Worked problems with real plotted graphs",    panel: "forge", forgeAction: "worksheet" },
+  { id: "forge:summary",     text: "Summary",   label: "Summary",            title: "Summary",            Icon: ClipboardList, tint: "#60A5FA", subtitle: "A concise overview of your notes",            panel: "forge", forgeAction: "summary" },
+  { id: "forge:flashcards",  text: "New set",   label: "Generate flashcards", title: "Generate Flashcards", Icon: Layers,       tint: "#F472B6", subtitle: "A fresh one-off set from your notes",         panel: "forge", forgeAction: "flashcards" },
+  { id: "flashcards",        text: "Cards",     label: "Flashcards",         title: "Flashcards",         Icon: Layers,        tint: "#F472B6", subtitle: "Your saved deck — review it over time" },
+  { id: "podcast",           text: "Podcast",   label: "Podcast Mode",       title: "Podcast",             Icon: Headphones,    tint: "#34D399", subtitle: "A two-host AI audio overview of your notes" },
+  { id: "feynman",           text: "Feynman",   label: "Feynman Mode",       title: "Feynman Mode",       Icon: Brain,         tint: "#FBBF24", subtitle: "Explain a concept in your words — Claude grades your understanding" },
 ];
 // Shown while a tool's chunk downloads. Tools are code-split because they are
 // only reachable behind a click, and together they were a large slice of a
@@ -1034,8 +1050,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           {activeTool === "notes" && (
             <UnitNotes notebookId={nb.id} currentUserId={currentUserId} tint={t} />
           )}
-          {activeTool === "forge" && (
-            <TheForge nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          {NB_TOOL_META[activeTool]?.panel === "forge" && (
+            <TheForge nb={nb} initialAction={NB_TOOL_META[activeTool].forgeAction} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           {activeTool === "flashcards" && (
             <FlashcardsPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />

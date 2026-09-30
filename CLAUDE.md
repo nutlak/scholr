@@ -10,7 +10,7 @@ ordering is deliberate — don't demote it.
 
 ```
 npx vite build          # must succeed
-npx eslint src server   # 0 errors; 9 pre-existing warnings are expected
+npx eslint src server   # 0 errors; 10 pre-existing warnings are expected
 npm test                # node --test, no React testing library
 ```
 

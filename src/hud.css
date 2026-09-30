@@ -359,13 +359,20 @@ html:not([data-theme="light"]) :focus-visible {
   /* Labels stay visible — an icon on its own is a guessing game. */
   .nb-action-text { display: inline !important; }
 
-  /* Five tools, five targets, every label spelled out. Replaces the single
-     "Forge" button on phones, which is now redundant. */
-  /* Bottom bar, under the composer: the chat is the screen, the tools sit
-     where the thumb already is. */
+  /* Every tool, every target, every label spelled out. Replaces the single
+     "Forge" button on phones, which is now redundant.
+     Bottom bar, under the composer: the chat is the screen, the tools sit
+     where the thumb already is.
+     auto-fill rather than a fixed repeat(5, 1fr): the registry this maps over
+     went from 5 tools to 9 the day Forge's five generation actions became
+     their own rows instead of a picker nested behind "The Forge" — a count
+     hardcoded into the grid is exactly the kind of thing that goes stale the
+     next time the list changes, silently squeezing whatever's added into
+     column widths sized for the old count. A 64px floor keeps each button's
+     label legible; the browser decides how many fit per row. */
   .nb-tool-strip {
     display: grid !important;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
     gap: 6px;
     margin: 10px 0 0;
     padding-top: 10px;

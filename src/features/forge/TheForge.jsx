@@ -13,7 +13,7 @@ const FORGE_ACTIONS = [
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
-export function TheForge({ nb, onToast, onUpgradeNeeded }) {
+export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
   const [action, setAction]         = useState(null);
   const [topic, setTopic]           = useState("");
   const [content, setContent]       = useState("");
@@ -107,6 +107,22 @@ export function TheForge({ nb, onToast, onUpgradeNeeded }) {
       setGenerating(false);
     }
   }
+
+  // Reached directly from the notebook's flat tool list (e.g. clicking
+  // "Worksheet" there, rather than opening a generic "Forge" panel and picking
+  // from its grid) — one click should mean one result, not a click that lands
+  // you back on the same picker you just chose from. Runs once per mount:
+  // ToolModal fully unmounts this component on close, so a later selection of
+  // a different action is a fresh mount with its own initialAction, never a
+  // stale re-fire. The picker grid stays visible underneath in case the
+  // person wants a different output from here without leaving the panel.
+  // Empty deps deliberately: initialAction is a mount-time prop, and generate
+  // is stable for the component's lifetime in every way that matters here —
+  // neither should re-trigger this on a later render.
+  useEffect(() => {
+    if (initialAction) generate(initialAction);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleCopy() {
     navigator.clipboard.writeText(content).then(() => {

@@ -36,6 +36,7 @@ import { PasswordResetModal } from "./features/account/PasswordResetModal.jsx";
 import { DeleteAccountModal } from "./features/account/DeleteAccountModal.jsx";
 import { TermsWall } from "./features/account/TermsWall.jsx";
 import { UpgradeModal } from "./features/billing/UpgradeModal.jsx";
+import { WelcomeProModal } from "./features/billing/WelcomeProModal.jsx";
 import { StreakMilestoneModal } from "./features/streak/StreakMilestoneModal.jsx";
 
 import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
@@ -158,6 +159,7 @@ export default function Scholr() {
     notebooksUsed: 0, notebooksLimit: 3,
   });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
+  const [welcomePlan, setWelcomePlan] = useState(null); // null | "pro" | "squad" — just paid, show what unlocked
   const [confirmDeleteNb, setConfirmDeleteNb] = useState(null); // notebook pending deletion
   const [deletingNb, setDeletingNb] = useState(false);
 
@@ -224,8 +226,7 @@ export default function Scholr() {
     api.joinSquad(token)
       .then(() => {
         setActiveView("settings");
-        setToast("You're in the squad — enjoy Pro!");
-        setTimeout(() => setToast(""), 4000);
+        setWelcomePlan("squad");
       })
       .catch(err => {
         setToast(err.message || "Couldn't join that squad.");
@@ -336,8 +337,7 @@ export default function Scholr() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("upgraded") === "true") {
       window.history.replaceState({}, "", "/app");
-      setToast("Welcome to scholr Pro!");
-      setTimeout(() => setToast(""), 4000);
+      setWelcomePlan("pro");
     }
   }, [user, authReady]);
 
@@ -380,8 +380,7 @@ export default function Scholr() {
     return onCheckoutReturn(status => {
       if (status !== "success") return;
       api.getSubscription().then(setSubscription).catch(console.error);
-      setToast("Welcome to scholr Pro!");
-      setTimeout(() => setToast(""), 4000);
+      setWelcomePlan("pro");
     });
   }, [user]);
 
@@ -988,6 +987,10 @@ export default function Scholr() {
           limitType={upgradeModal.limitType}
           onClose={() => setUpgradeModal(null)}
         />
+      )}
+
+      {welcomePlan && (
+        <WelcomeProModal plan={welcomePlan} onClose={() => setWelcomePlan(null)} />
       )}
 
       {/* The toast was green with a tick regardless of what it said, so

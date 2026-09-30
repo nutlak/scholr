@@ -90,7 +90,8 @@ Last updated: June 2, 2026
 Policy version: 2026-06-02
 
 Scholr ("Scholr," "we," "us," or "our") operates the website at scholr.dev and
-related study tools (the "Service"). This Privacy Policy explains what
+related study tools (the "Service"). Scholr is operated by Noah Butlak as an
+individual, not through a registered company. This Privacy Policy explains what
 information we collect, how we use it, who we share it with, and the choices you
 have. By using the Service, you agree to this Policy. Questions? Contact us at
 support@scholr.dev.
@@ -245,7 +246,8 @@ Terms version: 2026-06-02
 
 These Terms of Service ("Terms") are a binding agreement between you and Scholr
 ("Scholr," "we," "us," or "our") governing your use of the website at scholr.dev
-and related study tools (the "Service"). By creating an account or using the
+and related study tools (the "Service"). Scholr is operated by Noah Butlak as an
+individual, not through a registered company. By creating an account or using the
 Service, you agree to these Terms and to our Privacy Policy. If you do not agree,
 do not use the Service.
 
@@ -418,8 +420,10 @@ Policy version: 2026-06-02
 
 Scholr ("we," "us," or "our") respects the intellectual property rights of
 others and expects users of scholr.dev and our study tools (the "Service") to do
-the same. This policy explains how to report content you believe infringes your
-copyright and describes our policy toward repeat infringers. Scholr lets users
+the same. Scholr is operated by Noah Butlak as an individual, not through a
+registered company. This policy explains how to report content you believe
+infringes your copyright and describes our policy toward repeat infringers.
+Scholr lets users
 upload their own study material. Users are solely responsible for the content
 they upload and must not upload material they do not own or have permission to
 use (including textbooks, test-prep books, or other copyrighted works).

@@ -36,15 +36,15 @@ const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => 
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "notes",             text: "Notes",     label: "Unit notes",         title: "Unit Notes",         Icon: FileText,      tint: "#60A5FA", subtitle: "Shared notes for everyone in this notebook" },
-  { id: "forge:study_guide", text: "Guide",     label: "Study Guide",        title: "Study Guide",        Icon: BookOpen,      tint: "#34D399", subtitle: "A comprehensive review of your notes",        panel: "forge", forgeAction: "study_guide" },
-  { id: "forge:questions",   text: "Questions", label: "Questions",          title: "Questions",          Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions from your notes",          panel: "forge", forgeAction: "questions" },
+  { id: "notes",             text: "Notes",     label: "Unit notes",         title: "Unit Notes",         Icon: FileText,      tint: "#60A5FA", subtitle: "Shared with your group" },
+  { id: "forge:study_guide", text: "Guide",     label: "Study Guide",        title: "Study Guide",        Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                        panel: "forge", forgeAction: "study_guide" },
+  { id: "forge:questions",   text: "Questions", label: "Questions",          title: "Questions",          Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions",                          panel: "forge", forgeAction: "questions" },
   { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",          title: "Worksheet",          Icon: LineChart,     tint: "#22D3EE", subtitle: "Worked problems with real plotted graphs",    panel: "forge", forgeAction: "worksheet" },
-  { id: "forge:summary",     text: "Summary",   label: "Summary",            title: "Summary",            Icon: ClipboardList, tint: "#60A5FA", subtitle: "A concise overview of your notes",            panel: "forge", forgeAction: "summary" },
-  { id: "forge:flashcards",  text: "New set",   label: "Generate flashcards", title: "Generate Flashcards", Icon: Layers,       tint: "#F472B6", subtitle: "A fresh one-off set from your notes",         panel: "forge", forgeAction: "flashcards" },
-  { id: "flashcards",        text: "Cards",     label: "Flashcards",         title: "Flashcards",         Icon: Layers,        tint: "#F472B6", subtitle: "Your saved deck — review it over time" },
-  { id: "podcast",           text: "Podcast",   label: "Podcast Mode",       title: "Podcast",             Icon: Headphones,    tint: "#34D399", subtitle: "A two-host AI audio overview of your notes" },
-  { id: "feynman",           text: "Feynman",   label: "Feynman Mode",       title: "Feynman Mode",       Icon: Brain,         tint: "#FBBF24", subtitle: "Explain a concept in your words — Claude grades your understanding" },
+  { id: "forge:summary",     text: "Summary",   label: "Summary",            title: "Summary",            Icon: ClipboardList, tint: "#60A5FA", subtitle: "Concise overview",                            panel: "forge", forgeAction: "summary" },
+  { id: "forge:flashcards",  text: "New set",   label: "Generate flashcards", title: "Generate Flashcards", Icon: Layers,       tint: "#F472B6", subtitle: "One-off set, not saved",                      panel: "forge", forgeAction: "flashcards" },
+  { id: "flashcards",        text: "Cards",     label: "Flashcards",         title: "Flashcards",         Icon: Layers,        tint: "#F472B6", subtitle: "Your saved deck" },
+  { id: "podcast",           text: "Podcast",   label: "Podcast Mode",       title: "Podcast",             Icon: Headphones,    tint: "#34D399", subtitle: "Two-host audio overview" },
+  { id: "feynman",           text: "Feynman",   label: "Feynman Mode",       title: "Feynman Mode",       Icon: Brain,         tint: "#FBBF24", subtitle: "Explain it, get graded" },
 ];
 // Shown while a tool's chunk downloads. Tools are code-split because they are
 // only reachable behind a click, and together they were a large slice of a
@@ -1000,12 +1000,25 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           subtitle="Turn these notes into something you can study from"
           Icon={Hammer}
         >
-          <SheetMenu
-            items={NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => ({
-              id, label, description: subtitle, Icon, tint,
-              onSelect: () => { setSheet(null); setActiveTool(id); },
-            }))}
-          />
+          {/* A grid, not a list of nine large rows. Same card the generation
+              actions use one level in (TheForge's own picker) — reused here
+              rather than invented fresh, so the whole notebook's tools read
+              as one visual language instead of two different "pick one"
+              styles stacked on top of each other. */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => (
+              <button
+                key={id}
+                onClick={() => { setSheet(null); setActiveTool(id); }}
+                className="btn-press forge-action-btn"
+                style={{ "--btn-color": tint }}
+              >
+                <div className="forge-action-icon"><Icon size={16} strokeWidth={1.75} /></div>
+                <div style={{ fontSize: 12, fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{label}</div>
+                <div className="forge-action-desc">{subtitle}</div>
+              </button>
+            ))}
+          </div>
         </ToolModal>
       )}
 

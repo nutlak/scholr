@@ -1,5 +1,5 @@
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
-import { supabase } from "../../supabase.js";
+import { api } from "../../api.js";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -13,12 +13,12 @@ export function PasswordResetModal({ onDone }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (password !== confirm) { setError("Passwords don't match."); return; }
-    if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
+    if (password.length < 8)  { setError("Use at least 8 characters."); return; }
     setError("");
     setLoading(true);
     try {
-      const { error: err } = await supabase.auth.updateUser({ password });
-      if (err) throw err;
+      // Through the server, not supabase.auth.updateUser() — see api.changePassword.
+      await api.changePassword(password);
       onDone();
     } catch (err) {
       setError(err.message);
@@ -64,7 +64,7 @@ export function PasswordResetModal({ onDone }) {
               <input
                 type={reveal ? "text" : "password"} required autoFocus
                 value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Min 6 characters" style={{ ...inputBase, paddingRight: 46 }}
+                placeholder="At least 8 characters" style={{ ...inputBase, paddingRight: 46 }}
                 onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px var(--acc-bg-h)"; }}
                 onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
               />

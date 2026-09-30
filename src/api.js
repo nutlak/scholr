@@ -134,6 +134,20 @@ export const api = {
     return shapeNotebook(nb, displayName);
   },
 
+  // Every password change goes through the server so one policy (length,
+  // common-password and breach screening) applies to all of them — the browser
+  // calling supabase.auth.updateUser() directly would skip it entirely.
+  async changePassword(newPassword) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/auth/change-password`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ newPassword }),
+    });
+    if (!res.ok) throw await readError(res);
+    return res.json();
+  },
+
   async signOut() {
     // Tell the server first, then clear the local Supabase session
     const headers = await authHeaders();

@@ -4,6 +4,7 @@ import { recordConsent, relayJarvis, trackEvent } from "../lib/analytics.js";
 import { otpIpLimiter, otpSendEmailLimiter, otpVerifyLimiter, resetLimiter } from "../lib/limiters.js";
 import { removeNotebookImageFiles } from "../lib/notebooks.js";
 import { OTP_MAX_VERIFY_FAILS, generateOtp, generateToken, invalidateOldCodes, otpFailures } from "../lib/otp.js";
+import { checkPassword } from "../lib/password.js";
 import { supabase } from "../lib/supabase.js";
 import { sendOnboardingEmail, sendOtpEmail } from "../email.js";
 import { requireAuth } from "../lib/auth.js";
@@ -81,6 +82,12 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
 
   if (type === "signup") {
     if (!password) return res.status(400).json({ error: "password is required" });
+    // Same policy as reset — length, common-password and breach screening. The
+    // client checks this too, for the feedback, but the client's check is a
+    // convenience: this endpoint takes a password field straight from the
+    // request body, so the rule that counts is the one enforced here.
+    const pwError = await checkPassword(password, { email });
+    if (pwError) return res.status(400).json({ error: pwError });
     if (req.body?.termsAccepted !== true) {
       return res.status(400).json({ error: "You must be at least 13 and accept the Terms of Service and Privacy Policy to create an account." });
     }
@@ -189,7 +196,6 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
 router.post("/api/auth/reset-password", resetLimiter, async (req, res) => {
   const { resetToken, newPassword } = req.body;
   if (!resetToken || !newPassword) return res.status(400).json({ error: "resetToken and newPassword are required" });
-  if (newPassword.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
   const { data: row } = await supabase
     .from("verification_codes")
@@ -200,12 +206,38 @@ router.post("/api/auth/reset-password", resetLimiter, async (req, res) => {
 
   if (!row?.user_id) return res.status(400).json({ error: "Invalid or expired reset token" });
 
+  // Checked after the token, deliberately: this runs a network call and reveals
+  // which passwords are breached, so it stays behind proof that the caller
+  // actually holds a valid reset token rather than being a free oracle.
+  const pwError = await checkPassword(newPassword);
+  if (pwError) return res.status(400).json({ error: pwError });
+
   const { error: updateErr } = await supabase.auth.admin.updateUserById(row.user_id, { password: newPassword });
   if (updateErr) return res.status(500).json({ error: updateErr.message });
 
   // Consume the token so it can't be reused
   await supabase.from("verification_codes").update({ reset_token: null }).eq("reset_token", resetToken);
 
+  res.json({ ok: true });
+});
+
+// POST /api/auth/change-password — set a new password for the signed-in user
+//
+// Exists so that EVERY path that sets a password goes through one policy. The
+// in-app reset screen used to call supabase.auth.updateUser() straight from the
+// browser, which works but answers to Supabase's own minimum and nothing else —
+// so the breach and common-password screening applied at signup and at
+// token-based reset simply didn't exist on that path. Three ways to set a
+// password, two of them checked, is the same as none of them being checked.
+router.post("/api/auth/change-password", requireAuth, resetLimiter, async (req, res) => {
+  const { newPassword } = req.body ?? {};
+  if (!newPassword) return res.status(400).json({ error: "newPassword is required" });
+
+  const pwError = await checkPassword(newPassword, { email: req.user.email });
+  if (pwError) return res.status(400).json({ error: pwError });
+
+  const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password: newPassword });
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ ok: true });
 });
 

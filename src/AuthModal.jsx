@@ -226,7 +226,10 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   async function handleResetPassword(e) {
     e.preventDefault();
     if (newPassword !== confirmPassword) { setError("Passwords don't match."); return; }
-    if (newPassword.length < 6)          { setError("Password must be at least 6 characters."); return; }
+    // Mirrors the server's floor so the form doesn't accept something the API
+    // will reject. The server owns the real policy (breach + common-password
+    // screening); this is only here to fail fast on the obvious case.
+    if (newPassword.length < 8)          { setError("Use at least 8 characters."); return; }
     setError(""); setLoading(true);
     try {
       await apiPost("/api/auth/reset-password", { resetToken, newPassword });
@@ -382,7 +385,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
               <input
                 type={showNewPassword ? "text" : "password"} required autoFocus
                 value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                placeholder="Min 6 characters"
+                placeholder="At least 8 characters"
                 style={{ ...inputStyle, paddingRight: 46 }}
                 onFocus={focusPurple} onBlur={blurGray}
               />
@@ -549,7 +552,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
             <input
               type={showPassword ? "text" : "password"} required
               value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
+              placeholder="At least 8 characters"
               style={{ ...inputStyle, paddingRight: 46 }}
               onFocus={focusPurple} onBlur={blurGray}
             />

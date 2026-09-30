@@ -75,7 +75,15 @@ slightly positive at micro) and `--lh-*` (leading runs inverse to size).
 Spacing is `--sp-1`…`--sp-8`.
 
 Rounded, not hard-edged — the old global `border-radius: 0` and the corner
-bracket/cut-corner card chrome are gone. Flat surfaces with hairline borders;
+bracket/cut-corner card chrome are gone. Corners are continuous where it shows
+(`corner-shape: superellipse(4)` at 8–18px, behind `@supports`), and **nested
+corners are concentric**: a shape sitting inside a rounded shape takes the
+outer radius *minus* the gap between them, so both curves turn about the same
+centre rather than being two unrelated arcs that almost line up. Express it,
+don't hardcode both ends — `.seg-control` holds `--seg-r` and `--seg-pad` and
+the pill derives `calc(var(--seg-r) - var(--seg-pad))`, so the relationship
+survives someone changing the padding. It only bites when the inset is small
+relative to the radius; a centred icon with a loose gap doesn't need it. Flat surfaces with hairline borders;
 no gradients or glows on interactive surfaces. In-app buttons take
 `var(--acc)`, never a hardcoded gradient, or the token lever stops reaching
 them. The landing page is deliberately its own visual world and keeps its

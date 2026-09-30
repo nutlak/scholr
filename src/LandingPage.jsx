@@ -283,12 +283,32 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
   );
 }
 
-// Illustrative testimonials — representative early-stage social proof (standard
-// practice pre-scale; swap for real, attributable quotes as they come in).
-const TESTIMONIALS = [
-  { quote: "Derek explained cell division better than my AP Bio teacher did.", name: "Maya R.", role: "AP Biology" },
-  { quote: "Went from a C to a B+ after one week of Feynman Mode practice.", name: "Jake T.", role: "AP Chemistry" },
-  { quote: "My whole study group uses it. We share notebooks before every exam.", name: "Priya S.", role: "AP US History" },
+// These were three invented students with names, courses and a specific
+// grade-improvement claim ("went from a C to a B+"), labelled in a comment as
+// "illustrative... standard practice pre-scale". They are not standard
+// practice: the FTC's Rule on Consumer Reviews and Testimonials prohibits
+// fabricated endorsements outright and carries civil penalties, and an
+// unsubstantiated outcome claim is its own violation on top. On a paid product
+// aimed at minors, with nine real accounts at the time of writing, it was the
+// single largest piece of legal exposure on the site.
+//
+// Replaced with what the product actually does, in the moment it gets used. No
+// invented people, no outcome claims, nothing that needs substantiating —
+// every one of these describes a feature that exists and can be checked. When
+// real, attributable quotes come in, they can go back in this shape.
+const USE_CASES = [
+  {
+    when: "It's 11pm and the test is tomorrow",
+    what: "Upload the lecture slides and ask Derek what you're still shaky on. Answers come from your own notes, not from the internet's version of the topic.",
+  },
+  {
+    when: "The group chat is the study group",
+    what: "Share one notebook. Everyone gets the same notes and the same answers, and can see who's actually studying right now.",
+  },
+  {
+    when: "You think you understand it",
+    what: "Explain it in your own words in Feynman Mode and get told where the gaps are — before the exam finds them for you.",
+  },
 ];
 
 const FAQS = [
@@ -301,29 +321,21 @@ const FAQS = [
   { q: "Can I get Scholr on my phone?", a: "Yes — install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
 ];
 
-function TestimonialCard({ quote, name, role, idx }) {
+function UseCaseCard({ when, what, idx }) {
   const [ref, visible] = useFadeIn(idx * 60);
   return (
     <div ref={ref} style={{
       background: "var(--card-bg)", border: "1px solid var(--card-border)",
       borderRadius: 16, padding: 24,
-      display: "flex", flexDirection: "column", gap: 16,
+      display: "flex", flexDirection: "column", gap: 10,
       opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
-      <div style={{ fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.65, fontFamily: FONT }}>"{quote}"</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: "auto" }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: "50%",
-          background: "linear-gradient(135deg, var(--acc), var(--acc-d))",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontWeight: 700, fontSize: 14, fontFamily: FONT, flexShrink: 0,
-        }}>{name[0]}</div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>{name}</div>
-          <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>{role}</div>
-        </div>
-      </div>
+      <div style={{
+        fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
+        fontFamily: FONT_SERIF, letterSpacing: "-0.01em", lineHeight: 1.3,
+      }}>{when}</div>
+      <div style={{ fontSize: 14.5, color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: FONT }}>{what}</div>
     </div>
   );
 }
@@ -964,7 +976,7 @@ export default function LandingPage({ onSignIn }) {
       }}>
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
-            pill="Loved by students"
+            pill="How it gets used"
             title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#FBBF24" }}>before the exam</span></>}
             sub="Real study workflows, minus the busywork."
             accent="#FBBF24"
@@ -974,8 +986,8 @@ export default function LandingPage({ onSignIn }) {
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 16, marginTop: 56,
           }}>
-            {TESTIMONIALS.map((t, i) => (
-              <TestimonialCard key={t.name} {...t} idx={i} />
+            {USE_CASES.map((c, i) => (
+              <UseCaseCard key={c.when} {...c} idx={i} />
             ))}
           </div>
         </div>

@@ -585,8 +585,18 @@
      columns make the geometry true by construction. */
   display: grid;
   grid-template-columns: repeat(var(--seg-n, 3), 1fr);
-  padding: 2px;
-  border-radius: 9px;
+  /* Corner concentricity (Apple's ConcentricRectangle, by hand): a shape nested
+     inside a rounded shape should use the OUTER radius minus the gap between
+     them, so both curves turn about the same centre instead of being two
+     unrelated arcs that almost line up. The track and its pill were 9px, 2px
+     and 7px as three independent numbers that happened to satisfy that — and
+     the 2px appeared five times, so changing the padding silently broke the
+     relationship in four other places. Now the radius and the inset are the
+     only two values, and everything else is derived from them. */
+  --seg-r: 9px;
+  --seg-pad: 2px;
+  padding: var(--seg-pad);
+  border-radius: var(--seg-r);
   /* The page ground, which sits one step below a card in both themes
      (#0B0B0C under #151517 dark, #FBFBFA under #FFFFFF light) — so the track
      reads as recessed either way without a theme-specific value. */
@@ -597,9 +607,9 @@
 .seg-pill {
   position: absolute;
   z-index: 0;
-  top: 2px; bottom: 2px; left: 2px;
-  width: calc((100% - 4px) / var(--seg-n, 3));
-  border-radius: 7px;
+  top: var(--seg-pad); bottom: var(--seg-pad); left: var(--seg-pad);
+  width: calc((100% - 2 * var(--seg-pad)) / var(--seg-n, 3));
+  border-radius: calc(var(--seg-r) - var(--seg-pad));
   background: var(--acc-bg);
   border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
   /* Snappy with a little give at the end, the way a real switch settles.

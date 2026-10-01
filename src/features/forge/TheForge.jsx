@@ -318,7 +318,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
             <div style={{
               fontSize: 11, color: "var(--t3)", fontFamily: MONO,
               padding: "3px 8px", background: "var(--s2)",
-              borderRadius: 6, fontWeight: 600,
+              borderRadius: 8, fontWeight: 600,
             }}>{cardIdx + 1} / {totalCards}</div>
             <div style={{
               fontSize: 11, color: "var(--t3)", fontFamily: FONT,
@@ -330,7 +330,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               fontFamily: MONO, flexShrink: 0,
               padding: "3px 8px",
               background: learned.size > 0 ? "rgba(52,211,153,0.1)" : "var(--s2)",
-              borderRadius: 6, fontWeight: 600,
+              borderRadius: 8, fontWeight: 600,
             }}>{learned.size}/{totalCards}</div>
           </div>
 

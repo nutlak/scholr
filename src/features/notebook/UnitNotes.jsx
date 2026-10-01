@@ -116,7 +116,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
               padding: "2px 6px", fontSize: 12,
               color: "var(--t4, rgba(245,245,250,0.3))",
               transition: "color 0.15s, background 0.15s",
-              borderRadius: 6, height: 24, flexShrink: 0,
+              borderRadius: 8, height: 24, flexShrink: 0,
             }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "var(--t4, rgba(245,245,250,0.3))"; e.currentTarget.style.background = "transparent"; }}
@@ -186,7 +186,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                     onClick={() => { toggleReaction(e); setPickerOpen(false); }}
                     style={{
                       background: "transparent", border: "none", cursor: "pointer",
-                      fontSize: 16, padding: "4px 6px", borderRadius: 6,
+                      fontSize: 16, padding: "4px 6px", borderRadius: 8,
                     }}
                     onMouseEnter={ev => { ev.currentTarget.style.background = "var(--border)"; }}
                     onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; }}
@@ -268,7 +268,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                   style={{
                     flex: 1, background: "var(--bg-surface-1)",
                     border: "1px solid var(--border-default)",
-                    borderRadius: 7, padding: "0 10px", height: 30,
+                    borderRadius: 9, padding: "0 10px", height: 30,
                     color: "var(--text-primary)", fontSize: 12, fontFamily: FONT,
                     outline: "none",
                   }}
@@ -280,7 +280,7 @@ function UnitNoteRow({ note, currentUserId, tint, onDelete, onChange }) {
                     background: commentDraft.trim() && !postingComment
                       ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`
                       : "var(--bg-surface-2)",
-                    border: "none", borderRadius: 7, padding: "0 10px", height: 30,
+                    border: "none", borderRadius: 9, padding: "0 10px", height: 30,
                     color: "#fff", fontSize: 11.5, fontWeight: 600,
                     cursor: commentDraft.trim() && !postingComment ? "pointer" : "not-allowed",
                     fontFamily: FONT,

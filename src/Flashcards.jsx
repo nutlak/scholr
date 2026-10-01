@@ -271,11 +271,11 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
               <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                 <button
                   onClick={() => setEditing(c)}
-                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 7, background: "var(--bg-surface-2)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
+                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 9, background: "var(--bg-surface-2)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
                 >Edit</button>
                 <button
                   onClick={() => remove(c.id)}
-                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 7, background: "transparent", border: "1px solid rgba(248,113,113,0.28)", color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
+                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 9, background: "transparent", border: "1px solid rgba(248,113,113,0.28)", color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
                 >Delete</button>
               </div>
             </div>

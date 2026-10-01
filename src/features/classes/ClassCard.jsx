@@ -56,7 +56,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
       <div style={{
         fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
         flexShrink: 0, padding: "2px 8px", background: "var(--bg-surface-2)",
-        borderRadius: 6, fontWeight: 500,
+        borderRadius: 8, fontWeight: 500,
       }}>
         {unit.notes} {unit.notes === 1 ? "note" : "notes"}
       </div>
@@ -188,7 +188,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               background: "none", border: "none", cursor: "pointer",
               padding: "4px 6px", color: "var(--text-tertiary)",
               opacity: hovered ? 1 : 0,
-              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 6,
+              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 8,
               display: "inline-flex", alignItems: "center",
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = t.hue; }}
@@ -251,7 +251,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               background: "none", border: "none", cursor: "pointer",
               padding: "4px 6px", fontSize: 13, lineHeight: 1, color: "var(--text-tertiary)",
               opacity: hovered ? 1 : 0,
-              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 6,
+              transition: "opacity 0.18s, color 0.18s", flexShrink: 0, borderRadius: 8,
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}

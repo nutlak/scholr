@@ -504,7 +504,7 @@ export default function LegalPage({ page }) {
             color: "var(--text-primary)", letterSpacing: "-0.03em",
           }}
         >
-          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover" }} />
+          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 28, height: 28, borderRadius: 9, objectFit: "cover" }} />
           {/* One span = one flex item → gap:8 doesn't split "schol" from "r" */}
           <span style={{ letterSpacing: "-0.03em" }}>schol<span style={{ color: "var(--accent)" }}>r</span></span>
         </a>

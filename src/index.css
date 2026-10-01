@@ -134,7 +134,7 @@ html[data-theme="light"] code {
   --info:      #60A5FA;
 
   /* Radii */
-  --r-sm:  6px;
+  --r-sm:  8px;   /* was 6 — below 8 the continuous-corner curve is invisible */
   --r-md:  10px;
   --r-lg:  14px;
   --r-xl:  18px;

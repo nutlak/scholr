@@ -62,7 +62,7 @@ export function DashboardRail({
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                padding: "4px 8px", borderRadius: 8, transition: "all 0.15s",
                 fontWeight: 500, minHeight: 44,
               }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
@@ -77,7 +77,7 @@ export function DashboardRail({
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
+                padding: "4px 8px", borderRadius: 8, transition: "all 0.15s",
                 fontWeight: 500, minHeight: 44,
               }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}

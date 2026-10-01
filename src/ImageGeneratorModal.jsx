@@ -235,7 +235,7 @@ export default function ImageGeneratorModal({ notebookId, onClose }) {
                         position: "absolute", bottom: 6, right: 6,
                         background: "rgba(20,20,31,0.85)",
                         border: "1px solid rgba(167,139,250,0.32)",
-                        borderRadius: 6, padding: "3px 8px",
+                        borderRadius: 8, padding: "3px 8px",
                         color: "#C4B5FD", fontWeight: 600, fontSize: 10.5,
                         cursor: "pointer", fontFamily: FONT,
                         backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",

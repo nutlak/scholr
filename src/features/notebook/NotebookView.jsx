@@ -124,7 +124,7 @@ function SourcesPanel({ sources, notesById = {} }) {
                   <div style={{
                     marginTop: 4, marginBottom: 4, padding: "8px 10px",
                     background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
-                    borderRadius: 6, fontSize: 12, color: "var(--text-secondary)",
+                    borderRadius: 8, fontSize: 12, color: "var(--text-secondary)",
                     lineHeight: 1.5, maxHeight: 200, overflowY: "auto", whiteSpace: "pre-wrap",
                   }}>
                     {(note.content || "[file attachment \u2014 no text content]").slice(0, 1200)}
@@ -877,7 +877,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       onMouseDown={e => { e.preventDefault(); pickMention(name); }}
                       style={{
                         display: "flex", alignItems: "center", gap: 8,
-                        padding: "6px 8px", borderRadius: 7, cursor: "pointer",
+                        padding: "6px 8px", borderRadius: 9, cursor: "pointer",
                         fontSize: 13, color: "var(--text-primary)", fontFamily: FONT,
                       }}
                       onMouseEnter={e => { e.currentTarget.style.background = "var(--border)"; }}

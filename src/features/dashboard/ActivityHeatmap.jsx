@@ -90,7 +90,7 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
   const navBtnStyle = {
     background: "none", border: "none", color: "var(--t3)",
     cursor: "pointer", fontSize: 18, padding: "2px 8px", lineHeight: 1,
-    borderRadius: 6, fontFamily: FONT,
+    borderRadius: 8, fontFamily: FONT,
   };
 
   return (

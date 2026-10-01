@@ -802,7 +802,7 @@ export default function Scholr() {
                 onClick={() => { setActiveView(id); setActiveNb(null); setSearch(""); setSidebarOpen(false); }}
                 style={{
                   position: "relative",
-                  padding: "0 12px", height: 34, borderRadius: 6,
+                  padding: "0 12px", height: 34, borderRadius: 8,
                   display: "flex", alignItems: "center", gap: 10,
                   background: active ? "var(--bg-surface-2)" : "transparent",
                   boxShadow: active ? "inset 2px 0 0 var(--accent)" : "none",
@@ -916,7 +916,7 @@ export default function Scholr() {
                     width: "100%", height: 30,
                     background: "linear-gradient(135deg, rgba(167,139,250,0.18), var(--acc-bg))",
                     border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
-                    borderRadius: 7, color: "var(--acc)",
+                    borderRadius: 9, color: "var(--acc)",
                     fontSize: 11.5, fontWeight: 600, fontFamily: FONT,
                     cursor: "pointer", letterSpacing: "-0.01em",
                     transition: "all 0.15s",
@@ -954,7 +954,7 @@ export default function Scholr() {
                   onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
                   style={{
                     width: "100%", background: "transparent", border: "none",
-                    borderRadius: 7, padding: "8px 8px", color: "var(--text-primary)",
+                    borderRadius: 9, padding: "8px 8px", color: "var(--text-primary)",
                     fontSize: 12.5, fontWeight: 500, cursor: "pointer",
                     fontFamily: FONT, textAlign: "left",
                     display: "flex", alignItems: "center", gap: 8,
@@ -971,7 +971,7 @@ export default function Scholr() {
                   onClick={() => { setProfileOpen(false); handleLogout(); }}
                   style={{
                     width: "100%", background: "transparent", border: "none",
-                    borderRadius: 7, padding: "8px 8px", color: "var(--danger)",
+                    borderRadius: 9, padding: "8px 8px", color: "var(--danger)",
                     fontSize: 12.5, fontWeight: 500, cursor: "pointer",
                     fontFamily: FONT, textAlign: "left",
                     display: "flex", alignItems: "center", gap: 8,

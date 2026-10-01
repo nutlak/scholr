@@ -45,7 +45,7 @@ export function StatusPill({ status, onChange, size = "sm", compact = false }) {
                 onClick={() => { onChange(key); setOpen(false); }}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 10px", borderRadius: 7, cursor: "pointer",
+                  padding: "8px 10px", borderRadius: 9, cursor: "pointer",
                   fontSize: "var(--fs-xs)", color: m.color, fontFamily: FONT, fontWeight: 500,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = "var(--s2)"; }}

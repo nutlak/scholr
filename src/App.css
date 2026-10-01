@@ -694,9 +694,12 @@
    correctly (bevel→0, scoop→-1), so it is specific to `squircle`; the explicit
    exponent is unambiguous and renders today.
 
-   Only surfaces in the 8–18px range: below that the difference is invisible,
+   Only surfaces in the 8–22px range: below that the difference is invisible,
    and above it lives the pills, avatars and status dots, where a squircle
-   would turn a circle into a rounded square. Verified against the rendered
+   would turn a circle into a rounded square. 20 and 22 are the big modal
+   cards (UpgradeModal, the sheets) — those are exactly where the softer
+   curvature reads most, and nothing circular uses a literal radius that
+   large: round things here are 999 or 50%. Verified against the rendered
    page — 27 surfaces matched, no round element caught.
 
    Styles here are inline by convention, so the attribute selector is how you
@@ -714,7 +717,9 @@
   [style*="border-radius: 12px"],
   [style*="border-radius: 14px"],
   [style*="border-radius: 16px"],
-  [style*="border-radius: 18px"] {
+  [style*="border-radius: 18px"],
+  [style*="border-radius: 20px"],
+  [style*="border-radius: 22px"] {
     corner-shape: superellipse(4);
   }
 }
@@ -722,6 +727,46 @@
 /* ── Mobile platform baseline ─────────────────────────────────────────────
    The handful of declarations that decide whether a phone reads this as an
    installed app or as a web page. Each is here for one specific tell. */
+
+/* iOS Safari zooms the whole page when focus lands on an input whose font is
+   under 16px, and it does NOT zoom back out on blur — the user is left on a
+   cropped, drifted layout with no way back but a manual pinch. Eleven inputs
+   in this app sat at 11–13.5px, which is every search field, rename box and
+   note title.
+
+   The fix is the font size, never `user-scalable=no` on the viewport: that
+   disables pinch-zoom for everyone, which is an accessibility failure and
+   does not even work on iOS 10+. Scoped to coarse pointers so the desktop
+   keeps its denser type.
+
+   `!important` is load-bearing here and not laziness: styles in this app are
+   inline by convention, and an inline style beats any selector no matter how
+   specific. This is the one declaration that has to override all of them. */
+@media (pointer: coarse) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Press feedback on every button, not just the ones that remembered to ask
+   for .btn-press. A native control responds the instant your finger lands;
+   a web button that only changes on click responds when the finger LEAVES,
+   which reads as lag even at 0ms. Same curve and asymmetry as .btn-press —
+   instant going down, 260ms settling back, so the surface reads as pushed
+   into the page rather than nudged down a pixel.
+
+   Opt out with .no-press where a button is really a container (a row that
+   happens to be a <button>) and scaling it would move its whole contents. */
+button:not(:disabled):not(.no-press) {
+  transition: transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+button:not(:disabled):not(.no-press):active {
+  transform: scale(0.97);
+  transition-duration: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):not(.no-press):active { transform: none; }
+}
 
 html {
   /* The translucent grey box iOS and Android paint over anything tappable —

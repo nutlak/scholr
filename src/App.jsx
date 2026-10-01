@@ -12,7 +12,7 @@ import NotificationsBell from "./NotificationsBell.jsx";
 // Lazy: only renders during an active review session. A static import here also
 // defeated NotebookView's lazy() of FlashcardsPanel from this same module.
 const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
-import { Star, Bell, Plus, Search, FileText, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, BookOpen, Layers, LogOut, AlertTriangle, Check, X, Menu, Notebook, RefreshCw, Trash2, UserPlus, AtSign, FolderPlus, CreditCard } from "lucide-react";
+import { Star, Plus, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, LogOut, AlertTriangle, Check, X, Menu, Notebook, Trash2, CreditCard } from "lucide-react";
 import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 // Lazy: 52kB of source that only matters once a notebook is open, and never
@@ -22,16 +22,11 @@ import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx"
 import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx";
 import { ClassSyllabusModal } from "./features/classes/ClassSyllabusModal.jsx";
 import { ConfirmDeleteClassModal } from "./features/classes/ClassCard.jsx";
-// Lazy: the only thing that needs the drag library, and reordering classes is
-// not something anyone does in their first second on the page.
-const SortableClassList = lazy(() => import("./features/classes/SortableClassList.jsx").then(m => ({ default: m.SortableClassList })));
 import { FriendsRow } from "./features/friends/FriendsRow.jsx";
 import { MobileTabBar } from "./features/shell/MobileTabBar.jsx";
 import { MobileProfileSheet } from "./features/shell/MobileProfileSheet.jsx";
 
 import { SettingsView } from "./features/settings/SettingsView.jsx";
-import { NotebookCard } from "./features/dashboard/NotebookCard.jsx";
-import { UpcomingDeadlines } from "./features/dashboard/UpcomingDeadlines.jsx";
 import { PasswordResetModal } from "./features/account/PasswordResetModal.jsx";
 import { DeleteAccountModal } from "./features/account/DeleteAccountModal.jsx";
 import { TermsWall } from "./features/account/TermsWall.jsx";
@@ -39,21 +34,21 @@ import { UpgradeModal } from "./features/billing/UpgradeModal.jsx";
 import { WelcomeProModal } from "./features/billing/WelcomeProModal.jsx";
 import { StreakMilestoneModal } from "./features/streak/StreakMilestoneModal.jsx";
 
-import { ActivityHeatmap } from "./features/dashboard/ActivityHeatmap.jsx";
-import { EmptyState } from "./ui/EmptyState.jsx";
+import { DashboardView } from "./features/dashboard/DashboardView.jsx";
 
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
-import { STREAK_MILESTONES, timeAgo, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, notifLine, sameUser, NOTIF_OPENS_NOTEBOOK, NOTIF_OPENS_BILLING } from "./lib/format.js";
+import { STREAK_MILESTONES, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
-import { useServerFeature } from "./lib/useServerFeature.js";
+import { useBilling } from "./lib/useBilling.js";
 
 import { useFriendPresence } from "./lib/live.js";
 import { useAppearance } from "./lib/useAppearance.js";
 import { useCanonicalUrl } from "./lib/useCanonicalUrl.js";
+import { useNotificationFeed } from "./lib/useNotificationFeed.js";
 import { useNotebookActions } from "./lib/useNotebookActions.js";
 
 // Module-scoped guard: only ever call /track-visit once per page load,
@@ -90,19 +85,6 @@ const NAV = [
 
 // Streak alive but at risk = yesterday had activity, today does not (yet).
 
-// Unified notification rendering (drives both the dashboard feed and the bell's
-// fallback). Reads the social_notifications payload by type.
-const NOTIF_ICON = {
-  friend_request:  UserPlus,
-  friend_accepted: Check,
-  notebook_invite: FolderPlus,
-  mention:         AtSign,
-  note_uploaded:   FileText,
-  payment_failed:  AlertTriangle,
-  renewal_reminder: RefreshCw,
-};
-// Which types deep-link into a notebook when tapped.
-// Which types open the Stripe billing portal when tapped.
 
 export default function Scholr() {
   const [user, setUser] = useState(null);
@@ -120,7 +102,6 @@ export default function Scholr() {
   const [sharedNotebooks, setSharedNotebooks] = useState([]);
   const [starredNotebooks, setStarredNotebooks] = useState([]);
   const [starredIds, setStarredIds] = useState(new Set());
-  const [notifications, setNotifications] = useState([]);
   const [classes, setClasses] = useState([]);
   const [expandedClassId, setExpandedClassId] = useState(null);
   // Require a 4px drag before activating so taps/clicks on the card body
@@ -148,20 +129,16 @@ export default function Scholr() {
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
   const [dueCount, setDueCount] = useState(0);            // flashcards due across all notebooks
   const [reviewSession, setReviewSession] = useState(null); // active all-notebooks review (cards[])
-  const [feedActioned, setFeedActioned] = useState({});   // notifId -> "busy" | terminal status (e.g. already-handled)
-  const [feedError, setFeedError] = useState({});         // notifId -> inline error shown ALONGSIDE the buttons (retryable)
-  const [notifVersion, setNotifVersion] = useState(0);     // bump to make NotificationsBell reload
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
-  const [subscription, setSubscription] = useState({
-    tier: "free",
-    messagesUsed: 0, messagesLimit: 100,
-    forgeUsed: 0, forgeLimit: 3,
-    notebooksUsed: 0, notebooksLimit: 3,
-  });
   const [upgradeModal, setUpgradeModal] = useState(null); // null | { limitType: string }
   const [welcomePlan, setWelcomePlan] = useState(null); // null | "pro" | "squad" — just paid, show what unlocked
   const [confirmDeleteNb, setConfirmDeleteNb] = useState(null); // notebook pending deletion
+
+  const {
+    subscription, setSubscription, portalLoading, billingReady,
+    openPortal: handleManageSubscription, refreshSubscription,
+  } = useBilling({ onToast: msg => { setToast(msg); setTimeout(() => setToast(""), 3500); } });
 
   // Every notebook/class CRUD handler — moved out of this component into one
   // hook (src/lib/useNotebookActions.js). State those handlers read/write
@@ -191,6 +168,24 @@ export default function Scholr() {
     setUpgradeModal, setShowNewClassModal, setNewUnitFor,
     setSubscription,
   });
+
+  // Online presence: heartbeat on mount + every 60s while the app is open. It
+  // carries the notebook currently open so friends see "Noah is in Bio 101"
+  // rather than a bare green dot — that's what turns presence into company.
+  // Heartbeat + realtime presence + the refresh counter, all in one place:
+  // additive over the 60s poll so a friend coming online shows in ~1s, with
+  // polling left as the safety net if Realtime is unavailable.
+  // friendIds itself stays inside the hook — FriendsRow owns the list and
+  // hands it up via onFriendIds purely so presence can fan out to it.
+  const { setFriendIds, friendsVersion, bumpFriendsVersion } =
+    useFriendPresence(user?.id, activeNb?.id);
+
+  const {
+    notifications, setNotifications,
+    feedActioned, feedError, notifVersion,
+    clearInbox, respondToFriendFromFeed,
+  } = useNotificationFeed(user, { onFriendRequestHandled: bumpFriendsVersion });
+
 
   useEffect(() => {
     if (!profileOpen) return;
@@ -408,36 +403,10 @@ export default function Scholr() {
     if (!user) return undefined;
     return onCheckoutReturn(status => {
       if (status !== "success") return;
-      api.getSubscription().then(setSubscription).catch(console.error);
+      refreshSubscription();
       setWelcomePlan("pro");
     });
   }, [user]);
-
-  // Online presence: heartbeat on mount + every 60s while the app is open. It
-  // carries the notebook currently open so friends see "Noah is in Bio 101"
-  // rather than a bare green dot — that's what turns presence into company.
-  // Heartbeat + realtime presence + the refresh counter, all in one place:
-  // additive over the 60s poll so a friend coming online shows in ~1s, with
-  // polling left as the safety net if Realtime is unavailable.
-  // friendIds itself stays inside the hook — FriendsRow owns the list and
-  // hands it up via onFriendIds purely so presence can fan out to it.
-  const { setFriendIds, friendsVersion, bumpFriendsVersion } =
-    useFriendPresence(user?.id, activeNb?.id);
-
-  // Unified notifications feed — reload helper + 30s polling so the dashboard
-  // Recent Activity stays live (the bell polls its own copy independently).
-  const refreshNotifications = useCallback(async () => {
-    try {
-      const d = await api.getSocialNotifications();
-      setNotifications(d?.notifications ?? []);
-    } catch { /* keep last good state */ }
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    const id = setInterval(refreshNotifications, 30_000);
-    return () => clearInterval(id);
-  }, [user, refreshNotifications]);
 
   useCanonicalUrl(authReady, user);
 
@@ -477,71 +446,7 @@ export default function Scholr() {
     try { const d = await api.getDueCount(); setDueCount(d?.count ?? 0); } catch { /* ignore */ }
   }
 
-  // Accept/Decline a friend request straight from the Recent Activity feed.
-  // notifId = the social_notifications row id (so we can clear it); requestId =
-  // the friend_request id (for respondToFriend).
-  // Clear inbox — delete ALL notifications (with a confirm), and clear the bell.
-  async function clearInbox() {
-    if (!window.confirm("Clear all notifications?")) return;
-    setNotifications([]);            // optimistic: empty the feed
-    setNotifVersion(v => v + 1);     // tell the bell to reload (→ empty)
-    try { await api.clearSocialNotifications(); }
-    catch { refreshNotifications(); } // restore on failure
-  }
 
-  async function respondToFriendFromFeed(notifId, requestId, action) {
-    const dropRow = () => setNotifications(prev => prev.filter(n => n.id !== notifId));
-
-    // Legacy/stale notification with no requestId in its payload — nothing to
-    // action server-side; just clear the row and mark it read.
-    if (!requestId) {
-      dropRow();
-      if (notifId) api.markSocialNotificationsRead([notifId]).catch(() => {});
-      return;
-    }
-
-    // Immediate visible feedback so the button never feels dead. Clear any prior
-    // inline error from a previous failed attempt.
-    setFeedActioned(s => ({ ...s, [notifId]: "busy" }));
-    setFeedError(s => { const next = { ...s }; delete next[notifId]; return next; });
-    try {
-      await api.respondToFriend(requestId, action);
-      // Success: row removed, sidebar friends refreshed so the new friend shows,
-      // and the feed re-fetched (the server deleted this notification, so it
-      // won't come back).
-      dropRow();
-      bumpFriendsVersion();
-      refreshNotifications();
-    } catch (err) {
-      if (err.status === 409 || err.code === "already_actioned") {
-        // Already handled elsewhere — show a brief terminal note, then clear.
-        setFeedActioned(s => ({ ...s, [notifId]: err.message || "Already handled" }));
-        bumpFriendsVersion();
-        setTimeout(() => { dropRow(); refreshNotifications(); }, 1400);
-      } else {
-        // Generic failure — restore the actionable buttons and show an inline
-        // error next to them so "try again" is actually possible.
-        setFeedActioned(s => { const next = { ...s }; delete next[notifId]; return next; });
-        setFeedError(s => ({ ...s, [notifId]: "Couldn't respond — try again" }));
-      }
-    }
-  }
-
-  const [portalLoading, setPortalLoading] = useState(false);
-  // Same gate as SettingsView: the portal 500s without Stripe server-side.
-  const billingReady = useServerFeature("pro");
-  async function handleManageSubscription() {
-    setPortalLoading(true);
-    try {
-      // api.createPortalSession() redirects via window.location.href on success
-      await api.createPortalSession();
-    } catch (err) {
-      console.error("Portal session error:", err);
-      setToast({ text: "Could not open subscription management. Please try again.", tone: "error" });
-      setTimeout(() => setToast(""), 3500);
-      setPortalLoading(false);
-    }
-  }
 
   async function handleDeleteAccount() {
     await api.deleteAccount();    // cleans DB rows + deletes auth user
@@ -1169,455 +1074,34 @@ export default function Scholr() {
             />
 
           ) : (
-            // Content measure: the pane is as wide as the window, and a dashboard
-            // of short rows stretched across 1600px reads as scattered debris —
-            // cap it and centre it, the way Settings already does.
-            <div className="dash-wrap" style={{ animation: "fadeIn 0.25s ease", width: "100%", maxWidth: 1280, margin: "0 auto" }}>
-              {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
-                <div className="streak-banner">
-                  🔥 Your streak is at risk! Study today to keep it alive.
-                  <button onClick={() => setStreakBannerDismissed(true)} aria-label="Dismiss">×</button>
-                </div>
-              )}
-              {/* Header. Sticky so the greeting isn't sliced when the pane
-                  scrolls under the status strip. The opaque backdrop (and the
-                  spread shadow that covers the pane's top-padding band) apply
-                  ONLY while scrolled — at rest the header is transparent so it
-                  doesn't read as a black card over the HUD void.
-                  var(--bg), not var(--bg-base): hud.css forces bg-base inline
-                  backgrounds transparent, which would defeat the scrolled fill. */}
-              <div className="pane-heading" style={{
-                position: "relative",
-                paddingTop: 10, paddingBottom: 24,
-                display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
-              }}>
-                <div className="dash-heading">
-                  <div className="greeting-text" style={{
-                    fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
-                    fontFamily: FONT_HEADING,
-                    letterSpacing: "var(--tr-display)", lineHeight: "var(--lh-display)",
-                    display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-                  }}>
-                    {activeView === "dashboard" ? greeting.text : viewLabel}
-                  </div>
-                  <div style={{
-                    fontSize: 15, color: "var(--text-tertiary)",
-                    fontFamily: FONT, marginTop: 5,
-                  }}>
-                    {activeView === "dashboard"
-                      ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
-                      : `${filtered.length} ${filtered.length === 1 ? "notebook" : "notebooks"}`}
-                  </div>
-                  {activeView === "dashboard" && (
-                    <div style={{
-                      fontSize: 14.5, color: "var(--text-tertiary)", fontFamily: FONT,
-                      marginTop: 10, maxWidth: 680, lineHeight: 1.5,
-                    }}>
-                      “{greeting.quote.text}”
-                      <span style={{ opacity: 0.72 }}> — {greeting.quote.author}</span>
-                    </div>
-                  )}
-                </div>
-                {activeView === "dashboard" && (
-                  <>
-                    <button
-                      onClick={() => setShowNewClassModal(true)}
-                      className="btn-press desktop-only"
-                      style={{
-                        background: "var(--acc)",
-                        border: "none", borderRadius: 10, padding: "0 22px", height: 46,
-                        color: "var(--on-acc)", fontWeight: 600, fontSize: 15, cursor: "pointer",
-                        fontFamily: FONT, flexShrink: 0,
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                        letterSpacing: "-0.01em",
-                        display: "flex", alignItems: "center", gap: 6,
-                      }}
-                    >+ New Class</button>
-                  </>
-                )}
-                {/* Mobile-only profile avatar trigger (opens existing dropdown) */}
-                <button
-                  className="mobile-header-avatar mobile-only"
-                  onClick={() => setProfileOpen(v => !v)}
-                  aria-label="Open profile menu"
-                >
-                  <Avatar name={displayName} size={36} seed={user?.email ?? displayName} />
-                </button>
-              </div>
-
-              {/* Two-column dashboard on a wide window: the work you act on
-                  stays in a readable column on the left, while the streak
-                  calendar and the activity feed move into a rail that fits
-                  them. Narrower than that it is one column, in this same
-                  order — the breakpoint lives with .dash-grid in App.css. */}
-              <div className={activeView === "dashboard" ? "dash-grid" : undefined}>
-                <div className="dash-main">
-                  {/* Friends first: the reason the app exists. */}
-                  {activeView === "dashboard" && (
-                    <FriendsRow
-                      refreshSignal={friendsVersion}
-                      onChanged={() => bumpFriendsVersion()}
-                      onOpenNotebook={openNotebookById}
-                      onFriendIds={setFriendIds}
-                    />
-                  )}
-
-                  {/* Search — only once there are enough classes for it to earn its space. */}
-                  {(activeView !== "dashboard" || classes.length > 4) && (
-                  <div style={{ position: "relative", marginBottom: 28 }}>
-                    <span style={{
-                      position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                      color: "var(--text-tertiary)", pointerEvents: "none",
-                      display: "inline-flex", alignItems: "center",
-                    }}><Search size={15} strokeWidth={1.75} /></span>
-                    <input
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      placeholder="Search notebooks…"
-                      style={{
-                        width: "100%", background: "var(--bg-surface-1)",
-                        border: "1px solid var(--border-default)",
-                        borderRadius: 10, padding: "0 14px 0 38px", height: 40,
-                        color: "var(--text-primary)", fontSize: 13.5, fontFamily: FONT, outline: "none",
-                        transition: "all 0.18s", letterSpacing: "-0.01em",
-                      }}
-                      onFocus={e => { e.target.style.borderColor = "var(--accent)"; e.target.style.boxShadow = "0 0 0 2px var(--accent-soft)"; }}
-                      onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
-                    />
-                </div>
-                )}
-
-                {/* Dashboard: upcoming deadlines */}
-                {activeView === "dashboard" && (
-                  <UpcomingDeadlines
-                    notebooks={notebooks}
-                    classes={classes}
-                    onOpen={(nb, classColor) => openUnitWithClassColor(nb, classColor)}
-                  />
-                )}
-
-                {/* Dashboard: class cards */}
-                {activeView === "dashboard" ? (
-                  filteredClasses.length === 0 ? (
-                    <EmptyState
-                      icon={search ? <Search size={32} strokeWidth={1.5} /> : <BookOpen size={32} strokeWidth={1.5} />}
-                      title={search ? "No classes match" : "Welcome to Scholr"}
-                      body={search
-                        ? "Try a different search term."
-                        : "Create your first class to start organizing your notes and chatting with Derek."}
-                      cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
-                    />
-                  ) : (
-                    // Drag-to-reorder is enabled only when not searching, since the
-                    // SortableContext items would otherwise be a filtered subset and
-                    // a persisted order would be incomplete.
-                    <>
-                      <div style={{
-                        fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
-                        fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
-                        marginBottom: 6,
-                      }}>Classes</div>
-                    <Suspense fallback={<div style={{ minHeight: 120 }} />}>
-                      <SortableClassList
-                        classes={filteredClasses}
-                        dragDisabled={!!search}
-                        onReorder={handleReorderClasses}
-                        cardProps={cls => ({
-                          expanded: expandedClassId === cls.id,
-                          units: classUnitsCache[cls.id] ?? null,
-                          onToggle: () => handleToggleClass(cls.id),
-                          onChangeColor: color => handleChangeClassColor(cls.id, color),
-                          onOpenUnit: unit => openUnitWithClassColor(unit, cls.color),
-                          onViewSyllabus: () => openClassSyllabus(cls.id),
-                          onImportSyllabus: () => setSyllabusForClass(cls),
-                          onNewUnit: () => setNewUnitFor({ classId: cls.id, classTitle: cls.title }),
-                          onDeleteClass: () => setDeleteClassTarget(cls),
-                          onUnitStatusChange: (unit, status) => handleSetStatus(unit, status),
-                        })}
-                      />
-                    </Suspense>
-                    </>
-                  )
-
-                ) : filtered.length === 0 ? (
-                  <EmptyState
-                    icon={
-                      search ? <Search size={32} strokeWidth={1.5} />
-                      : activeView === "starred" ? <Star size={32} strokeWidth={1.5} />
-                      : activeView === "shared" ? <Users size={32} strokeWidth={1.5} />
-                      : <Notebook size={32} strokeWidth={1.5} />
-                    }
-                    title={
-                      search ? "No notebooks match"
-                      : activeView === "starred" ? "No starred notebooks"
-                      : activeView === "shared"  ? "Nothing shared with you yet"
-                      : "No notebooks yet"
-                    }
-                    body={
-                      search ? "Try a different search term."
-                      : activeView === "starred" ? "Tap the star on any notebook to add it here."
-                      : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
-                      : "Notebooks you create will appear in this view."
-                    }
-                  />
-                ) : (
-                  <>
-                    <div style={{
-                      fontSize: 11, fontWeight: 600, color: "var(--t3)",
-                      fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
-                    }}>
-                      {viewLabel}
-                    </div>
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                      gap: 12, marginBottom: 40,
-                    }}>
-                      {filtered.map(nb => (
-                        <NotebookCard
-                          key={nb.id}
-                          nb={nb}
-                          onClick={() => setActiveNb(nb)}
-                          starred={starredIds.has(nb.id)}
-                          onToggleStar={() => handleToggleStar(nb)}
-                          onStatusChange={status => handleSetStatus(nb, status)}
-                          // Only the owner can delete; the API returns role per
-                          // notebook, so a shared notebook shows no trash rather
-                          // than offering one that 403s.
-                          onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* Dashboard: cards due — spaced repetition entry point */}
-                {activeView === "dashboard" && dueCount > 0 && (
-                  <button
-                    onClick={startAllReview}
-                    className="btn-press"
-                    style={{
-                      width: "100%", textAlign: "left", marginBottom: 18,
-                      display: "flex", alignItems: "center", gap: 14, minHeight: 64,
-                      padding: "14px 18px", borderRadius: 14, cursor: "pointer",
-                      background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
-                      border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
-                    }}
-                  >
-                    <span style={{
-                      width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "var(--acc)", color: "var(--on-acc)",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                    }}><Layers size={19} strokeWidth={2} /></span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
-                        {dueCount} card{dueCount === 1 ? "" : "s"} due
-                      </span>
-                      <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
-                        Review now to keep your streak sharp
-                      </span>
-                    </span>
-                    <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
-                  </button>
-                )}
-
-                {/* Dashboard: passive renewal reminder — Pro plan renewing within 3 days.
-                    No cron needed; computed from the stored current_period_end on load. */}
-                {activeView === "dashboard" && subscription.tier === "pro" && subscription.currentPeriodEnd && (() => {
-                  const days = Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - Date.now()) / 86400000);
-                  if (days < 0 || days > 3) return null;
-                  const when = days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-                  return (
-                    <button
-                      onClick={handleManageSubscription}
-                      disabled={portalLoading || (subscription.tier === "pro" && !billingReady)}
-                      className="btn-press"
-                      style={{
-                        width: "100%", textAlign: "left", marginBottom: 18,
-                        display: "flex", alignItems: "center", gap: 14, minHeight: 60,
-                        padding: "13px 18px", borderRadius: 14,
-                        cursor: portalLoading ? "wait" : "pointer",
-                        background: "var(--bg-surface-1)", border: "1px solid var(--border-default)",
-                        fontFamily: FONT,
-                      }}
-                    >
-                      <span style={{
-                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "var(--bg-surface-2)", color: "var(--accent)",
-                      }}><RefreshCw size={17} strokeWidth={1.9} /></span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-                          Your Pro plan renews {when}
-                        </span>
-                        <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
-                          Manage or cancel anytime before you're charged
-                        </span>
-                      </span>
-                      <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
-                        {portalLoading ? "Opening…" : "Manage →"}
-                      </span>
-                    </button>
-                  );
-                })()}
-
-                </div>
-
-                <aside className="dash-rail">
-                  {/* Dashboard: activity heatmap */}
-                  {activeView === "dashboard" && (
-                    <ActivityHeatmap data={heatmap} longestStreak={profile?.longest_streak ?? 0} leaderboard={leaderboard} />
-                  )}
-
-                  {/* Notifications — dashboard only. Unified social_notifications feed. */}
-                  {activeView === "dashboard" && (
-                    <>
-                      <div style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        marginBottom: 14, paddingTop: 20,
-                        borderTop: "1px solid var(--border-subtle)",
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{
-                            fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
-                            fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
-                          }}>
-                            Recent Activity
-                          </div>
-                          {notifications.filter(n => !n.read).length > 0 && (
-                            <span style={{
-                              fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
-                              background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
-                              padding: "1px 7px", borderRadius: 999,
-                            }}>{notifications.filter(n => !n.read).length}</span>
-                          )}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          {notifications.some(n => !n.read) && (
-                            <button
-                              onClick={async () => {
-                                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                                try { await api.markAllSocialNotificationsRead(); } catch { /* silent */ }
-                              }}
-                              style={{
-                                background: "none", border: "none", cursor: "pointer",
-                                fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                                fontWeight: 500, minHeight: 44,
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-                            >
-                              Mark all read
-                            </button>
-                          )}
-                          {notifications.length > 0 && (
-                            <button
-                              onClick={clearInbox}
-                              style={{
-                                background: "none", border: "none", cursor: "pointer",
-                                fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
-                                padding: "4px 8px", borderRadius: 6, transition: "all 0.15s",
-                                fontWeight: 500, minHeight: 44,
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-                            >
-                              Clear inbox
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {notifications.length === 0 ? (
-                        <div style={{ padding: "8px 0 12px", color: "var(--text-tertiary)", fontSize: 12.5, fontFamily: FONT }}>
-                          You're all caught up. Friend requests, invites, and study-group activity appear here.
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          {notifications.map(n => {
-                            const Icon = NOTIF_ICON[n.type] ?? Bell;
-                            const opensNotebook = NOTIF_OPENS_NOTEBOOK.has(n.type) && n.payload?.notebookId;
-                            const opensBilling = NOTIF_OPENS_BILLING.has(n.type);
-                            const isRequest = n.type === "friend_request";
-                            const onRowClick = opensNotebook
-                              ? () => openNotebookById(n.payload.notebookId)
-                              : opensBilling ? () => handleManageSubscription() : undefined;
-                            return (
-                              <div
-                                key={n.id}
-                                onClick={onRowClick}
-                                className="notif-row"
-                                style={{
-                                  display: "flex", alignItems: "center", gap: 12,
-                                  padding: "11px 8px", minHeight: 44,
-                                  borderBottom: "1px solid var(--border-subtle)",
-                                  borderRadius: 8,
-                                  cursor: onRowClick ? "pointer" : "default",
-                                  background: n.read ? "transparent" : "var(--acc-bg)",
-                                }}
-                              >
-                                <span style={{
-                                  width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  background: "var(--bg-surface-2)", color: "var(--accent)",
-                                }}>
-                                  <Icon size={15} strokeWidth={1.85} />
-                                </span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.45, letterSpacing: "-0.005em" }}>
-                                    {notifLine(n)}
-                                  </div>
-                                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>
-                                    {timeAgo(n.created_at)}
-                                  </div>
-                                </div>
-                                {isRequest && (() => {
-                                  const st = feedActioned[n.id];
-                                  // Terminal status (e.g. "Already handled") replaces the buttons; the row clears shortly after.
-                                  if (st && st !== "busy") {
-                                    return (
-                                      <span style={{ flexShrink: 0, fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>{st}</span>
-                                    );
-                                  }
-                                  const busy = st === "busy";
-                                  const err = feedError[n.id];
-                                  return (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                      {err && <span style={{ fontSize: 11, color: "var(--danger)", fontFamily: FONT }}>{err}</span>}
-                                      <button
-                                        onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "accept")}
-                                        disabled={busy}
-                                        style={{
-                                          background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
-                                          borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                          color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT,
-                                          cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-                                        }}
-                                      >{busy ? "…" : "Accept"}</button>
-                                      <button
-                                        onClick={() => respondToFriendFromFeed(n.id, n.payload?.requestId, "decline")}
-                                        disabled={busy}
-                                        style={{
-                                          background: "transparent", border: "1px solid var(--border-default)",
-                                          borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                                          color: "var(--text-secondary)", fontWeight: 600, fontSize: 12, fontFamily: FONT,
-                                          cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-                                        }}
-                                      >Decline</button>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </aside>
-              </div>
-            </div>
+            <DashboardView
+              activeView={activeView} viewLabel={viewLabel} greeting={greeting}
+              displayName={displayName} user={user}
+              streakAtRisk={streakAtRisk}
+              streakBannerDismissed={streakBannerDismissed}
+              setStreakBannerDismissed={setStreakBannerDismissed}
+              classes={classes} notebooks={notebooks}
+              filtered={filtered} filteredClasses={filteredClasses}
+              search={search} setSearch={setSearch}
+              setShowNewClassModal={setShowNewClassModal} setProfileOpen={setProfileOpen}
+              friendsVersion={friendsVersion} bumpFriendsVersion={bumpFriendsVersion}
+              setFriendIds={setFriendIds}
+              openNotebookById={openNotebookById} openUnitWithClassColor={openUnitWithClassColor}
+              expandedClassId={expandedClassId} classUnitsCache={classUnitsCache}
+              handleReorderClasses={handleReorderClasses} handleToggleClass={handleToggleClass}
+              handleChangeClassColor={handleChangeClassColor} openClassSyllabus={openClassSyllabus}
+              setSyllabusForClass={setSyllabusForClass} setNewUnitFor={setNewUnitFor}
+              setDeleteClassTarget={setDeleteClassTarget}
+              handleSetStatus={handleSetStatus} handleToggleStar={handleToggleStar}
+              starredIds={starredIds} setActiveNb={setActiveNb} setConfirmDeleteNb={setConfirmDeleteNb}
+              dueCount={dueCount} startAllReview={startAllReview}
+              subscription={subscription} handleManageSubscription={handleManageSubscription}
+              portalLoading={portalLoading} billingReady={billingReady}
+              heatmap={heatmap} profile={profile} leaderboard={leaderboard}
+              notifications={notifications} setNotifications={setNotifications}
+              clearInbox={clearInbox} feedActioned={feedActioned} feedError={feedError}
+              respondToFriendFromFeed={respondToFriendFromFeed}
+            />
           )}
         </div>
 

@@ -85,7 +85,7 @@ const DOCS = {
 
 Effective date: June 2, 2026
 
-Last updated: June 2, 2026
+Last updated: September 30, 2026
 
 Policy version: 2026-06-02
 
@@ -240,7 +240,7 @@ Questions about this Policy or your data? Email support@scholr.dev.`,
 
 Effective date: June 2, 2026
 
-Last updated: June 2, 2026
+Last updated: September 30, 2026
 
 Terms version: 2026-06-02
 
@@ -414,7 +414,7 @@ Questions about these Terms? Email support@scholr.dev.`,
 
 Effective date: June 2, 2026
 
-Last updated: June 2, 2026
+Last updated: September 30, 2026
 
 Policy version: 2026-06-02
 

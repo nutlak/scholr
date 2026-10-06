@@ -41,6 +41,10 @@ function localDate() {
 
 async function authHeaders(extra = {}) {
   const { data: { session } } = await supabase.auth.getSession();
+  // Every caller hits a requireAuth route, so with no session the request can
+  // only 401. Don't send it: the logged-out landing page was firing five of
+  // these on load and they drowned out every other line in the server log.
+  if (!session) throw new Error("Not signed in.");
   return {
     "Content-Type": "application/json",
     "X-Client-Date": localDate(),

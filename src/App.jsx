@@ -535,10 +535,13 @@ export default function Scholr() {
 
       {authReady && !user && !showPasswordReset && !pendingInviteToken && !showAuth && (
         <Suspense fallback={null}>
-        <LandingPage onSignIn={() => {
+        <LandingPage onSignIn={(intent) => {
+          // "Sign in" buttons pass "login"; every other CTA (which passes a click
+          // event) opens sign-up.
+          const tab = intent === "login" ? "login" : "signup";
           // Marketing domain can't host the session → send users to the app origin to sign in.
-          if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/?auth=signup`; return; }
-          setAuthIntent("signup");
+          if (IS_MARKETING_HOST) { window.location.href = `${APP_ORIGIN}/?auth=${tab}`; return; }
+          setAuthIntent(tab);
           setShowAuth(true);
         }} />
         </Suspense>

@@ -638,7 +638,7 @@ export default function LandingPage({ onSignIn }) {
             className="nav-link nav-link-pricing"
             onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
           >Pricing</button>
-          <button className="nav-link" onClick={onSignIn}>Sign in</button>
+          <button className="nav-link" onClick={() => onSignIn("login")}>Sign in</button>
           <button className="btn-primary" onClick={onSignIn}>Get started free</button>
         </div>
       </nav>
@@ -732,7 +732,7 @@ export default function LandingPage({ onSignIn }) {
               Get started free
               <span style={{ fontSize: 16, marginLeft: 2 }}>→</span>
             </button>
-            <button className="btn-ghost btn-ghost-lg" onClick={onSignIn}>
+            <button className="btn-ghost btn-ghost-lg" onClick={() => onSignIn("login")}>
               Sign in
             </button>
           </div>

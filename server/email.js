@@ -53,12 +53,12 @@ export async function sendOtpEmail(to, code, type) {
     <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
       schol<span style="color:#A78BFA;">r</span>
     </div>
-    <p style="font-size:13px;color:#808098;margin:0 0 28px;">
+    <p style="font-size:13px;color:#A8A8BC;margin:0 0 28px;">
       ${isSignup ? "Complete your signup" : "Reset your password"}
     </p>
 
     <div style="background:#111118;border:1px solid #2A2A38;border-radius:14px;padding:32px;text-align:center;margin-bottom:20px;">
-      <div style="font-size:12px;color:#505070;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
+      <div style="font-size:12px;color:#9A9AB0;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
         Your verification code
       </div>
       <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#A78BFA;font-family:monospace;padding-left:16px;">
@@ -66,8 +66,8 @@ export async function sendOtpEmail(to, code, type) {
       </div>
     </div>
 
-    <p style="font-size:12px;color:#404060;line-height:1.6;margin:0;">
-      This code expires in <strong style="color:#606080;">10 minutes</strong>.
+    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:0;">
+      This code expires in <strong style="color:#C0C0D8;">10 minutes</strong>.
       If you didn't request this, you can safely ignore this email.
     </p>
   </div>
@@ -95,7 +95,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
     <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
       schol<span style="color:#A78BFA;">r</span>
     </div>
-    <p style="font-size:13px;color:#808098;margin:0 0 28px;">Study together, learn faster</p>
+    <p style="font-size:13px;color:#A8A8BC;margin:0 0 28px;">Study together, learn faster</p>
 
     <div style="background:#111118;border:1px solid #2A2A38;border-radius:14px;padding:32px;margin-bottom:20px;">
       <p style="font-size:15px;color:#C0C0D8;line-height:1.7;margin:0 0 24px;">
@@ -104,7 +104,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
       <a href="${inviteUrl}" style="display:inline-block;background:#A78BFA;color:#0A0A0F;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
     </div>
 
-    <p style="font-size:12px;color:#404060;line-height:1.6;margin:0;">
+    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:0;">
       If you don't have a scholr account yet, you'll be prompted to create one first.<br>
       If you weren't expecting this invite, you can safely ignore it.
     </p>
@@ -132,7 +132,7 @@ function unsubBase() {
 
 function emailShell(innerHtml, userId) {
   const unsub = userId
-    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#5b5b6b;text-decoration:underline;">Unsubscribe</a>`
+    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#9A9AB0;text-decoration:underline;">Unsubscribe</a>`
     : "";
   return `<!DOCTYPE html>
 <html>
@@ -144,7 +144,7 @@ function emailShell(innerHtml, userId) {
   <div style="max-width:480px;margin:0 auto;">
     <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#A78BFA;">r</span></div>
     ${innerHtml}
-    <p style="font-size:12px;color:#404060;line-height:1.6;margin:28px 0 0;border-top:1px solid #1c1c28;padding-top:16px;">
+    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:28px 0 0;border-top:1px solid #1c1c28;padding-top:16px;">
       You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#8b8b9b;">support@scholr.dev</a>.<br>${unsub}
     </p>
   </div>
@@ -170,7 +170,7 @@ const ONBOARDING_TEMPLATES = {
         🎯 <strong style="color:#E8E8F0;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
       </p>
       ${ctaButton("Open Scholr →", appUrl())}
-      <p style="font-size:13px;color:#808098;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>
+      <p style="font-size:13px;color:#A8A8BC;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>
     `,
   }),
   feynman: () => ({
@@ -216,7 +216,7 @@ export async function sendReferralEmail(to, referrerName, refUserId) {
     <h1 style="${H}font-size:24px;margin:0 0 14px;">${name} invited you to study on Scholr</h1>
     <p style="${P}">Scholr turns your class notes into a shared AI tutor — upload notes, ask Derek anything, and quiz yourself with Feynman Mode, together with your study group.</p>
     ${ctaButton("Join Scholr free →", link)}
-    <p style="font-size:13px;color:#808098;margin:16px 0 0;">It's free to start.</p>
+    <p style="font-size:13px;color:#A8A8BC;margin:16px 0 0;">It's free to start.</p>
   `);
   const { error } = await getResend().emails.send({
     from: "Scholr <support@scholr.dev>",

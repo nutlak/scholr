@@ -36,6 +36,8 @@ begin
     where n.nspname = 'public' and p.proname = 'get_user_id_by_email'
   loop
     execute format('revoke execute on function %s from public, anon, authenticated', f.sig);
+    -- service_role may only have had it via PUBLIC; keep the server's access (see 041).
+    execute format('grant execute on function %s to service_role', f.sig);
   end loop;
 end $$;
 

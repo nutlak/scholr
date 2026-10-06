@@ -43,7 +43,10 @@ router.post("/api/auth/send-otp", otpIpLimiter, otpSendEmailLimiter, requireTurn
   const { error: insertErr } = await supabase.from("verification_codes").insert({
     email, code, type, user_id: userId, expires_at: expiresAt,
   });
-  if (insertErr) return res.status(500).json({ error: "Failed to generate code" });
+  if (insertErr) {
+    console.error("[send-otp] verification_codes insert failed:", insertErr.message);
+    return res.status(500).json({ error: "Something went wrong on our side. Try again in a minute." });
+  }
 
   try {
     await sendOtpEmail(email, code, type);

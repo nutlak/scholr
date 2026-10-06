@@ -15,7 +15,9 @@ export async function verifyTurnstile(token, ip, { secret = process.env.TURNSTIL
       body: new URLSearchParams({ secret, response: token, ...(ip ? { remoteip: ip } : {}) }),
       signal: AbortSignal.timeout(5000),
     });
-    return (await res.json()).success === true;
+    const out = await res.json();
+    if (out.success !== true) console.warn("[turnstile] rejected:", (out["error-codes"] || []).join(",") || "no reason");
+    return out.success === true;
   } catch (err) {
     console.error("[turnstile] verify failed:", err.message);
     return false;

@@ -1,12 +1,12 @@
 // Signup, OTP, password reset, sign-out and account deletion.
 import { Router } from "express";
-import { recordConsent, relayJarvis, trackEvent } from "../lib/analytics.js";
 import { otpIpLimiter, otpSendEmailLimiter, otpVerifyLimiter, resetLimiter } from "../lib/limiters.js";
 import { removeNotebookImageFiles } from "../lib/notebooks.js";
 import { OTP_MAX_VERIFY_FAILS, generateOtp, generateToken, invalidateOldCodes, otpFailures } from "../lib/otp.js";
 import { checkPassword } from "../lib/password.js";
 import { supabase } from "../lib/supabase.js";
-import { sendOnboardingEmail, sendOtpEmail } from "../email.js";
+import { sendOtpEmail } from "../email.js";
+import { MIN_AGE, ageFromDob, needsSignupCompletion, welcomeNewAccount } from "../lib/signup.js";
 import { requireAuth } from "../lib/auth.js";
 import { requireTurnstile } from "../lib/turnstile.js";
 
@@ -100,24 +100,12 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
       return res.status(400).json({ error: "You must be at least 13 and accept the Terms of Service and Privacy Policy to create an account." });
     }
 
-    // ── Age gate (COPPA): require a valid date of birth and block under-13.
-    // Authoritative server-side check — never trust the client's check alone.
-    // The account is NOT created if this fails.
+    // ── Age gate (COPPA): authoritative server-side check. The account is NOT
+    // created if this fails.
     const dateOfBirth = typeof req.body?.dateOfBirth === "string" ? req.body.dateOfBirth.trim() : "";
-    const dob = dateOfBirth ? new Date(dateOfBirth) : null;
-    if (!dob || isNaN(dob.getTime()) || dob > new Date()) {
-      return res.status(400).json({ error: "A valid date of birth is required." });
-    }
-    const ageNow = (() => {
-      const now = new Date();
-      let a = now.getFullYear() - dob.getFullYear();
-      const m = now.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) a--;
-      return a;
-    })();
-    if (ageNow < 13) {
-      return res.status(403).json({ error: "You must be at least 13 to use Scholr." });
-    }
+    const ageNow = ageFromDob(dateOfBirth);
+    if (Number.isNaN(ageNow)) return res.status(400).json({ error: "A valid date of birth is required." });
+    if (ageNow < MIN_AGE) return res.status(403).json({ error: "You must be at least 13 to use Scholr." });
 
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
@@ -133,50 +121,8 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
       return res.status(500).json({ error: createErr.message });
     }
 
-    // Record consent (13+, Terms + Privacy) — latest snapshot + append-only log.
     if (created?.user?.id) {
-      await recordConsent(created.user.id);
-      // Store the verified birthdate on the profile (auditable). Best-effort:
-      // a not-yet-run migration must not block signup.
-      await supabase.from("profiles").upsert(
-        { user_id: created.user.id, date_of_birth: dateOfBirth, age_verified_at: new Date().toISOString() },
-        { onConflict: "user_id" },
-      ).then(({ error }) => { if (error) console.error("[signup] DOB save error:", error.message); });
-    }
-
-    // Onboarding email sequence: welcome now, Feynman in 3 days, invite in 7.
-    // All best-effort — a Resend hiccup or a not-yet-run migration must never
-    // block signup.
-    if (created?.user?.id) {
-      const uid = created.user.id;
-      const name = fullName?.trim()?.split(" ")[0] || "";
-      sendOnboardingEmail("welcome", email, name, uid).catch(e => console.error("[onboarding welcome]", e.message));
-      trackEvent(uid, "user_signed_up");
-      relayJarvis("new_user", { email });
-      try {
-        const now = Date.now();
-        await supabase.from("pending_emails").insert([
-          { user_id: uid, email, email_type: "feynman",       send_at: new Date(now + 3 * 86400000).toISOString() },
-          { user_id: uid, email, email_type: "invite_friend", send_at: new Date(now + 7 * 86400000).toISOString() },
-        ]);
-      } catch (e) { console.error("[onboarding enqueue]", e.message); }
-
-      // Referral attribution: signup came via ?ref=<referrerId>.
-      const ref = String(req.body?.ref ?? "").trim();
-      if (ref && ref !== uid) {
-        try {
-          await supabase.from("profiles").upsert({ user_id: uid, referred_by: ref }, { onConflict: "user_id" });
-          const { data: existing } = await supabase
-            .from("referrals").select("id")
-            .eq("referrer_id", ref).eq("referred_email", email.toLowerCase())
-            .limit(1).maybeSingle();
-          if (existing) {
-            await supabase.from("referrals").update({ status: "signed_up", referred_user_id: uid }).eq("id", existing.id);
-          } else {
-            await supabase.from("referrals").insert({ referrer_id: ref, referred_email: email.toLowerCase(), referred_user_id: uid, status: "signed_up" });
-          }
-        } catch (e) { console.error("[referral capture]", e.message); }
-      }
+      await welcomeNewAccount({ uid: created.user.id, email, name: fullName, dateOfBirth, ref: req.body?.ref });
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -198,6 +144,39 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
     .eq("id", row.id);
 
   res.json({ ok: true, resetToken });
+});
+
+// POST /api/auth/complete-signup — the age gate and terms for accounts made by
+// Google sign-in, which Supabase creates without ever reaching verify-otp.
+// requireAuth lets a not-yet-completed account reach only this and sign-out.
+router.post("/api/auth/complete-signup", requireAuth, async (req, res) => {
+  const user = req.user;
+  if (!needsSignupCompletion(user)) return res.json({ ok: true });
+  if (req.body?.termsAccepted !== true) {
+    return res.status(400).json({ error: "Please confirm you're at least 13 and accept the Terms and Privacy Policy." });
+  }
+  const dateOfBirth = typeof req.body?.dateOfBirth === "string" ? req.body.dateOfBirth.trim() : "";
+  const age = ageFromDob(dateOfBirth);
+  if (Number.isNaN(age)) return res.status(400).json({ error: "Please enter a valid date of birth." });
+  if (age < MIN_AGE) {
+    // COPPA: an under-13 account can't be kept at all, not just blocked.
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    if (error) console.error("[complete-signup] under-13 delete failed:", error.message);
+    return res.status(403).json({ error: "You must be at least 13 to use Scholr.", deleted: true });
+  }
+
+  const { error: metaErr } = await supabase.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...user.app_metadata, age_verified: true },
+  });
+  if (metaErr) {
+    console.error("[complete-signup] app_metadata update failed:", metaErr.message);
+    return res.status(500).json({ error: "Something went wrong on our side. Try again in a minute." });
+  }
+  const meta = user.user_metadata ?? {};
+  await welcomeNewAccount({
+    uid: user.id, email: user.email, name: meta.full_name ?? meta.name, dateOfBirth, ref: req.body?.ref,
+  });
+  res.json({ ok: true });
 });
 
 // POST /api/auth/reset-password — set a new password using a verified reset token

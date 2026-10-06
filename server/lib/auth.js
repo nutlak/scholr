@@ -1,4 +1,7 @@
 import { supabase, supabaseAuth } from "./supabase.js";
+import { needsSignupCompletion } from "./signup.js";
+
+const SIGNUP_COMPLETION_ROUTES = new Set(["/api/auth/complete-signup", "/api/auth/sign-out"]);
 
 export async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace("Bearer ", "");
@@ -18,6 +21,10 @@ export async function requireAuth(req, res, next) {
   }
 
   req.user = data.user;
+  // A Google sign-in that hasn't passed the age gate yet can only finish it or leave.
+  if (needsSignupCompletion(data.user) && !SIGNUP_COMPLETION_ROUTES.has(req.path)) {
+    return res.status(403).json({ error: "Finish setting up your account first.", code: "finish_signup" });
+  }
   next();
 }
 

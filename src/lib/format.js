@@ -52,7 +52,16 @@ export function sameUser(a, b) {
   if (!a || !b) return false;
   return a.id === b.id
     && a.email === b.email
-    && a.user_metadata?.full_name === b.user_metadata?.full_name;
+    && a.user_metadata?.full_name === b.user_metadata?.full_name
+    && a.app_metadata?.age_verified === b.app_metadata?.age_verified;
+}
+
+// Google sign-ins are created by Supabase directly, so they never pass the
+// email signup's age gate. The server holds them there (requireAuth answers
+// everything else with finish_signup) until FinishSignupWall succeeds.
+export function needsSignupCompletion(user) {
+  const meta = user?.app_metadata ?? {};
+  return meta.provider !== "email" && !meta.age_verified;
 }
 
 export function getDisplayName(user) {

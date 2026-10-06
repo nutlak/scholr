@@ -773,6 +773,19 @@ export const api = {
     return res.json(); // { accepted: boolean }
   },
 
+  // Google sign-ins: birthday + terms. Resolves { deleted: true, error } when
+  // the server removed an under-13 account, so the screen can say so.
+  async completeSignup({ dateOfBirth, termsAccepted, ref }) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/auth/complete-signup`, {
+      method: "POST", headers, body: JSON.stringify({ dateOfBirth, termsAccepted, ref }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.deleted) return data;
+    if (!res.ok) throw new Error(data.error ?? "Couldn't finish signing up. Try again.");
+    return data;
+  },
+
   async acceptTerms() {
     const headers = await authHeaders({ "Content-Type": "application/json" });
     const res = await fetch(`${API_URL}/api/user/accept-terms`, {

@@ -5,8 +5,29 @@ import OtpInput from "./OtpInput.jsx";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
 import { getCaptchaToken, preloadCaptcha } from "./lib/turnstile.js";
+import { ageFromDob } from "./lib/age.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+// Off until the Google provider is configured in Supabase, so the button never
+// ships pointing at a provider that isn't switched on.
+const GOOGLE_SIGNIN = import.meta.env.VITE_GOOGLE_SIGNIN === "1";
+
+// Google's sign-in button, dark variant (their branding rules: the official
+// multicolour G, "Continue with Google", no recolouring).
+const googleBtn = {
+  width: "100%", height: 44, borderRadius: 10,
+  background: "#131314", border: "1px solid #8E918F", color: "#E3E3E3",
+  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+  fontFamily: FONT, fontWeight: 500, fontSize: 14, cursor: "pointer",
+};
+const GoogleG = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+);
 
 const inputStyle = {
   width: "100%",
@@ -148,24 +169,23 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     setResendCooldown(60);
   }
 
+  async function handleGoogle() {
+    setError(""); setLoading(true);
+    // Leaves for Google; the session comes back on the redirect and App picks it
+    // up. A brand-new account then gets the birthday + terms step before anything.
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (err) { setError(err.message); setLoading(false); }
+  }
+
   async function handleLogin(e) {
     e.preventDefault(); setError(""); setLoading(true);
     try {
       onAuth(await signIn(email, password));
     } catch (err) { setError(err.message); }
     setLoading(false);
-  }
-
-  // Whole years between a YYYY-MM-DD birthdate and today.
-  function ageFromDob(birthDate) {
-    if (!birthDate) return NaN;
-    const d = new Date(birthDate);
-    if (isNaN(d)) return NaN;
-    const now = new Date();
-    let age = now.getFullYear() - d.getFullYear();
-    const m = now.getMonth() - d.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
-    return age;
   }
 
   async function handleSignup(e) {
@@ -502,6 +522,19 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
           >{label}</button>
         ))}
       </div>
+
+      {GOOGLE_SIGNIN && (
+        <>
+          <button type="button" onClick={handleGoogle} disabled={loading} style={{ ...googleBtn, opacity: loading ? 0.55 : 1 }}>
+            <GoogleG /> Continue with Google
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0", color: "rgba(245,245,250,0.45)", fontSize: 12, fontFamily: FONT }}>
+            <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+            or with email
+            <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          </div>
+        </>
+      )}
 
       <form
         onSubmit={tab === "login" ? handleLogin : handleSignup}

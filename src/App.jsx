@@ -30,6 +30,7 @@ import { SettingsView } from "./features/settings/SettingsView.jsx";
 import { PasswordResetModal } from "./features/account/PasswordResetModal.jsx";
 import { DeleteAccountModal } from "./features/account/DeleteAccountModal.jsx";
 import { TermsWall } from "./features/account/TermsWall.jsx";
+import { FinishSignupWall } from "./features/account/FinishSignupWall.jsx";
 import { UpgradeModal } from "./features/billing/UpgradeModal.jsx";
 import { WelcomeProModal } from "./features/billing/WelcomeProModal.jsx";
 import { StreakMilestoneModal } from "./features/streak/StreakMilestoneModal.jsx";
@@ -39,7 +40,7 @@ import { DashboardView } from "./features/dashboard/DashboardView.jsx";
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
-import { STREAK_MILESTONES, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser } from "./lib/format.js";
+import { STREAK_MILESTONES, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser, needsSignupCompletion } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
@@ -281,7 +282,9 @@ export default function Scholr() {
   // Fourteen requests, keyed on `user`. See setUserStable: the identity of that
   // object is what decides whether this runs once or three times.
   useEffect(() => {
-    if (!user || !authReady) return;
+    // An unfinished Google sign-in gets only the finish screen; the server would
+    // refuse every one of these until it's done.
+    if (!user || !authReady || needsSignupCompletion(user)) return;
     const name = getDisplayName(user);
 
     // Terms gate: existing users (pre age-gate) have no accepted-terms record →
@@ -503,6 +506,7 @@ export default function Scholr() {
     typeof window !== "undefined" ? window.location.pathname : ""
   ];
   if (legalPage) return <Suspense fallback={null}><LegalPage page={legalPage} /></Suspense>;
+  if (user && authReady && needsSignupCompletion(user)) return <FinishSignupWall user={user} onDone={setUserStable} />;
 
   return (
     <>

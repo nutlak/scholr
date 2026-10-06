@@ -20,13 +20,17 @@ router.post("/api/auth/send-otp", otpIpLimiter, otpSendEmailLimiter, requireTurn
   if (!["signup", "password_reset"].includes(type))
     return res.status(400).json({ error: "Invalid type" });
 
+  // A lookup error used to read as "no such account": signup let duplicates
+  // through and reset quietly sent nothing. Fail loudly instead.
+  const { data: uid, error: lookupErr } = await supabase.rpc("get_user_id_by_email", { target_email: email });
+  if (lookupErr) {
+    console.error("[send-otp] get_user_id_by_email failed:", lookupErr.message);
+    return res.status(500).json({ error: "Something went wrong on our side. Try again in a minute." });
+  }
   let userId = null;
-
   if (type === "signup") {
-    const { data: existing } = await supabase.rpc("get_user_id_by_email", { target_email: email });
-    if (existing) return res.status(400).json({ error: "An account with this email already exists. Please log in instead." });
+    if (uid) return res.status(400).json({ error: "An account with this email already exists. Please log in instead." });
   } else {
-    const { data: uid } = await supabase.rpc("get_user_id_by_email", { target_email: email });
     if (!uid) return res.json({ ok: true }); // don't reveal whether email is registered
     userId = uid;
   }

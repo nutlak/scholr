@@ -311,6 +311,7 @@ app.get("/api/health", (_, res) => {
     VAPID_PUBLIC_KEY:          !!process.env.VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY:         !!process.env.VAPID_PRIVATE_KEY,
     VAPID_SUBJECT:             !!process.env.VAPID_SUBJECT,
+    TURNSTILE_SECRET_KEY:      !!process.env.TURNSTILE_SECRET_KEY,
   };
   res.json({
     ok: true,

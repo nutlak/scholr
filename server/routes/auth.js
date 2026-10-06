@@ -8,12 +8,13 @@ import { checkPassword } from "../lib/password.js";
 import { supabase } from "../lib/supabase.js";
 import { sendOnboardingEmail, sendOtpEmail } from "../email.js";
 import { requireAuth } from "../lib/auth.js";
+import { requireTurnstile } from "../lib/turnstile.js";
 
 export const router = Router();
 
 // POST /api/auth/send-otp — generate & email a 6-digit code
 // type: "signup" | "password_reset"
-router.post("/api/auth/send-otp", otpIpLimiter, otpSendEmailLimiter, async (req, res) => {
+router.post("/api/auth/send-otp", otpIpLimiter, otpSendEmailLimiter, requireTurnstile, async (req, res) => {
   const { email, type } = req.body;
   if (!email || !type) return res.status(400).json({ error: "email and type are required" });
   if (!["signup", "password_reset"].includes(type))
@@ -44,7 +45,7 @@ router.post("/api/auth/send-otp", otpIpLimiter, otpSendEmailLimiter, async (req,
     await sendOtpEmail(email, code, type);
   } catch (err) {
     console.error("Email send error:", err.message);
-    return res.status(500).json({ error: "Failed to send verification email. Check RESEND_API_KEY." });
+    return res.status(500).json({ error: "Couldn't send the verification email. Try again in a minute." });
   }
 
   res.json({ ok: true });

@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
+import { getCaptchaToken, preloadCaptcha } from "./lib/turnstile.js";
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -97,6 +98,8 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
 
+  useEffect(preloadCaptcha, []);
+
   useEffect(() => {
     if (resendCooldown === 0) return;
     const id = setTimeout(() => setResendCooldown(c => c - 1), 1000);
@@ -121,7 +124,17 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     return data;
   }
   async function sendOtp(emailAddr, type) {
-    return apiPost("/api/auth/send-otp", { email: emailAddr, type });
+    return apiPost("/api/auth/send-otp", { email: emailAddr, type, captchaToken: await getCaptchaToken() });
+  }
+  // Every password sign-in goes through here so each one carries a fresh
+  // Turnstile token — Supabase rejects sign-ins without one once its bot
+  // protection is switched on.
+  async function signIn(emailAddr, pwd) {
+    const { data, error: err } = await supabase.auth.signInWithPassword({
+      email: emailAddr, password: pwd, options: { captchaToken: await getCaptchaToken() },
+    });
+    if (err) throw err;
+    return data.user;
   }
 
   function enterOtpScreen(emailAddr, flow, pwd = "", name = "", birthDate = "") {
@@ -138,9 +151,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   async function handleLogin(e) {
     e.preventDefault(); setError(""); setLoading(true);
     try {
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) throw err;
-      onAuth(data.user);
+      onAuth(await signIn(email, password));
     } catch (err) { setError(err.message); }
     setLoading(false);
   }
@@ -200,11 +211,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
       const data = await apiPost("/api/auth/verify-otp", body);
 
       if (otpFlow === "signup") {
-        const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-          email: pendingEmail, password: pendingPassword,
-        });
-        if (authErr) throw authErr;
-        onAuth(authData.user);
+        onAuth(await signIn(pendingEmail, pendingPassword));
       } else {
         setResetToken(data.resetToken);
         setNewPassword(""); setConfirmPassword("");
@@ -233,11 +240,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     setError(""); setLoading(true);
     try {
       await apiPost("/api/auth/reset-password", { resetToken, newPassword });
-      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-        email: pendingEmail, password: newPassword,
-      });
-      if (authErr) throw authErr;
-      onAuth(authData.user);
+      onAuth(await signIn(pendingEmail, newPassword));
     } catch (err) { setError(err.message); }
     setLoading(false);
   }

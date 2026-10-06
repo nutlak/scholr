@@ -35,11 +35,20 @@ test("the CSP is enforcing, not Report-Only", () => {
   );
 });
 
-test("scripts are same-origin only — no inline, no CDN", () => {
+// The one exception is Cloudflare Turnstile, the bot check on sign-in. Its
+// script can't be self-hosted (Cloudflare requires loading it from their
+// origin), and it renders its challenge in an iframe from the same origin.
+const TURNSTILE = "https://challenges.cloudflare.com";
+
+test("scripts are same-origin only — no inline, no CDN beyond Turnstile", () => {
   const src = directive("script-src");
-  assert.equal(src, "'self'");
+  assert.equal(src, `'self' ${TURNSTILE}`);
   assert.ok(!src.includes("unsafe-inline"), "inline scripts would defeat the whole policy");
   assert.ok(!src.includes("unsafe-eval"));
+});
+
+test("frames are limited to the Turnstile challenge", () => {
+  assert.equal(directive("frame-src"), TURNSTILE);
 });
 
 test("inline styles stay allowed — the app's styling convention depends on it", () => {

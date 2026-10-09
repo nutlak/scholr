@@ -35,15 +35,15 @@ const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ def
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "#C2410C", subtitle: "Every key idea, and how well you know it" },
-  { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "#1D4ED8", subtitle: "What Derek reads in this unit",            group: "learn" },
-  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "#15803D", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
-  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "#0E7490", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
-  { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "#DC2626", subtitle: "Two-host audio overview",                  group: "learn" },
-  { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "#B45309", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
-  { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "#C2410C", subtitle: "Your deck, spaced out over days",          group: "test" },
-  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",    title: "Worksheet",    Icon: LineChart,     tint: "#1D4ED8", subtitle: "Worked problems with real plotted graphs", group: "test",  panel: "forge", forgeAction: "worksheet" },
-  { id: "feynman",           text: "Feynman",   label: "Explain it",   title: "Feynman Mode", Icon: Brain,         tint: "#15803D", subtitle: "Explain it in your words, get graded",     group: "test" },
+  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "var(--ink-violet)", subtitle: "Every key idea, and how well you know it" },
+  { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "var(--ink-blue)", subtitle: "What Derek reads in this unit",            group: "learn" },
+  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "var(--ink-green)", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
+  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "var(--ink-teal)", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
+  { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "var(--ink-red)", subtitle: "Two-host audio overview",                  group: "learn" },
+  { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "var(--ink-amber)", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
+  { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "var(--ink-pink)", subtitle: "Your deck, spaced out over days",          group: "test" },
+  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",    title: "Worksheet",    Icon: LineChart,     tint: "var(--ink-blue)", subtitle: "Worked problems with real plotted graphs", group: "test",  panel: "forge", forgeAction: "worksheet" },
+  { id: "feynman",           text: "Feynman",   label: "Explain it",   title: "Feynman Mode", Icon: Brain,         tint: "var(--ink-green)", subtitle: "Explain it in your words, get graded",     group: "test" },
 ];
 // Shown while a tool's chunk downloads. Tools are code-split because they are
 // only reachable behind a click, and together they were a large slice of a
@@ -410,7 +410,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 disabled={deleting}
                 className="btn-press"
                 style={{
-                  background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
+                  background: "#DC2626",
                   border: "none", borderRadius: 10, padding: "0 18px", height: 36,
                   color: "#fff", fontWeight: 600, fontSize: 13,
                   cursor: deleting ? "not-allowed" : "pointer",
@@ -630,9 +630,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       ) : senderTint && (
                         <div style={{
                           width: 16, height: 16, borderRadius: "50%",
-                          background: `linear-gradient(135deg, ${senderTint.hue}, ${senderTint.deep})`,
+                          background: senderTint.hue,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 9, fontWeight: 700, color: "#fff",
+                          fontSize: 9, fontWeight: 700, color: "var(--paper)",
                         }}>{(senderLabel[0] || "?").toUpperCase()}</div>
                       )}
                       <div style={{
@@ -795,9 +795,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     >
                       <div style={{
                         width: 20, height: 20, borderRadius: "50%",
-                        background: `linear-gradient(135deg, ${tnt.hue}, ${tnt.deep})`,
+                        background: tnt.hue,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 10, fontWeight: 700, color: "#fff",
+                        fontSize: 10, fontWeight: 700, color: "var(--paper)",
                       }}>{name[0]?.toUpperCase()}</div>
                       {name}
                     </div>

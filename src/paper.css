@@ -3,7 +3,7 @@
 
    The look: an explainer sketched on white paper. Black ink lines that wobble
    a little, handwritten labels, lots of white space, and colour only where it
-   means something (orange = the way forward, red = a problem, blue = a note).
+   means something (blue pen = the way forward, red = a problem).
    No glows, gradients, shadows or textures.
 
    Most components are inline-styled, so the outlines reach them the way
@@ -11,15 +11,41 @@
    they consistently write ([style*="var(--card-bg)"] and friends).
    ====================================================================== */
 
-/* The wobble: an ellipse-per-corner radius that never quite matches itself,
-   so a 1.5px ink border reads as drawn by hand rather than by a CSS engine. */
+/* The wobble: corners that are round but never quite match each other, so a
+   1.5px ink border reads as drawn by hand rather than by a CSS engine. */
 :root {
-  --wobble:    255px 14px 225px 14px / 14px 225px 14px 255px;
-  --wobble-sm: 255px 12px 225px 12px / 12px 225px 12px 255px;
+  /* Rounded, and never quite even: each corner a slightly different curve.
+     Sized so even a 44px button keeps visibly round corners. */
+  --wobble:    28px 36px 30px 40px / 36px 28px 40px 30px;
+  --wobble-sm: 16px 22px 18px 24px / 22px 16px 24px 18px;
   --ink-line:  1.5px solid var(--ink, #1C1C1C);
 }
 
-html, body { background: #FFFFFF; }
+html, body { background: var(--bg); }
+
+/* ── Notebook paper: wide-ruled lines and a red margin ──────────────────
+   On the scrolling content (and the landing page), so the ruling moves with
+   the page like a real sheet. Cards sit on it like index cards. 32px is
+   wide-ruled (11/32"). */
+:root { --rule-gap: 32px; --rule-x: 44px; }
+@media (max-width: 699px) { :root { --rule-x: 8px; } }
+.main-pane, .landing-root {
+  background-color: var(--bg) !important;
+  background-image:
+    linear-gradient(90deg, transparent var(--rule-x), var(--rule-margin) var(--rule-x),
+      var(--rule-margin) calc(var(--rule-x) + 1.5px), transparent calc(var(--rule-x) + 1.5px)),
+    repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--rule-gap) - 1px),
+      var(--rule-line) calc(var(--rule-gap) - 1px), var(--rule-line) var(--rule-gap)) !important;
+  background-attachment: local !important;
+}
+
+/* Anything that sets its own small radius gets the hand-drawn corners too.
+   :where() keeps this at zero specificity, so the card/sheet rules below (and
+   circles, pills and chat bubbles) still win. */
+:where([style*="border-radius"]:not([style*="border-radius: 50%"]):not([style*="border-radius: 999"]):not([style*="border-radius: 9999"]):not([style*="border-radius: 0"])) {
+  border-radius: var(--wobble-sm) !important;
+}
+:where(button:not([style*="border-radius: 50%"])) { border-radius: var(--wobble-sm); }
 
 /* ── Type: handwritten where it's a heading or a label ─────────────────── */
 h1, h2, h3, .greeting-text, .tool-modal-title, .hud-title {
@@ -45,7 +71,7 @@ h1, h2, h3, .greeting-text, .tool-modal-title, .hud-title {
   font-size: 15px !important;
   font-weight: 400 !important;
   color: var(--text-secondary) !important;
-  background: #FFFFFF !important;
+  background: var(--bg) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   border-bottom: 1.5px solid var(--border-subtle) !important;
@@ -70,9 +96,9 @@ h1, h2, h3, .greeting-text, .tool-modal-title, .hud-title {
   background-image: none !important;
 }
 /* Study tiles: white paper, the colour moves to the icon only. */
-.study-tile, .study-hero { background: #FFFFFF !important; }
-.study-hero-orb { background: #FFFFFF !important; border: var(--ink-line) !important; }
-.battle-tile { background: #FFFFFF !important; }
+.study-tile, .study-hero { background: var(--paper) !important; }
+.study-hero-orb { background: var(--paper) !important; border: var(--ink-line) !important; }
+.battle-tile { background: var(--paper) !important; }
 .battle-tile .battle-shape { font-size: 22px; }
 
 /* Inputs: a drawn box. */
@@ -99,7 +125,7 @@ textarea[style*="border"], select[style*="border"] {
 .btn-press[style*="border: 1px solid"], .btn-ghost, .nb-util-btn, .nb-tool-btn {
   border: var(--ink-line) !important;
 }
-.seg-control { border: var(--ink-line) !important; background: #FFFFFF !important; }
+.seg-control { border: var(--ink-line) !important; background: var(--paper) !important; }
 .seg-pill {
   border-radius: var(--wobble-sm) !important;
   background: var(--acc-bg-h) !important;
@@ -109,52 +135,55 @@ textarea[style*="border"], select[style*="border"] {
 .seg-option { font-family: var(--font-hand) !important; font-size: 16px !important; }
 
 /* Chat: Derek's bubble is a drawn speech bubble; yours is a highlighter. */
-.chat-bubble.chat-in  { background: #FFFFFF !important; border: var(--ink-line) !important; }
+.chat-bubble.chat-in  { background: var(--paper) !important; border: var(--ink-line) !important; }
 .chat-bubble.chat-own { background: var(--acc) !important; border: 1.5px solid var(--acc) !important; color: var(--on-acc) !important; }
 
 /* No glows or drop shadows anywhere — the paper is flat. */
 [style*="box-shadow"]:not(.btn-press):not(input) { box-shadow: none !important; }
 
-/* ── Waiting indicator: same oscillating sweep, in ink and orange ────────── */
+/* ── Waiting indicator: the same oscillating sweep, in ink and the pen colour */
 .shimmer {
   background-image: linear-gradient(90deg,
     var(--text-tertiary) 0%, var(--text-tertiary) 30%,
-    var(--acc) 48%, #F97316 50%, var(--acc) 52%,
+    var(--acc) 46%, var(--acc-h) 50%, var(--acc) 54%,
     var(--text-tertiary) 70%, var(--text-tertiary) 100%) !important;
   font-family: var(--font-hand);
 }
 
 /* Selection and focus in ink colours. */
-::selection { background: rgba(249, 115, 22, 0.22); color: inherit; }
+::selection { background: var(--acc-bg-h); color: inherit; }
 :focus-visible { outline: 2px solid var(--acc) !important; outline-offset: 2px; }
 
-/* A wavy orange marker underline, drawn under a word. */
+/* A wavy marker underline, drawn under a word (in the blue pen colour). */
 .hand-underline {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%23E8590C' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%232563EB' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-size: 100% 0.32em !important;
   background-position: 0 100% !important;
   padding-bottom: 0.06em;
+}
+html[data-theme="dark"] .hand-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%238AB4FF' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
 }
 
 /* Landing page cards and pills. */
 .lp-feature, .landing-root [style*="var(--card-bg)"] {
   border: var(--ink-line) !important;
   border-radius: var(--wobble) !important;
-  background: #FFFFFF !important;
+  background: var(--paper) !important;
   box-shadow: none !important;
   transform: none !important;
 }
-.lp-feat-icon { background: #FFFFFF !important; border: var(--ink-line) !important; border-radius: var(--wobble-sm) !important; }
+.lp-feat-icon { background: var(--paper) !important; border: var(--ink-line) !important; border-radius: var(--wobble-sm) !important; }
 .lp-feat-title { font-family: var(--font-hand) !important; font-size: 21px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
-.lp-card { border: var(--ink-line) !important; border-radius: var(--wobble) !important; background: #FFFFFF !important; box-shadow: none !important; transform: none !important; background-image: none !important; }
+.lp-card { border: var(--ink-line) !important; border-radius: var(--wobble) !important; background: var(--paper) !important; box-shadow: none !important; transform: none !important; background-image: none !important; }
 .lp-step-num {
-  background: #FFFFFF !important; color: var(--acc) !important; box-shadow: none !important;
+  background: var(--paper) !important; color: var(--acc) !important; box-shadow: none !important;
   border: 2px solid var(--ink) !important; border-radius: 52% 48% 46% 54% / 50% 54% 46% 50% !important;
   font-family: var(--font-hand) !important; font-size: 20px !important;
 }
 .lp-step-num + div { background: repeating-linear-gradient(to bottom, var(--ink) 0 6px, transparent 6px 11px) !important; width: 2px !important; opacity: 0.5; }
-.lp-pill { background: #FFFFFF !important; border: 1.5px solid var(--acc) !important; border-radius: var(--wobble-sm) !important; box-shadow: none !important; }
+.lp-pill { background: var(--paper) !important; border: 1.5px solid var(--acc) !important; border-radius: var(--wobble-sm) !important; box-shadow: none !important; }
 
 /* No frosted glass: overlays are a plain white veil (--overlay), chrome is
    solid paper. */

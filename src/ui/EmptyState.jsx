@@ -9,7 +9,7 @@ export function EmptyState({ icon, title, body, cta, secondary }) {
     }}>
       <div style={{
         width: 72, height: 72, borderRadius: 18,
-        background: "#FFFFFF",
+        background: "var(--paper)",
         border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)",
         display: "flex", alignItems: "center", justifyContent: "center",
         marginBottom: 6, color: "var(--accent)",

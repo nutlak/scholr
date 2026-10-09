@@ -39,22 +39,22 @@ function useFadeIn(delay = 0) {
 const PLANS = ["free", "pro", "squad"];
 
 const FEATURES = [
-  { Icon: Radio,         title: "Study together, live", tint: "#15803D", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
-  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#C2410C", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
-  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#C2410C", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
-  { Icon: Orbit,         title: "The unit brain",     tint: "#C2410C", short: "See what you know at a glance", body: "Every key idea in a unit, sketched as a map and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
-  { Icon: Brain,         title: "Feynman Mode",       tint: "#15803D", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
-  { Icon: Hammer,        title: "Study guides in a tap", tint: "#B45309", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
-  { Icon: Headphones,    title: "AI podcasts",        tint: "#DC2626", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
-  { Icon: Users,         title: "Join your class with a PIN", tint: "#1D4ED8", short: "One PIN, the whole class", body: "Paste one link in your class group chat, or read out a six-character PIN. Classmates get every unit in the class, with the same sources and the same AI answers, and you're friends straight away." },
-  { Icon: BookOpen,      title: "Upload anything",    tint: "#1D4ED8", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
+  { Icon: Radio,         title: "Study together, live", tint: "var(--ink-green)", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
+  { Icon: Flame,         title: "Friends streak leaderboard", tint: "var(--ink-red)", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
+  { Icon: MessageCircle, title: "Ask Derek anything", tint: "var(--ink-blue)", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
+  { Icon: Orbit,         title: "The unit brain",     tint: "var(--ink-violet)", short: "See what you know at a glance", body: "Every key idea in a unit, sketched as a map and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "var(--ink-green)", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
+  { Icon: Hammer,        title: "Study guides in a tap", tint: "var(--ink-amber)", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "var(--ink-red)", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
+  { Icon: Users,         title: "Join your class with a PIN", tint: "var(--ink-blue)", short: "One PIN, the whole class", body: "Paste one link in your class group chat, or read out a six-character PIN. Classmates get every unit in the class, with the same sources and the same AI answers, and you're friends straight away." },
+  { Icon: BookOpen,      title: "Upload anything",    tint: "var(--ink-blue)", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
-  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "#C2410C" },
-  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "#1D4ED8" },
-  { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "#DC2626" },
-  { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#15803D" },
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "var(--ink-blue)" },
+  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "var(--ink-blue)" },
+  { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "var(--ink-red)" },
+  { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "var(--ink-green)" },
 ];
 
 function FeatureCard({ Icon, title, body, short, tint, idx }) {
@@ -76,15 +76,15 @@ function FeatureCard({ Icon, title, body, short, tint, idx }) {
         transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(20px)",
-        boxShadow: hovered ? `0 14px 40px rgba(0,0,0,0.4), 0 0 0 1px ${tint}22` : "0 2px 8px rgba(0,0,0,0.2)",
+        boxShadow: hovered ? `0 14px 40px rgba(0,0,0,0.4), 0 0 0 1px color-mix(in srgb, ${tint} 13%, transparent)` : "0 2px 8px rgba(0,0,0,0.2)",
         overflow: "hidden",
       }}
     >
       <div className="lp-feat-icon" style={{
         position: "relative",
         width: 44, height: 44, borderRadius: 12,
-        background: "#FFFFFF",
-        border: `1px solid ${tint}33`,
+        background: "var(--paper)",
+        border: `1px solid color-mix(in srgb, ${tint} 20%, transparent)`,
         display: "flex", alignItems: "center", justifyContent: "center",
         color: tint, marginBottom: 18,
         transition: "transform 0.25s ease",
@@ -116,16 +116,16 @@ function Step({ n, title, body, tint, last, idx }) {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <div className="lp-step-num" style={{
           width: 40, height: 40, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${tint}, ${tint}88)`,
+          background: `linear-gradient(135deg, ${tint}, color-mix(in srgb, ${tint} 53%, transparent))`,
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 15, fontWeight: 700, color: "#fff",
           fontFamily: FONT, flexShrink: 0,
-          boxShadow: `0 8px 20px ${tint}40, 0 0 0 4px ${tint}14`,
+          boxShadow: `0 8px 20px color-mix(in srgb, ${tint} 25%, transparent), 0 0 0 4px color-mix(in srgb, ${tint} 8%, transparent)`,
         }}>{n}</div>
         {!last && (
           <div style={{
             width: 2, flex: 1, marginTop: 4,
-            background: `linear-gradient(180deg, ${tint}44 0%, var(--bg-surface-2) 100%)`,
+            background: `linear-gradient(180deg, color-mix(in srgb, ${tint} 27%, transparent) 0%, var(--bg-surface-2) 100%)`,
             minHeight: 36,
           }} />
         )}
@@ -156,9 +156,9 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
       style={{
         position: "relative",
         background: highlighted
-          ? "#FFFFFF"
+          ? "var(--paper)"
           : "#14141F",
-        border: `1px solid ${highlighted ? `${accent}55` : "var(--border-subtle)"}`,
+        border: `1px solid ${highlighted ? `color-mix(in srgb, ${accent} 33%, transparent)` : "var(--border-subtle)"}`,
         borderRadius: 18,
         padding: "30px 26px",
         opacity: visible ? 1 : 0,
@@ -167,7 +167,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
           : "translateY(24px)",
         transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, box-shadow 0.25s ease, border-color 0.2s ease",
         boxShadow: highlighted
-          ? `0 24px 60px ${accent}33, 0 0 0 1px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.06)`
+          ? `0 24px 60px color-mix(in srgb, ${accent} 20%, transparent), 0 0 0 1px color-mix(in srgb, ${accent} 33%, transparent), inset 0 1px 0 rgba(255,255,255,0.06)`
           : (hovered ? "0 14px 40px rgba(0,0,0,0.45)" : "0 4px 14px rgba(0,0,0,0.25)"),
         overflow: "hidden",
       }}
@@ -176,11 +176,11 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         <div style={{
           position: "absolute", top: 14, right: 14,
           fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-          textTransform: "uppercase", color: "#fff",
+          textTransform: "uppercase", color: "var(--paper)",
           background: gradient,
           borderRadius: 999, padding: "4px 10px",
           fontFamily: FONT,
-          boxShadow: `0 4px 14px ${accent}55`,
+          boxShadow: `0 4px 14px color-mix(in srgb, ${accent} 33%, transparent)`,
         }}>
           Most popular
         </div>
@@ -216,7 +216,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
           }}>
             <span style={{
               flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
-              background: `${accent}22`, border: `1px solid ${accent}44`,
+              background: `color-mix(in srgb, ${accent} 13%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 27%, transparent)`,
               display: "flex", alignItems: "center", justifyContent: "center",
               color: accent, marginTop: 1,
             }}><Check size={11} strokeWidth={2.5} /></span>
@@ -229,12 +229,12 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         style={{
           width: "100%", height: 46,
           background: highlighted ? gradient : "transparent",
-          border: highlighted ? "none" : `1px solid ${accent}55`,
-          color: highlighted ? "#fff" : accent,
+          border: highlighted ? "none" : `1px solid color-mix(in srgb, ${accent} 33%, transparent)`,
+          color: highlighted ? "var(--paper)" : accent,
           borderRadius: 12,
           fontSize: 14, fontWeight: 600,
           fontFamily: FONT, cursor: "pointer",
-          boxShadow: highlighted ? `0 8px 24px ${accent}55` : "none",
+          boxShadow: highlighted ? `0 8px 24px color-mix(in srgb, ${accent} 33%, transparent)` : "none",
           transition: "transform 0.18s, box-shadow 0.22s, background 0.18s",
           letterSpacing: "-0.01em",
         }}
@@ -248,7 +248,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
   );
 }
 
-function SectionHeader({ pill, title, sub, accent = "#C2410C" }) {
+function SectionHeader({ pill, title, sub, accent = "var(--ink-blue)" }) {
   const [ref, visible] = useFadeIn();
   return (
     <div ref={ref} style={{
@@ -258,7 +258,7 @@ function SectionHeader({ pill, title, sub, accent = "#C2410C" }) {
     }}>
       <div className="lp-pill" style={{
         display: "inline-flex", alignItems: "center", gap: 6,
-        background: `${accent}14`, border: `1px solid ${accent}30`,
+        background: `color-mix(in srgb, ${accent} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 19%, transparent)`,
         borderRadius: 999, padding: "5px 12px",
         // Mono, tracked out, small. The label type of a technical page rather
         // than a marketing one — the thing that reads as precision in the
@@ -319,6 +319,7 @@ const FAQS = [
   { q: "Can I study with my class?", a: "Yes. Open a class, tap Invite, and share the PIN or link. Everyone who joins sees the same units, sources, chat, and AI answers in real time, and becomes your friend on Scholr." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
   { q: "Can I get Scholr on my phone?", a: "Yes. Install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
+  { q: "Is there a dark mode?", a: "Yes. Scholr follows your device's light or dark setting, and you can switch it anytime in Settings. Both look like the same notebook page." },
 ];
 
 function UseCaseCard({ when, what, idx }) {
@@ -460,7 +461,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
   return (
     // Same paper theme as the app: ink on white, hand-drawn outlines.
     <div className="landing-root" style={{
-      background: "#FFFFFF", minHeight: "100vh",
+      background: "var(--bg)", minHeight: "100vh",
       fontFamily: FONT, color: "var(--text-primary)",
       overflowX: "hidden",
       position: "relative",
@@ -586,7 +587,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
         paddingLeft: "max(24px, env(safe-area-inset-left))",
         paddingRight: "max(24px, env(safe-area-inset-right))",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "#FFFFFF",
+        background: "var(--bg)",
         borderBottom: scrolled ? "1.5px solid var(--border-subtle)" : "1.5px solid transparent",
         transition: "all 0.25s ease",
       }}>
@@ -758,7 +759,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
             pill="How it works"
             title="Up and running in minutes"
             sub="Upload your notes and start asking. Derek can build your units from a syllabus."
-            accent="#1D4ED8"
+            accent="var(--ink-blue)"
           />
           <div className="lp-steps" style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
@@ -779,7 +780,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
             pill="Pricing"
             title="Simple, student-friendly pricing"
             sub="Start free. Upgrade when you outgrow the limits, and cancel anytime."
-            accent="#DC2626"
+            accent="var(--ink-red)"
           />
           {/* Phone: one plan at a time (Pro first) instead of three cards
               stacked 1,650px deep. Desktop shows all three side by side. */}
@@ -802,7 +803,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Free"
               price="$0"
               period="forever"
-              accent="#1D4ED8"
+              accent="var(--ink-blue)"
               ctaLabel="Get started free"
               onClick={onSignIn}
               features={[
@@ -820,7 +821,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Pro"
               price="$8.49"
               period="/ month"
-              accent="#C2410C"
+              accent="var(--ink-blue)"
               highlighted
               ctaLabel="Upgrade to Pro"
               onClick={onSignIn}
@@ -840,7 +841,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Squad"
               price="$24.99"
               period="/ month"
-              accent="#15803D"
+              accent="var(--ink-green)"
               ctaLabel="Start a squad"
               onClick={onSignIn}
               features={[
@@ -864,9 +865,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
             pill="How it gets used"
-            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#B45309" }}>before the exam</span></>}
+            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--ink-amber)" }}>before the exam</span></>}
             sub="Real study workflows, minus the busywork."
-            accent="#B45309"
+            accent="var(--ink-amber)"
           />
           <div className="lp-scroller" style={{
             display: "grid",
@@ -889,9 +890,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <SectionHeader
             pill="FAQ"
-            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#1D4ED8" }}>answered</span></>}
+            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--ink-blue)" }}>answered</span></>}
             sub="Everything you need to know before you start."
-            accent="#1D4ED8"
+            accent="var(--ink-blue)"
           />
           <div style={{ marginTop: 48 }}>
             {FAQS.map(f => (<FAQItem key={f.q} {...f} />))}

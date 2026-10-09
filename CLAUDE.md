@@ -38,9 +38,9 @@ Inline styles, driven by CSS custom properties. `style={{ color: "var(--t1)" }}`
 is the house pattern — so **editing the `:root` tokens in `src/index.css`
 restyles the whole app**, which is almost always the right lever.
 
-Load order is `index.css` → `hud.css` → `App.css` (App.css is imported from
-`App.jsx`, so it lands last and wins ties). `src/hud.css` is the override
-layer: it retunes tokens and adds chrome on top of index.css.
+Load order is `index.css` → `hud.css` → `App.css` → `paper.css` (the last two
+are imported from `App.jsx`, paper last, so it wins ties). `src/hud.css` is now
+just layout for the status strip and the phone shell.
 
 Because styles are inline, attribute selectors are how you reach many
 components at once — `[style*="var(--card-bg)"]` applies the card chrome
@@ -52,20 +52,29 @@ rather than importing `src/lib/theme.js`. Font changes must sweep all of them
 
 ## Design language
 
-**Paper: a hand-drawn explainer sketched on white.** (Since 2026-10-09; the
-dark violet "instrument panel" look is retired.) Pure white `#FFFFFF` — no
-beige, no texture — with black ink `#1C1C1C` for text and lines, and colour
-only where it means something: orange `--acc` (`#C2410C`) for the way forward
-and primary actions, red `--danger` for problems, blue `--info` for notes,
-green `--success` for "solid". Every text colour clears 4.5:1 on white; don't
-add pastels (`#FBBF24`, `#60A5FA`…) as text, use the inks in `src/lib/theme.js`.
-There is one theme: `useAppearance` pins `data-theme="light"`, and the
-accent is still the student's choice (Orange default).
+**Paper: a hand-drawn sketch in a wide-ruled notebook.** (Since 2026-10-09; the
+dark violet "instrument panel" look is retired.) The page is notebook paper —
+faint blue rules every 32px and a red margin line, on `.main-pane` and
+`.landing-root` — with ink `--ink` for text and lines, and colour only where it
+means something: ballpoint-blue `--acc` for the way forward and primary actions,
+red `--danger` for problems, green `--success` for "solid", mustard `--warning`.
+No orange: Noah rejected it.
+
+**Two themes, same notebook.** Light paper (`html[data-theme="light"]`, white)
+and dark paper (`html[data-theme="dark"]`, slate with cream ink), both in
+`index.css`. `useAppearance` holds the choice (device setting by default,
+Settings → Theme to change), `public/theme-boot.js` applies it before first
+paint, and the accent preset supplies a deep shade for light and a pale one for
+dark. So **never hard-code a colour a component paints**: use the tokens —
+`--paper` for card/tile surfaces, `--ink-blue|green|amber|red|violet|pink|teal`
+for coloured icons and labels (each clears 4.5:1 on its own paper), and
+`color-mix(in srgb, <colour> N%, transparent)` for tints, since `${hex}22`
+breaks on a `var()`.
 
 **`src/paper.css` is the hand-drawn layer and loads last** (after App.css).
 It gives cards, sheets, panels, tiles, inputs and outlined/filled buttons an
-ink outline with the `--wobble` border-radius (the PaperCSS ellipse trick that
-reads as drawn by hand), turns tracked-uppercase "instrument labels" into
+ink outline with the `--wobble` border-radius (big, slightly uneven corners
+that read as drawn by hand; anything with an inline radius gets `--wobble-sm`), turns tracked-uppercase "instrument labels" into
 handwritten notes, kills glows, shadows, radial gradients and frosted glass,
 and restyles the status strip. Reach new components through classes or the
 tokens they write, the same way. No gradients, glows, shadows or blur.
@@ -78,13 +87,14 @@ including Derek's answers. Handwriting for a paragraph fails the legibility bar.
 **Type and space come from scales, not from taste per component.** `--fs-*`
 with a matching `--tr-*` and `--lh-*`. Spacing is `--sp-1`…`--sp-8`.
 
-**Illustrations are hand-drawn SVG** in the same ink/orange/blue/red palette
+**Illustrations are hand-drawn SVG** in theme tokens (ink, `--acc`, `--danger`)
 (`src/ui/HeroSketch.jsx`, `src/ui/ScholrMark.jsx`, the brain's `HandOrb`). No
 WebGL effects, no mock app screenshots.
 
 Panels dock to the **right rail** (`ToolModal`), never centre-screen dialogs.
-`.shimmer` is the one "waiting" indicator — an oscillating ink-to-orange
-sweep clipped to text.
+`.shimmer` is the one "waiting" indicator — an oscillating ink-to-blue
+sweep clipped to text. No `corner-shape` squircles: they
+square off the hand-drawn corners.
 
 Chrome stays quiet, and copy stays plain: the bar is *simple and clean enough
 for a 3-year-old or an 83-year-old*. When the aesthetic fights legibility,

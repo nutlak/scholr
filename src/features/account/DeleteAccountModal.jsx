@@ -108,7 +108,7 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
               disabled={!confirmed || loading}
               className="btn-press"
               style={{
-                background: confirmed ? "linear-gradient(135deg, #F87171 0%, #EF4444 100%)" : "var(--s2)",
+                background: confirmed ? "#DC2626" : "var(--s2)",
                 border: confirmed ? "none" : "1px solid var(--border)",
                 borderRadius: 10, padding: "0 18px", height: 36,
                 color: confirmed ? "#fff" : "var(--t4)",

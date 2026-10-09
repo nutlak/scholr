@@ -5,11 +5,11 @@ import { FONT, MONO } from "../../lib/theme.js";
 import { WorksheetView } from "./WorksheetView.jsx";
 
 const FORGE_ACTIONS = [
-  { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "#15803D", desc: "Comprehensive review" },
-  { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "#B45309", desc: "Practice questions"  },
-  { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "#C2410C", desc: "Quick recall cards"  },
-  { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "#0E7490", desc: "Concise overview"    },
-  { id: "worksheet",   label: "Worksheet",   Icon: LineChart,      color: "#1D4ED8", desc: "Worked problems + graphs" },
+  { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "var(--ink-green)", desc: "Comprehensive review" },
+  { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "var(--ink-amber)", desc: "Practice questions"  },
+  { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "var(--ink-pink)", desc: "Quick recall cards"  },
+  { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "var(--ink-teal)", desc: "Concise overview"    },
+  { id: "worksheet",   label: "Worksheet",   Icon: LineChart,      color: "var(--ink-blue)", desc: "Worked problems + graphs" },
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
@@ -242,7 +242,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               <div key={o.id} className="forge-saved-item">
                 <div style={{
                   width: 30, height: 30, borderRadius: 8,
-                  background: `${color}18`, border: `1px solid ${color}30`,
+                  background: `color-mix(in srgb, ${color} 9%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 19%, transparent)`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   color, flexShrink: 0,
                 }}><Icon size={15} strokeWidth={1.75} /></div>
@@ -414,7 +414,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
                 display: "flex", flexDirection: "column", alignItems: "center",
                 justifyContent: "center", height: "100%", gap: 14, minHeight: 200,
               }}>
-                <div className="forge-spinner" style={{ borderTopColor: activeColor, borderColor: `${activeColor}26` }} />
+                <div className="forge-spinner" style={{ borderTopColor: activeColor, borderColor: `color-mix(in srgb, ${activeColor} 15%, transparent)` }} />
                 <span style={{
                   fontSize: 12.5, color: "var(--t2)", fontFamily: FONT,
                   fontWeight: 500, letterSpacing: "-0.005em",

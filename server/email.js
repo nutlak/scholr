@@ -51,7 +51,7 @@ export async function sendOtpEmail(to, code, type) {
 <body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
     <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#C2410C;">r</span>
+      schol<span style="color:#1D4ED8;">r</span>
     </div>
     <p style="font-size:13px;color:#555555;margin:0 0 28px;">
       ${isSignup ? "Complete your signup" : "Reset your password"}
@@ -61,7 +61,7 @@ export async function sendOtpEmail(to, code, type) {
       <div style="font-size:12px;color:#555555;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
         Your verification code
       </div>
-      <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#C2410C;font-family:monospace;padding-left:16px;">
+      <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#1D4ED8;font-family:monospace;padding-left:16px;">
         ${code}
       </div>
     </div>
@@ -93,7 +93,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
 <body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
     <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#C2410C;">r</span>
+      schol<span style="color:#1D4ED8;">r</span>
     </div>
     <p style="font-size:13px;color:#555555;margin:0 0 28px;">Study together, learn faster</p>
 
@@ -101,7 +101,7 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
       <p style="font-size:15px;color:#333333;line-height:1.7;margin:0 0 24px;">
         ${inviterEmail} invited you to join <strong style="color:#1C1C1C;">${notebookTitle}</strong>${location} on scholr. Click below to accept and start studying together.
       </p>
-      <a href="${inviteUrl}" style="display:inline-block;background:#C2410C;color:#FFFFFF;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
+      <a href="${inviteUrl}" style="display:inline-block;background:#1D4ED8;color:#FFFFFF;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
     </div>
 
     <p style="font-size:12px;color:#555555;line-height:1.6;margin:0;">
@@ -142,7 +142,7 @@ function emailShell(innerHtml, userId) {
 </head>
 <body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:480px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#C2410C;">r</span></div>
+    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#1D4ED8;">r</span></div>
     ${innerHtml}
     <p style="font-size:12px;color:#555555;line-height:1.6;margin:28px 0 0;border-top:1px solid #E5E5E5;padding-top:16px;">
       You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#666666;">support@scholr.dev</a>.<br>${unsub}
@@ -155,7 +155,7 @@ function emailShell(innerHtml, userId) {
 const H = `font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:#1C1C1C;font-weight:700;`;
 const P = `font-size:15px;color:#333333;line-height:1.7;margin:0 0 16px;`;
 function ctaButton(label, href) {
-  return `<a href="${href}" style="display:inline-block;background:#C2410C;color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:#1D4ED8;color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
 }
 
 const ONBOARDING_TEMPLATES = {

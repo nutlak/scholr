@@ -551,7 +551,7 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
                   <div style={{
                     width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
                     background: isReady ? "var(--accent)" : "var(--bg-surface-2)",
-                    color: isReady ? "#fff" : "var(--text-tertiary)",
+                    color: isReady ? "var(--on-acc)" : "var(--text-tertiary)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     {isReady ? <Play size={12} strokeWidth={2} fill="currentColor" style={{ marginLeft: 1 }} />

@@ -37,8 +37,8 @@ function UnitRow({ unit, color, onClick }) {
             <span style={{
               fontSize: 10.5, fontWeight: 600,
               color: dueDateTone(unit.due_date).color,
-              background: `${dueDateTone(unit.due_date).color}1A`,
-              border: `1px solid ${dueDateTone(unit.due_date).color}55`,
+              background: `color-mix(in srgb, ${dueDateTone(unit.due_date).color} 10%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${dueDateTone(unit.due_date).color} 33%, transparent)`,
               padding: "1px 7px", borderRadius: 999,
             }}>Due {formatDueDate(unit.due_date)}</span>
           )}
@@ -310,13 +310,13 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
               className="btn-press"
               style={{
                 background: "transparent",
-                border: `1px dashed ${t.hue}55`,
+                border: `1px dashed color-mix(in srgb, ${t.hue} 33%, transparent)`,
                 borderRadius: 8, padding: "7px 14px",
                 color: t.ink ?? t.hue, fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = `${t.hue}55`; e.currentTarget.style.background = "transparent"; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `color-mix(in srgb, ${t.hue} 6%, transparent)`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `color-mix(in srgb, ${t.hue} 33%, transparent)`; e.currentTarget.style.background = "transparent"; }}
             >+ New Unit</button>
           </div>
         </div>
@@ -347,8 +347,8 @@ export function ColorSwatchPicker({ value, onChange }) {
                 : "2px solid transparent",
               cursor: "pointer", padding: 0,
               boxShadow: selected
-                ? `0 0 0 3px ${c.hue}44, 0 6px 16px ${c.hue}55`
-                : `0 2px 6px ${c.hue}30`,
+                ? `0 0 0 3px color-mix(in srgb, ${c.hue} 27%, transparent), 0 6px 16px color-mix(in srgb, ${c.hue} 33%, transparent)`
+                : `0 2px 6px color-mix(in srgb, ${c.hue} 19%, transparent)`,
               transition: "all 0.18s",
               outline: "none",
             }}
@@ -425,7 +425,7 @@ export function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
             type="button" onClick={handleConfirm} disabled={loading}
             className="btn-press"
             style={{
-              background: "linear-gradient(135deg, #F87171 0%, #EF4444 100%)",
+              background: "#DC2626",
               border: "none", borderRadius: 10, padding: "0 18px", height: 36,
               color: "#fff", fontWeight: 600, fontSize: 13,
               cursor: loading ? "not-allowed" : "pointer", fontFamily: FONT,

@@ -124,7 +124,7 @@ export default function Scholr() {
   const [showInviteAuth, setShowInviteAuth] = useState(false);
   const [heatmap, setHeatmap] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
-  const { accentColor, setAccentColor } = useAppearance();
+  const { theme, setTheme, accentColor, setAccentColor } = useAppearance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
@@ -888,7 +888,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
                       background: subscription.forgeUsed >= subscription.forgeLimit
                         ? "var(--danger)"
-                        : "var(--warning)",
+                        : "var(--acc)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -1069,6 +1069,8 @@ export default function Scholr() {
               portalLoading={portalLoading}
               setAccentColor={setAccentColor}
               setShowDeleteAccount={setShowDeleteAccount}
+              setTheme={setTheme}
+              theme={theme}
               setUpgradeModal={setUpgradeModal}
               subscription={subscription}
               user={user}

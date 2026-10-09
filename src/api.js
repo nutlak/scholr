@@ -78,7 +78,7 @@ export function serverFeatures() {
   return _featuresPromise;
 }
 
-const COLORS = ["#A78BFA", "#60A5FA", "#34D399", "#F472B6", "#FBBF24", "#F97316"];
+const COLORS = ["#A78BFA", "#60A5FA", "#34D399", "#F472B6", "#FBBF24", "#FB7185"];
 
 function shapeNotebook(nb, displayName) {
   return {

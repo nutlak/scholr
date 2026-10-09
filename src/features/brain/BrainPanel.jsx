@@ -45,7 +45,7 @@ function HandOrb({ label }) {
   return (
     <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true" style={{ overflow: "visible" }}>
       <path d="M50 6c22 0 42 15 43 41 1 25-17 46-42 47C26 95 7 77 6 52 5 27 24 7 47 6m6 1c18 2 32 12 37 29"
-        fill="#fff" stroke="var(--text-primary)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        fill="var(--paper)" stroke="var(--text-primary)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       <text x="50" y={lines.length > 1 ? 47 : 56} textAnchor="middle" fill="var(--acc)"
         style={{ fontFamily: "Kalam, cursive", fontWeight: 700, fontSize: 12.5 }}>
         {lines.map((l, k) => <tspan key={k} x="50" dy={k ? 15 : 0}>{l}</tspan>)}

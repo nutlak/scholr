@@ -2,36 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
 import { FONT } from "./lib/theme.js";
-
-// Deterministic avatar tint by seed — mirrors the Avatar palette in App.jsx so
-// initials look consistent across the app.
-const TINTS = [
-  { hue: "#A78BFA", deep: "#8B5CF6" }, { hue: "#60A5FA", deep: "#3B82F6" },
-  { hue: "#34D399", deep: "#10B981" }, { hue: "#FBBF24", deep: "#F59E0B" },
-  { hue: "#F472B6", deep: "#EC4899" }, { hue: "#FB7185", deep: "#F43F5E" },
-  { hue: "#22D3EE", deep: "#06B6D4" },
-];
-function tintFor(seed) {
-  if (!seed) return TINTS[0];
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  return TINTS[Math.abs(h) % TINTS.length];
-}
-
-function Initial({ name, seed, size = 32 }) {
-  const t = tintFor(seed ?? name);
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.4, fontWeight: 700, color: "#fff",
-      fontFamily: FONT, flexShrink: 0, letterSpacing: "-0.02em",
-    }}>
-      {(name?.[0] ?? "?").toUpperCase()}
-    </div>
-  );
-}
+import { Avatar } from "./ui/Avatar.jsx";
 
 // Shared row chrome for a person entry.
 function PersonRow({ name, sub, seed, children }) {
@@ -41,7 +12,7 @@ function PersonRow({ name, sub, seed, children }) {
       padding: "8px 10px", borderRadius: 10,
       background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
     }}>
-      <Initial name={name} seed={seed} />
+      <Avatar name={name} seed={seed} size={32} />
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
         <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>

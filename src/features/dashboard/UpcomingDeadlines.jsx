@@ -34,7 +34,7 @@ export function DeadlineRow({ nb, cls, onOpen }) {
       </div>
       <div style={{
         fontSize: 11, fontWeight: 600, color: tone.color, fontFamily: FONT,
-        background: `${tone.color}1A`, border: `1px solid ${tone.color}55`,
+        background: `color-mix(in srgb, ${tone.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${tone.color} 33%, transparent)`,
         padding: "1px 7px", borderRadius: 999, flexShrink: 0,
       }}>
         Due {formatDueDate(nb.due_date)}

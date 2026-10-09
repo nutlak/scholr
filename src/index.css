@@ -26,12 +26,12 @@ html[data-theme="light"] {
   --t2:        #444444;
   --t3:        #666666;
   --t4:        rgba(28,28,28,0.45);
-  --acc:       #C2410C;
-  --acc-h:     #9A3412;
+  --acc:       #1D4ED8;
+  --acc-h:     #1E40AF;
   --on-acc:    #FFFFFF;
-  --acc-d:     #9A3412;
-  --acc-bg:    rgba(194,65,12,0.07);
-  --acc-bg-h:  rgba(194,65,12,0.13);
+  --acc-d:     #1E40AF;
+  --acc-bg:    rgba(29,78,216,0.07);
+  --acc-bg-h:  rgba(29,78,216,0.13);
   --acc-glow:  transparent;
   --sh-card:   none;
   --sh-card-h: none;
@@ -47,25 +47,104 @@ html[data-theme="light"] {
   --border-subtle:  rgba(28,28,28,0.14);
   --border-default: rgba(28,28,28,0.34);
   --border-strong:  #1C1C1C;
-  --accent:         #C2410C;
-  --accent-soft:    rgba(194,65,12,0.07);
+  --accent:         #1D4ED8;
+  --accent-soft:    rgba(29,78,216,0.07);
   --glow-accent: transparent;
   --glow-soft:   transparent;
   --card-bg:     #FFFFFF;
   --bubble-in:   #F5F5F4;
   --card-border: #1C1C1C;
   --card-glow:   transparent;
-  --ring:        rgba(194,65,12,0.4);
+  --ring:        rgba(29,78,216,0.4);
   --pill-bg:     #FFFFFF;
   --pill-border: rgba(28,28,28,0.34);
   /* Status inks: green for "solid", red for problems, blue for notes. */
   --success:   #15803D;
-  --warning:   #B45309;
+  --warning:   #A16207;
   --danger:    #DC2626;
   --info:      #1D4ED8;
   --overlay:   rgba(255,255,255,0.78);
+  /* Paper: the card surface, the ink, and the notebook ruling behind it. */
+  --paper:       #FFFFFF;
+  /* Coloured inks for icons, tiles and small labels: each clears 4.5:1 on
+     the paper. Dark paper redefines them lighter. */
+  --ink-blue:   #1D4ED8;
+  --ink-green:  #15803D;
+  --ink-amber:  #A16207;
+  --ink-red:    #DC2626;
+  --ink-violet: #6D28D9;
+  --ink-pink:   #BE185D;
+  --ink-teal:   #0E7490;
+  --rule-line:   rgba(96,150,214,0.34);
+  --rule-margin: rgba(220,38,38,0.42);
 }
-html[data-theme="light"] body {
+
+/* ── Dark paper: the same notebook at night ─────────────────────────
+   Slate pages, chalky cream ink, faint blue ruling. Text colours clear
+   4.5:1 on both the page and the cards. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ink:       #E8E4DA;
+  --bg:        #1C1E23;
+  --s1:        #24272D;
+  --s2:        #2B2F36;
+  --s3:        #343941;
+  --border:    rgba(232,228,218,0.30);
+  --border-h:  rgba(232,228,218,0.55);
+  --border-f:  #E8E4DA;
+  --t1:        #EDEAE2;
+  --t2:        #C9C5BC;
+  --t3:        #A6A299;
+  --t4:        rgba(237,234,226,0.45);
+  --acc:       #8AB4FF;
+  --acc-h:     #A8C7FF;
+  --on-acc:    #0E1730;
+  --acc-d:     #6E9BF5;
+  --acc-bg:    rgba(138,180,255,0.10);
+  --acc-bg-h:  rgba(138,180,255,0.18);
+  --acc-glow:  transparent;
+  --sh-card:   none;
+  --sh-card-h: none;
+  --sh-modal:  none;
+  --bg-base:        #1C1E23;
+  --bg-chrome:      #1C1E23;
+  --bg-surface-1:   #24272D;
+  --bg-surface-2:   #2B2F36;
+  --bg-surface-3:   #343941;
+  --text-primary:   #EDEAE2;
+  --text-secondary: #C9C5BC;
+  --text-tertiary:  #A6A299;
+  --border-subtle:  rgba(232,228,218,0.14);
+  --border-default: rgba(232,228,218,0.32);
+  --border-strong:  #E8E4DA;
+  --accent:         #8AB4FF;
+  --accent-soft:    rgba(138,180,255,0.10);
+  --glow-accent: transparent;
+  --glow-soft:   transparent;
+  --card-bg:     #24272D;
+  --bubble-in:   #2B2F36;
+  --card-border: #E8E4DA;
+  --card-glow:   transparent;
+  --ring:        rgba(138,180,255,0.45);
+  --pill-bg:     #24272D;
+  --pill-border: rgba(232,228,218,0.32);
+  --success:   #5BD08A;
+  --warning:   #F2C14E;
+  --danger:    #F58A8A;
+  --info:      #8AB4FF;
+  --overlay:   rgba(20,22,26,0.82);
+  --paper:       #24272D;
+  --ink-blue:   #8AB4FF;
+  --ink-green:  #5BD08A;
+  --ink-amber:  #F2C14E;
+  --ink-red:    #F58A8A;
+  --ink-violet: #B9A2FF;
+  --ink-pink:   #F49AC6;
+  --ink-teal:   #6CD3E6;
+  --rule-line:   rgba(138,180,255,0.13);
+  --rule-margin: rgba(245,138,138,0.30);
+}
+html[data-theme="light"] body, html[data-theme="dark"] body {
   background: var(--bg);
   background-image: none;
 }
@@ -779,7 +858,7 @@ textarea.field { height: auto; padding: 12px 14px; line-height: 1.6; resize: ver
 /* ── Streak-at-risk banner (1F) ──────────────────────────────────────────── */
 .streak-banner {
   display: flex; align-items: center; gap: 10px;
-  background: #F59E0B; color: #1a1206;
+  background: var(--paper); color: var(--text-primary); border: 1.5px solid var(--warning);
   font-weight: 600; font-size: 14px;
   padding: 10px 16px; border-radius: 10px; margin-bottom: 18px;
 }

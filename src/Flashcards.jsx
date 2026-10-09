@@ -32,8 +32,8 @@ function CardFace({ label, text, answer, hint }) {
 // Rating buttons → SM-2 quality. Again=1, Hard=3, Good=4, Easy=5.
 const RATINGS = [
   { key: "1", label: "Again", quality: 1, color: "var(--danger)" },
-  { key: "2", label: "Hard",  quality: 3, color: "#B45309" },
-  { key: "3", label: "Good",  quality: 4, color: "#1D4ED8" },
+  { key: "2", label: "Hard",  quality: 3, color: "var(--ink-amber)" },
+  { key: "3", label: "Good",  quality: 4, color: "var(--ink-blue)" },
   { key: "4", label: "Easy",  quality: 5, color: "var(--success)" },
 ];
 

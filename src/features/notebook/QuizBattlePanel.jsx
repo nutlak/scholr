@@ -6,10 +6,10 @@ import { buildRounds } from "../../lib/quizOptions.js";
 
 // Colour and shape both carry the option, so it reads without colour vision.
 const TILES = [
-  { color: "#DC2626", shape: "▲" },
-  { color: "#1D4ED8", shape: "◆" },
-  { color: "#B45309", shape: "●" },
-  { color: "#15803D", shape: "■" },
+  { color: "var(--ink-red)", shape: "▲" },
+  { color: "var(--ink-blue)", shape: "◆" },
+  { color: "var(--ink-amber)", shape: "●" },
+  { color: "var(--ink-green)", shape: "■" },
 ];
 
 // Live quiz battle inside a study room: reuses the notebook's existing

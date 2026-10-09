@@ -10,16 +10,16 @@ export const FONT_HEADING = `"Kalam", "Hanken Grotesk", system-ui, sans-serif`;
 
 export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 
-// Per-unit accent when a unit has no class colour. Inks, not pastels: they
-// colour small labels on white paper, so each clears 4.5:1.
+// Per-unit accent when a unit has no class colour: the theme's ink tokens, so
+// small labels clear 4.5:1 on light and dark paper.
 export const TINTS = [
-  { hue: "#C2410C", deep: "#9A3412" }, // orange
-  { hue: "#1D4ED8", deep: "#1E40AF" }, // blue
-  { hue: "#15803D", deep: "#166534" }, // green
-  { hue: "#B45309", deep: "#92400E" }, // amber
-  { hue: "#BE185D", deep: "#9D174D" }, // pink
-  { hue: "#BE123C", deep: "#9F1239" }, // rose
-  { hue: "#0E7490", deep: "#155E75" }, // teal
+  { hue: "var(--ink-blue)",   deep: "var(--ink-blue)" },
+  { hue: "var(--ink-green)",  deep: "var(--ink-green)" },
+  { hue: "var(--ink-amber)",  deep: "var(--ink-amber)" },
+  { hue: "var(--ink-violet)", deep: "var(--ink-violet)" },
+  { hue: "var(--ink-pink)",   deep: "var(--ink-pink)" },
+  { hue: "var(--ink-red)",    deep: "var(--ink-red)" },
+  { hue: "var(--ink-teal)",   deep: "var(--ink-teal)" },
 ];
 
 export function tintFor(seed) {
@@ -30,12 +30,12 @@ export function tintFor(seed) {
 }
 
 export const CLASS_COLORS = [
-  { id: "purple", ink: "#6D28D9",  hue: "#A78BFA", deep: "#8B5CF6", label: "Purple"  },
-  { id: "blue", ink: "#1D4ED8",    hue: "#60A5FA", deep: "#3B82F6", label: "Blue"    },
-  { id: "emerald", ink: "#047857", hue: "#34D399", deep: "#10B981", label: "Emerald" },
-  { id: "amber", ink: "#B45309",   hue: "#FBBF24", deep: "#F59E0B", label: "Amber"   },
-  { id: "pink", ink: "#BE185D",    hue: "#F472B6", deep: "#EC4899", label: "Pink"    },
-  { id: "rose", ink: "#BE123C",    hue: "#FB7185", deep: "#F43F5E", label: "Rose"    },
+  { id: "purple", ink: "var(--ink-violet)",  hue: "#A78BFA", deep: "#8B5CF6", label: "Purple"  },
+  { id: "blue", ink: "var(--ink-blue)",    hue: "#60A5FA", deep: "#3B82F6", label: "Blue"    },
+  { id: "emerald", ink: "var(--ink-green)", hue: "#34D399", deep: "#10B981", label: "Emerald" },
+  { id: "amber", ink: "var(--ink-amber)",   hue: "#FBBF24", deep: "#F59E0B", label: "Amber"   },
+  { id: "pink", ink: "var(--ink-pink)",    hue: "#F472B6", deep: "#EC4899", label: "Pink"    },
+  { id: "rose", ink: "var(--ink-red)",    hue: "#FB7185", deep: "#F43F5E", label: "Rose"    },
 ];
 
 export function classTint(color) {
@@ -55,11 +55,11 @@ export function classTint(color) {
    for the dark theme's dark --on-acc, and every 700 shade is dark enough for
    the light theme's white one. */
 export const ACCENT_PRESETS = [
-  { name: "Orange",  color: "#F97316", hover: "#FB923C", deep: "#EA580C", light: "#C2410C", lightHover: "#9A3412" },
+  // Ballpoint blue first: the default, and the colour of pen on notebook paper.
+  { name: "Blue",    color: "#8AB4FF", hover: "#A8C7FF", deep: "#6E9BF5", light: "#1D4ED8", lightHover: "#1E40AF" },
   { name: "Purple",  color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", light: "#6D28D9", lightHover: "#5B21B6" },
-  { name: "Blue",    color: "#60A5FA", hover: "#93C5FD", deep: "#3B82F6", light: "#1D4ED8", lightHover: "#1E40AF" },
   { name: "Emerald", color: "#34D399", hover: "#6EE7B7", deep: "#10B981", light: "#047857", lightHover: "#065F46" },
-  { name: "Amber",   color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", light: "#B45309", lightHover: "#92400E" },
+  { name: "Amber",   color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", light: "#A16207", lightHover: "#854D0E" },
   { name: "Pink",    color: "#F472B6", hover: "#F9A8D4", deep: "#EC4899", light: "#BE185D", lightHover: "#9D174D" },
   { name: "Rose",    color: "#FB7185", hover: "#FDA4AF", deep: "#F43F5E", light: "#BE123C", lightHover: "#9F1239" },
 ];

@@ -83,8 +83,8 @@ export function TermsWall({ onAccepted }) {
           className="btn-press"
           style={{
             width: "100%", height: 44, borderRadius: 12, border: "none",
-            background: (agreed && !loading) ? "linear-gradient(135deg, var(--acc) 0%, var(--acc-d) 100%)" : "var(--bg-surface-3)",
-            color: (agreed && !loading) ? "#fff" : "var(--text-tertiary)",
+            background: (agreed && !loading) ? "var(--acc)" : "var(--bg-surface-3)",
+            color: (agreed && !loading) ? "var(--on-acc)" : "var(--text-tertiary)",
             fontFamily: FONT, fontSize: 14, fontWeight: 600,
             cursor: (agreed && !loading) ? "pointer" : "not-allowed",
             boxShadow: (agreed && !loading) ? "0 6px 20px var(--acc-bg-h)" : "none",

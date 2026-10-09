@@ -61,8 +61,8 @@ export function NotebookCard({ nb, onClick, onDelete }) {
           <div style={{
             fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap", marginRight: 22,
             color: dueDateTone(nb.due_date).color,
-            background: `${dueDateTone(nb.due_date).color}1A`,
-            border: `1px solid ${dueDateTone(nb.due_date).color}55`,
+            background: `color-mix(in srgb, ${dueDateTone(nb.due_date).color} 10%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${dueDateTone(nb.due_date).color} 33%, transparent)`,
             padding: "2px 8px", borderRadius: 999, fontFamily: FONT,
           }}>Due {formatDueDate(nb.due_date)}</div>
         ) : (

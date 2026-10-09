@@ -69,12 +69,12 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
         )}
         <div style={{
           width: size, height: size, borderRadius: "50%", boxSizing: "border-box",
-          background: active ? "var(--acc-d)" : "var(--s2)",
+          background: active ? "var(--acc)" : "var(--s2)",
           border: isT ? "2px solid var(--acc)" : "2px solid transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: Math.max(9, Math.floor(size * 0.36)),
           fontWeight: active ? 700 : 400,
-          color: active ? "#fff" : "var(--t3)",
+          color: active ? "var(--on-acc)" : "var(--t3)",
           fontFamily: FONT,
           transition: "background 0.15s",
         }}>
@@ -214,7 +214,7 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
                       return (
                         <div key={di} style={{
                           aspectRatio: "1", borderRadius: "50%", boxSizing: "border-box",
-                          background: active ? "var(--acc-d)" : "var(--s2)",
+                          background: active ? "var(--acc)" : "var(--s2)",
                           border: isT ? "1.5px solid var(--acc)" : "1.5px solid transparent",
                         }} />
                       );

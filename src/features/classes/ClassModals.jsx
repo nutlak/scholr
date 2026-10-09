@@ -153,7 +153,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                 }}>Cancel</button>
                 <button type="button" disabled={!template} onClick={() => advance(template)} className="btn-press" style={{
                   background: template ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)` : "var(--s2)",
-                  border: "none", borderRadius: 10, padding: "0 22px", height: 38, color: "#fff", fontWeight: 600, fontSize: 13,
+                  border: "none", borderRadius: 10, padding: "0 22px", height: 38, color: "#1C1C1C", fontWeight: 600, fontSize: 13,
                   cursor: template ? "pointer" : "not-allowed", opacity: template ? 1 : 0.5, fontFamily: FONT, letterSpacing: "-0.01em",
                 }}>Next →</button>
               </div>
@@ -192,7 +192,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                   <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
                     background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
                     border: "none", borderRadius: 10, padding: "0 20px", height: 38,
-                    color: "#fff", fontWeight: 600, fontSize: 13,
+                    color: "#1C1C1C", fontWeight: 600, fontSize: 13,
                     cursor: loading || !title.trim() ? "not-allowed" : "pointer",
                     fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
                     boxShadow: `0 4px 14px ${tint.hue}55, 0 0 0 1px ${tint.hue}66`,

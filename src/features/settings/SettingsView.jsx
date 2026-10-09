@@ -3,11 +3,12 @@
 // eleven props are exactly the state it already read from that closure.
 import { PushToggle } from "../notifications/PushToggle.jsx";
 import { SquadSection } from "../squad/SquadSection.jsx";
+import { Moon, Sun } from "lucide-react";
 import { ACCENT_PRESETS, FONT } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { useServerFeature } from "../../lib/useServerFeature.js";
 
-export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setUpgradeModal, subscription, user }) {
+export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
   // Billing needs Stripe configured server-side. Without this the Manage
   // subscription button looks live and dies on click — which is the exact
   // problem SquadSection already solved for Squad, and the reason /api/health
@@ -145,6 +146,25 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 <div className="ins-caption">Appearance</div>
                 <div className="ins-group">
 
+                {/* Theme row: the same notebook, day or night. */}
+                <div className="ins-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT }}>Theme</div>
+                    <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
+                      {theme === "dark" ? "Dark paper" : "Light paper"}
+                    </div>
+                  </div>
+                  <div className="seg-control" role="radiogroup" aria-label="Theme" style={{ "--seg-n": 2, flexShrink: 0 }}>
+                    <span className="seg-pill" aria-hidden="true" style={{ transform: `translateX(${theme === "dark" ? 100 : 0}%)` }} />
+                    {[["light", "Light", Sun], ["dark", "Dark", Moon]].map(([value, label, Icon]) => (
+                      <button key={value} className="seg-option" role="radio" aria-checked={theme === value} onClick={() => setTheme(value)}
+                        style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 40, padding: "0 16px" }}>
+                        <Icon size={15} strokeWidth={1.9} /> {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Accent color row */}
                 <div className="ins-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -168,7 +188,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         style={{
                           width: 32, height: 32, minWidth: 32, borderRadius: 8, padding: 0, cursor: "pointer",
                           // The shade the paper theme actually applies.
-                          background: p.light,
+                          background: theme === "dark" ? p.color : p.light,
                           border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
                           outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
                           outlineOffset: "1px",

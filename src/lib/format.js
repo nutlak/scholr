@@ -21,9 +21,9 @@ export function dueDateTone(iso) {
   const now = Date.now();
   const due = new Date(iso).getTime();
   const dayMs = 24 * 60 * 60 * 1000;
-  if (due < now) return { color: "#DC2626", label: "Overdue", tone: "red" };
-  if (due - now <= 3 * dayMs) return { color: "#B45309", label: "Due soon", tone: "amber" };
-  return { color: "#15803D", label: "Upcoming", tone: "green" };
+  if (due < now) return { color: "var(--ink-red)", label: "Overdue", tone: "red" };
+  if (due - now <= 3 * dayMs) return { color: "var(--ink-amber)", label: "Due soon", tone: "amber" };
+  return { color: "var(--ink-green)", label: "Upcoming", tone: "green" };
 }
 
 export function formatPodcastTime(secs) {

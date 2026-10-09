@@ -7,9 +7,9 @@ export function Avatar({ name, size = 28, seed }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: `linear-gradient(135deg, ${t.hue} 0%, ${t.deep} 100%)`,
+      background: t.hue,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.4, fontWeight: 700, color: "#fff",
+      fontSize: size * 0.4, fontWeight: 700, color: "var(--paper)",
       fontFamily: FONT, flexShrink: 0,
       border: "2px solid var(--bg)",
       letterSpacing: "-0.02em",

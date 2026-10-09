@@ -5,6 +5,7 @@ import { requireAuth, requireMember } from "../lib/auth.js";
 import { aiLimiter, forgeLimiter } from "../lib/limiters.js";
 import { logUserActivity } from "../lib/presence.js";
 import { supabase } from "../lib/supabase.js";
+import { BRAIN_TYPES } from "./brain.js";
 import { checkUsageLimit, getUserTier, incrementUsage, recordProCost } from "../lib/usage.js";
 
 export const router = Router();
@@ -216,6 +217,7 @@ router.get("/api/notebooks/:id/forge-outputs", requireAuth, requireMember, async
     .from("forge_outputs")
     .select("id, type, title, content, created_at")
     .eq("notebook_id", req.params.id)
+    .not("type", "in", `(${BRAIN_TYPES.join(",")})`) // the brain's rows aren't saved outputs
     .order("created_at", { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);

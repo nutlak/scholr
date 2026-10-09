@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, Hammer, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, Hammer, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
@@ -18,6 +18,7 @@ const FlashcardsPanel = lazy(() => import("../../Flashcards.jsx").then(m => ({ d
 const TheForge = lazy(() => import("../forge/TheForge.jsx").then(m => ({ default: m.TheForge })));
 const PodcastPanel = lazy(() => import("../podcast/PodcastPanel.jsx").then(m => ({ default: m.PodcastPanel })));
 const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => ({ default: m.FeynmanPanel })));
+const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ default: m.BrainPanel })));
 
 // ── Scholr 2.0 study-tool registry ────────────────────────────────────────────
 // One source of truth for the notebook study tools. The header bar maps over
@@ -36,6 +37,7 @@ const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => 
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
+  { id: "brain",             text: "Brain",     label: "Unit brain",         title: "Brain",              Icon: Orbit,         tint: "#A78BFA", subtitle: "Every key idea, and how well you know it" },
   { id: "notes",             text: "Notes",     label: "Unit notes",         title: "Unit Notes",         Icon: FileText,      tint: "#60A5FA", subtitle: "Shared with your group" },
   { id: "forge:study_guide", text: "Guide",     label: "Study Guide",        title: "Study Guide",        Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                        panel: "forge", forgeAction: "study_guide" },
   { id: "forge:questions",   text: "Questions", label: "Questions",          title: "Questions",          Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions",                          panel: "forge", forgeAction: "questions" },
@@ -227,7 +229,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   // Scholr 2.0 — one source of truth for which study tool is open (it renders
   // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
   // tangle; responsive behavior is now handled purely in CSS.
-  const [activeTool, setActiveTool] = useState(null); // null | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
+  const [activeTool, setActiveTool] = useState(null); // null | 'brain' | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
+  const [feynmanConcept, setFeynmanConcept] = useState(null); // set when the brain opens Feynman on one concept
+  useEffect(() => { if (activeTool !== "feynman") setFeynmanConcept(null); }, [activeTool]);
   const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
   const [notesById, setNotesById] = useState({});     // id -> note, for expanding a citation inline
 
@@ -514,8 +518,11 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
         >← Back</button>
 
-        {/* Title + (desktop) status + due date */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+        {/* Title + (desktop) status + due date. The 200px basis is what makes
+            the actions wrap to a second row when a docked tool narrows the
+            column; with a 0 basis the title was squeezed to nothing and the
+            Forge button drew on top of the topic and status pill. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: "1 1 200px" }}>
           <div style={{
             width: 8, height: 8, borderRadius: 2,
             background: t.hue, flexShrink: 0,
@@ -530,6 +537,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               <div style={{
                 fontSize: 11.5, color: "var(--text-tertiary)",
                 fontFamily: FONT, marginTop: 1,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>{nb.topic}</div>
             )}
           </div>
@@ -1073,7 +1081,12 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             <PodcastPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           {activeTool === "feynman" && (
-            <FeynmanPanel nb={nb} me={me} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+            <FeynmanPanel key={feynmanConcept ?? ""} nb={nb} me={me} initialConcept={feynmanConcept} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
+          )}
+          {activeTool === "brain" && (
+            <BrainPanel nb={nb} members={members} currentUserId={currentUserId} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded}
+              onExplain={(c) => { setFeynmanConcept(c); setActiveTool("feynman"); }}
+              onAsk={(text) => { setActiveTool(null); setQuery(text); setTimeout(() => inputRef.current?.focus(), 0); }} />
           )}
           </Suspense>
         </ToolModal>

@@ -1217,6 +1217,29 @@ export const api = {
   },
 
   // ── Flashcards (spaced repetition) ──────────────────────────────────
+  // Unit brain — concept map + each member's Feynman scores on it.
+  async getBrain(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/brain`, { headers });
+    if (!res.ok) throw await readError(res);
+    return res.json(); // { map, scores }
+  },
+
+  async buildBrain(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/brain`, { method: "POST", headers });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    if (!res.ok) throw apiError(res, data, "Failed to build the brain"); // code e.g. "forge_limit_reached"
+    return data; // { map }
+  },
+
+  async scoreConcept(notebookId, concept, score) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    await fetch(`${API_URL}/api/notebooks/${notebookId}/brain/score`, {
+      method: "POST", headers, body: JSON.stringify({ concept, score }),
+    });
+  },
+
   async generateFlashcards(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/flashcards/generate`, {

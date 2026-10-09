@@ -337,7 +337,7 @@ input, textarea, select { font-family: var(--font); }
 }
 
 /* ── Notebook header responsive ──────────────────────────────────── */
-.nb-header { flex-wrap: wrap; row-gap: 0; }
+.nb-header { flex-wrap: wrap; row-gap: 10px; }
 .nb-header-actions {
   display: flex; align-items: center; gap: 8px; margin-left: auto;
 }

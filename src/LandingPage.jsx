@@ -1,8 +1,14 @@
-import { useState, useEffect, useRef } from "react";
-import { HeroMesh } from "./ui/HeroMesh.jsx";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { useInstall } from "./lib/install.js";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download } from "lucide-react";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download, Orbit } from "lucide-react";
 import { FONT, FONT_HEADING, FONT_SERIF, MONO } from "./lib/theme.js";
+
+const ElectricLogo = lazy(() => import("./ui/fx/ElectricLogo.jsx"));
+const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const staticLogo = (
+  <img src="/scholr-logo-final.png" alt="scholr"
+    style={{ width: 64, height: 64, borderRadius: 16, objectFit: "cover", position: "relative", zIndex: 1 }} />
+);
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -38,6 +44,7 @@ const FEATURES = [
   { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
   { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
+  { Icon: Orbit,         title: "The unit brain",     tint: "#A78BFA", body: "Every key idea in a unit, mapped around a crystal ball and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
   { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
   { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
   { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
@@ -659,25 +666,22 @@ export default function LandingPage({ onSignIn }) {
           transform: heroVisible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
-          {/* Logo, sitting inside a slowly rotating wireframe. The mesh is
-              drawn by hand into a canvas rather than pulled from a 3D engine —
-              twelve vertices do not justify 150kb on the page a first-time
-              visitor waits for. It stops when scrolled away or the tab is
-              hidden, and holds a fixed angle under prefers-reduced-motion. */}
+          {/* The scholr mark traced in live electricity (React Bits'
+              ElectricLogo). It's WebGL, so it loads after first paint as its
+              own chunk, with the plain logo standing in until it arrives —
+              and staying put for anyone who has asked for reduced motion. */}
           <div style={{
             position: "relative", display: "flex",
             alignItems: "center", justifyContent: "center",
-            width: 340, height: 340, marginBottom: -40, marginTop: -60,
+            width: 300, height: 300, marginBottom: -24, marginTop: -60,
           }}>
-            <HeroMesh size={340} />
-            <img
-              src="/scholr-logo-final.png"
-              alt="scholr"
-              style={{
-                width: 64, height: 64, borderRadius: 16, objectFit: "cover",
-                position: "relative", zIndex: 1,
-              }}
-            />
+            {REDUCED_MOTION ? staticLogo : (
+              <Suspense fallback={staticLogo}>
+                <ElectricLogo src="/scholr-logo-final.png" color="#E9DDFF" glowColor="#A78BFA"
+                  scale={0.62} intensity={0.9} strands={3} speed={1.6} cursorRadius={80}
+                  style={{ position: "absolute", inset: 0 }} />
+              </Suspense>
+            )}
           </div>
 
           {/* Badge */}

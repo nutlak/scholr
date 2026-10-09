@@ -75,8 +75,8 @@ function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
     </div>
   );
 }
-export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
-  const [concept, setConcept] = useState(nb?.topic || nb?.title || "");
+export function FeynmanPanel({ nb, me, initialConcept, onToast, onUpgradeNeeded }) {
+  const [concept, setConcept] = useState(initialConcept || nb?.topic || nb?.title || "");
   const [explanation, setExplanation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -118,6 +118,8 @@ export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
       const r = await api.feynman({ concept: concept.trim(), explanation: trimmed });
       setResult(r);
       onToast?.(`Scored ${r.score}/100`);
+      // Lights this concept up on the unit brain, if it's on the map.
+      api.scoreConcept(nb.id, concept.trim(), r.score).catch(() => {});
     } catch (e) {
       if (e.code === "message_limit") { onUpgradeNeeded?.("message_limit"); return; }
       setError(e.message || "Couldn't grade that one — try again in a sec.");

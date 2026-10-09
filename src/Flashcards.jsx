@@ -2,6 +2,33 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
 import { FONT } from "./lib/theme.js";
+import PixelSwap from "./ui/fx/PixelSwap.jsx";
+
+const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+function CardFace({ label, text, answer, hint }) {
+  return (
+    <div style={{
+      height: "100%", boxSizing: "border-box", padding: "28px 24px",
+      background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
+      textAlign: "center", fontFamily: FONT, color: "var(--text-primary)", overflowY: "auto",
+    }}>
+      <div style={{
+        fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+        color: answer ? "#6EE7B7" : "var(--text-tertiary)",
+      }}>{label}</div>
+      <div style={{ fontSize: answer ? 18 : 20, fontWeight: answer ? 400 : 600, lineHeight: 1.5, letterSpacing: "-0.01em", whiteSpace: "pre-wrap" }}>
+        {text}
+      </div>
+      {hint && (
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 6 }}>
+          Tap to flip <span className="nb-desktop-only">· Space</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Rating buttons → SM-2 quality. Again=1, Hard=3, Good=4, Easy=5.
 const RATINGS = [
@@ -102,30 +129,30 @@ export function FlashcardReview({ cards, onDone }) {
         </div>
       ) : (
         <>
-          {/* Card */}
+          {/* Card. The two faces swap in a pixel dissolve rather than a
+              text swap; keyed per card so moving on never animates the next
+              card's answer into view. */}
           <button
             onClick={() => setFlipped(f => !f)}
+            aria-label={flipped ? "Show question" : "Show answer"}
             style={{
-              flex: 1, width: "100%", maxWidth: 640, margin: "0 auto",
-              background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+              flex: 1, width: "100%", maxWidth: 640, margin: "0 auto", padding: 0,
+              position: "relative", overflow: "hidden",
               border: "1px solid var(--border-default)", borderRadius: 18,
-              padding: "28px 24px", cursor: "pointer", textAlign: "center",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
-              fontFamily: FONT, color: "var(--text-primary)",
+              cursor: "pointer", background: "none",
             }}
           >
-            <div style={{
-              fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              color: flipped ? "#6EE7B7" : "var(--text-tertiary)",
-            }}>{flipped ? "Answer" : "Question"}</div>
-            <div style={{ fontSize: flipped ? 18 : 20, fontWeight: flipped ? 400 : 600, lineHeight: 1.5, letterSpacing: "-0.01em", whiteSpace: "pre-wrap" }}>
-              {flipped ? card.back : card.front}
-            </div>
-            {!flipped && (
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 6 }}>
-                Tap to flip <span className="nb-desktop-only">· Space</span>
-              </div>
-            )}
+            <PixelSwap
+              key={card.id}
+              active={flipped}
+              trigger="none"
+              pixelSize={40}
+              duration={REDUCED_MOTION ? 1 : 700}
+              pixelDuration={REDUCED_MOTION ? 1 : 320}
+              style={{ position: "absolute", inset: 0, aspectRatio: "auto", height: "100%" }}
+              firstContent={<CardFace label="Question" text={card.front} hint />}
+              secondContent={<CardFace label="Answer" text={card.back} answer />}
+            />
           </button>
 
           {/* Ratings */}

@@ -145,6 +145,38 @@ export function DashboardView({
             />
           )}
 
+          {/* Cards due: the one thing to do right now, so it sits straight under
+              Friends instead of below every class (it was ~900px down on a phone). */}
+          {activeView === "dashboard" && dueCount > 0 && (
+            <button
+              onClick={startAllReview}
+              className="btn-press"
+              style={{
+                width: "100%", textAlign: "left", marginBottom: 18,
+                display: "flex", alignItems: "center", gap: 14, minHeight: 64,
+                padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
+                border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
+              }}
+            >
+              <span style={{
+                width: 40, height: 40, borderRadius: 11, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "var(--acc)", color: "var(--on-acc)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              }}><Layers size={19} strokeWidth={2} /></span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
+                  {dueCount} card{dueCount === 1 ? "" : "s"} due
+                </span>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
+                  Review now to keep your streak sharp
+                </span>
+              </span>
+              <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
+            </button>
+          )}
+
           {/* Search — only once there are enough classes for it to earn its space. */}
           {(activeView !== "dashboard" || classes.length > 4) && (
             <div style={{ position: "relative", marginBottom: 28 }}>
@@ -269,37 +301,6 @@ export function DashboardView({
                 ))}
               </div>
             </>
-          )}
-
-          {/* Dashboard: cards due — spaced repetition entry point */}
-          {activeView === "dashboard" && dueCount > 0 && (
-            <button
-              onClick={startAllReview}
-              className="btn-press"
-              style={{
-                width: "100%", textAlign: "left", marginBottom: 18,
-                display: "flex", alignItems: "center", gap: 14, minHeight: 64,
-                padding: "14px 18px", borderRadius: 14, cursor: "pointer",
-                background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent) 0%, var(--acc-bg) 100%)",
-                border: "1px solid var(--acc-bg-h)", fontFamily: FONT,
-              }}
-            >
-              <span style={{
-                width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "var(--acc)", color: "var(--on-acc)",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-              }}><Layers size={19} strokeWidth={2} /></span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.015em" }}>
-                  {dueCount} card{dueCount === 1 ? "" : "s"} due
-                </span>
-                <span style={{ display: "block", fontSize: 12.5, color: "var(--text-secondary)", marginTop: 1 }}>
-                  Review now to keep your streak sharp
-                </span>
-              </span>
-              <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Review →</span>
-            </button>
           )}
 
           {/* Dashboard: passive renewal reminder — Pro plan renewing within 3 days.

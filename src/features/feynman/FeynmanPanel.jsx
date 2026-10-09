@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../api.js";
 import { AlertTriangle, ArrowRight, CheckCircle, RotateCcw, Sparkles, Users2, XCircle } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
@@ -106,7 +106,21 @@ export function FeynmanPanel({ nb, me, initialConcept, onToast, onUpgradeNeeded 
   const words = trimmed ? trimmed.split(/\s+/).length : 0;
   const canGrade = concept.trim().length > 1 && trimmed.length >= 20 && !loading;
 
-  const sampleChips = [nb?.topic, ...FEYNMAN_SAMPLES]
+  // When the unit has a brain, suggest its concepts — the ones you know least
+  // first — instead of generic samples ("Recursion" in a biology unit).
+  const [brainConcepts, setBrainConcepts] = useState([]);
+  useEffect(() => {
+    let live = true;
+    api.getBrain(nb.id).then(({ map, scores }) => {
+      if (!live || !map) return;
+      const mine = scores?.[me?.userId] ?? {};
+      const known = c => mine[c.name.toLowerCase()] ?? -1;
+      setBrainConcepts(map.concepts.slice().sort((a, b) => known(a) - known(b)).map(c => c.name));
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [nb.id, me?.userId]);
+
+  const sampleChips = (brainConcepts.length ? brainConcepts : [nb?.topic, ...FEYNMAN_SAMPLES])
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i)
     .slice(0, 4);

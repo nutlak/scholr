@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Calendar, ChevronRight, Trash2, Upload, X } from "lucide-react";
+import { Calendar, ChevronRight, Trash2, Upload } from "lucide-react";
 import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
@@ -246,6 +246,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
           <button
             onClick={e => { e.stopPropagation(); onDeleteClass(); }}
             title="Delete class"
+            aria-label={`Delete ${cls.title}`}
             className="class-delete-btn"
             style={{
               background: "none", border: "none", cursor: "pointer",
@@ -255,7 +256,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
             }}
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
             onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
-          ><X size={13} strokeWidth={2} /></button>
+          ><Trash2 size={14} strokeWidth={1.9} /></button>
         )}
 
         {/* Chevron */}

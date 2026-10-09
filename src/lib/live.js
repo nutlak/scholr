@@ -149,7 +149,7 @@ export function useStudyRoom(roomId, me, enabled) {
       setAnswers(prev => {
         const round = prev[payload.round] || {};
         if (round[payload.userId]) return prev; // first answer per round only
-        return { ...prev, [payload.round]: { ...round, [payload.userId]: { name: payload.name, at: payload.at } } };
+        return { ...prev, [payload.round]: { ...round, [payload.userId]: { name: payload.name, at: payload.at, choice: payload.choice } } };
       });
     });
     ch.on("broadcast", { event: "battle-end" }, () => setBattle(null));
@@ -192,11 +192,11 @@ export function useStudyRoom(roomId, me, enabled) {
     chRef.current?.send({ type: "broadcast", event: "battle-start", payload: b });
   }, []);
 
-  const submitAnswer = useCallback((round) => {
+  const submitAnswer = useCallback((round, choice) => {
     if (!me?.userId) return;
     chRef.current?.send({
       type: "broadcast", event: "battle-answer",
-      payload: { round, userId: me.userId, name: me.name || "Someone", at: Date.now() },
+      payload: { round, choice, userId: me.userId, name: me.name || "Someone", at: Date.now() },
     });
   }, [me]);
 

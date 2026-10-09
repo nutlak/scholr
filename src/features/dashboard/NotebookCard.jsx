@@ -79,7 +79,19 @@ export function NotebookCard({ nb, onClick, starred = false, onToggleStar, onSta
             </span>
           )}
         </div>
-        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
+        {/* The due date replaces the updated date rather than floating over it
+            (absolutely positioned, the pill was drawn on top of "Oct 9"). */}
+        {nb.due_date ? (
+          <div style={{
+            fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap", marginRight: 22,
+            color: dueDateTone(nb.due_date).color,
+            background: `${dueDateTone(nb.due_date).color}1A`,
+            border: `1px solid ${dueDateTone(nb.due_date).color}55`,
+            padding: "2px 8px", borderRadius: 999, fontFamily: FONT,
+          }}>Due {formatDueDate(nb.due_date)}</div>
+        ) : (
+          <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
+        )}
       </div>
       <div style={{
         position: "relative",
@@ -112,19 +124,6 @@ export function NotebookCard({ nb, onClick, starred = false, onToggleStar, onSta
           transition: "opacity 0.2s, transform 0.2s",
         }}>Open →</div>
       </div>
-      {nb.due_date && (
-        <div style={{
-          position: "absolute", top: 12, right: starred || hovered ? 36 : 12,
-          fontSize: 10.5, fontWeight: 600,
-          color: dueDateTone(nb.due_date).color,
-          background: `${dueDateTone(nb.due_date).color}1A`,
-          border: `1px solid ${dueDateTone(nb.due_date).color}55`,
-          padding: "2px 8px", borderRadius: 999, fontFamily: FONT,
-          transition: "right 0.18s",
-        }}>
-          Due {formatDueDate(nb.due_date)}
-        </div>
-      )}
     </div>
   );
 }

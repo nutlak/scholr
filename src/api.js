@@ -85,7 +85,7 @@ function shapeNotebook(nb, displayName) {
     ...nb,
     notes: nb.notes_count ?? 0,
     color: COLORS[nb.id?.charCodeAt(0) % COLORS.length] ?? COLORS[0],
-    contributors: [displayName ?? "You"],
+    contributors: nb.member_names?.length ? nb.member_names : [displayName ?? "You"],
     updated: nb.created_at
       ? new Date(nb.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       : "Today",

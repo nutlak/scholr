@@ -853,3 +853,18 @@ a[role="button"],
    the bare input, over the prefix. Ring the wrapper instead. */
 .affix-field:focus-within { outline: 2px solid var(--hud); outline-offset: 2px; }
 .affix-field input:focus-visible { outline: none !important; }
+
+/* Quiz battle answer tiles (QuizBattlePanel) — Kahoot's lesson: few, big,
+   colour + shape. Two columns, one on very narrow phones. */
+.battle-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 360px) { .battle-tiles { grid-template-columns: 1fr; } }
+.battle-tile {
+  display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 10px 12px;
+  text-align: left; cursor: pointer; border-radius: 12px; font-family: inherit;
+  font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--text-primary);
+  background: color-mix(in srgb, var(--tile) 16%, var(--bg-surface-1));
+  border: 1px solid color-mix(in srgb, var(--tile) 45%, transparent);
+  transition: opacity 0.2s;
+}
+.battle-tile:disabled { cursor: default; }
+.battle-shape { color: var(--tile); font-size: 18px; width: 20px; text-align: center; flex-shrink: 0; }

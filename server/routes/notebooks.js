@@ -163,6 +163,23 @@ router.post("/api/notebooks/:id/invite-friend", requireAuth, requireMember, asyn
   })();
 });
 
+// Who is in each notebook, for the cards' avatar stack and "N members".
+// The client used to hardcode [you], so every shared notebook claimed
+// "1 member". Two queries for the whole list, not one per notebook.
+export async function attachMembers(notebooks) {
+  const ids = notebooks.map(n => n.id).filter(Boolean);
+  if (!ids.length) return notebooks;
+  const { data: rows } = await supabase.from("notebook_members").select("notebook_id, user_id").in("notebook_id", ids);
+  const userIds = [...new Set((rows ?? []).map(r => r.user_id))];
+  const { data: profs } = userIds.length
+    ? await supabase.from("profiles").select("user_id, username").in("user_id", userIds)
+    : { data: [] };
+  const name = new Map((profs ?? []).map(p => [p.user_id, p.username]));
+  const byNotebook = {};
+  for (const r of rows ?? []) (byNotebook[r.notebook_id] ??= []).push(name.get(r.user_id) || "Member");
+  return notebooks.map(n => ({ ...n, member_names: byNotebook[n.id] ?? [] }));
+}
+
 // GET /api/notebooks — list notebooks the user belongs to
 router.get("/api/notebooks", requireAuth, async (req, res) => {
   const { data, error } = await supabase
@@ -185,7 +202,7 @@ router.get("/api/notebooks", requireAuth, async (req, res) => {
     notes: undefined,
   }));
 
-  res.json(notebooks);
+  res.json(await attachMembers(notebooks));
 });
 
 // GET /api/notebooks/shared — notebooks the user was invited to (member, not owner)
@@ -214,7 +231,7 @@ router.get("/api/notebooks/shared", requireAuth, async (req, res) => {
   }));
 
   console.log(`[shared] returning ${notebooks.length} shared notebooks for user=${req.user.id}`);
-  res.json(notebooks);
+  res.json(await attachMembers(notebooks));
 });
 
 // GET /api/notebooks/owned — notebooks the calling user created
@@ -233,7 +250,7 @@ router.get("/api/notebooks/owned", requireAuth, async (req, res) => {
     role: "owner",
     notes: undefined,
   }));
-  res.json(notebooks);
+  res.json(await attachMembers(notebooks));
 });
 
 // GET /api/notebooks/starred — notebooks the calling user has starred
@@ -256,7 +273,7 @@ router.get("/api/notebooks/starred", requireAuth, async (req, res) => {
     notes_count: nb.notes[0]?.count ?? 0,
     notes: undefined,
   }));
-  res.json(notebooks);
+  res.json(await attachMembers(notebooks));
 });
 
 // POST /api/notebooks — create a notebook

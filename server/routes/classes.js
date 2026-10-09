@@ -1,5 +1,6 @@
 // Classes, their notebooks, templates and syllabus import.
 import { Router } from "express";
+import { attachMembers } from "./notebooks.js";
 import { aiErrorDetail, anthropicClient, getModel } from "../lib/ai.js";
 import { trackEvent } from "../lib/analytics.js";
 import { requireAuth } from "../lib/auth.js";
@@ -142,11 +143,11 @@ router.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
 
-  res.json((data ?? []).map(nb => ({
+  res.json(await attachMembers((data ?? []).map(nb => ({
     ...nb,
     notes_count: nb.notes[0]?.count ?? 0,
     notes: undefined,
-  })));
+  }))));
 });
 
 // POST /api/classes/:id/notebooks — create a unit inside a class

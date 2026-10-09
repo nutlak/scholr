@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
 import { FONT } from "./lib/theme.js";
+import { Layers, Trash2 } from "lucide-react";
 import PixelSwap from "./ui/fx/PixelSwap.jsx";
 
 const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -250,38 +251,37 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
 
   return (
     <div className="tool-content" style={{ display: "flex", flexDirection: "column", minHeight: 0, fontFamily: FONT }}>
-      {/* Actions */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        <button
-          onClick={generate}
-          disabled={generating}
-          className="btn-press"
-          style={{
-            minHeight: 44, padding: "0 16px", borderRadius: 10,
-            background: generating ? "var(--bg-surface-2)" : "var(--acc)",
-            border: "none", color: "var(--on-acc)", fontWeight: 600, fontSize: 13.5, fontFamily: FONT,
-            cursor: generating ? "default" : "pointer", opacity: generating ? 0.7 : 1,
-            boxShadow: generating ? "none" : "0 1px 2px rgba(0,0,0,0.3)",
-          }}
-        >{generating ? "Generating…" : "Generate from notes"}</button>
-        <button
-          onClick={startReview}
-          disabled={generating}
-          className="btn-press"
-          style={{
-            minHeight: 44, padding: "0 16px", borderRadius: 10,
-            background: "transparent", border: "1px solid var(--border-strong)",
-            color: "var(--text-primary)", fontWeight: 600, fontSize: 13.5, fontFamily: FONT, cursor: "pointer",
-          }}
-        >Start review</button>
-      </div>
+      {/* One big thing to do (review), then the deck — Quizlet's set page,
+          not two equal buttons above a column of Edit/Delete boxes. */}
+      <button
+        onClick={startReview}
+        disabled={generating || !cards?.length}
+        className="btn-press"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
+          minHeight: 52, borderRadius: 12, border: "none", marginBottom: 8,
+          background: "var(--acc)", color: "var(--on-acc)", fontWeight: 650, fontSize: 15.5, fontFamily: FONT,
+          cursor: cards?.length ? "pointer" : "default", opacity: cards?.length ? 1 : 0.55,
+        }}
+      ><Layers size={18} strokeWidth={2} /> {cards?.length ? `Review ${cards.length} card${cards.length === 1 ? "" : "s"}` : "Review"}</button>
+      <button
+        onClick={generate}
+        disabled={generating}
+        className="btn-press"
+        style={{
+          width: "100%", minHeight: 44, borderRadius: 12, marginBottom: 18,
+          background: "transparent", border: "1px solid var(--border-strong)",
+          color: "var(--text-primary)", fontWeight: 600, fontSize: 14, fontFamily: FONT,
+          cursor: generating ? "default" : "pointer",
+        }}
+      >{generating ? <span className="shimmer">Making cards from your notes…</span> : cards?.length ? "Generate more from notes" : "Generate from notes"}</button>
 
       {/* List */}
       {cards === null ? (
         <div className="shimmer" style={{ fontSize: 13, padding: "8px 2px" }}>Loading…</div>
       ) : cards.length === 0 ? (
         <div style={{ fontSize: 13, color: "var(--text-tertiary)", padding: "8px 2px", lineHeight: 1.5 }}>
-          No flashcards yet. Tap “Generate from notes” to create a set from this notebook’s notes.
+          No cards yet. “Generate from notes” makes a set from this unit’s notes.
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", minHeight: 0 }}>
@@ -290,21 +290,20 @@ export function FlashcardsPanel({ nb, onToast, onUpgradeNeeded }) {
           </div>
           {cards.map(c => (
             <div key={c.id} style={{
-              background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
-              borderRadius: 10, padding: "11px 13px",
+              display: "flex", alignItems: "flex-start", gap: 4,
+              background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)", borderRadius: 10,
             }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.45 }}>{c.front}</div>
-              <div style={{ fontSize: 12.5, color: "var(--text-secondary)", marginTop: 4, lineHeight: 1.45 }}>{c.back}</div>
-              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                <button
-                  onClick={() => setEditing(c)}
-                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 9, background: "var(--bg-surface-2)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
-                >Edit</button>
-                <button
-                  onClick={() => remove(c.id)}
-                  style={{ minHeight: 32, padding: "0 12px", borderRadius: 9, background: "transparent", border: "1px solid rgba(248,113,113,0.28)", color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
-                >Delete</button>
-              </div>
+              <button onClick={() => setEditing(c)} aria-label={`Edit card: ${c.front}`} style={{
+                flex: 1, minWidth: 0, textAlign: "left", padding: "11px 4px 11px 13px", background: "none",
+                border: "none", cursor: "pointer", fontFamily: FONT,
+              }}>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.45 }}>{c.front}</span>
+                <span style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.45 }}>{c.back}</span>
+              </button>
+              <button onClick={() => remove(c.id)} aria-label="Delete card" title="Delete card" className="btn-press" style={{
+                width: 44, height: 44, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                background: "none", border: "none", color: "var(--text-tertiary)", cursor: "pointer",
+              }}><Trash2 size={16} strokeWidth={1.8} /></button>
             </div>
           ))}
         </div>

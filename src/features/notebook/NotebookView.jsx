@@ -5,7 +5,7 @@ import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
-import { FONT, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
+import { FONT, classTint, tintFor } from "../../lib/theme.js";
 import { useNarrow } from "../../lib/breakpoints.js";
 import { useDerekPhrase } from "../../lib/derekPhrases.js";
 import { InviteModal } from "./InviteModal.jsx";
@@ -35,15 +35,15 @@ const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ def
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "#A78BFA", subtitle: "Every key idea, and how well you know it" },
-  { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "#60A5FA", subtitle: "What Derek reads in this unit",            group: "learn" },
-  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
-  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "#38BDF8", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
-  { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "#F472B6", subtitle: "Two-host audio overview",                  group: "learn" },
-  { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
-  { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "#FB923C", subtitle: "Your deck, spaced out over days",          group: "test" },
-  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",    title: "Worksheet",    Icon: LineChart,     tint: "#22D3EE", subtitle: "Worked problems with real plotted graphs", group: "test",  panel: "forge", forgeAction: "worksheet" },
-  { id: "feynman",           text: "Feynman",   label: "Explain it",   title: "Feynman Mode", Icon: Brain,         tint: "#4ADE80", subtitle: "Explain it in your words, get graded",     group: "test" },
+  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "#C2410C", subtitle: "Every key idea, and how well you know it" },
+  { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "#1D4ED8", subtitle: "What Derek reads in this unit",            group: "learn" },
+  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "#15803D", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
+  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "#0E7490", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
+  { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "#DC2626", subtitle: "Two-host audio overview",                  group: "learn" },
+  { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "#B45309", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
+  { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "#C2410C", subtitle: "Your deck, spaced out over days",          group: "test" },
+  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",    title: "Worksheet",    Icon: LineChart,     tint: "#1D4ED8", subtitle: "Worked problems with real plotted graphs", group: "test",  panel: "forge", forgeAction: "worksheet" },
+  { id: "feynman",           text: "Feynman",   label: "Explain it",   title: "Feynman Mode", Icon: Brain,         tint: "#15803D", subtitle: "Explain it in your words, get graded",     group: "test" },
 ];
 // Shown while a tool's chunk downloads. Tools are code-split because they are
 // only reachable behind a click, and together they were a large slice of a
@@ -359,12 +359,12 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
 
       {confirmDelete && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+          position: "fixed", inset: 0, background: "var(--overlay)",
           backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, padding: 16,
         }}>
           <div style={{
-            background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+            background: "var(--bg-surface-1)",
             border: "1px solid var(--border)",
             borderRadius: 18, width: "100%", maxWidth: 400,
             padding: "24px",
@@ -387,7 +387,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               <div style={{
                 background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
                 borderRadius: 10, padding: "10px 12px", marginBottom: 16,
-                fontSize: 12.5, color: "#F87171", fontFamily: FONT,
+                fontSize: 12.5, color: "var(--danger)", fontFamily: FONT,
               }}>{deleteError}</div>
             )}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -666,7 +666,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                     padding: "11px 15px",
                     fontSize: isAssistant && !m.isError ? 15 : 14,
                     lineHeight: isAssistant && !m.isError ? 1.65 : 1.6,
-                    fontFamily: isAssistant && !m.isError ? FONT_SERIF : FONT,
+                    fontFamily: FONT, // answers are read at length: body face, not handwriting
                     border: !isOwn
                       ? `1px solid ${m.isError ? "rgba(248,113,113,0.22)" : "var(--border-default)"}`
                       : "none",
@@ -715,7 +715,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                               onClick={() => doExplainDifferently(m.id, l.id)}
                               style={{
                                 background: "var(--bg-surface-2)",
-                                border: "1px solid rgba(167,139,250,0.32)",
+                                border: "1px solid var(--acc)",
                                 borderRadius: 8, padding: "0 10px", height: 26,
                                 fontSize: 11, fontWeight: 600, fontFamily: FONT,
                                 color: "var(--acc-h)", cursor: "pointer",
@@ -748,7 +748,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   }}>Derek</div>
                 </div>
                 <div style={{
-                  background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+                  background: "var(--bg-surface-1)",
                   border: "1px solid var(--border)",
                   borderRadius: 14, padding: "11px 14px",
                   display: "flex", gap: 6, alignItems: "center",

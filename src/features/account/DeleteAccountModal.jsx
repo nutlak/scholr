@@ -25,12 +25,12 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid rgba(248,113,113,0.18)",
         borderRadius: 18, width: "100%", maxWidth: 420,
         padding: "26px",
@@ -47,7 +47,7 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
           Delete your account?
         </div>
         <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, marginBottom: 20, lineHeight: 1.6 }}>
-          All notebooks, notes, and data will be <span style={{ color: "#F87171", fontWeight: 500 }}>permanently deleted</span>. This cannot be undone.
+          All notebooks, notes, and data will be <span style={{ color: "var(--danger)", fontWeight: 500 }}>permanently deleted</span>. This cannot be undone.
         </div>
 
         <form onSubmit={handleConfirm} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -57,7 +57,7 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
               letterSpacing: "0.04em", textTransform: "uppercase",
               display: "block", marginBottom: 7, fontWeight: 600,
             }}>
-              Type <span style={{ color: "#F87171", letterSpacing: "0.08em" }}>DELETE</span> to confirm
+              Type <span style={{ color: "var(--danger)", letterSpacing: "0.08em" }}>DELETE</span> to confirm
             </label>
             <input
               type="text"
@@ -70,7 +70,7 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
                 width: "100%", background: "var(--s1)",
                 border: `1px solid ${confirmed ? "rgba(248,113,113,0.45)" : "var(--border)"}`,
                 borderRadius: 10, padding: "0 14px", height: 42,
-                color: confirmed ? "#F87171" : "var(--t1)",
+                color: confirmed ? "var(--danger)" : "var(--t1)",
                 fontSize: 14, fontFamily: MONO,
                 outline: "none", transition: "all 0.18s",
                 letterSpacing: "0.08em",
@@ -83,7 +83,7 @@ export function DeleteAccountModal({ onClose, onConfirm }) {
             <div style={{
               background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
               borderRadius: 10, padding: "10px 12px",
-              fontSize: 12.5, color: "#F87171", fontFamily: FONT,
+              fontSize: 12.5, color: "var(--danger)", fontFamily: FONT,
             }}>{error}</div>
           )}
 

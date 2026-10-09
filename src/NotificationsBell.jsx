@@ -100,7 +100,7 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
           <span style={{
             position: "absolute", top: -5, right: -5,
             minWidth: 17, height: 17, padding: "0 4px", borderRadius: 9,
-            background: "#F87171", color: "#fff", fontSize: 10, fontWeight: 700,
+            background: "var(--danger)", color: "#fff", fontSize: 10, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: FONT, border: "2px solid var(--bg-base)",
           }}>{unread > 9 ? "9+" : unread}</span>
@@ -113,18 +113,18 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
           width: PANEL_W, maxWidth: `calc(100vw - ${VIEWPORT_MARGIN}px)`,
           transform: shiftX ? `translateX(${shiftX}px)` : undefined,
           maxHeight: 380, overflowY: "auto",
-          background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-          border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12,
+          background: "var(--bg-surface-1)",
+          border: "1px solid var(--border-default)", borderRadius: 12,
           boxShadow: "0 24px 60px rgba(0,0,0,0.55)", zIndex: 500,
           padding: 6, animation: "fadeIn 0.15s ease",
         }}>
           <div style={{
-            fontSize: 11, fontWeight: 700, color: "rgba(245,245,250,0.5)",
+            fontSize: 11, fontWeight: 700, color: "var(--text-tertiary)",
             fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase",
             padding: "8px 10px 6px",
           }}>Notifications</div>
           {items.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "10px" }}>
+            <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT, padding: "10px" }}>
               You're all caught up.
             </div>
           ) : (
@@ -139,18 +139,18 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
                     padding: "9px 10px", borderRadius: 8,
                     cursor: tappable ? "pointer" : "default",
                   }}
-                  onMouseEnter={e => { if (tappable) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseEnter={e => { if (tappable) e.currentTarget.style.background = "var(--bg-surface-2)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                 >
                   <span style={{
                     width: 6, height: 6, borderRadius: "50%", marginTop: 6, flexShrink: 0,
-                    background: n.read ? "transparent" : "#A78BFA",
+                    background: n.read ? "transparent" : "var(--acc-bg)",
                   }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, color: "#F5F5FA", fontFamily: FONT, lineHeight: 1.45 }}>
+                    <div style={{ fontSize: 12.5, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.45 }}>
                       {notifLine(n)}
                     </div>
-                    <div style={{ fontSize: 10.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
+                    <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>
                       {timeAgo(n.created_at)}
                     </div>
                   </div>

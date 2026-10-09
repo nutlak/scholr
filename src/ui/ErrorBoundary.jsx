@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component {
     return (
       <div style={{
         minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "var(--bg-base, #0B0B0C)", color: "var(--t1, #F0EDE7)",
+        background: "var(--bg-base, var(--bg-surface-1))", color: "var(--t1, var(--text-primary))",
         padding: 24, fontFamily: FONT,
       }}>
         <div style={{ maxWidth: 460, textAlign: "center" }}>
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component {
             Something broke on this screen
           </div>
           <p style={{
-            fontSize: 14.5, lineHeight: 1.6, color: "var(--t2, rgba(240,237,231,0.76))",
+            fontSize: 14.5, lineHeight: 1.6, color: "var(--t2, var(--text-secondary))",
             margin: "0 0 22px",
           }}>
             Your notes are safe — this is a display problem, not a data one.
@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component {
               onClick={() => window.location.reload()}
               style={{
                 height: 44, padding: "0 20px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: "var(--acc, #A78BFA)", color: "var(--on-acc, #14121A)",
+                background: "var(--acc, var(--acc-bg))", color: "var(--on-acc, var(--text-primary))",
                 fontFamily: FONT, fontSize: 14, fontWeight: 600,
               }}
             >Reload</button>
@@ -66,8 +66,8 @@ export class ErrorBoundary extends Component {
               onClick={() => { window.location.href = "/app"; }}
               style={{
                 height: 44, padding: "0 20px", borderRadius: 10, cursor: "pointer",
-                background: "transparent", border: "1px solid var(--border, rgba(240,237,231,0.10))",
-                color: "var(--t2, rgba(240,237,231,0.76))",
+                background: "transparent", border: "1px solid var(--border, var(--border-default))",
+                color: "var(--t2, var(--text-secondary))",
                 fontFamily: FONT, fontSize: 14, fontWeight: 600,
               }}
             >Back to dashboard</button>
@@ -78,7 +78,7 @@ export class ErrorBoundary extends Component {
           {this.state.error?.message && (
             <p style={{
               marginTop: 22, fontSize: 12, fontFamily: "var(--mono)",
-              color: "var(--t3, rgba(240,237,231,0.56))", wordBreak: "break-word",
+              color: "var(--t3, var(--text-secondary))", wordBreak: "break-word",
             }}>{String(this.state.error.message).slice(0, 200)}</p>
           )}
         </div>

@@ -40,7 +40,7 @@ export function SourcesPanel({ nb, currentUserId, isOwner, members = [], refresh
         fontFamily: FONT, fontSize: 15, fontWeight: 650, cursor: "pointer",
       }}><Plus size={18} strokeWidth={2.2} /> Add a source</button>
       <p style={{ margin: 0, fontSize: 13, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
-        Derek, the Forge and the brain all read these. Upload a file, or write or paste a note.
+        Derek, your study tools and the brain all read these. Upload a file, or write or paste a note.
       </p>
 
       {sources === null ? (

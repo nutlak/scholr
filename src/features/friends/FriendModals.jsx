@@ -46,14 +46,14 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
       className="mobile-sheet-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 16,
       }}
     >
       <div className="mobile-sheet" style={{
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)", borderRadius: 18,
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)", borderRadius: 18,
         width: "100%", maxWidth: 380, padding: "22px 20px",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
@@ -63,26 +63,26 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
             <Avatar name={friend.name} size={38} seed={friend.username || friend.userId} />
             <span style={{
               position: "absolute", bottom: -1, right: -1, width: 11, height: 11, borderRadius: "50%",
-              background: friend.isOnline ? "#34D399" : "#6B7280", border: "2.5px solid #14141F",
+              background: friend.isOnline ? "var(--success)" : "#6B7280", border: "2.5px solid var(--border-default)",
             }} />
           </span>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friend.name}</div>
-            <div style={{ fontSize: 12, color: friend.isOnline ? "#6EE7B7" : "rgba(245,245,250,0.45)", fontFamily: FONT }}>
+            <div style={{ fontSize: 15.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{friend.name}</div>
+            <div style={{ fontSize: 12, color: friend.isOnline ? "var(--success)" : "var(--text-tertiary)", fontFamily: FONT }}>
               {friend.isOnline ? "Active now" : (friend.username ? `@${friend.username}` : "Offline")}
             </div>
           </div>
         </div>
 
         {error && (
-          <div style={{ fontSize: 12.5, color: "#F87171", fontFamily: FONT, marginBottom: 12 }}>{error}</div>
+          <div style={{ fontSize: 12.5, color: "var(--danger)", fontFamily: FONT, marginBottom: 12 }}>{error}</div>
         )}
 
         {view === "menu" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{
               fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-              color: "rgba(245,245,250,0.45)", fontFamily: FONT, marginBottom: 2,
+              color: "var(--text-tertiary)", fontFamily: FONT, marginBottom: 2,
             }}>
               {shared === null ? "Shared notebooks" : `${shared.length} shared notebook${shared.length === 1 ? "" : "s"}`}
             </div>
@@ -91,7 +91,7 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
               <div className="shimmer" style={{ fontSize: 13, fontFamily: FONT, padding: "4px 0" }}>Loading…</div>
             )}
             {shared?.length === 0 && (
-              <div style={{ fontSize: 13, color: "rgba(245,245,250,0.5)", fontFamily: FONT, lineHeight: 1.5, marginBottom: 4 }}>
+              <div style={{ fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT, lineHeight: 1.5, marginBottom: 4 }}>
                 Nothing yet. Invite {friend.name.split(" ")[0]} to a notebook and you can study it together.
               </div>
             )}
@@ -105,7 +105,7 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
                 }}
               >
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.title}</span>
-                <span style={{ color: "rgba(245,245,250,0.4)", flexShrink: 0 }}>&rarr;</span>
+                <span style={{ color: "var(--text-tertiary)", flexShrink: 0 }}>&rarr;</span>
               </button>
             ))}
 
@@ -123,8 +123,8 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
 
         {view === "confirmRemove" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontSize: 13.5, color: "rgba(245,245,250,0.8)", fontFamily: FONT, lineHeight: 1.5 }}>
-              Remove <strong style={{ color: "#F5F5FA" }}>{friend.name}</strong> from your friends?
+            <div style={{ fontSize: 13.5, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.5 }}>
+              Remove <strong style={{ color: "var(--text-primary)" }}>{friend.name}</strong> from your friends?
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setView("menu")} disabled={busy} style={{ ...btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.65)"), flex: 1 }}>Cancel</button>
@@ -135,8 +135,8 @@ export function FriendActionModal({ friend, onClose, onInvite, onChanged, onOpen
 
         {view === "confirmBlock" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontSize: 13.5, color: "rgba(245,245,250,0.8)", fontFamily: FONT, lineHeight: 1.5 }}>
-              Block <strong style={{ color: "#F5F5FA" }}>{friend.name}</strong>? This also removes them from your friends and they won't be able to send you requests.
+            <div style={{ fontSize: 13.5, color: "var(--text-primary)", fontFamily: FONT, lineHeight: 1.5 }}>
+              Block <strong style={{ color: "var(--text-primary)" }}>{friend.name}</strong>? This also removes them from your friends and they won't be able to send you requests.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setView("menu")} disabled={busy} style={{ ...btn("transparent", "1px solid rgba(255,255,255,0.12)", "rgba(245,245,250,0.65)"), flex: 1 }}>Cancel</button>
@@ -178,7 +178,7 @@ export function FriendInviteModal({ friend, onClose }) {
       className="mobile-sheet-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 1000, padding: 16,
@@ -186,8 +186,8 @@ export function FriendInviteModal({ friend, onClose }) {
     >
       <div className="mobile-sheet" style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 18, width: "100%", maxWidth: 420,
         maxHeight: "80vh", display: "flex", flexDirection: "column",
         padding: "24px 22px",
@@ -197,19 +197,19 @@ export function FriendInviteModal({ friend, onClose }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
           <Avatar name={friend.name} size={34} seed={friend.username || friend.userId} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>
               Invite {friend.name}
             </div>
-            <div style={{ fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT }}>
+            <div style={{ fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
               Choose a notebook to share
             </div>
           </div>
           <button
             onClick={onClose} aria-label="Close"
             style={{
-              marginLeft: "auto", background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+              marginLeft: "auto", background: "transparent", border: "1px solid var(--border-default)",
               borderRadius: 8, width: 30, height: 30, cursor: "pointer",
-              color: "rgba(245,245,250,0.6)", fontSize: 15, flexShrink: 0,
+              color: "var(--text-secondary)", fontSize: 15, flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >✕</button>
@@ -219,7 +219,7 @@ export function FriendInviteModal({ friend, onClose }) {
           {notebooks === null ? (
             <div className="shimmer" style={{ fontSize: 13, fontFamily: FONT, padding: "8px 2px" }}>Loading…</div>
           ) : notebooks.length === 0 ? (
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "8px 2px" }}>
+            <div style={{ fontSize: 13, color: "var(--text-tertiary)", fontFamily: FONT, padding: "8px 2px" }}>
               You don't have any notebooks yet.
             </div>
           ) : (
@@ -230,22 +230,22 @@ export function FriendInviteModal({ friend, onClose }) {
                 <div key={nb.id} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "9px 11px", borderRadius: 10,
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border-subtle)",
                 }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.title}</div>
-                    {nb.topic && <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.topic}</div>}
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.title}</div>
+                    {nb.topic && <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nb.topic}</div>}
                   </div>
                   <button
                     onClick={() => invite(nb.id)}
                     disabled={st === "busy" || done}
                     style={{
                       flexShrink: 0,
-                      background: done ? "rgba(52,211,153,0.14)" : "rgba(167,139,250,0.14)",
-                      border: `1px solid ${done ? "rgba(52,211,153,0.32)" : "rgba(167,139,250,0.32)"}`,
+                      background: done ? "rgba(52,211,153,0.14)" : "var(--acc-bg)",
+                      border: `1px solid ${done ? "rgba(52,211,153,0.32)" : "var(--acc)"}`,
                       borderRadius: 8, padding: "6px 12px",
-                      color: done ? "#6EE7B7" : "#C4B5FD",
+                      color: done ? "var(--success)" : "var(--acc)",
                       fontWeight: 600, fontSize: 12, fontFamily: FONT,
                       cursor: st === "busy" || done ? "default" : "pointer",
                       opacity: st === "busy" ? 0.7 : 1,

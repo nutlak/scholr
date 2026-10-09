@@ -48,26 +48,26 @@ export async function sendOtpEmail(to, code, type) {
     subject: isSignup ? "Verify your scholr account" : "Reset your scholr password",
     html: `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:40px 20px;background:#0A0A0F;font-family:'Helvetica Neue',Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#A78BFA;">r</span>
+    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
+      schol<span style="color:#C2410C;">r</span>
     </div>
-    <p style="font-size:13px;color:#A8A8BC;margin:0 0 28px;">
+    <p style="font-size:13px;color:#555555;margin:0 0 28px;">
       ${isSignup ? "Complete your signup" : "Reset your password"}
     </p>
 
-    <div style="background:#111118;border:1px solid #2A2A38;border-radius:14px;padding:32px;text-align:center;margin-bottom:20px;">
-      <div style="font-size:12px;color:#9A9AB0;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
+    <div style="background:#FFFFFF;border:1.5px solid #1C1C1C;border-radius:14px;padding:32px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:12px;color:#555555;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
         Your verification code
       </div>
-      <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#A78BFA;font-family:monospace;padding-left:16px;">
+      <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#C2410C;font-family:monospace;padding-left:16px;">
         ${code}
       </div>
     </div>
 
-    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:0;">
-      This code expires in <strong style="color:#C0C0D8;">10 minutes</strong>.
+    <p style="font-size:12px;color:#555555;line-height:1.6;margin:0;">
+      This code expires in <strong style="color:#333333;">10 minutes</strong>.
       If you didn't request this, you can safely ignore this email.
     </p>
   </div>
@@ -90,21 +90,21 @@ export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitl
       subject: `You've been invited to join ${notebookTitle} on scholr`,
       html: `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:40px 20px;background:#0A0A0F;font-family:'Helvetica Neue',Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:460px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#A78BFA;">r</span>
+    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
+      schol<span style="color:#C2410C;">r</span>
     </div>
-    <p style="font-size:13px;color:#A8A8BC;margin:0 0 28px;">Study together, learn faster</p>
+    <p style="font-size:13px;color:#555555;margin:0 0 28px;">Study together, learn faster</p>
 
-    <div style="background:#111118;border:1px solid #2A2A38;border-radius:14px;padding:32px;margin-bottom:20px;">
-      <p style="font-size:15px;color:#C0C0D8;line-height:1.7;margin:0 0 24px;">
-        ${inviterEmail} invited you to join <strong style="color:#E8E8F0;">${notebookTitle}</strong>${location} on scholr. Click below to accept and start studying together.
+    <div style="background:#FFFFFF;border:1.5px solid #1C1C1C;border-radius:14px;padding:32px;margin-bottom:20px;">
+      <p style="font-size:15px;color:#333333;line-height:1.7;margin:0 0 24px;">
+        ${inviterEmail} invited you to join <strong style="color:#1C1C1C;">${notebookTitle}</strong>${location} on scholr. Click below to accept and start studying together.
       </p>
-      <a href="${inviteUrl}" style="display:inline-block;background:#A78BFA;color:#0A0A0F;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
+      <a href="${inviteUrl}" style="display:inline-block;background:#C2410C;color:#FFFFFF;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
     </div>
 
-    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:0;">
+    <p style="font-size:12px;color:#555555;line-height:1.6;margin:0;">
       If you don't have a scholr account yet, you'll be prompted to create one first.<br>
       If you weren't expecting this invite, you can safely ignore it.
     </p>
@@ -132,7 +132,7 @@ function unsubBase() {
 
 function emailShell(innerHtml, userId) {
   const unsub = userId
-    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#9A9AB0;text-decoration:underline;">Unsubscribe</a>`
+    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#555555;text-decoration:underline;">Unsubscribe</a>`
     : "";
   return `<!DOCTYPE html>
 <html>
@@ -140,22 +140,22 @@ function emailShell(innerHtml, userId) {
   <meta charset="utf-8">
   <style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');</style>
 </head>
-<body style="margin:0;padding:40px 20px;background:#08080C;font-family:'Helvetica Neue',Arial,sans-serif;">
+<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
   <div style="max-width:480px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#E8E8F0;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#A78BFA;">r</span></div>
+    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#C2410C;">r</span></div>
     ${innerHtml}
-    <p style="font-size:12px;color:#9A9AB0;line-height:1.6;margin:28px 0 0;border-top:1px solid #1c1c28;padding-top:16px;">
-      You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#8b8b9b;">support@scholr.dev</a>.<br>${unsub}
+    <p style="font-size:12px;color:#555555;line-height:1.6;margin:28px 0 0;border-top:1px solid #E5E5E5;padding-top:16px;">
+      You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#666666;">support@scholr.dev</a>.<br>${unsub}
     </p>
   </div>
 </body>
 </html>`;
 }
 
-const H = `font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:#F5F5FA;font-weight:700;`;
-const P = `font-size:15px;color:#C0C0D8;line-height:1.7;margin:0 0 16px;`;
+const H = `font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:#1C1C1C;font-weight:700;`;
+const P = `font-size:15px;color:#333333;line-height:1.7;margin:0 0 16px;`;
 function ctaButton(label, href) {
-  return `<a href="${href}" style="display:inline-block;background:#A78BFA;color:#0A0A0F;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
+  return `<a href="${href}" style="display:inline-block;background:#C2410C;color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
 }
 
 const ONBOARDING_TEMPLATES = {
@@ -165,12 +165,12 @@ const ONBOARDING_TEMPLATES = {
       <h1 style="${H}font-size:26px;margin:0 0 14px;">Hey ${name || "there"}, you're in.</h1>
       <p style="${P}">Scholr turns your class notes into a shared AI tutor. Here's the 10-second version:</p>
       <p style="${P}">
-        📤 <strong style="color:#E8E8F0;">Upload notes</strong> — drop a PDF, image, or paste text<br>
-        💬 <strong style="color:#E8E8F0;">Ask Derek</strong> — your AI tutor that actually knows your material<br>
-        🎯 <strong style="color:#E8E8F0;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
+        📤 <strong style="color:#1C1C1C;">Upload notes</strong> — drop a PDF, image, or paste text<br>
+        💬 <strong style="color:#1C1C1C;">Ask Derek</strong> — your AI tutor that actually knows your material<br>
+        🎯 <strong style="color:#1C1C1C;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
       </p>
       ${ctaButton("Open Scholr →", appUrl())}
-      <p style="font-size:13px;color:#A8A8BC;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>
+      <p style="font-size:13px;color:#555555;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>
     `,
   }),
   feynman: () => ({
@@ -178,7 +178,7 @@ const ONBOARDING_TEMPLATES = {
     html: `
       <h1 style="${H}font-size:24px;margin:0 0 14px;">Most students re-read notes. The best students explain them.</h1>
       <p style="${P}">It's called the Feynman technique: if you can explain a concept in plain words, you actually understand it. If you stumble, you've found exactly what to review.</p>
-      <p style="${P}">Scholr's <strong style="color:#E8E8F0;">Feynman Mode</strong> grades your explanation in real time — it tells you what you nailed, where the gaps are, and asks a follow-up to push you further.</p>
+      <p style="${P}">Scholr's <strong style="color:#1C1C1C;">Feynman Mode</strong> grades your explanation in real time — it tells you what you nailed, where the gaps are, and asks a follow-up to push you further.</p>
       ${ctaButton("Try Feynman Mode →", appUrl())}
     `,
   }),

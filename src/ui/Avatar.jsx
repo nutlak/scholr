@@ -29,7 +29,7 @@ export function AvatarStack({ names }) {
       {names.length > 3 && (
         <div style={{
           marginLeft: -8, width: 24, height: 24, borderRadius: "50%",
-          background: "var(--s2)", border: "2px solid #0B0B12",
+          background: "var(--s2)", border: "2px solid var(--border-default)",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 10, fontWeight: 600, color: "var(--t2)", fontFamily: FONT,
         }}>+{names.length - 3}</div>
@@ -82,14 +82,14 @@ export function MemberAvatarStack({ members }) {
       {overflow > 0 && (
         <div style={{
           marginLeft: -10, width: 28, height: 28, borderRadius: "50%",
-          background: "var(--s2)", border: "2px solid #0B0B12",
+          background: "var(--s2)", border: "2px solid var(--border-default)",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 10.5, fontWeight: 600, color: "var(--t2)", fontFamily: FONT, zIndex: 0,
         }}>+{overflow}</div>
       )}
       {onlineCount > 1 && (
         <span style={{
-          marginLeft: 9, fontSize: 12, fontWeight: 500, color: "#34D399",
+          marginLeft: 9, fontSize: 12, fontWeight: 500, color: "var(--success)",
           fontFamily: FONT, whiteSpace: "nowrap",
         }}>{onlineCount} here now</span>
       )}

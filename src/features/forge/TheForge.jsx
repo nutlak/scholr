@@ -5,11 +5,11 @@ import { FONT, MONO } from "../../lib/theme.js";
 import { WorksheetView } from "./WorksheetView.jsx";
 
 const FORGE_ACTIONS = [
-  { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "#34D399", desc: "Comprehensive review" },
-  { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "#FBBF24", desc: "Practice questions"  },
-  { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "#F472B6", desc: "Quick recall cards"  },
-  { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "#60A5FA", desc: "Concise overview"    },
-  { id: "worksheet",   label: "Worksheet",   Icon: LineChart,      color: "#22D3EE", desc: "Worked problems + graphs" },
+  { id: "study_guide", label: "Study Guide", Icon: BookOpen,       color: "#15803D", desc: "Comprehensive review" },
+  { id: "questions",   label: "Questions",   Icon: HelpCircle,     color: "#B45309", desc: "Practice questions"  },
+  { id: "flashcards",  label: "Flashcards",  Icon: Layers,         color: "#C2410C", desc: "Quick recall cards"  },
+  { id: "summary",     label: "Summary",     Icon: ClipboardList,  color: "#0E7490", desc: "Concise overview"    },
+  { id: "worksheet",   label: "Worksheet",   Icon: LineChart,      color: "#1D4ED8", desc: "Worked problems + graphs" },
 ];
 const FORGE_BY_ID = Object.fromEntries(FORGE_ACTIONS.map(a => [a.id, a]));
 
@@ -284,7 +284,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               flex: 1, textAlign: "center", margin: "0 12px",
             }}>{nb.title}</div>
             <div style={{
-              fontSize: 11, color: learned.size > 0 ? "#34D399" : "var(--t4)",
+              fontSize: 11, color: learned.size > 0 ? "var(--success)" : "var(--t4)",
               fontFamily: MONO, flexShrink: 0,
               padding: "3px 8px",
               background: learned.size > 0 ? "rgba(52,211,153,0.1)" : "var(--s2)",
@@ -296,7 +296,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
             <div className={`forge-card${isFlipped ? " flipped" : ""}`} style={{ width: "100%", height: "100%", position: "relative", minHeight: 200 }}>
               <div className="forge-face" style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(180deg, #1C1C2A 0%, #14141F 100%)",
+                background: "var(--bg-surface-1)",
                 border: "1px solid var(--border-h)",
                 borderRadius: 14,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -356,7 +356,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               background: learned.has(realIdx) ? "rgba(52,211,153,0.12)" : "var(--s1)",
               border: `1px solid ${learned.has(realIdx) ? "rgba(52,211,153,0.32)" : "var(--border)"}`,
               borderRadius: 10, padding: "0 14px", height: 36,
-              color: learned.has(realIdx) ? "#34D399" : "var(--t2)",
+              color: learned.has(realIdx) ? "var(--success)" : "var(--t2)",
               cursor: "pointer", fontSize: 12, fontFamily: FONT, fontWeight: 600,
               whiteSpace: "nowrap", letterSpacing: "-0.005em",
             }}>
@@ -377,7 +377,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
         <>
           <div ref={contentRef} style={{
             flex: 1, overflowY: "auto", minHeight: 240,
-            background: "#0F0F18",
+            background: "var(--bg-surface-1)",
             border: "1px solid var(--border)",
             borderRadius: 12,
             padding: "18px",
@@ -393,7 +393,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
                 <div style={{
                   width: 56, height: 56, borderRadius: 14,
                   background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
-                  border: "1px solid rgba(167,139,250,0.18)",
+                  border: "1px solid var(--acc)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   color: "var(--accent)",
                 }}><Sparkles size={24} strokeWidth={1.5} /></div>
@@ -432,7 +432,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
                 flex: 1, background: copied ? "rgba(52,211,153,0.1)" : "var(--s1)",
                 border: `1px solid ${copied ? "rgba(52,211,153,0.3)" : "var(--border)"}`,
                 borderRadius: 10, height: 36,
-                color: copied ? "#34D399" : "var(--t2)",
+                color: copied ? "var(--success)" : "var(--t2)",
                 fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 letterSpacing: "-0.005em",

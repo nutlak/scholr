@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import OtpInput from "./OtpInput.jsx";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ScholrMark } from "./ui/ScholrMark.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
 import { getCaptchaToken, preloadCaptcha } from "./lib/turnstile.js";
 import { ageFromDob } from "./lib/age.js";
@@ -15,7 +16,7 @@ const GOOGLE_SIGNIN = import.meta.env.VITE_GOOGLE_SIGNIN === "1";
 // multicolour G, "Continue with Google", no recolouring).
 const googleBtn = {
   width: "100%", height: 44, borderRadius: 10,
-  background: "#131314", border: "1px solid #8E918F", color: "#E3E3E3",
+  background: "var(--bg-surface-1)", border: "1px solid #8E918F", color: "#E3E3E3",
   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
   fontFamily: FONT, fontWeight: 500, fontSize: 14, cursor: "pointer",
 };
@@ -30,12 +31,12 @@ const GoogleG = () => (
 
 const inputStyle = {
   width: "100%",
-  background: "#14141F",
-  border: "1px solid rgba(255,255,255,0.09)",
+  background: "var(--bg-surface-1)",
+  border: "1px solid var(--border-subtle)",
   borderRadius: 10,
   padding: "0 14px",
   height: 42,
-  color: "#F5F5FA",
+  color: "var(--text-primary)",
   fontSize: 14,
   fontFamily: FONT,
   outline: "none",
@@ -61,7 +62,7 @@ const btnPrimary = {
 
 const labelStyle = {
   fontSize: 11,
-  color: "rgba(245,245,250,0.55)",
+  color: "var(--text-secondary)",
   fontFamily: FONT,
   letterSpacing: "0.04em",
   textTransform: "uppercase",
@@ -76,17 +77,17 @@ const errorBox = {
   borderRadius: 10,
   padding: "10px 12px",
   fontSize: 12.5,
-  color: "#F87171",
+  color: "var(--danger)",
   fontFamily: FONT,
   lineHeight: 1.5,
 };
 
 function focusPurple(e) {
-  e.target.style.borderColor = "#A78BFA";
+  e.target.style.borderColor = "var(--acc)";
   e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)";
 }
 function blurGray(e) {
-  e.target.style.borderColor = "rgba(255,255,255,0.09)";
+  e.target.style.borderColor = "var(--border-subtle)";
   e.target.style.boxShadow = "none";
 }
 
@@ -263,43 +264,36 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   const shell = (children) => (
     <div style={{
       position: "fixed", inset: 0,
-      background: "rgba(8,8,14,0.78)",
+      background: "var(--overlay)",
       backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
       display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 18, width: "100%", maxWidth: 420,
         padding: "32px 28px",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
         overflow: "hidden",
       }}>
-        {/* Soft accent glow */}
-        <div style={{
-          position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)",
-          width: 280, height: 280, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
         <div style={{ position: "relative" }}>
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
             marginBottom: 6,
           }}>
-            <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover", marginBottom: 12 }} />
+            <div style={{ marginBottom: 8 }}><ScholrMark size={52} /></div>
             <div style={{
               fontFamily: FONT, fontSize: 22, fontWeight: 600,
-              color: "#F5F5FA", letterSpacing: "-0.03em",
+              color: "var(--text-primary)", letterSpacing: "-0.03em",
             }}>
-              <span>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+              <span>schol<span style={{ color: "var(--acc)" }}>r</span></span>
             </div>
           </div>
           <div style={{
-            fontSize: 12.5, color: "rgba(245,245,250,0.5)", textAlign: "center",
+            fontSize: 12.5, color: "var(--text-tertiary)", textAlign: "center",
             fontFamily: FONT, marginBottom: 26,
           }}>
             AI-powered collaborative notebooks
@@ -318,30 +312,30 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
           style={{
             display: "flex", alignItems: "center", gap: 4,
             background: "transparent", border: "none",
-            color: "rgba(245,245,250,0.5)", fontSize: 12, cursor: "pointer",
+            color: "var(--text-tertiary)", fontSize: 12, cursor: "pointer",
             fontFamily: FONT, marginBottom: 20, padding: "4px 0",
             transition: "color 0.15s",
           }}
-          onMouseEnter={e => e.currentTarget.style.color = "#F5F5FA"}
-          onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.5)"}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary)"}
         >← Back</button>
 
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div style={{
             width: 56, height: 56, borderRadius: 14,
-            background: "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.06))",
-            border: "1px solid rgba(167,139,250,0.3)",
+            background: "var(--acc-bg)",
+            border: "1px solid var(--acc)",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            color: "#A78BFA", marginBottom: 12,
+            color: "var(--acc)", marginBottom: 12,
           }}>
             {otpFlow === "signup" ? <Mail size={26} strokeWidth={1.75} /> : <Lock size={26} strokeWidth={1.75} />}
           </div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
             {otpFlow === "signup" ? "Verify your email" : "Check your email"}
           </div>
-          <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.6 }}>
             We sent a 6-digit code to<br />
-            <span style={{ color: "#F5F5FA", fontWeight: 500 }}>{pendingEmail}</span>
+            <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{pendingEmail}</span>
           </div>
         </div>
 
@@ -359,7 +353,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
 
         <div style={{
           marginTop: 18, textAlign: "center",
-          fontSize: 12.5, color: "rgba(245,245,250,0.5)", fontFamily: FONT,
+          fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
         }}>
           Didn't receive it?{" "}
           <button
@@ -368,13 +362,13 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
             disabled={resendCooldown > 0 || loading}
             style={{
               background: "transparent", border: "none",
-              color: resendCooldown > 0 ? "rgba(245,245,250,0.3)" : "#A78BFA",
+              color: resendCooldown > 0 ? "var(--text-tertiary)" : "var(--acc)",
               fontSize: 12.5, cursor: resendCooldown > 0 ? "default" : "pointer",
               fontFamily: FONT, fontWeight: 600, padding: 0,
               transition: "color 0.15s",
             }}
-            onMouseEnter={e => { if (resendCooldown === 0) e.currentTarget.style.color = "#C4B5FD"; }}
-            onMouseLeave={e => { if (resendCooldown === 0) e.currentTarget.style.color = "#A78BFA"; }}
+            onMouseEnter={e => { if (resendCooldown === 0) e.currentTarget.style.color = "var(--acc)"; }}
+            onMouseLeave={e => { if (resendCooldown === 0) e.currentTarget.style.color = "var(--acc)"; }}
           >
             {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
           </button>
@@ -386,10 +380,10 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
   if (screen === "reset-password") {
     return shell(
       <>
-        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Set a new password
         </div>
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
           Choose a strong password for your account.
         </div>
 
@@ -451,18 +445,18 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
           style={{
             display: "flex", alignItems: "center", gap: 4,
             background: "transparent", border: "none",
-            color: "rgba(245,245,250,0.5)", fontSize: 12, cursor: "pointer",
+            color: "var(--text-tertiary)", fontSize: 12, cursor: "pointer",
             fontFamily: FONT, marginBottom: 20, padding: "4px 0",
             transition: "color 0.15s",
           }}
-          onMouseEnter={e => e.currentTarget.style.color = "#F5F5FA"}
-          onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.5)"}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary)"}
         >← Back to login</button>
 
-        <div style={{ fontSize: 17, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.015em" }}>
           Reset your password
         </div>
-        <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, marginBottom: 22, lineHeight: 1.6 }}>
           Enter your email and we'll send you a 6-digit verification code.
         </div>
 
@@ -493,8 +487,8 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
     <>
       {/* Tab switcher */}
       <div style={{
-        display: "flex", background: "#0B0B12",
-        border: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 10, padding: 3, marginBottom: 22, gap: 3,
       }}>
         {[["login", "Log in"], ["signup", "Sign up"]].map(([t, label]) => (
@@ -505,9 +499,9 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
             style={{
               flex: 1, padding: "8px", border: "none", borderRadius: 8,
               background: tab === t
-                ? "linear-gradient(180deg, #252537 0%, #1C1C2A 100%)"
+                ? "var(--acc-bg-h)"
                 : "transparent",
-              color: tab === t ? "#F5F5FA" : "rgba(245,245,250,0.5)",
+              color: tab === t ? "var(--acc)" : "var(--text-secondary)",
               fontWeight: tab === t ? 600 : 500,
               fontSize: 13, cursor: "pointer",
               fontFamily: FONT, transition: "all 0.18s",
@@ -523,10 +517,10 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
           <button type="button" onClick={handleGoogle} disabled={loading} style={{ ...googleBtn, opacity: loading ? 0.55 : 1 }}>
             <GoogleG /> Continue with Google
           </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0", color: "rgba(245,245,250,0.45)", fontSize: 12, fontFamily: FONT }}>
-            <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0", color: "var(--text-tertiary)", fontSize: 12, fontFamily: FONT }}>
+            <span style={{ flex: 1, height: 1, background: "var(--bg-surface-3)" }} />
             or with email
-            <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+            <span style={{ flex: 1, height: 1, background: "var(--bg-surface-3)" }} />
           </div>
         </>
       )}
@@ -557,7 +551,7 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
               style={{ ...inputStyle, minHeight: 44, colorScheme: "dark" }}
               onFocus={focusPurple} onBlur={blurGray}
             />
-            <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", marginTop: 6, fontFamily: FONT }}>
+            <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", marginTop: 6, fontFamily: FONT }}>
               You must be at least 13 to use Scholr.
             </div>
           </div>
@@ -611,12 +605,12 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
               onClick={() => switchTab("forgot")}
               style={{
                 marginTop: 8, background: "transparent", border: "none",
-                color: "rgba(245,245,250,0.45)", fontSize: 12, cursor: "pointer",
+                color: "var(--text-tertiary)", fontSize: 12, cursor: "pointer",
                 fontFamily: FONT, padding: 0, transition: "color 0.15s",
                 fontWeight: 500,
               }}
-              onMouseEnter={e => e.currentTarget.style.color = "#A78BFA"}
-              onMouseLeave={e => e.currentTarget.style.color = "rgba(245,245,250,0.45)"}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--acc)"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary)"}
             >Forgot password?</button>
           )}
         </div>
@@ -627,13 +621,13 @@ export default function AuthModal({ onAuth, initialTab = "login" }) {
               type="checkbox"
               checked={agreed}
               onChange={e => setAgreed(e.target.checked)}
-              style={{ marginTop: 2, width: 16, height: 16, accentColor: "#A78BFA", cursor: "pointer", flexShrink: 0 }}
+              style={{ marginTop: 2, width: 16, height: 16, accentColor: "var(--acc)", cursor: "pointer", flexShrink: 0 }}
             />
-            <span style={{ fontSize: 12, color: "rgba(245,245,250,0.6)", lineHeight: 1.5 }}>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
               I am at least 13 years old (or the minimum age required in my jurisdiction) and agree to Scholr's{" "}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "#A78BFA", fontWeight: 600 }}>Terms of Service</a>{" "}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "var(--acc)", fontWeight: 600 }}>Terms of Service</a>{" "}
               and{" "}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#A78BFA", fontWeight: 600 }}>Privacy Policy</a>
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--acc)", fontWeight: 600 }}>Privacy Policy</a>
             </span>
           </label>
         )}

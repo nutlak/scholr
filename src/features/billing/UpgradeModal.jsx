@@ -93,13 +93,13 @@ export function UpgradeModal({ limitType, onClose }) {
   return (
     <div className="mobile-sheet-overlay" style={{
       position: "fixed", inset: 0, zIndex: 3000,
-      background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+      background: "var(--overlay)", backdropFilter: "blur(8px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 16, animation: "fadeIn 0.18s ease",
     }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="mobile-sheet" style={{
         background: "var(--bg-surface-1)",
-        border: "1px solid rgba(167,139,250,0.28)",
+        border: "1px solid var(--acc)",
         borderRadius: 20, padding: "32px 28px",
         maxWidth: 400, width: "100%",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
@@ -122,7 +122,7 @@ export function UpgradeModal({ limitType, onClose }) {
         {/* Price */}
         <div style={{
           background: "linear-gradient(135deg, var(--acc-bg), rgba(167,139,250,0.04))",
-          border: "1px solid rgba(167,139,250,0.22)",
+          border: "1px solid var(--acc)",
           borderRadius: 12, padding: "14px 18px", marginBottom: 20,
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
         }}>
@@ -176,7 +176,7 @@ export function UpgradeModal({ limitType, onClose }) {
             background: "rgba(248,113,113,0.08)",
             border: "1px solid rgba(248,113,113,0.22)",
             borderRadius: 10, padding: "9px 11px", marginBottom: 10,
-            fontSize: 12.5, color: "#F87171", fontFamily: FONT, lineHeight: 1.45,
+            fontSize: 12.5, color: "var(--danger)", fontFamily: FONT, lineHeight: 1.45,
           }}>{checkoutError}</div>
         )}
         <button

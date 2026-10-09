@@ -49,7 +49,7 @@ export function NotebookCard({ nb, onClick, onDelete }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <div style={{
             fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em",
-            color: t.hue, textTransform: "uppercase",
+            color: t.ink ?? t.hue, textTransform: "uppercase",
             fontFamily: FONT,
           }}>
             {nb.notes} {nb.notes === 1 ? "note" : "notes"}
@@ -94,7 +94,7 @@ export function NotebookCard({ nb, onClick, onDelete }) {
           </span>
         </div>
         <div style={{
-          fontSize: 12, color: t.hue, fontFamily: FONT, fontWeight: 600,
+          fontSize: 12, color: t.ink ?? t.hue, fontFamily: FONT, fontWeight: 600,
           opacity: hovered ? 1 : 0,
           transform: hovered ? "translateX(0)" : "translateX(-4px)",
           transition: "opacity 0.2s, transform 0.2s",

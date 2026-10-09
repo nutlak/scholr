@@ -151,7 +151,7 @@ export function DashboardRail({
                         style={{
                           background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)",
                           borderRadius: 8, padding: "7px 12px", minHeight: 34,
-                          color: "#6EE7B7", fontWeight: 600, fontSize: 12, fontFamily: FONT,
+                          color: "var(--success)", fontWeight: 600, fontSize: 12, fontFamily: FONT,
                           cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
                         }}
                       >{busy ? "…" : "Accept"}</button>

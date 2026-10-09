@@ -66,11 +66,11 @@ export default function OtpInput({ value = "", onChange, disabled = false }) {
           onPaste={handlePaste}
           onFocus={e => {
             e.target.select();
-            e.target.style.borderColor = "#A78BFA";
+            e.target.style.borderColor = "var(--acc)";
             e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)";
           }}
           onBlur={e => {
-            e.target.style.borderColor = d ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.1)";
+            e.target.style.borderColor = d ? "var(--acc)" : "var(--border-default)";
             e.target.style.boxShadow = "none";
           }}
           style={{
@@ -80,10 +80,10 @@ export default function OtpInput({ value = "", onChange, disabled = false }) {
             fontSize: 20,
             fontWeight: 600,
             fontFamily: FONT,
-            background: "#14141F",
-            border: `1.5px solid ${d ? "rgba(167,139,250,0.45)" : "rgba(255,255,255,0.1)"}`,
+            background: "var(--bg-surface-1)",
+            border: `1.5px solid ${d ? "var(--acc)" : "var(--border-default)"}`,
             borderRadius: 10,
-            color: "#F5F5FA",
+            color: "var(--text-primary)",
             outline: "none",
             transition: "border-color 0.18s, box-shadow 0.18s",
             caretColor: "transparent",

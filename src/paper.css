@@ -1,0 +1,177 @@
+/* ======================================================================
+   paper.css — the hand-drawn layer. Loaded last (after App.css).
+
+   The look: an explainer sketched on white paper. Black ink lines that wobble
+   a little, handwritten labels, lots of white space, and colour only where it
+   means something (orange = the way forward, red = a problem, blue = a note).
+   No glows, gradients, shadows or textures.
+
+   Most components are inline-styled, so the outlines reach them the way
+   CLAUDE.md describes: by class where one exists, otherwise by the tokens
+   they consistently write ([style*="var(--card-bg)"] and friends).
+   ====================================================================== */
+
+/* The wobble: an ellipse-per-corner radius that never quite matches itself,
+   so a 1.5px ink border reads as drawn by hand rather than by a CSS engine. */
+:root {
+  --wobble:    255px 14px 225px 14px / 14px 225px 14px 255px;
+  --wobble-sm: 255px 12px 225px 12px / 12px 225px 12px 255px;
+  --ink-line:  1.5px solid var(--ink, #1C1C1C);
+}
+
+html, body { background: #FFFFFF; }
+
+/* ── Type: handwritten where it's a heading or a label ─────────────────── */
+h1, h2, h3, .greeting-text, .tool-modal-title, .hud-title {
+  font-family: var(--font-hand) !important;
+  letter-spacing: 0 !important;
+}
+.greeting-text { font-weight: 700 !important; }
+/* The tracked-out uppercase "instrument labels" (CONCEPT, 6 CARDS, FRIENDS…)
+   become margin notes instead. */
+[style*="text-transform: uppercase"] {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: var(--font-hand) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+/* ── Status strip: a plain line of handwriting under the page edge ───────── */
+.hud-bar {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: var(--font-hand) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--text-secondary) !important;
+  background: #FFFFFF !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-bottom: 1.5px solid var(--border-subtle) !important;
+}
+.hud-bar::before, .hud-bar::after { display: none !important; content: none !important; }
+.hud-num { font-family: var(--font-hand) !important; color: var(--text-primary) !important; font-weight: 700 !important; }
+.hud-num.warn { color: var(--acc) !important; }
+.hud-seg + .hud-seg::before { content: "·" !important; color: var(--text-tertiary) !important; margin: 0 10px !important; }
+
+/* ── Cards: ink outline, drawn by hand ──────────────────────────────────── */
+[style*="var(--card-bg)"],
+.lift-card,
+.study-hero,
+.study-tile,
+.battle-tile,
+.mobile-sheet,
+.tool-modal-card,
+.ins-group {
+  border: var(--ink-line) !important;
+  border-radius: var(--wobble) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+/* Study tiles: white paper, the colour moves to the icon only. */
+.study-tile, .study-hero { background: #FFFFFF !important; }
+.study-hero-orb { background: #FFFFFF !important; border: var(--ink-line) !important; }
+.battle-tile { background: #FFFFFF !important; }
+.battle-tile .battle-shape { font-size: 22px; }
+
+/* Inputs: a drawn box. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea, select {
+  border-radius: var(--wobble-sm) !important;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"])[style*="border"],
+textarea[style*="border"], select[style*="border"] {
+  border-color: var(--ink) !important;
+}
+
+/* Buttons with a fill or an outline get the wobble; bare icon buttons and
+   avatars keep their shape. */
+.btn-press[style*="background: var(--acc)"],
+.btn-press[style*="background: var(--accent)"],
+.btn-press[style*="border: 1px solid"],
+.btn-primary, .btn-ghost,
+.forge-action-btn, .nb-util-btn, .nb-tool-btn, .seg-control {
+  border-radius: var(--wobble-sm) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+.btn-press[style*="border: 1px solid"], .btn-ghost, .nb-util-btn, .nb-tool-btn {
+  border: var(--ink-line) !important;
+}
+.seg-control { border: var(--ink-line) !important; background: #FFFFFF !important; }
+.seg-pill {
+  border-radius: var(--wobble-sm) !important;
+  background: var(--acc-bg-h) !important;
+  border: 1.5px solid var(--acc) !important;
+}
+.seg-option[aria-checked="true"] { color: var(--acc) !important; }
+.seg-option { font-family: var(--font-hand) !important; font-size: 16px !important; }
+
+/* Chat: Derek's bubble is a drawn speech bubble; yours is a highlighter. */
+.chat-bubble.chat-in  { background: #FFFFFF !important; border: var(--ink-line) !important; }
+.chat-bubble.chat-own { background: var(--acc) !important; border: 1.5px solid var(--acc) !important; color: var(--on-acc) !important; }
+
+/* No glows or drop shadows anywhere — the paper is flat. */
+[style*="box-shadow"]:not(.btn-press):not(input) { box-shadow: none !important; }
+
+/* ── Waiting indicator: same oscillating sweep, in ink and orange ────────── */
+.shimmer {
+  background-image: linear-gradient(90deg,
+    var(--text-tertiary) 0%, var(--text-tertiary) 30%,
+    var(--acc) 48%, #F97316 50%, var(--acc) 52%,
+    var(--text-tertiary) 70%, var(--text-tertiary) 100%) !important;
+  font-family: var(--font-hand);
+}
+
+/* Selection and focus in ink colours. */
+::selection { background: rgba(249, 115, 22, 0.22); color: inherit; }
+:focus-visible { outline: 2px solid var(--acc) !important; outline-offset: 2px; }
+
+/* A wavy orange marker underline, drawn under a word. */
+.hand-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%23E8590C' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 0.32em !important;
+  background-position: 0 100% !important;
+  padding-bottom: 0.06em;
+}
+
+/* Landing page cards and pills. */
+.lp-feature, .landing-root [style*="var(--card-bg)"] {
+  border: var(--ink-line) !important;
+  border-radius: var(--wobble) !important;
+  background: #FFFFFF !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.lp-feat-icon { background: #FFFFFF !important; border: var(--ink-line) !important; border-radius: var(--wobble-sm) !important; }
+.lp-feat-title { font-family: var(--font-hand) !important; font-size: 21px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+.lp-card { border: var(--ink-line) !important; border-radius: var(--wobble) !important; background: #FFFFFF !important; box-shadow: none !important; transform: none !important; background-image: none !important; }
+.lp-step-num {
+  background: #FFFFFF !important; color: var(--acc) !important; box-shadow: none !important;
+  border: 2px solid var(--ink) !important; border-radius: 52% 48% 46% 54% / 50% 54% 46% 50% !important;
+  font-family: var(--font-hand) !important; font-size: 20px !important;
+}
+.lp-step-num + div { background: repeating-linear-gradient(to bottom, var(--ink) 0 6px, transparent 6px 11px) !important; width: 2px !important; opacity: 0.5; }
+.lp-pill { background: #FFFFFF !important; border: 1.5px solid var(--acc) !important; border-radius: var(--wobble-sm) !important; box-shadow: none !important; }
+
+/* No frosted glass: overlays are a plain white veil (--overlay), chrome is
+   solid paper. */
+*, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.lp-price button { border-radius: var(--wobble-sm) !important; border-width: 1.5px !important; }
+.chat-bubble { border-radius: var(--wobble-sm) !important; }
+.sidebar { box-shadow: none !important; border-right: 1.5px solid var(--border-subtle); }
+/* On a phone the tool panel is the whole screen: no outline around the screen. */
+@media (max-width: 699px) {
+  .tool-modal-card { border: none !important; border-radius: 0 !important; }
+}
+.ins-caption {
+  text-transform: none !important; letter-spacing: 0 !important;
+  font-family: var(--font-hand) !important; font-size: 17px !important; font-weight: 700 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Decorative glows (inline radial gradients behind icons and headers) are
+   gone on paper. */
+[style*="radial-gradient"] { background: none !important; }

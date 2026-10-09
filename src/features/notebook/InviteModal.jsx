@@ -51,13 +51,13 @@ export function InviteModal({ notebookId, onClose }) {
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
@@ -67,7 +67,7 @@ export function InviteModal({ notebookId, onClose }) {
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--acc-bg) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
         <div style={{ position: "relative" }}>
@@ -80,13 +80,13 @@ export function InviteModal({ notebookId, onClose }) {
             <div style={{ textAlign: "center", padding: "24px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
               <div style={{
                 width: 56, height: 56, borderRadius: "50%",
-                background: "linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.06) 100%)",
+                background: "var(--bg-surface-2)",
                 border: "1.5px solid rgba(52,211,153,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 color: "var(--success)",
                 boxShadow: "0 0 24px rgba(52,211,153,0.2)",
               }}><CheckCircle size={28} strokeWidth={1.75} /></div>
-              <div style={{ fontSize: 15, color: "#34D399", fontFamily: FONT, fontWeight: 600, letterSpacing: "-0.015em" }}>
+              <div style={{ fontSize: 15, color: "var(--success)", fontFamily: FONT, fontWeight: 600, letterSpacing: "-0.015em" }}>
                 Invite sent to {sentTo}!
               </div>
             </div>
@@ -111,7 +111,7 @@ export function InviteModal({ notebookId, onClose }) {
                 onBlur={e => { if (!error) { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}}
               />
               {error && (
-                <div style={{ fontSize: 12.5, color: "#F87171", fontFamily: FONT, marginBottom: 10 }}>{error}</div>
+                <div style={{ fontSize: 12.5, color: "var(--danger)", fontFamily: FONT, marginBottom: 10 }}>{error}</div>
               )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button onClick={onClose} className="btn-press" style={{
@@ -175,7 +175,7 @@ export function InviteModal({ notebookId, onClose }) {
                               background: done ? "rgba(52,211,153,0.14)" : "var(--acc-bg)",
                               border: `1px solid ${done ? "rgba(52,211,153,0.32)" : "var(--acc-bg-h)"}`,
                               borderRadius: 8, padding: "6px 12px",
-                              color: done ? "#6EE7B7" : "var(--acc-h)",
+                              color: done ? "var(--success)" : "var(--acc-h)",
                               fontWeight: 600, fontSize: 12, fontFamily: FONT,
                               cursor: st === "busy" || done ? "default" : "pointer",
                               opacity: st === "busy" ? 0.7 : 1,
@@ -225,7 +225,7 @@ export function InviteLanding({ inviteInfo, onSignIn }) {
       </div>
       {inviteInfo ? (
         <div style={{
-          background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+          background: "var(--bg-surface-1)",
           border: "1px solid var(--border)",
           borderRadius: 14, padding: "18px 24px", textAlign: "center", maxWidth: 380,
           boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px var(--acc-bg)",

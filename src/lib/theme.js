@@ -2,20 +2,24 @@
 
 export const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-export const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
+// Kalam: the hand-lettered face for headings, labels and anything that should
+// read like a note in the margin. Body text stays Hanken Grotesk for legibility.
+export const FONT_SERIF = `"Kalam", "Hanken Grotesk", system-ui, sans-serif`;
 
-export const FONT_HEADING = `"Newsreader", Georgia, "Times New Roman", serif`;
+export const FONT_HEADING = `"Kalam", "Hanken Grotesk", system-ui, sans-serif`;
 
 export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 
+// Per-unit accent when a unit has no class colour. Inks, not pastels: they
+// colour small labels on white paper, so each clears 4.5:1.
 export const TINTS = [
-  { hue: "#A78BFA", deep: "#8B5CF6" }, // violet
-  { hue: "#60A5FA", deep: "#3B82F6" }, // sky
-  { hue: "#34D399", deep: "#10B981" }, // emerald
-  { hue: "#FBBF24", deep: "#F59E0B" }, // amber
-  { hue: "#F472B6", deep: "#EC4899" }, // pink
-  { hue: "#FB7185", deep: "#F43F5E" }, // rose
-  { hue: "#22D3EE", deep: "#06B6D4" }, // cyan
+  { hue: "#C2410C", deep: "#9A3412" }, // orange
+  { hue: "#1D4ED8", deep: "#1E40AF" }, // blue
+  { hue: "#15803D", deep: "#166534" }, // green
+  { hue: "#B45309", deep: "#92400E" }, // amber
+  { hue: "#BE185D", deep: "#9D174D" }, // pink
+  { hue: "#BE123C", deep: "#9F1239" }, // rose
+  { hue: "#0E7490", deep: "#155E75" }, // teal
 ];
 
 export function tintFor(seed) {
@@ -26,12 +30,12 @@ export function tintFor(seed) {
 }
 
 export const CLASS_COLORS = [
-  { id: "purple",  hue: "#A78BFA", deep: "#8B5CF6", label: "Purple"  },
-  { id: "blue",    hue: "#60A5FA", deep: "#3B82F6", label: "Blue"    },
-  { id: "emerald", hue: "#34D399", deep: "#10B981", label: "Emerald" },
-  { id: "amber",   hue: "#FBBF24", deep: "#F59E0B", label: "Amber"   },
-  { id: "pink",    hue: "#F472B6", deep: "#EC4899", label: "Pink"    },
-  { id: "rose",    hue: "#FB7185", deep: "#F43F5E", label: "Rose"    },
+  { id: "purple", ink: "#6D28D9",  hue: "#A78BFA", deep: "#8B5CF6", label: "Purple"  },
+  { id: "blue", ink: "#1D4ED8",    hue: "#60A5FA", deep: "#3B82F6", label: "Blue"    },
+  { id: "emerald", ink: "#047857", hue: "#34D399", deep: "#10B981", label: "Emerald" },
+  { id: "amber", ink: "#B45309",   hue: "#FBBF24", deep: "#F59E0B", label: "Amber"   },
+  { id: "pink", ink: "#BE185D",    hue: "#F472B6", deep: "#EC4899", label: "Pink"    },
+  { id: "rose", ink: "#BE123C",    hue: "#FB7185", deep: "#F43F5E", label: "Rose"    },
 ];
 
 export function classTint(color) {
@@ -51,6 +55,7 @@ export function classTint(color) {
    for the dark theme's dark --on-acc, and every 700 shade is dark enough for
    the light theme's white one. */
 export const ACCENT_PRESETS = [
+  { name: "Orange",  color: "#F97316", hover: "#FB923C", deep: "#EA580C", light: "#C2410C", lightHover: "#9A3412" },
   { name: "Purple",  color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", light: "#6D28D9", lightHover: "#5B21B6" },
   { name: "Blue",    color: "#60A5FA", hover: "#93C5FD", deep: "#3B82F6", light: "#1D4ED8", lightHover: "#1E40AF" },
   { name: "Emerald", color: "#34D399", hover: "#6EE7B7", deep: "#10B981", light: "#047857", lightHover: "#065F46" },

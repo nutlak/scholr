@@ -6,7 +6,7 @@ import { useEscape } from "../../ui/useEscape.js";
 
 // Pre-built course templates (starter notebooks + note structures).
 const CLASS_TEMPLATES = [
-  { id: "ap-bio", name: "AP Biology", emoji: "🧬", color: "#34D399", notebooks: [
+  { id: "ap-bio", name: "AP Biology", emoji: "🧬", color: "var(--success)", notebooks: [
     { name: "Unit 1 — Chemistry of Life", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Unit 2 — Cell Structure", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Unit 3 — Cellular Energetics", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
@@ -20,7 +20,7 @@ const CLASS_TEMPLATES = [
     { name: "Unit 4 — Differential Equations", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Calculator Tips"] },
   ] },
-  { id: "ap-us-history", name: "AP US History", emoji: "🇺🇸", color: "#F87171", notebooks: [
+  { id: "ap-us-history", name: "AP US History", emoji: "🇺🇸", color: "var(--danger)", notebooks: [
     { name: "Period 1-2 (1491–1754)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Period 3-4 (1754–1848)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Period 5-6 (1844–1898)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
@@ -28,7 +28,7 @@ const CLASS_TEMPLATES = [
     { name: "Period 9 (1980–Present)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Exam Prep", notes: ["SAQ Practice", "LEQ Practice", "DBQ Practice", "Key Themes"] },
   ] },
-  { id: "ap-chem", name: "AP Chemistry", emoji: "⚗️", color: "#A78BFA", notebooks: [
+  { id: "ap-chem", name: "AP Chemistry", emoji: "⚗️", color: "var(--acc)", notebooks: [
     { name: "Unit 1 — Atomic Structure", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Unit 2 — Molecular Structure", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Unit 3 — Intermolecular Forces", notes: ["Key Concepts", "Practice Problems"] },
@@ -93,13 +93,13 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
 
   return (
     <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div className="mobile-sheet" style={{
         position: "relative",
-        background: "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid var(--border-default)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
@@ -181,7 +181,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                   <label style={lbl}>Color</label>
                   <ColorSwatchPicker value={color} onChange={setColor} />
                 </div>
-                {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
+                {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "var(--danger)", fontFamily: FONT }}>{error}</div>}
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
                   <button type="button" onClick={() => setStep(1)} className="btn-press" style={{
                     background: "transparent", border: "1px solid var(--border-h)",
@@ -238,13 +238,13 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
@@ -254,7 +254,7 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--acc-bg) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
         <div style={{ position: "relative" }}>
@@ -279,7 +279,7 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
                 onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
-            {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT }}>{error}</div>}
+            {error && <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "var(--danger)", fontFamily: FONT }}>{error}</div>}
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
               <button type="button" onClick={onClose} className="btn-press" style={{
                 background: "transparent", border: "1px solid var(--border-h)",

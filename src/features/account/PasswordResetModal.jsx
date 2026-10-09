@@ -39,12 +39,12 @@ export function PasswordResetModal({ onDone }) {
 
   return (
     <div style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div style={{
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid var(--border)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
@@ -98,7 +98,7 @@ export function PasswordResetModal({ onDone }) {
           {error && (
             <div style={{
               background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
-              borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "#F87171", fontFamily: FONT,
+              borderRadius: 10, padding: "10px 12px", fontSize: 12.5, color: "var(--danger)", fontFamily: FONT,
             }}>{error}</div>
           )}
           <button type="submit" disabled={loading} style={{

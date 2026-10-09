@@ -7,17 +7,17 @@ import { FONT } from "./lib/theme.js";
 const ACCEPTED = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md";
 
 const labelStyle = {
-  fontSize: 11, color: "rgba(245,245,250,0.55)", fontFamily: FONT,
+  fontSize: 11, color: "var(--text-secondary)", fontFamily: FONT,
   letterSpacing: "0.04em", textTransform: "uppercase",
   display: "block", marginBottom: 7, fontWeight: 600,
 };
 
 const inputBase = {
   width: "100%",
-  background: "#14141F",
-  border: "1px solid rgba(255,255,255,0.09)",
+  background: "var(--bg-surface-1)",
+  border: "1px solid var(--border-subtle)",
   borderRadius: 10,
-  color: "#F5F5FA",
+  color: "var(--text-primary)",
   fontSize: 14,
   fontFamily: FONT,
   outline: "none",
@@ -26,11 +26,11 @@ const inputBase = {
 };
 
 function focusPurple(e) {
-  e.target.style.borderColor = "#A78BFA";
+  e.target.style.borderColor = "var(--acc)";
   e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)";
 }
 function blurGray(e) {
-  e.target.style.borderColor = "rgba(255,255,255,0.09)";
+  e.target.style.borderColor = "var(--border-subtle)";
   e.target.style.boxShadow = "none";
 }
 
@@ -84,7 +84,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
     <div
       onClick={handleOverlayClick}
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center",
         justifyContent: "center", zIndex: 1000, padding: 16,
@@ -92,29 +92,23 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
     >
       <div style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 18, width: "100%", maxWidth: 480,
         padding: "28px 26px",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
         animation: "fadeIn 0.2s ease",
         overflow: "hidden",
       }}>
-        <div style={{
-          position: "absolute", top: -100, right: -60,
-          width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 22 }}>
             <div style={{
-              fontSize: 18, fontWeight: 600, color: "#F5F5FA",
+              fontSize: 18, fontWeight: 600, color: "var(--text-primary)",
               fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em",
             }}>
               Add a source
             </div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
               Text or files — Derek will use them in your next answer.
             </div>
           </div>
@@ -126,16 +120,16 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
             }}>
               <div style={{
                 width: 56, height: 56, borderRadius: "50%",
-                background: "linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(52,211,153,0.06) 100%)",
+                background: "var(--bg-surface-2)",
                 border: "1.5px solid rgba(52,211,153,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#34D399",
+                color: "var(--success)",
                 boxShadow: "0 0 24px rgba(52,211,153,0.2)",
               }}><CheckCircle size={28} strokeWidth={1.75} /></div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#34D399", fontFamily: FONT, letterSpacing: "-0.015em" }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--success)", fontFamily: FONT, letterSpacing: "-0.015em" }}>
                 Note added!
               </div>
-              <div style={{ fontSize: 12, color: "rgba(245,245,250,0.4)", fontFamily: FONT }}>Closing…</div>
+              <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>Closing…</div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -153,8 +147,8 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
               </div>
 
               <div style={{
-                display: "flex", background: "#0B0B12",
-                border: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", background: "var(--bg-surface-1)",
+                border: "1px solid var(--border-subtle)",
                 borderRadius: 10, padding: 3, gap: 3,
               }}>
                 {[["text", "Write or paste"], ["file", "Upload a file"]].map(([id, label]) => (
@@ -165,9 +159,9 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                     style={{
                       flex: 1, padding: "9px", border: "none", borderRadius: 8,
                       background: mode === id
-                        ? "linear-gradient(180deg, #252537 0%, #1C1C2A 100%)"
+                        ? "var(--acc-bg-h)"
                         : "transparent",
-                      color: mode === id ? "#F5F5FA" : "rgba(245,245,250,0.5)",
+                      color: mode === id ? "var(--acc)" : "var(--text-secondary)",
                       fontWeight: mode === id ? 600 : 500,
                       fontSize: 13, cursor: "pointer",
                       fontFamily: FONT, transition: "all 0.18s",
@@ -210,37 +204,37 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                     onDragOver={e => e.preventDefault()}
                     onDrop={handleDrop}
                     style={{
-                      border: `1.5px dashed ${file ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.14)"}`,
+                      border: `1.5px dashed ${file ? "var(--acc)" : "var(--border-default)"}`,
                       borderRadius: 12, padding: "28px 18px",
                       display: "flex", flexDirection: "column",
                       alignItems: "center", gap: 10,
                       cursor: "pointer", transition: "all 0.2s ease",
                       background: file
-                        ? "linear-gradient(180deg, rgba(167,139,250,0.06) 0%, rgba(167,139,250,0.02) 100%)"
+                        ? "var(--acc-bg)"
                         : "rgba(255,255,255,0.015)",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(167,139,250,0.5)"; e.currentTarget.style.background = "rgba(167,139,250,0.04)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--acc)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = file ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.14)";
-                      e.currentTarget.style.background = file ? "rgba(167,139,250,0.05)" : "rgba(255,255,255,0.015)";
+                      e.currentTarget.style.borderColor = file ? "var(--acc)" : "var(--border-default)";
+                      e.currentTarget.style.background = file ? "var(--acc-bg)" : "var(--bg-surface-2)";
                     }}
                   >
-                    <div style={{ color: file ? "#A78BFA" : "rgba(245,245,250,0.55)", display: "inline-flex" }}>{file ? <File size={30} strokeWidth={1.5} /> : <Folder size={30} strokeWidth={1.5} />}</div>
+                    <div style={{ color: file ? "var(--acc)" : "var(--text-secondary)", display: "inline-flex" }}>{file ? <File size={30} strokeWidth={1.5} /> : <Folder size={30} strokeWidth={1.5} />}</div>
                     {file ? (
                       <>
-                        <div style={{ fontSize: 14, color: "#F5F5FA", fontWeight: 600, fontFamily: FONT, textAlign: "center", wordBreak: "break-all", letterSpacing: "-0.01em" }}>
+                        <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 600, fontFamily: FONT, textAlign: "center", wordBreak: "break-all", letterSpacing: "-0.01em" }}>
                           {file.name}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.5)", fontFamily: FONT }}>
+                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>
                           {(file.size / 1024).toFixed(0)} KB · click to change
                         </div>
                       </>
                     ) : (
                       <>
-                        <div style={{ fontSize: 14, color: "rgba(245,245,250,0.65)", fontFamily: FONT, fontWeight: 500 }}>
+                        <div style={{ fontSize: 14, color: "var(--text-secondary)", fontFamily: FONT, fontWeight: 500 }}>
                           Drop a file or click to browse
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
+                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>
                           PDF, image, or text · max 10 MB
                         </div>
                       </>
@@ -261,7 +255,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                   background: "rgba(248,113,113,0.08)",
                   border: "1px solid rgba(248,113,113,0.22)",
                   borderRadius: 10, padding: "10px 12px",
-                  fontSize: 12.5, color: "#F87171", fontFamily: FONT,
+                  fontSize: 12.5, color: "var(--danger)", fontFamily: FONT,
                 }}>{error}</div>
               )}
 
@@ -271,14 +265,14 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                   onClick={onClose}
                   style={{
                     background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10, padding: "0 18px", height: 38,
-                    color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500,
+                    color: "var(--text-secondary)", fontSize: 13, fontWeight: 500,
                     cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
                     letterSpacing: "-0.01em",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#F5F5FA"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(245,245,250,0.65)"; e.currentTarget.style.background = "transparent"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--border-strong)"; e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.background = "var(--bg-surface-2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "transparent"; }}
                 >Cancel</button>
                 <button
                   type="submit"

@@ -13,6 +13,7 @@ import NotificationsBell from "./NotificationsBell.jsx";
 const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
 import { Plus, Hammer, MessageCircle, Settings, LayoutDashboard, ChevronRight, Sparkles, LogOut, AlertTriangle, Check, X, Menu, Notebook, Trash2, CreditCard } from "lucide-react";
 import "./App.css";
+import "./paper.css"; // hand-drawn layer: must stay last
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 // Lazy: 52kB of source that only matters once a notebook is open, and never
 // for anyone still on the landing page.
@@ -40,6 +41,7 @@ import { DashboardView } from "./features/dashboard/DashboardView.jsx";
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
+import { ScholrMark } from "./ui/ScholrMark.jsx";
 import { getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser, needsSignupCompletion } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
@@ -122,7 +124,7 @@ export default function Scholr() {
   const [showInviteAuth, setShowInviteAuth] = useState(false);
   const [heatmap, setHeatmap] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
-  const { theme, setTheme, accentColor, setAccentColor } = useAppearance();
+  const { accentColor, setAccentColor } = useAppearance();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileFriends, setShowMobileFriends] = useState(false);
   const [myUsername, setMyUsername] = useState(undefined); // undefined=loading, null=unset, string=set
@@ -591,7 +593,7 @@ export default function Scholr() {
           onClick={e => { if (e.target === e.currentTarget && !deletingNb) setConfirmDeleteNb(null); }}
           style={{
             position: "fixed", inset: 0, zIndex: 3200,
-            background: "rgba(0,0,0,0.66)", backdropFilter: "blur(6px)",
+            background: "var(--overlay)", backdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
             animation: "fadeIn 0.16s ease",
           }}
@@ -630,7 +632,7 @@ export default function Scholr() {
                 style={{
                   height: 38, padding: "0 16px", borderRadius: 8, cursor: deletingNb ? "wait" : "pointer",
                   background: "var(--danger)", border: "none",
-                  color: "#1A0A0A", fontFamily: FONT, fontSize: 13.5, fontWeight: 650,
+                  color: "var(--text-primary)", fontFamily: FONT, fontSize: 13.5, fontWeight: 650,
                 }}
               >{deletingNb ? "Deleting…" : "Delete"}</button>
             </div>
@@ -770,11 +772,7 @@ export default function Scholr() {
             display: "flex", alignItems: "center", gap: 8,
             marginBottom: 22, paddingLeft: 8,
           }}>
-            <img
-              src={theme === "light" ? "/scholr-logo-white.png" : "/scholr-logo-final.png"}
-              alt="scholr"
-              style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
-            />
+            <ScholrMark size={34} />
             <div style={{
               fontSize: 21, fontWeight: 600,
               color: "var(--text-primary)", letterSpacing: "-0.01em",
@@ -868,8 +866,8 @@ export default function Scholr() {
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
                       background: subscription.messagesUsed >= subscription.messagesLimit
-                        ? "#F87171"
-                        : "linear-gradient(90deg, #A78BFA, #8B5CF6)",
+                        ? "var(--danger)"
+                        : "var(--acc)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -889,8 +887,8 @@ export default function Scholr() {
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
                       background: subscription.forgeUsed >= subscription.forgeLimit
-                        ? "#F87171"
-                        : "linear-gradient(90deg, #FBBF24, #F59E0B)",
+                        ? "var(--danger)"
+                        : "var(--warning)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -899,7 +897,7 @@ export default function Scholr() {
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                      <Notebook size={12} strokeWidth={1.75} /> Notes
+                      <Notebook size={12} strokeWidth={1.75} /> Units
                     </span>
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
                       {subscription.notebooksUsed}/{subscription.notebooksLimit}
@@ -910,8 +908,8 @@ export default function Scholr() {
                       height: "100%", borderRadius: 2,
                       width: `${Math.min(100, Math.round((subscription.notebooksUsed / subscription.notebooksLimit) * 100))}%`,
                       background: subscription.notebooksUsed >= subscription.notebooksLimit
-                        ? "#F87171"
-                        : "linear-gradient(90deg, #34D399, #10B981)",
+                        ? "var(--danger)"
+                        : "var(--success)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -920,7 +918,7 @@ export default function Scholr() {
                   onClick={() => setUpgradeModal({ limitType: "upgrade" })}
                   style={{
                     width: "100%", height: 30,
-                    background: "linear-gradient(135deg, rgba(167,139,250,0.18), var(--acc-bg))",
+                    background: "var(--acc-bg)",
                     border: "1px solid color-mix(in srgb, var(--acc) 25%, transparent)",
                     borderRadius: 9, color: "var(--acc)",
                     fontSize: 11.5, fontWeight: 600, fontFamily: FONT,
@@ -1071,10 +1069,8 @@ export default function Scholr() {
               portalLoading={portalLoading}
               setAccentColor={setAccentColor}
               setShowDeleteAccount={setShowDeleteAccount}
-              setTheme={setTheme}
               setUpgradeModal={setUpgradeModal}
               subscription={subscription}
-              theme={theme}
               user={user}
             />
 
@@ -1201,7 +1197,7 @@ export default function Scholr() {
             className="mobile-sheet-overlay"
             onClick={e => { if (e.target === e.currentTarget) setShowMobileFriends(false); }}
             style={{
-              position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+              position: "fixed", inset: 0, background: "var(--overlay)",
               backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
               display: "flex", justifyContent: "center", zIndex: 1000,
             }}

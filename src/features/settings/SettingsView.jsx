@@ -5,10 +5,9 @@ import { PushToggle } from "../notifications/PushToggle.jsx";
 import { SquadSection } from "../squad/SquadSection.jsx";
 import { ACCENT_PRESETS, FONT } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
-import { Moon, Sun } from "lucide-react";
 import { useServerFeature } from "../../lib/useServerFeature.js";
 
-export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
+export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setUpgradeModal, subscription, user }) {
   // Billing needs Stripe configured server-side. Without this the Manage
   // subscription button looks live and dies on click — which is the exact
   // problem SquadSection already solved for Squad, and the reason /api/health
@@ -17,9 +16,9 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
   const billingReady = useServerFeature("pro");
   return (
               <div className="settings-pane" style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
-                <div style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.025em", marginBottom: 32 }}>
+                <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 28px" }}>
                   Settings
-                </div>
+                </h1>
 
                 <div className="ins-caption">Account</div>
                 <div className="ins-group">
@@ -146,45 +145,6 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 <div className="ins-caption">Appearance</div>
                 <div className="ins-group">
 
-                {/* Theme row */}
-                <div className="ins-row" style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  gap: 16, flexWrap: "wrap",
-                }}>
-                  <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.01em" }}>
-                      Theme
-                    </div>
-                    <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
-                      {theme === "light" ? "Light mode" : "Dark mode"}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    {[
-                      { value: "dark", label: "Dark", Icon: Moon },
-                      { value: "light", label: "Light", Icon: Sun },
-                    ].map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setTheme(opt.value)}
-                        style={{
-                          minHeight: 44, padding: "0 14px", borderRadius: 10, cursor: "pointer",
-                          fontFamily: FONT, fontSize: 13, fontWeight: 500,
-                          background: theme === opt.value ? "var(--accent-soft)" : "transparent",
-                          border: `1px solid ${theme === opt.value ? "var(--accent)" : "var(--border-default)"}`,
-                          color: theme === opt.value ? "var(--accent)" : "var(--text-secondary)",
-                          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-                          transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
-                        }}
-                        onMouseEnter={e => { if (theme !== opt.value) { e.currentTarget.style.background = "var(--bg-surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}}
-                        onMouseLeave={e => { if (theme !== opt.value) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-                      >
-                        <opt.Icon size={15} strokeWidth={1.75} /> {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Accent color row */}
                 <div className="ins-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -207,13 +167,8 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         aria-label={`${p.name} accent`}
                         style={{
                           width: 32, height: 32, minWidth: 32, borderRadius: 8, padding: 0, cursor: "pointer",
-                          // Show the hue this preset will actually apply in the
-                          // theme you are in — the light theme uses the deep
-                          // shades, so previewing the pale ones was a swatch
-                          // that did not match what you got.
-                          background: theme === "light"
-                            ? `linear-gradient(135deg, ${p.light} 0%, ${p.lightHover} 100%)`
-                            : `linear-gradient(135deg, ${p.color} 0%, ${p.deep} 100%)`,
+                          // The shade the paper theme actually applies.
+                          background: p.light,
                           border: accentColor === p.color ? `2px solid var(--text-primary)` : "2px solid transparent",
                           outline: accentColor === p.color ? `1px solid ${p.color}` : "none",
                           outlineOffset: "1px",

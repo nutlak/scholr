@@ -11,11 +11,9 @@
          paths. Revert by deleting maximum-scale and user-scalable here and
          removing the gesture handler in src/main.jsx. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <!-- One theme-color meant the status bar and browser chrome stayed near-black
-         in the light theme, against a #FBFBFA page. One per scheme; the value
-         is the colour at the very top of the page, not the brand colour. -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBFA" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070709" />
+    <!-- The colour at the very top of the page (paper white), so the status
+         bar and browser chrome blend into it. One theme, so one value. -->
+    <meta name="theme-color" content="#FFFFFF" />
 
     <!-- iOS only delivers web push to a site installed to the home screen, and
          it will only offer "Add to Home Screen" as an app for a site with a

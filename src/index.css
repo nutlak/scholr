@@ -5,69 +5,65 @@
    warm editorial serif; against a dense dark UI it read as a blog theme rather
    than an app, so headings now use the same grotesque as the body at a heavier
    weight and tighter tracking. */
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&family=Kalam:wght@400;700&display=swap');
 
 /* ── Light theme override — warm off-white layered palette ────────── */
+/* ── Paper theme: ink on white, the only theme ───────────────────────
+   Hand-drawn explainer look: pure white (no beige, no texture), black ink
+   for text and lines, orange as the one accent, red for problems, blue for
+   side notes. Text greys all clear 4.5:1 on white. */
 html[data-theme="light"] {
   color-scheme: light;
-  /* Warm off-white base; pure white sits ABOVE the page for cards */
-  --bg:        #FBFBFA;
+  --ink:       #1C1C1C;
+  --bg:        #FFFFFF;
   --s1:        #FFFFFF;
-  --s2:        #F4F4F2;
-  --s3:        #ECECE9;
-  --border:    rgba(0,0,0,0.09);
-  --border-h:  rgba(0,0,0,0.14);
-  --border-f:  rgba(0,0,0,0.2);
-  --t1:        #1A1A18;
-  --t2:        #5C5C57;
-  /* The dark theme's secondary steps were pitched up long ago for exactly this
-     reason; the light theme never got the same pass. #8A8A82 was 3.36:1 on the
-     page, 3.48 on a card and 3.07 on the nav rail — under AA on all three, and
-     it is what every caption, every meter label, every readout in the status
-     strip and the whole legal footer were set in: 64 failing elements from one
-     token. #6B6B63 is the first warm grey that clears 4.5:1 against all three
-     light grounds (5.19 / 5.37 / 4.75) rather than just against the page. */
-  --t3:        #6B6B63;
-  --t4:        rgba(26,26,24,0.45);
-  --acc:       #7C3AED;
-  --acc-h:     #6D28D9;
+  --s2:        #F5F5F4;
+  --s3:        #EBEBEA;
+  --border:    rgba(28,28,28,0.32);
+  --border-h:  rgba(28,28,28,0.6);
+  --border-f:  #1C1C1C;
+  --t1:        #1C1C1C;
+  --t2:        #444444;
+  --t3:        #666666;
+  --t4:        rgba(28,28,28,0.45);
+  --acc:       #C2410C;
+  --acc-h:     #9A3412;
   --on-acc:    #FFFFFF;
-  --acc-d:     #5B21B6;
-  --acc-bg:    rgba(124,58,237,0.08);
-  --acc-bg-h:  rgba(124,58,237,0.14);
-  --acc-glow:  rgba(124,58,237,0.10);
-  /* Flat here too, so the two themes agree on what a card is: a surface with
-     a hairline. The modal keeps its shadow — it is genuinely above the page. */
+  --acc-d:     #9A3412;
+  --acc-bg:    rgba(194,65,12,0.07);
+  --acc-bg-h:  rgba(194,65,12,0.13);
+  --acc-glow:  transparent;
   --sh-card:   none;
   --sh-card-h: none;
-  --sh-modal:  0 24px 64px rgba(0,0,0,0.14);
-  /* Semantic aliases — light overrides */
-  --bg-base:        #FBFBFA;
-  /* The sides (nav rail + dashboard rail) sit a step off the page so the
-     column you read in is obvious. Every app does this; we weren't. */
-  --bg-chrome:      #F1F1EE;
+  --sh-modal:  none;
+  --bg-base:        #FFFFFF;
+  --bg-chrome:      #FFFFFF;
   --bg-surface-1:   #FFFFFF;
-  --bg-surface-2:   #F4F4F2;
-  --bg-surface-3:   #ECECE9;
-  --text-primary:   #1A1A18;
-  --text-secondary: #5C5C57;
-  --text-tertiary:  #6B6B63;
-  --border-subtle:  rgba(0,0,0,0.05);
-  --border-default: rgba(0,0,0,0.09);
-  --border-strong:  rgba(0,0,0,0.14);
-  --accent:         #7C3AED;
-  --accent-soft:    rgba(124,58,237,0.08);
-  /* Glow tokens stay defined because components reference them, and resolve
-     to nothing in both themes. */
+  --bg-surface-2:   #F5F5F4;
+  --bg-surface-3:   #EBEBEA;
+  --text-primary:   #1C1C1C;
+  --text-secondary: #444444;
+  --text-tertiary:  #666666;
+  --border-subtle:  rgba(28,28,28,0.14);
+  --border-default: rgba(28,28,28,0.34);
+  --border-strong:  #1C1C1C;
+  --accent:         #C2410C;
+  --accent-soft:    rgba(194,65,12,0.07);
   --glow-accent: transparent;
   --glow-soft:   transparent;
   --card-bg:     #FFFFFF;
-  --bubble-in:   #E9E9EB;   /* incoming chat bubble (iMessage grey) */
-  --card-border: rgba(0,0,0,0.08);
+  --bubble-in:   #F5F5F4;
+  --card-border: #1C1C1C;
   --card-glow:   transparent;
-  --ring:        rgba(124,58,237,0.35);
-  --pill-bg:     rgba(0,0,0,0.035);
-  --pill-border: rgba(0,0,0,0.08);
+  --ring:        rgba(194,65,12,0.4);
+  --pill-bg:     #FFFFFF;
+  --pill-border: rgba(28,28,28,0.34);
+  /* Status inks: green for "solid", red for problems, blue for notes. */
+  --success:   #15803D;
+  --warning:   #B45309;
+  --danger:    #DC2626;
+  --info:      #1D4ED8;
+  --overlay:   rgba(255,255,255,0.78);
 }
 html[data-theme="light"] body {
   background: var(--bg);
@@ -83,8 +79,9 @@ html[data-theme="light"] code {
 :root {
   --font: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-sans: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-heading: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-serif: "Kalam", "Hanken Grotesk", system-ui, sans-serif;
+  --font-heading: "Kalam", "Hanken Grotesk", system-ui, sans-serif;
+  --font-hand: "Kalam", "Hanken Grotesk", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
   /* Surfaces — warm near-black. The indigo cast read as a skin over the UI;
@@ -952,7 +949,7 @@ select:focus:not(:focus-visible) { outline: none; }
   }
   .hud-bar        { background: var(--bg-base) !important; }
   .mobile-tab-bar { background: var(--bg-surface-1) !important; }
-  .mobile-sheet-overlay { background: rgba(6, 6, 8, 0.96) !important; }
+  .mobile-sheet-overlay { background: rgba(255, 255, 255, 0.96) !important; }
   .hud-bar::after { display: none; }
 }
 

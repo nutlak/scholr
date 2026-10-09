@@ -1,14 +1,10 @@
-import { lazy, Suspense, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useInstall } from "./lib/install.js";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download, Orbit } from "lucide-react";
 import { FONT, FONT_HEADING, FONT_SERIF, MONO } from "./lib/theme.js";
+import { HeroSketch } from "./ui/HeroSketch.jsx";
+import { ScholrMark } from "./ui/ScholrMark.jsx";
 
-const ElectricLogo = lazy(() => import("./ui/fx/ElectricLogo.jsx"));
-const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-const staticLogo = (
-  <img src="/scholr-logo-final.png" alt="scholr"
-    style={{ width: 64, height: 64, borderRadius: 16, objectFit: "cover", position: "relative", zIndex: 1 }} />
-);
 
 function useScrolled(threshold = 16) {
   const [scrolled, setScrolled] = useState(false);
@@ -43,22 +39,22 @@ function useFadeIn(delay = 0) {
 const PLANS = ["free", "pro", "squad"];
 
 const FEATURES = [
-  { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
-  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
-  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
-  { Icon: Orbit,         title: "The unit brain",     tint: "#A78BFA", short: "See what you know at a glance", body: "Every key idea in a unit, mapped around a crystal ball and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
-  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
-  { Icon: Hammer,        title: "Study guides in a tap", tint: "#FBBF24", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
-  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
-  { Icon: Users,         title: "Join your class with a PIN", tint: "#60A5FA", short: "One PIN, the whole class", body: "Paste one link in your class group chat, or read out a six-character PIN. Classmates get every unit in the class, with the same sources and the same AI answers, and you're friends straight away." },
-  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
+  { Icon: Radio,         title: "Study together, live", tint: "#15803D", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
+  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#C2410C", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
+  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#C2410C", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
+  { Icon: Orbit,         title: "The unit brain",     tint: "#C2410C", short: "See what you know at a glance", body: "Every key idea in a unit, sketched as a map and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "#15803D", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
+  { Icon: Hammer,        title: "Study guides in a tap", tint: "#B45309", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "#DC2626", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
+  { Icon: Users,         title: "Join your class with a PIN", tint: "#1D4ED8", short: "One PIN, the whole class", body: "Paste one link in your class group chat, or read out a six-character PIN. Classmates get every unit in the class, with the same sources and the same AI answers, and you're friends straight away." },
+  { Icon: BookOpen,      title: "Upload anything",    tint: "#1D4ED8", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
-  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "#A78BFA" },
-  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "#60A5FA" },
-  { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "#F472B6" },
-  { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "#C2410C" },
+  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "#1D4ED8" },
+  { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "#DC2626" },
+  { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#15803D" },
 ];
 
 function FeatureCard({ Icon, title, body, short, tint, idx }) {
@@ -73,8 +69,8 @@ function FeatureCard({ Icon, title, body, short, tint, idx }) {
       style={{
         position: "relative",
         flex: "1 1 280px",
-        background: hovered ? "#1C1C2A" : "#14141F",
-        border: `1px solid ${hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.07)"}`,
+        background: hovered ? "var(--bg-surface-1)" : "var(--bg-surface-1)",
+        border: `1px solid ${hovered ? "var(--border-default)" : "var(--border-subtle)"}`,
         borderRadius: 16,
         padding: "28px 24px",
         transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -84,17 +80,10 @@ function FeatureCard({ Icon, title, body, short, tint, idx }) {
         overflow: "hidden",
       }}
     >
-      <div style={{
-        position: "absolute", top: -40, right: -40, width: 160, height: 160,
-        background: `radial-gradient(circle, ${tint}22 0%, transparent 70%)`,
-        opacity: hovered ? 1 : 0.5,
-        transition: "opacity 0.3s ease",
-        pointerEvents: "none",
-      }} />
       <div className="lp-feat-icon" style={{
         position: "relative",
         width: 44, height: 44, borderRadius: 12,
-        background: `linear-gradient(135deg, ${tint}22, ${tint}0A)`,
+        background: "#FFFFFF",
         border: `1px solid ${tint}33`,
         display: "flex", alignItems: "center", justifyContent: "center",
         color: tint, marginBottom: 18,
@@ -103,12 +92,12 @@ function FeatureCard({ Icon, title, body, short, tint, idx }) {
       }}><Icon size={22} strokeWidth={1.75} /></div>
       <div className="lp-feat-title" style={{
         position: "relative",
-        fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+        fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
         fontFamily: FONT, marginBottom: 8, letterSpacing: "-0.015em",
       }}>{title}</div>
       <div className="lp-feat-body" style={{
         position: "relative",
-        fontSize: 14, color: "rgba(245,245,250,0.62)", lineHeight: 1.6,
+        fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6,
         fontFamily: FONT,
       }}>{body}</div>
       {short && <div className="lp-feat-short">{short}</div>}
@@ -125,7 +114,7 @@ function Step({ n, title, body, tint, last, idx }) {
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <div style={{
+        <div className="lp-step-num" style={{
           width: 40, height: 40, borderRadius: "50%",
           background: `linear-gradient(135deg, ${tint}, ${tint}88)`,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -136,18 +125,18 @@ function Step({ n, title, body, tint, last, idx }) {
         {!last && (
           <div style={{
             width: 2, flex: 1, marginTop: 4,
-            background: `linear-gradient(180deg, ${tint}44 0%, rgba(255,255,255,0.04) 100%)`,
+            background: `linear-gradient(180deg, ${tint}44 0%, var(--bg-surface-2) 100%)`,
             minHeight: 36,
           }} />
         )}
       </div>
       <div style={{ paddingBottom: last ? 0 : 40, paddingTop: 6 }}>
         <div style={{
-          fontSize: 16, fontWeight: 600, color: "#F5F5FA",
+          fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
           fontFamily: FONT, marginBottom: 6, letterSpacing: "-0.015em",
         }}>{title}</div>
         <div style={{
-          fontSize: 14, color: "rgba(245,245,250,0.62)", lineHeight: 1.65,
+          fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65,
           fontFamily: FONT,
         }}>{body}</div>
       </div>
@@ -158,18 +147,18 @@ function Step({ n, title, body, tint, last, idx }) {
 function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick, highlighted = false }) {
   const [ref, visible] = useFadeIn(highlighted ? 80 : 0);
   const [hovered, setHovered] = useState(false);
-  const gradient = `linear-gradient(135deg, ${accent} 0%, ${accent}99 100%)`;
+  const gradient = accent; // solid ink, no gradients on paper
   return (
-    <div
+    <div className="lp-card lp-price"
       ref={ref}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         position: "relative",
         background: highlighted
-          ? `linear-gradient(180deg, ${accent}14 0%, #1C1C2A 100%)`
+          ? "#FFFFFF"
           : "#14141F",
-        border: `1px solid ${highlighted ? `${accent}55` : "rgba(255,255,255,0.07)"}`,
+        border: `1px solid ${highlighted ? `${accent}55` : "var(--border-subtle)"}`,
         borderRadius: 18,
         padding: "30px 26px",
         opacity: visible ? 1 : 0,
@@ -203,16 +192,16 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
       }}>{tier}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
         <span style={{
-          fontSize: 44, fontWeight: 700, color: "#F5F5FA",
+          fontSize: 44, fontWeight: 700, color: "var(--text-primary)",
           letterSpacing: "-0.04em", fontFamily: FONT, lineHeight: 1,
         }}>{price}</span>
         <span style={{
-          fontSize: 13, color: "rgba(245,245,250,0.5)",
+          fontSize: 13, color: "var(--text-tertiary)",
           fontFamily: FONT, fontWeight: 500,
         }}>{period}</span>
       </div>
       <div style={{
-        height: 1, background: "rgba(255,255,255,0.08)",
+        height: 1, background: "var(--bg-surface-3)",
         margin: "22px 0 20px",
       }} />
       <ul style={{
@@ -222,7 +211,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         {features.map(f => (
           <li key={f} style={{
             display: "flex", alignItems: "flex-start", gap: 10,
-            fontSize: 14, color: "rgba(245,245,250,0.85)",
+            fontSize: 14, color: "var(--text-primary)",
             fontFamily: FONT, lineHeight: 1.45,
           }}>
             <span style={{
@@ -259,7 +248,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
   );
 }
 
-function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
+function SectionHeader({ pill, title, sub, accent = "#C2410C" }) {
   const [ref, visible] = useFadeIn();
   return (
     <div ref={ref} style={{
@@ -267,7 +256,7 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
       opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)",
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
-      <div style={{
+      <div className="lp-pill" style={{
         display: "inline-flex", alignItems: "center", gap: 6,
         background: `${accent}14`, border: `1px solid ${accent}30`,
         borderRadius: 999, padding: "5px 12px",
@@ -282,12 +271,12 @@ function SectionHeader({ pill, title, sub, accent = "#A78BFA" }) {
       </div>
       <h2 style={{
         fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600,
-        fontFamily: FONT_HEADING, color: "#F5F5FA",
+        fontFamily: FONT_HEADING, color: "var(--text-primary)",
         letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14,
         maxWidth: 640, margin: "0 auto 14px",
       }}>{title}</h2>
       <p style={{
-        fontSize: 16, color: "rgba(245,245,250,0.6)", lineHeight: 1.65,
+        fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.65,
         maxWidth: 520, margin: "0 auto", fontFamily: FONT,
       }}>{sub}</p>
     </div>
@@ -335,7 +324,7 @@ const FAQS = [
 function UseCaseCard({ when, what, idx }) {
   const [ref, visible] = useFadeIn(idx * 60);
   return (
-    <div ref={ref} style={{
+    <div className="lp-card" ref={ref} style={{
       background: "var(--card-bg)", border: "1px solid var(--card-border)",
       borderRadius: 16, padding: 24,
       display: "flex", flexDirection: "column", gap: 10,
@@ -469,33 +458,12 @@ export default function LandingPage({ onSignIn, invited = false }) {
   }, []);
 
   return (
-    // The marketing page is designed dark and says so in hardcoded colours —
-    // #0B0B12 behind #F5F5FA text. It also reads a dozen tokens, and those flip
-    // in light theme while the hardcoded half does not, which put near-white
-    // text on near-white cards: 19 elements below 3:1, some at 1.12. Reachable
-    // by setting light in Settings and signing out.
-    //
-    // Pinning the tokens it uses to their dark values here keeps the page
-    // self-consistent in either theme, without forcing the whole document to
-    // dark and flipping the theme under someone who chose light.
-    <div data-hud-void className="landing-root" style={{
-      background: "#0B0B12", minHeight: "100vh",
-      fontFamily: FONT, color: "#F5F5FA",
+    // Same paper theme as the app: ink on white, hand-drawn outlines.
+    <div className="landing-root" style={{
+      background: "#FFFFFF", minHeight: "100vh",
+      fontFamily: FONT, color: "var(--text-primary)",
       overflowX: "hidden",
       position: "relative",
-      "--text-primary": "#F0EDE7",
-      "--text-secondary": "rgba(240,237,231,0.76)",
-      "--text-tertiary": "rgba(240,237,231,0.56)",
-      "--t1": "#F0EDE7",
-      "--t2": "rgba(240,237,231,0.76)",
-      "--border-subtle": "rgba(240,237,231,0.07)",
-      "--border-default": "rgba(240,237,231,0.12)",
-      "--card-bg": "#151517",
-      "--card-border": "rgba(240,237,231,0.09)",
-      "--bubble-in": "#1A181E",
-      "--acc": "#A78BFA",
-      "--acc-h": "#C4B5FD",
-      "--on-acc": "#14121A",
     }}>
       <style>{`
         /* Phone layout: hierarchy instead of a column of equal cards. */
@@ -509,7 +477,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
           .lp-feature:not(.lp-feature-hero) .lp-feat-icon { width: 38px !important; height: 38px !important; margin-bottom: 12px !important; }
           .lp-feature:not(.lp-feature-hero) .lp-feat-title { font-size: 15px !important; margin-bottom: 4px !important; }
           .lp-feature:not(.lp-feature-hero) .lp-feat-body { display: none; }
-          .lp-feat-short { display: block; position: relative; font-size: 13.5px; line-height: 1.45; color: rgba(245,245,250,0.62); }
+          .lp-feat-short { display: block; position: relative; font-size: 13.5px; line-height: 1.45; color: var(--text-secondary); }
           .lp-steps { padding-left: 0 !important; margin-top: 32px !important; }
           .lp-plan-tabs { display: grid; max-width: 360px; margin: 28px auto 0; --seg-r: 12px; --seg-pad: 3px; }
           .lp-plan-tabs .seg-option { min-height: 40px; font-size: 14px; }
@@ -524,31 +492,15 @@ export default function LandingPage({ onSignIn, invited = false }) {
           .lp-scroller::-webkit-scrollbar { display: none; }
           .lp-scroller > * { flex: 0 0 84%; scroll-snap-align: center; }
         }
-        @keyframes orbit-slow {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(40px, -20px) scale(1.05); }
-        }
-        @keyframes orbit-slow-2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(-30px, 30px) scale(1.04); }
-        }
-        @keyframes fade-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes blink-dot {
-          0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
-          40%            { opacity: 1;    transform: scale(1); }
-        }
 
         .nav-link {
           background: transparent; border: none; cursor: pointer;
-          color: rgba(245,245,250,0.65); font-size: 14px; font-weight: 500;
+          color: var(--text-secondary); font-size: 14px; font-weight: 500;
           font-family: ${FONT};
           padding: 0 14px; height: 36px; border-radius: 8px;
           transition: color 0.15s, background 0.15s;
         }
-        .nav-link:hover { color: #F5F5FA; background: rgba(255,255,255,0.05); }
+        .nav-link:hover { color: var(--text-primary); background: var(--bg-surface-2); }
         /* The bar holds the wordmark, two links and the CTA. At 390px that is
            about 3px too wide and "Sign in" breaks across two lines, which is
            what it did in the iOS app. Pricing is the one that can go: the
@@ -558,14 +510,14 @@ export default function LandingPage({ onSignIn, invited = false }) {
         .install-cta {
           display: inline-flex; align-items: center; gap: 8px;
           min-height: 44px; padding: 0 16px; border-radius: 10px;
-          background: transparent; color: rgba(245,245,250,0.72);
-          border: 1px solid rgba(255,255,255,0.14);
+          background: transparent; color: var(--text-secondary);
+          border: 1px solid var(--border-default);
           font-family: ${FONT}; font-size: 14px; font-weight: 600;
           cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
         }
         .install-cta:hover {
-          color: #F5F5FA; border-color: rgba(167,139,250,0.5);
-          background: rgba(167,139,250,0.08);
+          color: var(--text-primary); border-color: var(--acc);
+          background: var(--acc-bg);
         }
         @media (max-width: 480px) {
           .nav-link-pricing { display: none; }
@@ -602,7 +554,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
           display: inline-flex; align-items: center; gap: 6px;
           background: transparent;
           color: var(--t2);
-          border: 1px solid rgba(255,255,255,0.12);
+          border: 1px solid var(--border-default);
           border-radius: 10px;
           padding: 0 18px; height: 38px;
           font-size: 13px; font-weight: 500;
@@ -613,36 +565,14 @@ export default function LandingPage({ onSignIn, invited = false }) {
         }
         .btn-ghost:hover {
           color: var(--t1);
-          border-color: rgba(255,255,255,0.22);
-          background: rgba(255,255,255,0.04);
+          border-color: var(--border-strong);
+          background: var(--bg-surface-2);
         }
 
         .btn-ghost-lg {
           padding: 0 26px; height: 50px; font-size: 15px; border-radius: 12px;
         }
       `}</style>
-
-      {/* Ambient gradient mesh */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        /* A measured field rather than a haze. One violet wash for depth, and a
-           fine grid that fades out before it reaches the copy — the grid is
-           what reads as technical; a coloured fog just reads as a gradient.
-           40px cells, hairline, masked to the top third so nothing sits behind
-           body text. */
-        background: `
-          radial-gradient(circle at 50% 0%, rgba(167,139,250,0.07) 0%, transparent 55%),
-          linear-gradient(to right, rgba(240,237,231,0.035) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(240,237,231,0.035) 1px, transparent 1px)
-        `,
-        backgroundSize: "100% 100%, 40px 40px, 40px 40px",
-        maskImage: "linear-gradient(to bottom, #000 0%, #000 38%, transparent 72%)",
-        WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 38%, transparent 72%)",
-      }} />
-
-      {/* Two blurred violet orbs used to drift here on 18s and 22s loops.
-          Drifting blobs are the single most recognisable "generated landing
-          page" signature there is, and they were animating behind body copy. */}
 
       {/* Nav */}
       {/* The insets matter in the iOS app, where viewport-fit=cover puts this
@@ -656,19 +586,17 @@ export default function LandingPage({ onSignIn, invited = false }) {
         paddingLeft: "max(24px, env(safe-area-inset-left))",
         paddingRight: "max(24px, env(safe-area-inset-right))",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: scrolled ? "rgba(11,11,18,0.78)" : "transparent",
-        backdropFilter: scrolled ? "blur(16px)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+        background: "#FFFFFF",
+        borderBottom: scrolled ? "1.5px solid var(--border-subtle)" : "1.5px solid transparent",
         transition: "all 0.25s ease",
       }}>
         <div style={{
           fontFamily: FONT, fontSize: 20, fontWeight: 700,
-          color: "#F5F5FA", letterSpacing: "-0.025em",
+          color: "var(--text-primary)", letterSpacing: "-0.025em",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
-          <span style={{ fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <ScholrMark size={34} />
+          <span style={{ fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>schol<span style={{ color: "var(--acc)" }}>r</span></span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button
@@ -697,24 +625,6 @@ export default function LandingPage({ onSignIn, invited = false }) {
           transform: heroVisible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.6s ease, transform 0.6s ease",
         }}>
-          {/* The scholr mark traced in live electricity (React Bits'
-              ElectricLogo). It's WebGL, so it loads after first paint as its
-              own chunk, with the plain logo standing in until it arrives —
-              and staying put for anyone who has asked for reduced motion. */}
-          <div style={{
-            position: "relative", display: "flex",
-            alignItems: "center", justifyContent: "center",
-            width: 300, height: 300, marginBottom: -24, marginTop: -60,
-          }}>
-            {REDUCED_MOTION ? staticLogo : (
-              <Suspense fallback={staticLogo}>
-                <ElectricLogo src="/scholr-logo-final.png" color="#E9DDFF" glowColor="#A78BFA"
-                  scale={0.62} intensity={0.9} strands={3} speed={1.6} cursorRadius={80}
-                  style={{ position: "absolute", inset: 0 }} />
-              </Suspense>
-            )}
-          </div>
-
           {invited && (
             <button onClick={() => onSignIn()} className="btn-primary" style={{ marginBottom: 18 }}>
               You've been invited to a class. Sign up free to join →
@@ -727,11 +637,11 @@ export default function LandingPage({ onSignIn, invited = false }) {
             background: "var(--acc-bg)",
             border: "1px solid color-mix(in srgb, var(--acc) 26%, transparent)",
             borderRadius: 999, padding: "6px 14px",
-            fontSize: 11, fontWeight: 600, color: "#C4B5FD",
+            fontSize: 11, fontWeight: 600, color: "var(--acc)",
             fontFamily: MONO, textTransform: "uppercase",
             marginBottom: 28, letterSpacing: "0.14em",
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#A78BFA", boxShadow: "0 0 8px #A78BFA" }} />
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--acc)" }} />
             AI-powered collaborative studying
           </div>
 
@@ -744,19 +654,16 @@ export default function LandingPage({ onSignIn, invited = false }) {
             maxWidth: "100%",
             whiteSpace: "normal",
           }}>
-            <span style={{ color: "#F5F5FA" }}>Study smarter.</span>{" "}
-            <span style={{
-              fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, letterSpacing: "0",
-              background: "linear-gradient(135deg, #C4B5FD 0%, #A78BFA 45%, #8B5CF6 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>Study together.</span>
+            <span style={{ color: "var(--text-primary)" }}>Study smarter.</span>{" "}
+            <span className="hand-underline" style={{ fontFamily: FONT_SERIF, fontWeight: 700, letterSpacing: "0", color: "var(--acc)" }}>
+              Study together.
+            </span>
           </h1>
 
           {/* Subtext */}
           <p style={{
             fontSize: "clamp(16px, 1.8vw, 19px)",
-            color: "rgba(245,245,250,0.65)", lineHeight: 1.55,
+            color: "var(--text-secondary)", lineHeight: 1.55,
             maxWidth: 560, margin: "0 auto 40px", fontFamily: FONT,
           }}>
             Scholr turns your class notes into a shared AI tutor. Upload your notes,
@@ -793,9 +700,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
               {showIOSHelp && (
                 <div style={{
                   marginTop: 10, fontSize: 13, lineHeight: 1.6,
-                  color: "rgba(245,245,250,0.6)", fontFamily: FONT,
+                  color: "var(--text-secondary)", fontFamily: FONT,
                 }}>
-                  Tap the Share button in Safari, then <strong style={{ color: "rgba(245,245,250,0.85)" }}>Add to Home Screen</strong>.
+                  Tap the Share button in Safari, then <strong style={{ color: "var(--text-primary)" }}>Add to Home Screen</strong>.
                 </div>
               )}
             </div>
@@ -803,89 +710,13 @@ export default function LandingPage({ onSignIn, invited = false }) {
 
         </div>
 
-        {/* Mock app preview */}
+        {/* What the app does, drawn rather than screenshotted. */}
         <div style={{
-          position: "relative", zIndex: 1,
-          marginTop: 64, maxWidth: 720, width: "100%",
-          opacity: heroVisible ? 1 : 0,
-          transform: heroVisible ? "translateY(0)" : "translateY(40px)",
-          transition: "opacity 0.8s 0.2s ease, transform 0.8s 0.2s ease",
+          position: "relative", zIndex: 1, marginTop: 40, width: "100%", maxWidth: 620,
+          display: "flex", justifyContent: "center",
+          opacity: heroVisible ? 1 : 0, transition: "opacity 0.6s 0.2s ease",
         }}>
-          <div style={{
-            background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            borderRadius: 18,
-            padding: "20px",
-            boxShadow: "0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(167,139,250,0.10)",
-          }}>
-            {/* Window chrome */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-              {["#F87171", "#FBBF24", "#34D399"].map(c => (
-                <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: `${c}77` }} />
-              ))}
-              <div style={{ marginLeft: 12, fontSize: 11, color: "rgba(245,245,250,0.4)", fontFamily: FONT, alignSelf: "center" }}>
-                AP Bio · Cell Division
-              </div>
-            </div>
-
-            {/* Mock chat */}
-            <div style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, color: "#fff",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-              }}>D</div>
-              <div className="chat-bubble chat-in" style={{
-                background: "var(--bubble-in)", border: "1px solid var(--border-default)",
-                borderRadius: 18, padding: "11px 15px", maxWidth: 480,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#A78BFA", marginBottom: 4, fontFamily: FONT, letterSpacing: "0.06em", textTransform: "uppercase" }}>Derek</div>
-                <div style={{ fontSize: 13, color: "rgba(245,245,250,0.82)", lineHeight: 1.6, fontFamily: FONT, textAlign: "left" }}>
-                  The three main types of chemical bonds are covalent, ionic, and metallic. Covalent bonds share electrons between nonmetals. Want me to explain how they differ?
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-              <div className="chat-bubble chat-own" style={{
-                background: "var(--acc)",
-                borderRadius: 18,
-                padding: "11px 15px", maxWidth: 380,
-                fontSize: 13, color: "var(--on-acc)", fontFamily: FONT, fontWeight: 500,
-                textAlign: "left",
-              }}>
-                What's the difference between ionic and covalent bonds?
-              </div>
-            </div>
-
-            {/* Typing indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: "linear-gradient(135deg, #A78BFA, #8B5CF6)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-              }}>D</div>
-              <div className="chat-bubble chat-in" style={{
-                background: "var(--bubble-in)", border: "1px solid var(--border-default)",
-                borderRadius: 18, padding: "11px 15px",
-                display: "flex", gap: 5, alignItems: "center",
-              }}>
-                <span style={{ fontSize: 12, color: "rgba(245,245,250,0.5)", fontStyle: "italic", fontFamily: FONT, marginRight: 4 }}>
-                  Derek is thinking
-                </span>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: 5, height: 5, borderRadius: "50%", background: "#A78BFA",
-                    animation: `blink-dot 1.4s ${i * 0.15}s ease-in-out infinite both`,
-                  }} />
-                ))}
-              </div>
-            </div>
-          </div>
+          <HeroSketch />
         </div>
       </section>
 
@@ -896,7 +727,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
       <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.04)",
+        borderTop: "1px solid var(--border-subtle)",
       }}>
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
@@ -920,14 +751,14 @@ export default function LandingPage({ onSignIn, invited = false }) {
       <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.04)",
+        borderTop: "1px solid var(--border-subtle)",
       }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
           <SectionHeader
             pill="How it works"
             title="Up and running in minutes"
             sub="Upload your notes and start asking. Derek can build your units from a syllabus."
-            accent="#60A5FA"
+            accent="#1D4ED8"
           />
           <div className="lp-steps" style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
@@ -941,14 +772,14 @@ export default function LandingPage({ onSignIn, invited = false }) {
       <section id="pricing" className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.04)",
+        borderTop: "1px solid var(--border-subtle)",
       }}>
         <div style={{ maxWidth: 980, margin: "0 auto" }}>
           <SectionHeader
             pill="Pricing"
             title="Simple, student-friendly pricing"
             sub="Start free. Upgrade when you outgrow the limits, and cancel anytime."
-            accent="#F472B6"
+            accent="#DC2626"
           />
           {/* Phone: one plan at a time (Pro first) instead of three cards
               stacked 1,650px deep. Desktop shows all three side by side. */}
@@ -971,14 +802,14 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Free"
               price="$0"
               period="forever"
-              accent="#60A5FA"
+              accent="#1D4ED8"
               ctaLabel="Get started free"
               onClick={onSignIn}
               features={[
                 "100 AI messages per month",
                 "3 AI generations per month",
                 "Up to 3 classes",
-                "Up to 3 notebooks",
+                "Up to 3 units",
                 "Claude Haiku model",
               ]}
             />
@@ -989,7 +820,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Pro"
               price="$8.49"
               period="/ month"
-              accent="#A78BFA"
+              accent="#C2410C"
               highlighted
               ctaLabel="Upgrade to Pro"
               onClick={onSignIn}
@@ -997,7 +828,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
                 "Unlimited AI messages",
                 "Unlimited AI generations",
                 "Unlimited classes",
-                "Unlimited notes",
+                "Unlimited units",
                 "Claude Sonnet (smarter AI)",
                 "Priority support",
               ]}
@@ -1009,7 +840,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Squad"
               price="$24.99"
               period="/ month"
-              accent="#34D399"
+              accent="#15803D"
               ctaLabel="Start a squad"
               onClick={onSignIn}
               features={[
@@ -1033,9 +864,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
             pill="How it gets used"
-            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#FBBF24" }}>before the exam</span></>}
+            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#B45309" }}>before the exam</span></>}
             sub="Real study workflows, minus the busywork."
-            accent="#FBBF24"
+            accent="#B45309"
           />
           <div className="lp-scroller" style={{
             display: "grid",
@@ -1058,9 +889,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <SectionHeader
             pill="FAQ"
-            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#60A5FA" }}>answered</span></>}
+            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#1D4ED8" }}>answered</span></>}
             sub="Everything you need to know before you start."
-            accent="#60A5FA"
+            accent="#1D4ED8"
           />
           <div style={{ marginTop: 48 }}>
             {FAQS.map(f => (<FAQItem key={f.q} {...f} />))}
@@ -1072,26 +903,21 @@ export default function LandingPage({ onSignIn, invited = false }) {
       <section style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px 120px",
-        borderTop: "1px solid rgba(255,255,255,0.04)",
+        borderTop: "1px solid var(--border-subtle)",
         textAlign: "center",
       }}>
         <div style={{ maxWidth: 580, margin: "0 auto", position: "relative" }}>
-          <div style={{
-            position: "absolute", inset: "-60px -100px",
-            background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 65%)",
-            filter: "blur(40px)", pointerEvents: "none",
-          }} />
           <div style={{ position: "relative" }}>
             <h2 style={{
               fontSize: "clamp(32px, 5vw, 48px)",
               fontWeight: 700, lineHeight: 1.05,
-              fontFamily: FONT_HEADING, color: "#F5F5FA",
+              fontFamily: FONT_HEADING, color: "var(--text-primary)",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>
-              Ready to <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "#C4B5FD" }}>study smarter?</span>
+              Ready to <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--acc)" }}>study smarter?</span>
             </h2>
             <p style={{
-              fontSize: 17, color: "rgba(245,245,250,0.65)", lineHeight: 1.6,
+              fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6,
               marginBottom: 36, fontFamily: FONT,
               maxWidth: 460, margin: "0 auto 36px",
             }}>
@@ -1108,26 +934,26 @@ export default function LandingPage({ onSignIn, invited = false }) {
       {/* Footer */}
       <footer style={{
         position: "relative", zIndex: 1,
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderTop: "1px solid var(--border-subtle)",
         padding: "28px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: 12,
-        background: "rgba(11,11,18,0.6)",
+        background: "var(--overlay)",
       }}>
         <div style={{
-          fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "#F5F5FA",
+          fontFamily: FONT, fontSize: 15, fontWeight: 700, color: "var(--text-primary)",
           letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8,
         }}>
-          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 22, height: 22, borderRadius: 5, objectFit: "cover" }} />
-          <span style={{ fontWeight: 600, letterSpacing: "-0.02em", color: "#FAFAFA" }}>schol<span style={{ color: "#A78BFA" }}>r</span></span>
+          <ScholrMark size={24} />
+          <span style={{ fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>schol<span style={{ color: "var(--acc)" }}>r</span></span>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", fontSize: 12.5, fontFamily: FONT }}>
-          <a href="/privacy" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Privacy</a>
-          <a href="/terms" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Terms</a>
-          <a href="/copyright" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Copyright</a>
-          <a href="mailto:support@scholr.dev" style={{ color: "rgba(245,245,250,0.5)", textDecoration: "none" }}>Contact: support@scholr.dev</a>
+          <a href="/privacy" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>Privacy</a>
+          <a href="/terms" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>Terms</a>
+          <a href="/copyright" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>Copyright</a>
+          <a href="mailto:support@scholr.dev" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>Contact: support@scholr.dev</a>
         </div>
-        <div style={{ fontSize: 12, color: "rgba(245,245,250,0.35)", fontFamily: FONT }}>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT }}>
           © {new Date().getFullYear()} Scholr · Built for students, by students
         </div>
       </footer>

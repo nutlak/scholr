@@ -134,7 +134,7 @@ export function WorksheetView({ worksheet }) {
           flex: 1, background: copied ? "rgba(52,211,153,0.1)" : "var(--s1)",
           border: `1px solid ${copied ? "rgba(52,211,153,0.3)" : "var(--border)"}`,
           borderRadius: 10, height: 36,
-          color: copied ? "#34D399" : "var(--t2)",
+          color: copied ? "var(--success)" : "var(--t2)",
           fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           letterSpacing: "-0.005em",

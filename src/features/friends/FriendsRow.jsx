@@ -105,7 +105,7 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
             <b style={{ fontWeight: 600 }}>{f.name}</b> is studying{" "}
             <b style={{ fontWeight: 600 }}>{f.activeNotebook.title}</b> right now
           </span>
-          <span style={{ color: "#34D399", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+          <span style={{ color: "var(--success)", fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
             Join &rarr;
           </span>
         </button>
@@ -232,7 +232,7 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
               }}>{f.name}</span>
               {f.activeNotebook && (
                 <span style={{
-                  fontSize: 10.5, color: "#34D399", maxWidth: "100%",
+                  fontSize: 10.5, color: "var(--success)", maxWidth: "100%",
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                 }}>in {f.activeNotebook.title}</span>
               )}

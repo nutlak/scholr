@@ -312,7 +312,7 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
                 background: "transparent",
                 border: `1px dashed ${t.hue}55`,
                 borderRadius: 8, padding: "7px 14px",
-                color: t.hue, fontSize: 12, fontWeight: 600,
+                color: t.ink ?? t.hue, fontSize: 12, fontWeight: 600,
                 cursor: "pointer", fontFamily: FONT, transition: "all 0.18s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = t.hue; e.currentTarget.style.background = `${t.hue}10`; }}
@@ -377,12 +377,12 @@ export function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
 
   return (
     <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+      position: "fixed", inset: 0, background: "var(--overlay)",
       backdropFilter: "blur(10px)", display: "flex", alignItems: "center",
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div className="mobile-sheet" style={{
-        background: "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid rgba(248,113,113,0.18)",
         borderRadius: 18, width: "100%", maxWidth: 400,
         padding: "24px",
@@ -405,7 +405,7 @@ export function ConfirmDeleteClassModal({ cls, onClose, onConfirm }) {
           <div style={{
             background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)",
             borderRadius: 10, padding: "10px 12px", fontSize: 12.5,
-            color: "#F87171", fontFamily: FONT, marginBottom: 16,
+            color: "var(--danger)", fontFamily: FONT, marginBottom: 16,
           }}>{error}</div>
         )}
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>

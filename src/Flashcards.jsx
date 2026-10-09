@@ -3,21 +3,19 @@ import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
 import { FONT } from "./lib/theme.js";
 import { Layers, Trash2 } from "lucide-react";
-import PixelSwap from "./ui/fx/PixelSwap.jsx";
 
-const REDUCED_MOTION = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 function CardFace({ label, text, answer, hint }) {
   return (
     <div style={{
       height: "100%", boxSizing: "border-box", padding: "28px 24px",
-      background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
+      background: "var(--bg-surface-1)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
       textAlign: "center", fontFamily: FONT, color: "var(--text-primary)", overflowY: "auto",
     }}>
       <div style={{
         fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-        color: answer ? "#6EE7B7" : "var(--text-tertiary)",
+        color: answer ? "var(--success)" : "var(--text-tertiary)",
       }}>{label}</div>
       <div style={{ fontSize: answer ? 18 : 20, fontWeight: answer ? 400 : 600, lineHeight: 1.5, letterSpacing: "-0.01em", whiteSpace: "pre-wrap" }}>
         {text}
@@ -33,10 +31,10 @@ function CardFace({ label, text, answer, hint }) {
 
 // Rating buttons → SM-2 quality. Again=1, Hard=3, Good=4, Easy=5.
 const RATINGS = [
-  { key: "1", label: "Again", quality: 1, color: "#F87171" },
-  { key: "2", label: "Hard",  quality: 3, color: "#FBBF24" },
-  { key: "3", label: "Good",  quality: 4, color: "#60A5FA" },
-  { key: "4", label: "Easy",  quality: 5, color: "#34D399" },
+  { key: "1", label: "Again", quality: 1, color: "var(--danger)" },
+  { key: "2", label: "Hard",  quality: 3, color: "#B45309" },
+  { key: "3", label: "Good",  quality: 4, color: "#1D4ED8" },
+  { key: "4", label: "Easy",  quality: 5, color: "var(--success)" },
 ];
 
 // ── FlashcardReview ───────────────────────────────────────────────────────────
@@ -77,7 +75,7 @@ export function FlashcardReview({ cards, onDone }) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 1200,
-      background: "var(--bg-base, #0B0B12)",
+      background: "var(--bg-base, var(--bg-surface-1))",
       display: "flex", flexDirection: "column",
       padding: "calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))",
     }}>
@@ -104,7 +102,7 @@ export function FlashcardReview({ cards, onDone }) {
           <div style={{
             height: "100%", borderRadius: 2,
             width: `${(index / cards.length) * 100}%`,
-            background: "linear-gradient(90deg, #A78BFA, #8B5CF6)", transition: "width 0.25s ease",
+            background: "var(--acc)", transition: "width 0.25s ease",
           }} />
         </div>
       )}
@@ -130,30 +128,19 @@ export function FlashcardReview({ cards, onDone }) {
         </div>
       ) : (
         <>
-          {/* Card. The two faces swap in a pixel dissolve rather than a
-              text swap; keyed per card so moving on never animates the next
-              card's answer into view. */}
+          {/* Card: a paper index card that turns over. Keyed per card so
+              moving on never shows the next card's answer mid-turn. */}
           <button
+            key={card.id}
             onClick={() => setFlipped(f => !f)}
             aria-label={flipped ? "Show question" : "Show answer"}
-            style={{
-              flex: 1, width: "100%", maxWidth: 640, margin: "0 auto", padding: 0,
-              position: "relative", overflow: "hidden",
-              border: "1px solid var(--border-default)", borderRadius: 18,
-              cursor: "pointer", background: "none",
-            }}
+            className={`flip-card${flipped ? " is-flipped" : ""}`}
+            style={{ flex: 1, width: "100%", maxWidth: 640, margin: "0 auto", padding: 0, background: "none", border: "none", cursor: "pointer" }}
           >
-            <PixelSwap
-              key={card.id}
-              active={flipped}
-              trigger="none"
-              pixelSize={40}
-              duration={REDUCED_MOTION ? 1 : 700}
-              pixelDuration={REDUCED_MOTION ? 1 : 320}
-              style={{ position: "absolute", inset: 0, aspectRatio: "auto", height: "100%" }}
-              firstContent={<CardFace label="Question" text={card.front} hint />}
-              secondContent={<CardFace label="Answer" text={card.back} answer />}
-            />
+            <span className="flip-inner">
+              <span className="flip-face"><CardFace label="Question" text={card.front} hint /></span>
+              <span className="flip-face flip-back"><CardFace label="Answer" text={card.back} answer /></span>
+            </span>
           </button>
 
           {/* Ratings */}
@@ -336,8 +323,8 @@ function EditCardModal({ card, onClose, onSaved }) {
   }
 
   const field = {
-    width: "100%", background: "#14141F", border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 10, padding: "10px 12px", color: "#F5F5FA", fontSize: 14, fontFamily: FONT,
+    width: "100%", background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
+    borderRadius: 10, padding: "10px 12px", color: "var(--text-primary)", fontSize: 14, fontFamily: FONT,
     outline: "none", boxSizing: "border-box", resize: "vertical", lineHeight: 1.5,
   };
 
@@ -346,24 +333,24 @@ function EditCardModal({ card, onClose, onSaved }) {
       className="mobile-sheet-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300, padding: 16,
       }}
     >
       <div className="mobile-sheet" style={{
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)", borderRadius: 18,
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)", borderRadius: 18,
         width: "100%", maxWidth: 440, padding: "24px 22px",
         boxShadow: "0 32px 80px rgba(0,0,0,0.6)", animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 16, letterSpacing: "-0.02em" }}>Edit card</div>
-        <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.55)", fontFamily: FONT, textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: 6 }}>Front</label>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, marginBottom: 16, letterSpacing: "-0.02em" }}>Edit card</div>
+        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", fontFamily: FONT, textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: 6 }}>Front</label>
         <textarea value={front} onChange={e => setFront(e.target.value)} rows={2} style={{ ...field, marginBottom: 14 }} />
-        <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.55)", fontFamily: FONT, textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: 6 }}>Back</label>
+        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", fontFamily: FONT, textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: 6 }}>Back</label>
         <textarea value={back} onChange={e => setBack(e.target.value)} rows={3} style={{ ...field, marginBottom: 18 }} />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ minHeight: 44, padding: "0 16px", borderRadius: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,245,250,0.65)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT }}>Cancel</button>
+          <button onClick={onClose} style={{ minHeight: 44, padding: "0 16px", borderRadius: 10, background: "transparent", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT }}>Cancel</button>
           <button
             onClick={save}
             disabled={saving || !front.trim() || !back.trim()}

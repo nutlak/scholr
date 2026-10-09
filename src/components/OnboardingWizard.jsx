@@ -90,7 +90,7 @@ export default function OnboardingWizard({ user, onComplete }) {
       className="onboarding-overlay"
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
+        background: "var(--overlay)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
       }}
     >
@@ -109,7 +109,7 @@ export default function OnboardingWizard({ user, onComplete }) {
           {[1, 2, 3].map((n) => (
             <span key={n} style={{
               width: n === step ? 24 : 8, height: 8, borderRadius: 999,
-              background: n <= step ? "var(--accent)" : "var(--border-strong, rgba(255,255,255,0.15))",
+              background: n <= step ? "var(--accent)" : "var(--border-strong, var(--bg-surface-3))",
               transition: "all 0.3s ease",
             }} />
           ))}
@@ -178,10 +178,10 @@ export default function OnboardingWizard({ user, onComplete }) {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0]); }}
                 style={{
-                  border: "2px dashed var(--border-strong, rgba(255,255,255,0.18))",
+                  border: "2px dashed var(--border-strong, var(--border-default))",
                   borderRadius: 12, padding: "28px 18px", textAlign: "center", cursor: "pointer",
                   color: "var(--text-secondary)", fontFamily: FONT, fontSize: 14, marginBottom: 16,
-                  background: "var(--bg-subtle, rgba(255,255,255,0.02))",
+                  background: "var(--bg-subtle, var(--bg-surface-2))",
                 }}
               >
                 {uploadName ? `✓ ${uploadName}` : (loading ? "Uploading…" : "📄 Click or drop a PDF / image here")}
@@ -250,8 +250,8 @@ export default function OnboardingWizard({ user, onComplete }) {
                   {sentInvites.map((e) => (
                     <span key={e} style={{
                       fontFamily: FONT, fontSize: 12.5, color: "var(--accent)",
-                      background: "var(--accent-soft, rgba(167,139,250,0.12))",
-                      border: "1px solid var(--accent-soft, rgba(167,139,250,0.2))",
+                      background: "var(--accent-soft, var(--acc-bg))",
+                      border: "1px solid var(--accent-soft, var(--acc))",
                       borderRadius: 999, padding: "5px 12px",
                     }}>✓ {e}</span>
                   ))}
@@ -277,17 +277,17 @@ const labelStyle = {
 };
 const inputStyle = {
   width: "100%", height: 44, padding: "0 14px", borderRadius: 10,
-  background: "var(--bg-subtle, rgba(255,255,255,0.04))", border: "1px solid var(--border)",
+  background: "var(--bg-subtle, var(--bg-surface-2))", border: "1px solid var(--border)",
   color: "var(--text-primary)", fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box",
 };
 const headingStyle = { fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 6px", letterSpacing: "-0.01em" };
 const subStyle = { fontFamily: FONT, fontSize: 14, color: "var(--text-secondary)", margin: "0 0 22px", lineHeight: 1.5 };
-const errStyle = { fontFamily: FONT, fontSize: 13, color: "#F87171", margin: "12px 0 0" };
+const errStyle = { fontFamily: FONT, fontSize: 13, color: "var(--danger)", margin: "12px 0 0" };
 const linkBtn = { background: "none", border: "none", color: "var(--text-secondary)", fontFamily: FONT, fontSize: 14, cursor: "pointer", textDecoration: "none" };
 function primaryBtn(disabled) {
   return {
     width: "100%", height: 46, marginTop: 20, borderRadius: 10, border: "none",
-    background: disabled ? "var(--border-strong, rgba(167,139,250,0.4))" : "var(--acc)",
+    background: disabled ? "var(--border-strong, var(--acc-bg))" : "var(--acc)",
     color: disabled ? "var(--t2)" : "var(--on-acc)", fontFamily: FONT, fontSize: 15, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.6 : 1, transition: "opacity 0.18s, transform 0.15s",
   };

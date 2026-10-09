@@ -52,51 +52,39 @@ rather than importing `src/lib/theme.js`. Font changes must sweep all of them
 
 ## Design language
 
-Violet `#A78BFA` on a warm near-black `#0B0B0C`, with warm off-white text
-`#F0EDE7` — not blue-white, and not pure black. One accent; colour elsewhere
-only where it carries meaning (streak green, warning gold, danger red).
+**Paper: a hand-drawn explainer sketched on white.** (Since 2026-10-09; the
+dark violet "instrument panel" look is retired.) Pure white `#FFFFFF` — no
+beige, no texture — with black ink `#1C1C1C` for text and lines, and colour
+only where it means something: orange `--acc` (`#C2410C`) for the way forward
+and primary actions, red `--danger` for problems, blue `--info` for notes,
+green `--success` for "solid". Every text colour clears 4.5:1 on white; don't
+add pastels (`#FBBF24`, `#60A5FA`…) as text, use the inks in `src/lib/theme.js`.
+There is one theme: `useAppearance` pins `data-theme="light"`, and the
+accent is still the student's choice (Orange default).
 
-**Text on the accent is `var(--on-acc)`, never `#fff`.** White on `#A78BFA` is
-2.72:1, under AA on the app's most-clicked surface. `--on-acc` is dark in the
-dark theme (7.23:1) and white in the light one, where the accent is the deep
-violet. Where a fill is conditional, the foreground has to be conditional too —
-the disabled and locked states are dark surfaces. Don't grep for `"#fff"` to
-audit this; walk the rendered page and compute real ratios, which is how the
-last two rounds of it were found.
+**`src/paper.css` is the hand-drawn layer and loads last** (after App.css).
+It gives cards, sheets, panels, tiles, inputs and outlined/filled buttons an
+ink outline with the `--wobble` border-radius (the PaperCSS ellipse trick that
+reads as drawn by hand), turns tracked-uppercase "instrument labels" into
+handwritten notes, kills glows, shadows, radial gradients and frosted glass,
+and restyles the status strip. Reach new components through classes or the
+tokens they write, the same way. No gradients, glows, shadows or blur.
 
-**Three typefaces, each with a job.** Newsreader for display, Hanken Grotesk
-for UI, and `var(--mono)` for *readouts only* — numbers you measure, with
-`tabular-nums` so they don't jitter. Mono is not for headings or labels; a
-sweep that put it on 57 UI labels was reverted for exactly that reason.
+**Two typefaces.** Kalam (`--font-hand`, `FONT_HEADING`, `FONT_SERIF`) for
+headings, labels, PINs and anything that reads like a margin note; Hanken
+Grotesk (`FONT`) for body text, buttons and anything read at length —
+including Derek's answers. Handwriting for a paragraph fails the legibility bar.
 
 **Type and space come from scales, not from taste per component.** `--fs-*`
-with a matching `--tr-*` (tracking is size-specific: negative on display,
-slightly positive at micro) and `--lh-*` (leading runs inverse to size).
-Spacing is `--sp-1`…`--sp-8`.
+with a matching `--tr-*` and `--lh-*`. Spacing is `--sp-1`…`--sp-8`.
 
-Rounded, not hard-edged — the old global `border-radius: 0` and the corner
-bracket/cut-corner card chrome are gone. Corners are continuous where it shows
-(`corner-shape: superellipse(4)` at 8–18px, behind `@supports`), and **nested
-corners are concentric**: a shape sitting inside a rounded shape takes the
-outer radius *minus* the gap between them, so both curves turn about the same
-centre rather than being two unrelated arcs that almost line up. Express it,
-don't hardcode both ends — `.seg-control` holds `--seg-r` and `--seg-pad` and
-the pill derives `calc(var(--seg-r) - var(--seg-pad))`, so the relationship
-survives someone changing the padding. It only bites when the inset is small
-relative to the radius; a centred icon with a loose gap doesn't need it. Flat surfaces with hairline borders;
-no gradients or glows on interactive surfaces. In-app buttons take
-`var(--acc)`, never a hardcoded gradient, or the token lever stops reaching
-them. The landing page is deliberately its own visual world and keeps its
-gradients.
-
-Chrome is a **material**, not a lid: `backdrop-filter: blur(20px)
-saturate(180%)` over a translucent fill, with a short gradient scroll edge
-rather than a 1px rule. Honour `prefers-reduced-transparency` and
-`prefers-contrast`.
+**Illustrations are hand-drawn SVG** in the same ink/orange/blue/red palette
+(`src/ui/HeroSketch.jsx`, `src/ui/ScholrMark.jsx`, the brain's `HandOrb`). No
+WebGL effects, no mock app screenshots.
 
 Panels dock to the **right rail** (`ToolModal`), never centre-screen dialogs.
-`.shimmer` in `hud.css` is the one "waiting" indicator — an oscillating purple
-gradient clipped to text.
+`.shimmer` is the one "waiting" indicator — an oscillating ink-to-orange
+sweep clipped to text.
 
 Chrome stays quiet, and copy stays plain: the bar is *simple and clean enough
 for a 3-year-old or an 83-year-old*. When the aesthetic fights legibility,

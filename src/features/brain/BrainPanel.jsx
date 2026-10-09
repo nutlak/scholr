@@ -1,14 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MessageCircle, Brain, RefreshCw } from "lucide-react";
 import { api } from "../../api.js";
 import { FONT } from "../../lib/theme.js";
 import { feynmanScoreColor } from "../../lib/format.js";
 
-// WebGL (ogl) only downloads when someone opens the brain.
-const CrystalizedBall = lazy(() => import("../../ui/fx/CrystalizedBall.jsx"));
 
 // ── BrainPanel ────────────────────────────────────────────────────────────────
-// The unit's key concepts orbiting a crystal ball, coloured by how well *you*
+// The unit's key concepts around a hand-drawn circle, coloured by how well *you*
 // understand each one (your Feynman grades, same bands as Feynman Mode). Links
 // run behind the ball. Under the picture is the same information as a plain
 // list, which is the part that has to work for everyone — the picture is the
@@ -41,8 +39,20 @@ function wrap(name) {
   return lines;
 }
 
-const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-const lightTheme = () => document.documentElement.getAttribute("data-theme") === "light";
+// The unit at the centre: a hand-drawn ink circle with its name lettered in.
+function HandOrb({ label }) {
+  const lines = wrap(label || "This unit").slice(0, 2);
+  return (
+    <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true" style={{ overflow: "visible" }}>
+      <path d="M50 6c22 0 42 15 43 41 1 25-17 46-42 47C26 95 7 77 6 52 5 27 24 7 47 6m6 1c18 2 32 12 37 29"
+        fill="#fff" stroke="var(--text-primary)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <text x="50" y={lines.length > 1 ? 47 : 56} textAnchor="middle" fill="var(--acc)"
+        style={{ fontFamily: "Kalam, cursive", fontWeight: 700, fontSize: 12.5 }}>
+        {lines.map((l, k) => <tspan key={k} x="50" dy={k ? 15 : 0}>{l}</tspan>)}
+      </text>
+    </svg>
+  );
+}
 
 export function BrainPanel({ nb, members = [], currentUserId, onExplain, onAsk, onToast, onUpgradeNeeded }) {
   const [state, setState] = useState({ loading: true, map: null, scores: {} });
@@ -97,17 +107,12 @@ export function BrainPanel({ nb, members = [], currentUserId, onExplain, onAsk, 
     return <div style={{ textAlign: "center", padding: 40, fontFamily: FONT, fontSize: 13 }}><span className="shimmer">Loading…</span></div>;
   }
 
-  const ball = (
-    <Suspense fallback={null}>
-      <CrystalizedBall preset="nebula" color="#A78BFA" theme={lightTheme() ? "light" : "dark"}
-        size={0.8} particleCount={6000} paused={reducedMotion()} intro={!reducedMotion()} />
-    </Suspense>
-  );
+  const ball = <HandOrb label={nb.topic || nb.title} />;
 
   if (!map) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 14, fontFamily: FONT, padding: "4px 4px 8px" }}>
-        <div style={{ width: 220, height: 220 }}>{ball}</div>
+        <div style={{ width: 160, height: 160 }}>{ball}</div>
         <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>Map this unit's brain</div>
         <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text-secondary)", margin: 0, maxWidth: 340 }}>
           Scholr reads your notes and finds the key ideas and how they connect. Explain each one in

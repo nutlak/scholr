@@ -74,7 +74,7 @@ export function SyllabusImportModal({ onClose, onCreated, targetClass = null }) 
       justifyContent: "center", zIndex: 1000, padding: 16,
     }}>
       <div className="mobile-sheet" style={{
-        background: "linear-gradient(180deg, var(--bg-surface-1) 0%, var(--bg-surface-2) 100%)",
+        background: "var(--bg-surface-1)",
         border: "1px solid var(--border-default)",
         borderRadius: 18, width: "100%", maxWidth: 460,
         padding: "28px 26px", maxHeight: "85vh", overflowY: "auto",

@@ -6,10 +6,10 @@ import { buildRounds } from "../../lib/quizOptions.js";
 
 // Colour and shape both carry the option, so it reads without colour vision.
 const TILES = [
-  { color: "#F87171", shape: "▲" },
-  { color: "#60A5FA", shape: "◆" },
-  { color: "#FBBF24", shape: "●" },
-  { color: "#34D399", shape: "■" },
+  { color: "#DC2626", shape: "▲" },
+  { color: "#1D4ED8", shape: "◆" },
+  { color: "#B45309", shape: "●" },
+  { color: "#15803D", shape: "■" },
 ];
 
 // Live quiz battle inside a study room: reuses the notebook's existing
@@ -122,7 +122,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
         fontFamily: FONT, display: "flex", flexDirection: "column", gap: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14 }}>
-          <Trophy size={16} strokeWidth={2} color="#FBBF24" /> Battle over
+          <Trophy size={16} strokeWidth={2} color="var(--warning)" /> Battle over
         </div>
         {totals.length === 0 ? (
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Nobody answered in time.</span>

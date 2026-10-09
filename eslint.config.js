@@ -8,7 +8,7 @@ export default defineConfig([
   // 'ios' holds the generated Xcode project; ios/App/App/public is a copy of
   // the built bundle that `cap sync` drops there, so linting it reports the
   // minified output as ~170 errors that no one can act on.
-  globalIgnores(['dist', 'ios', 'src/ui/fx']), // src/ui/fx: vendored React Bits, kept verbatim
+  globalIgnores(['dist', 'ios']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

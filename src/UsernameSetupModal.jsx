@@ -40,7 +40,7 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
   return (
     <div
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.82)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 1200, padding: 16,
@@ -58,15 +58,15 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--acc-bg) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
         <div style={{ position: "relative" }}>
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em" }}>
               Choose a username
             </div>
-            <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
               This is how friends find and add you. Your email stays private.
             </div>
           </div>
@@ -74,12 +74,12 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
           <form onSubmit={handleSubmit}>
             <div className="affix-field" style={{
               display: "flex", alignItems: "center", gap: 0,
-              background: "#14141F",
-              border: `1px solid ${error ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.09)"}`,
+              background: "var(--bg-surface-1)",
+              border: `1px solid ${error ? "rgba(248,113,113,0.5)" : "var(--border-subtle)"}`,
               borderRadius: 10, paddingLeft: 12, marginBottom: 8,
               transition: "border-color 0.18s, box-shadow 0.18s",
             }}>
-              <span style={{ fontSize: 15, color: "rgba(245,245,250,0.4)", fontFamily: FONT }}>@</span>
+              <span style={{ fontSize: 15, color: "var(--text-tertiary)", fontFamily: FONT }}>@</span>
               <input
                 ref={inputRef}
                 value={value}
@@ -91,7 +91,7 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
                 spellCheck={false}
                 style={{
                   flex: 1, background: "transparent", border: "none", outline: "none",
-                  padding: "11px 12px", color: "#F5F5FA", fontSize: 14, fontFamily: FONT,
+                  padding: "11px 12px", color: "var(--text-primary)", fontSize: 14, fontFamily: FONT,
                   letterSpacing: "-0.01em",
                 }}
               />
@@ -99,7 +99,7 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
 
             <div style={{
               fontSize: 11.5, fontFamily: FONT, marginBottom: 16,
-              color: error ? "#F87171" : valid ? "#6EE7B7" : "rgba(245,245,250,0.45)",
+              color: error ? "var(--danger)" : valid ? "var(--success)" : "var(--text-tertiary)",
             }}>
               {error || hint}
             </div>

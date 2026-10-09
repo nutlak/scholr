@@ -39,12 +39,12 @@ function PersonRow({ name, sub, seed, children }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
       padding: "8px 10px", borderRadius: 10,
-      background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+      background: "var(--bg-surface-2)", border: "1px solid var(--border-subtle)",
     }}>
       <Initial name={name} seed={seed} />
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-        <div style={{ fontSize: 11.5, color: "rgba(245,245,250,0.45)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
       </div>
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>{children}</div>
     </div>
@@ -57,10 +57,10 @@ const pillBtn = (variant = "accent", disabled = false) => {
     fontWeight: 600, fontSize: 12, fontFamily: FONT,
     cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.7 : 1,
   };
-  if (variant === "green")  return { ...base, background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)", color: "#6EE7B7" };
-  if (variant === "ghost")  return { ...base, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(245,245,250,0.6)" };
-  if (variant === "danger") return { ...base, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", color: "#F87171" };
-  return { ...base, background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.32)", color: "#C4B5FD" };
+  if (variant === "green")  return { ...base, background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.32)", color: "var(--success)" };
+  if (variant === "ghost")  return { ...base, background: "transparent", border: "1px solid var(--border-default)", color: "var(--text-secondary)" };
+  if (variant === "danger") return { ...base, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", color: "var(--danger)" };
+  return { ...base, background: "var(--acc-bg)", border: "1px solid var(--acc)", color: "var(--acc)" };
 };
 
 export default function AddFriendModal({ onClose, onChanged }) {
@@ -168,8 +168,8 @@ export default function AddFriendModal({ onClose, onChanged }) {
         onClick={() => setTab(id)}
         style={{
           flex: 1, minHeight: 38, borderRadius: 9, border: "none", cursor: "pointer",
-          background: active ? "rgba(167,139,250,0.16)" : "transparent",
-          color: active ? "#C4B5FD" : "rgba(245,245,250,0.55)",
+          background: active ? "var(--acc-bg)" : "transparent",
+          color: active ? "var(--acc)" : "var(--text-secondary)",
           fontWeight: 600, fontSize: 13, fontFamily: FONT,
           display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
           transition: "all 0.15s",
@@ -179,7 +179,7 @@ export default function AddFriendModal({ onClose, onChanged }) {
         {badge > 0 && (
           <span style={{
             minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
-            background: active ? "#A78BFA" : "#F87171", color: "#fff",
+            background: active ? "var(--acc-bg)" : "var(--danger)", color: "#fff",
             fontSize: 10, fontWeight: 700, display: "inline-flex",
             alignItems: "center", justifyContent: "center",
           }}>{badge}</span>
@@ -188,9 +188,9 @@ export default function AddFriendModal({ onClose, onChanged }) {
     );
   }
 
-  const emptyText = { fontSize: 12.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, padding: "10px 2px" };
+  const emptyText = { fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT, padding: "10px 2px" };
   const groupLabel = {
-    fontSize: 11, fontWeight: 600, color: "rgba(245,245,250,0.5)", fontFamily: FONT,
+    fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT,
     letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 9,
   };
 
@@ -199,7 +199,7 @@ export default function AddFriendModal({ onClose, onChanged }) {
       className="mobile-sheet-overlay"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed", inset: 0, background: "rgba(8,8,14,0.78)",
+        position: "fixed", inset: 0, background: "var(--overlay)",
         backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 1000, padding: 16,
@@ -207,8 +207,8 @@ export default function AddFriendModal({ onClose, onChanged }) {
     >
       <div className="mobile-sheet" style={{
         position: "relative",
-        background: "linear-gradient(180deg, #14141F 0%, #1C1C2A 100%)",
-        border: "1px solid rgba(255,255,255,0.09)",
+        background: "var(--bg-surface-1)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 18, width: "100%", maxWidth: 460,
         maxHeight: "88vh", display: "flex", flexDirection: "column",
         padding: "24px 22px",
@@ -218,22 +218,22 @@ export default function AddFriendModal({ onClose, onChanged }) {
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          background: "radial-gradient(circle, var(--acc-bg) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
         <div style={{ position: "relative", display: "flex", flexDirection: "column", minHeight: 0 }}>
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#F5F5FA", fontFamily: FONT, letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>
               Friends
             </div>
             <button
               onClick={onClose}
               aria-label="Close"
               style={{
-                background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+                background: "transparent", border: "1px solid var(--border-default)",
                 borderRadius: 8, width: 32, height: 32, cursor: "pointer",
-                color: "rgba(245,245,250,0.6)", fontSize: 16, lineHeight: 1,
+                color: "var(--text-secondary)", fontSize: 16, lineHeight: 1,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}
             >✕</button>
@@ -242,7 +242,7 @@ export default function AddFriendModal({ onClose, onChanged }) {
           {/* Tabs */}
           <div style={{
             display: "flex", gap: 4, marginBottom: 16, padding: 4,
-            background: "rgba(255,255,255,0.03)", borderRadius: 11,
+            background: "var(--bg-surface-2)", borderRadius: 11,
           }}>
             {tabBtn("add", "Add")}
             {tabBtn("requests", "Requests", reqCount)}
@@ -258,13 +258,13 @@ export default function AddFriendModal({ onClose, onChanged }) {
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search by @username…"
                 style={{
-                  width: "100%", background: "#14141F",
-                  border: "1px solid rgba(255,255,255,0.09)",
+                  width: "100%", background: "var(--bg-surface-1)",
+                  border: "1px solid var(--border-subtle)",
                   borderRadius: 10, padding: "0 14px", height: 42,
-                  color: "#F5F5FA", fontSize: 14, fontFamily: FONT,
+                  color: "var(--text-primary)", fontSize: 14, fontFamily: FONT,
                   outline: "none", boxSizing: "border-box", marginBottom: 14,
                 }}
-                onFocus={e => { e.target.style.borderColor = "#A78BFA"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
+                onFocus={e => { e.target.style.borderColor = "var(--acc)"; e.target.style.boxShadow = "0 0 0 3px rgba(167,139,250,0.14)"; }}
                 onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; e.target.style.boxShadow = "none"; }}
               />
               <div style={{ overflowY: "auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 6 }}>

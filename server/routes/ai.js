@@ -96,6 +96,19 @@ router.post("/api/generate-image", requireAuth, aiLimiter, async (req, res) => {
   }
 });
 
+// Derek's replies are written here, by the server, never by the browser —
+// /messages only accepts the user's own lines. Before this a member could post
+// role:"assistant" and put words in Derek's mouth in a shared notebook.
+async function saveDerekReply(notebookId, content) {
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({ notebook_id: notebookId, role: "assistant", content, created_by: null })
+    .select("id")
+    .single();
+  if (error) console.error("saving Derek's reply failed:", error);
+  return data?.id ?? null;
+}
+
 router.post("/api/notebooks/:id/query", requireAuth, requireMember, aiLimiter, queryLimiter, async (req, res) => {
   const { question } = req.body;
   const claudeKey = process.env.CLAUDE_API_KEY;
@@ -227,7 +240,8 @@ ${notesContext}`,
     const usageWarning = (nextUsed !== null && nextUsed >= FREE_MSG_WARN && nextUsed < FREE_MSG_LIMIT)
       ? { used: nextUsed, limit: FREE_MSG_LIMIT, message: "You're almost out of free AI messages — upgrade for unlimited." }
       : undefined;
-    res.json({ answer, sources, usageWarning });
+    const messageId = await saveDerekReply(req.params.id, answer);
+    res.json({ answer, sources, usageWarning, messageId });
 
     // Increment usage counter fire-and-forget
     incrementUsage(userId, "message").catch(err => console.error("usage increment error:", err));
@@ -316,7 +330,8 @@ ${notesContext}`,
     recordProCost(req.user.id, explainTier, explainModel, message.usage).catch(err => console.error("cost tracking error:", err));
     const answer = message.content.find(b => b.type === "text")?.text ?? "";
     incrementUsage(req.user.id, "message").catch(err => console.error("explain usage increment error:", err));
-    res.json({ answer });
+    const messageId = await saveDerekReply(req.params.id, answer);
+    res.json({ answer, messageId });
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
     console.error("[explain] Claude error:", err);

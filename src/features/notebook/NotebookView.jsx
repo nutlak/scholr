@@ -343,8 +343,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
     try {
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
-      const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(err => { console.error("addMessage failed (assistant):", err); return null; });
-      setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
+      setMessages(m => [...m, { id: data.messageId, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
       if (data.usageWarning) onToast?.(`⚡ ${data.usageWarning.message}`);
     } catch (err) {
       if (err.code === "message_limit_reached") {
@@ -395,8 +394,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
     setExplainingId(messageId);
     try {
       const data = await api.explainDifferently(nb.id, messageId, level);
-      const saved = await api.addMessage(nb.id, "assistant", data.answer).catch(() => null);
-      setMessages(m => [...m, { id: saved?.id, role: "assistant", text: data.answer, createdBy: null }]);
+      setMessages(m => [...m, { id: data.messageId, role: "assistant", text: data.answer, createdBy: null }]);
     } catch (err) {
       setMessages(m => [...m, { role: "assistant", text: `Couldn't re-explain: ${err.message}`, isError: true }]);
     } finally {

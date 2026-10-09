@@ -347,7 +347,9 @@ router.get("/api/notebooks/:id/messages", requireAuth, requireMember, async (req
 router.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (req, res) => {
   const { role, content } = req.body;
   if (!role || !content) return res.status(400).json({ error: "role and content are required" });
-  if (!["user", "assistant"].includes(role)) return res.status(400).json({ error: "role must be user or assistant" });
+  // Derek's replies are saved server-side by the AI routes; a client may only
+  // post its own messages, or anyone could forge a "Derek" answer.
+  if (role !== "user") return res.status(403).json({ error: "Only your own messages can be posted here." });
   if (typeof content !== "string" || content.length > 8000) return res.status(400).json({ error: "Message too long (max 8000 characters)." });
 
   const notebookId = req.params.id;
@@ -359,7 +361,7 @@ router.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (re
       notebook_id: notebookId,
       role,
       content,
-      created_by: role === "user" ? userId : null,
+      created_by: userId,
     })
     .select("id, role, content, created_at, created_by")
     .single();

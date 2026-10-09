@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { api } from "./api.js";
-import { dropdownShiftX } from "./lib/format.js";
+import { dropdownShiftX, notifLine } from "./lib/format.js";
 import { FONT } from "./lib/theme.js";
 
 const PANEL_W = 300;         // panel width; also used to predict its left edge
@@ -16,23 +16,6 @@ function timeAgo(iso) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h`;
   return `${Math.floor(hrs / 24)}d`;
-}
-
-// Build the human-readable line for a notification from its type + payload.
-function describe(n) {
-  const who = n.payload?.fromUsername ? `@${n.payload.fromUsername}` : "Someone";
-  switch (n.type) {
-    case "friend_request":  return `${who} sent you a friend request`;
-    case "friend_accepted": return `${who} accepted your friend request`;
-    case "notebook_invite": return `${who} added you to ${n.payload?.notebookTitle ?? "a notebook"}`;
-    case "payment_failed":  return "Your payment didn't go through — tap to update your card";
-    case "renewal_reminder": {
-      const d = n.payload?.days;
-      const when = d === 0 ? "today" : d === 1 ? "tomorrow" : `in ${d ?? "a few"} days`;
-      return `Your scholr Pro renews ${when}`;
-    }
-    default:                return "New notification";
-  }
 }
 
 export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloadSignal = 0 }) {
@@ -165,7 +148,7 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
                   }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12.5, color: "#F5F5FA", fontFamily: FONT, lineHeight: 1.45 }}>
-                      {describe(n)}
+                      {notifLine(n)}
                     </div>
                     <div style={{ fontSize: 10.5, color: "rgba(245,245,250,0.4)", fontFamily: FONT, marginTop: 2 }}>
                       {timeAgo(n.created_at)}

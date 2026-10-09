@@ -288,6 +288,30 @@ export const api = {
     return res.json(); // [{ user_id, role, first_name, display_name, username, lastActive, isOnline }]
   },
 
+  // Class PINs (server/routes/join.js).
+  async getClassPin(classId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/classes/${classId}/pin`, { headers });
+    if (!res.ok) throw await readError(res);
+    return res.json(); // { pin, link }
+  },
+
+  async previewJoin(pin) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/join/${encodeURIComponent(pin)}`, { headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw apiError(res, data, "No class has that PIN.");
+    return data; // { classTitle, ownerName, units, isOwner }
+  },
+
+  async joinClass(pin) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/join/${encodeURIComponent(pin)}`, { method: "POST", headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw apiError(res, data, "Couldn't join that class.");
+    return data; // { classTitle, notebookIds, firstNotebookId, newFriend }
+  },
+
   async deleteNote(notebookId, noteId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes/${noteId}`, { method: "DELETE", headers });

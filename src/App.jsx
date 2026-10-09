@@ -16,6 +16,8 @@ import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 // Lazy: 52kB of source that only matters once a notebook is open, and never
 // for anyone still on the landing page.
+const ClassPinSheet = lazy(() => import("./features/classes/ClassPin.jsx").then(m => ({ default: m.ClassPinSheet })));
+const JoinClassSheet = lazy(() => import("./features/classes/ClassPin.jsx").then(m => ({ default: m.JoinClassSheet })));
 const NotebookView = lazy(() => import("./features/notebook/NotebookView.jsx").then(m => ({ default: m.NotebookView })));
 import { NewClassModal, NewUnitModal } from "./features/classes/ClassModals.jsx";
 import { SyllabusImportModal } from "./features/classes/SyllabusImportModal.jsx";
@@ -111,6 +113,10 @@ export default function Scholr() {
   const [showAuth, setShowAuth] = useState(() => readAuthIntentFromUrl() !== null);
   const [authIntent, setAuthIntent] = useState(() => readAuthIntentFromUrl() || "signup"); // tab: "signup" | "login"
   const [pendingInviteToken, setPendingInviteToken] = useState(null);
+  // Class PIN: null = closed, "" = typing one in, "AB3X7Q" = arrived via a /join link.
+  // Kept in sessionStorage so signing up first doesn't lose it.
+  const [joinPin, setJoinPin] = useState(() => { try { return sessionStorage.getItem("scholr:join"); } catch { return null; } });
+  const [pinForClass, setPinForClass] = useState(null);
   const [pendingSquadToken, setPendingSquadToken] = useState(null);
   const [inviteInfo, setInviteInfo] = useState(null);
   const [showInviteAuth, setShowInviteAuth] = useState(false);
@@ -215,6 +221,32 @@ export default function Scholr() {
     });
     return () => subscription.unsubscribe();
   }, [setUserStable]);
+
+  useEffect(() => {
+    const m = window.location.pathname.match(/^\/join\/([A-Za-z0-9-]{6,8})\/?$/);
+    if (!m) return;
+    const pin = m[1].toUpperCase().replace(/[^A-Z0-9]/g, "");
+    try { sessionStorage.setItem("scholr:join", pin); } catch { /* private mode */ }
+    window.history.replaceState({}, "", "/");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the landing URL
+    setJoinPin(pin);
+  }, []);
+
+  function closeJoin() {
+    try { sessionStorage.removeItem("scholr:join"); } catch { /* private mode */ }
+    setJoinPin(null);
+  }
+
+  async function handleJoined({ classTitle, firstNotebookId, newFriend }) {
+    closeJoin();
+    const nbs = await api.listNotebooks(getDisplayName(user)).catch(() => null);
+    if (nbs) setNotebooks(nbs);
+    bumpFriendsVersion();
+    const first = nbs?.find(n => n.id === firstNotebookId);
+    if (first) { setActiveNb(first); setActiveView("dashboard"); }
+    setToast(`You joined ${classTitle}${newFriend ? " and made a new friend" : ""}`);
+    setTimeout(() => setToast(""), 3500);
+  }
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/invite\/([^/]+)/);
@@ -492,13 +524,24 @@ export default function Scholr() {
       )}
 
 
+      {user && joinPin !== null && (
+        <Suspense fallback={null}>
+          <JoinClassSheet initialPin={joinPin} onClose={closeJoin} onJoined={handleJoined} />
+        </Suspense>
+      )}
+      {user && pinForClass && (
+        <Suspense fallback={null}>
+          <ClassPinSheet cls={pinForClass} onClose={() => setPinForClass(null)} />
+        </Suspense>
+      )}
+
       {pendingInviteToken && authReady && !user && (
         <InviteLanding inviteInfo={inviteInfo} onSignIn={() => setShowInviteAuth(true)} />
       )}
 
       {authReady && !user && !showPasswordReset && !pendingInviteToken && !showAuth && (
         <Suspense fallback={null}>
-        <LandingPage onSignIn={(intent) => {
+        <LandingPage invited={!!joinPin} onSignIn={(intent) => {
           // "Sign in" buttons pass "login"; every other CTA (which passes a click
           // event) opens sign-up.
           const tab = intent === "login" ? "login" : "signup";
@@ -835,7 +878,7 @@ export default function Scholr() {
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                      <Hammer size={12} strokeWidth={1.75} /> Forge
+                      <Hammer size={12} strokeWidth={1.75} /> AI generations
                     </span>
                     <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
                       {subscription.forgeUsed}/{subscription.forgeLimit}
@@ -1055,6 +1098,7 @@ export default function Scholr() {
               setSyllabusForClass={setSyllabusForClass} setNewUnitFor={setNewUnitFor}
               setDeleteClassTarget={setDeleteClassTarget}
               unitsFilter={unitsFilter} setUnitsFilter={setUnitsFilter}
+              onJoinClass={() => setJoinPin("")} onInviteToClass={setPinForClass}
               setActiveNb={setActiveNb} setConfirmDeleteNb={setConfirmDeleteNb}
               dueCount={dueCount} startAllReview={startAllReview}
               subscription={subscription} handleManageSubscription={handleManageSubscription}

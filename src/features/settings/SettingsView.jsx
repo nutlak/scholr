@@ -80,7 +80,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                       )}
                       {subscription.tier !== "pro" && (
                         <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, lineHeight: 1.5 }}>
-                          Upgrade for unlimited messages, Forge, classes, and storage.
+                          Upgrade for unlimited messages, AI generations, classes, and storage.
                         </div>
                       )}
                     </div>

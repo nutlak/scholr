@@ -1,5 +1,5 @@
 import { Suspense, lazy, useMemo } from "react";
-import { BookOpen, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
+import { BookOpen, KeyRound, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { EmptyState } from "../../ui/EmptyState.jsx";
@@ -31,7 +31,7 @@ export function DashboardView({
   expandedClassId, classUnitsCache,
   handleReorderClasses, handleToggleClass, handleChangeClassColor,
   openClassSyllabus, setSyllabusForClass, setNewUnitFor, setDeleteClassTarget,
-  unitsFilter, setUnitsFilter, setActiveNb, setConfirmDeleteNb,
+  unitsFilter, setUnitsFilter, setActiveNb, setConfirmDeleteNb, onJoinClass, onInviteToClass,
   dueCount, startAllReview,
   subscription, handleManageSubscription, portalLoading, billingReady,
   heatmap, profile, leaderboard,
@@ -72,12 +72,12 @@ export function DashboardView({
           doesn't read as a black card over the HUD void. */}
       <div className="pane-heading" style={{
         position: "relative",
-        paddingTop: 10, paddingBottom: 24,
+        paddingTop: 6, paddingBottom: 14,
         display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12,
       }}>
         <div className="dash-heading">
           <div className="greeting-text" style={{
-            fontSize: "clamp(27px, 5.5vw, 36px)", fontWeight: 650, color: "var(--text-primary)",
+            fontSize: "clamp(23px, 4.6vw, 30px)", fontWeight: 650, color: "var(--text-primary)",
             fontFamily: FONT_HEADING,
             letterSpacing: "var(--tr-display)", lineHeight: "var(--lh-display)",
             display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
@@ -89,13 +89,13 @@ export function DashboardView({
             fontFamily: FONT, marginTop: 5,
           }}>
             {activeView === "dashboard"
-              ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "notebook" : "notebooks"}`
-              : `${filtered.length} ${filtered.length === 1 ? "notebook" : "notebooks"}`}
+              ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "unit" : "units"}`
+              : `${filtered.length} ${filtered.length === 1 ? "unit" : "units"}`}
           </div>
           {activeView === "dashboard" && (
             <div style={{
-              fontSize: 14.5, color: "var(--text-tertiary)", fontFamily: FONT,
-              marginTop: 10, maxWidth: 680, lineHeight: 1.5,
+              fontSize: 14, color: "var(--text-tertiary)", fontFamily: FONT,
+              marginTop: 6, maxWidth: 680, lineHeight: 1.45,
             }}>
               “{greeting.quote.text}”
               <span style={{ opacity: 0.72 }}> — {greeting.quote.author}</span>
@@ -142,6 +142,11 @@ export function DashboardView({
               onOpenNotebook={openNotebookById}
               onFriendIds={setFriendIds}
             />
+          )}
+          {activeView === "dashboard" && (
+            <button onClick={onJoinClass} className="btn-press join-class-link">
+              <KeyRound size={16} strokeWidth={1.9} /> Have a class PIN? <b>Join a class</b>
+            </button>
           )}
 
           {/* Cards due: the one thing to do right now, so it sits straight under
@@ -218,6 +223,7 @@ export function DashboardView({
                   ? "Try a different search term."
                   : "Create your first class to start organizing your notes and chatting with Derek."}
                 cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
+                secondary={!search ? { label: "Join a class with a PIN", onClick: onJoinClass } : null}
               />
             ) : (
               // Drag-to-reorder is enabled only when not searching, since the
@@ -244,6 +250,7 @@ export function DashboardView({
                       onImportSyllabus: () => setSyllabusForClass(cls),
                       onNewUnit: () => setNewUnitFor({ classId: cls.id, classTitle: cls.title }),
                       onDeleteClass: () => setDeleteClassTarget(cls),
+                      onInvite: () => onInviteToClass(cls),
                     })}
                   />
                 </Suspense>

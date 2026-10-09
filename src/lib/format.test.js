@@ -78,6 +78,7 @@ test("notifLine renders every handled type and a safe default", () => {
   const who = { fromUsername: "ada" };
   assert.match(notifLine({ type: "friend_request", payload: who }), /@ada sent you a friend request/);
   assert.match(notifLine({ type: "friend_accepted", payload: who }), /accepted/);
+  assert.match(notifLine({ type: "friend_accepted", payload: { ...who, classTitle: "AP Bio" } }), /joined AP Bio with your PIN/);
   assert.match(notifLine({ type: "notebook_invite", payload: { ...who, notebookTitle: "Bio" } }), /added you to Bio/);
   assert.match(notifLine({ type: "mention", payload: who }), /mentioned you/);
   assert.match(notifLine({ type: "payment_failed", payload: {} }), /payment/i);

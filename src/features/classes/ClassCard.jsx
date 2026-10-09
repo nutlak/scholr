@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Calendar, ChevronRight, Trash2, Upload } from "lucide-react";
+import { Calendar, ChevronRight, Trash2, Upload, UserPlus } from "lucide-react";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { useEscape } from "../../ui/useEscape.js";
@@ -62,7 +62,7 @@ function UnitRow({ unit, color, onClick }) {
     </div>
   );
 }
-export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onViewSyllabus, onImportSyllabus }) {
+export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onViewSyllabus, onImportSyllabus, onInvite }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
@@ -170,6 +170,21 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
             onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.background = "var(--acc-bg-h)"; }}
             onMouseLeave={e => { e.stopPropagation(); e.currentTarget.style.background = "var(--acc-bg)"; }}
           ><Upload size={13} strokeWidth={2} /> Import syllabus</button>
+        )}
+
+        {/* Invite classmates with a PIN — the main way into a friend's class. */}
+        {onInvite && (
+          <button
+            onClick={e => { e.stopPropagation(); onInvite(); }}
+            className="btn-press"
+            title={`Invite classmates to ${cls.title}`}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
+              background: "transparent", border: "1px solid var(--border-strong)",
+              borderRadius: "var(--r-sm)", padding: "0 11px", height: 30, cursor: "pointer",
+              color: "var(--text-primary)", fontFamily: FONT, fontSize: "var(--fs-xs)", fontWeight: 650,
+            }}
+          ><UserPlus size={13} strokeWidth={2} /> Invite</button>
         )}
 
         {/* Syllabus view — all units, due dates, assessment types, at a glance */}

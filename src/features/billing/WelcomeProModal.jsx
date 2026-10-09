@@ -7,7 +7,7 @@ import { useEscape } from "../../ui/useEscape.js";
 // already keeps landing copy and in-app copy in sync by hand (CLAUDE.md's
 // landing-page-parity rule already assumes the two are edited together).
 const FEATURES = {
-  pro: ["Unlimited AI messages", "Unlimited Forge outputs", "Unlimited classes",
+  pro: ["Unlimited AI messages", "Unlimited AI generations", "Unlimited classes",
     "Unlimited notes", "Claude Sonnet (smarter AI)", "Priority support"],
   squad: ["Everything in Pro", "Pro for up to 5 people", "One bill for the whole group",
     "Invite your study group instantly"],

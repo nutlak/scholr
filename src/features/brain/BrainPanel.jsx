@@ -116,7 +116,7 @@ export function BrainPanel({ nb, members = [], currentUserId, onExplain, onAsk, 
         <button onClick={build} disabled={building} className="btn-press" style={primaryBtn(building)}>
           {building ? <span className="shimmer">Reading your notes…</span> : "Build the brain"}
         </button>
-        <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Uses one Forge generation</div>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Uses one AI generation</div>
       </div>
     );
   }

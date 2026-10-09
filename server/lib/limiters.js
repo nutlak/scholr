@@ -43,7 +43,7 @@ export const forgeLimiter = rateLimit({
   max: 20,
   keyGenerator: req => req.user?.id ?? ipKeyGenerator(req.ip),
   standardHeaders: true, legacyHeaders: false,
-  message: { error: "Too many Forge requests. Please try again later." },
+  message: { error: "Too many requests. Please try again in a moment." },
 });
 export const checkoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute

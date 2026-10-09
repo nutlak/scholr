@@ -48,16 +48,16 @@ const FEATURES = [
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
   { Icon: Orbit,         title: "The unit brain",     tint: "#A78BFA", short: "See what you know at a glance", body: "Every key idea in a unit, mapped around a crystal ball and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
   { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
-  { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
+  { Icon: Hammer,        title: "Study guides in a tap", tint: "#FBBF24", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
   { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
-  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", short: "One notebook for the group", body: "Invite your study group so everyone owns the same notebook, with the same uploaded notes and the same AI answers whenever they check in." },
+  { Icon: Users,         title: "Join your class with a PIN", tint: "#60A5FA", short: "One PIN, the whole class", body: "Paste one link in your class group chat, or read out a six-character PIN. Classmates get every unit in the class, with the same sources and the same AI answers, and you're friends straight away." },
   { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
   { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "#A78BFA" },
-  { n: "2", title: "Upload your notes",      body: "Drag in PDFs, lecture slides, typed notes. Scholr extracts every word for Derek.", tint: "#60A5FA" },
-  { n: "3", title: "Invite your study group", body: "Send an email invite. They join in one click and see everything immediately.", tint: "#F472B6" },
+  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "#60A5FA" },
+  { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "#F472B6" },
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
 ];
 
@@ -323,11 +323,11 @@ const USE_CASES = [
 ];
 
 const FAQS = [
-  { q: "Is Scholr free?", a: "Yes. The Free plan is free forever: 100 AI messages and 3 Forge outputs a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
+  { q: "Is Scholr free?", a: "Yes. The Free plan is free forever: 100 AI messages and 3 AI generations (guides, quizzes, worksheets, brains) a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
   { q: "What can I upload?", a: "PDFs, lecture slides, Word docs, images, and plain text. Scholr extracts the text so Derek can read and reference your actual material." },
   { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you understand it: what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
   { q: "Is my data private?", a: "Your notebooks are invite-only, with no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
-  { q: "Can I study with my class?", a: "Yes. Invite classmates to a shared notebook and everyone sees the same notes, chat, and AI answers in real time." },
+  { q: "Can I study with my class?", a: "Yes. Open a class, tap Invite, and share the PIN or link. Everyone who joins sees the same units, sources, chat, and AI answers in real time, and becomes your friend on Scholr." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
   { q: "Can I get Scholr on my phone?", a: "Yes. Install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
 ];
@@ -457,7 +457,7 @@ function SocialProofBar() {
   );
 }
 
-export default function LandingPage({ onSignIn }) {
+export default function LandingPage({ onSignIn, invited = false }) {
   const scrolled = useScrolled();
   const [heroVisible, setHeroVisible] = useState(false);
   const [plan, setPlan] = useState("pro");
@@ -715,6 +715,12 @@ export default function LandingPage({ onSignIn }) {
             )}
           </div>
 
+          {invited && (
+            <button onClick={() => onSignIn()} className="btn-primary" style={{ marginBottom: 18 }}>
+              You've been invited to a class. Sign up free to join →
+            </button>
+          )}
+
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
@@ -970,7 +976,7 @@ export default function LandingPage({ onSignIn }) {
               onClick={onSignIn}
               features={[
                 "100 AI messages per month",
-                "3 Forge outputs per month",
+                "3 AI generations per month",
                 "Up to 3 classes",
                 "Up to 3 notebooks",
                 "Claude Haiku model",
@@ -989,7 +995,7 @@ export default function LandingPage({ onSignIn }) {
               onClick={onSignIn}
               features={[
                 "Unlimited AI messages",
-                "Unlimited Forge outputs",
+                "Unlimited AI generations",
                 "Unlimited classes",
                 "Unlimited notes",
                 "Claude Sonnet (smarter AI)",

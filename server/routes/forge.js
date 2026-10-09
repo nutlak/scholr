@@ -88,7 +88,7 @@ router.post("/api/notebooks/:id/forge", requireAuth, requireMember, aiLimiter, f
   if (!forgeUsage.allowed) {
     return res.status(403).json({
       error: "forge_limit_reached",
-      message: "You have reached your 3 Forge output limit this month. Upgrade to Pro for unlimited.",
+      message: "You have reached your 3 AI generations this month. Upgrade to Pro for unlimited.",
     });
   }
 

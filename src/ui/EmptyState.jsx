@@ -1,6 +1,6 @@
 import { FONT, FONT_SERIF } from "../lib/theme.js";
 
-export function EmptyState({ icon, title, body, cta }) {
+export function EmptyState({ icon, title, body, cta, secondary }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
@@ -35,6 +35,13 @@ export function EmptyState({ icon, title, body, cta }) {
             letterSpacing: "-0.01em",
           }}
         >{cta.label}</button>
+      )}
+      {secondary && (
+        <button onClick={secondary.onClick} className="btn-press" style={{
+          background: "transparent", border: "1px solid var(--border-strong)", borderRadius: 10,
+          padding: "0 20px", height: 44, color: "var(--text-primary)", fontWeight: 600, fontSize: 14,
+          cursor: "pointer", fontFamily: FONT,
+        }}>{secondary.label}</button>
       )}
     </div>
   );

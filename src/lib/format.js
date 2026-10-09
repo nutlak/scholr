@@ -153,7 +153,9 @@ export function notifLine(n) {
   const book = n.payload?.notebookTitle ?? "a notebook";
   switch (n.type) {
     case "friend_request":  return `${who} sent you a friend request`;
-    case "friend_accepted": return `${who} accepted your friend request`;
+    case "friend_accepted": return n.payload?.classTitle
+      ? `${who} joined ${n.payload.classTitle} with your PIN`
+      : `${who} accepted your friend request`;
     case "notebook_invite": return `${who} added you to ${book}`;
     case "mention":         return `${who} mentioned you in ${book}`;
     case "note_uploaded":   return `${who} added ${n.payload?.noteTitle ?? "a note"} to ${book}`;

@@ -53,8 +53,8 @@ export function UpgradeModal({ limitType, onClose }) {
     },
     forge_limit_reached: {
       Icon: Zap,
-      headline: "Forge limit reached",
-      detail: "You've used all 3 Forge outputs this month on the free plan.",
+      headline: "AI generation limit reached",
+      detail: "You've used all 3 AI generations this month on the free plan.",
     },
     class_limit_reached: {
       Icon: BookOpen,
@@ -134,7 +134,7 @@ export function UpgradeModal({ limitType, onClose }) {
         <div style={{ marginBottom: 24 }}>
           {[
             "Unlimited AI messages with Claude Sonnet (smarter AI)",
-            "Unlimited Forge outputs (study guides, flashcards, summaries)",
+            "Unlimited AI generations (study guides, worksheets, brains)",
             "Unlimited classes",
             "Unlimited notes & storage",
             "Priority support",

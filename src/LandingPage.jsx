@@ -35,18 +35,18 @@ function useFadeIn(delay = 0) {
 }
 
 const FEATURES = [
-  { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump straight into their notebook — same notes, same chat, plus a live quiz battle when you want to make review a competition." },
+  { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
   { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
-  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Definitions, practice questions, summaries — just ask." },
-  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you really understand — gaps, misconceptions and all." },
+  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
   { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
-  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes — or merge in a friend's notebook for a dual-perspective episode — and review on the walk to class." },
-  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group so everyone owns the same notebook — same uploaded notes, same AI answers, whenever they check in." },
-  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "PDFs, slides, docs, images, plain text — Scholr reads every word so Derek can reference your real material." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
+  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group so everyone owns the same notebook, with the same uploaded notes and the same AI answers whenever they check in." },
+  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
-  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus — into a new class, or an existing one — and Derek sets up the units for you.", tint: "#A78BFA" },
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "#A78BFA" },
   { n: "2", title: "Upload your notes",      body: "Drag in PDFs, lecture slides, typed notes. Scholr extracts every word for Derek.", tint: "#60A5FA" },
   { n: "3", title: "Invite your study group", body: "Send an email invite. They join in one click and see everything immediately.", tint: "#F472B6" },
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
@@ -307,18 +307,18 @@ const USE_CASES = [
   },
   {
     when: "You think you understand it",
-    what: "Explain it in your own words in Feynman Mode and get told where the gaps are — before the exam finds them for you.",
+    what: "Explain it in your own words in Feynman Mode and find out where the gaps are before the exam does.",
   },
 ];
 
 const FAQS = [
-  { q: "Is Scholr free?", a: "Yes — the Free plan is free forever: 100 AI messages and 3 Forge outputs a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
+  { q: "Is Scholr free?", a: "Yes. The Free plan is free forever: 100 AI messages and 3 Forge outputs a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
   { q: "What can I upload?", a: "PDFs, lecture slides, Word docs, images, and plain text. Scholr extracts the text so Derek can read and reference your actual material." },
-  { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you really understand it — what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
-  { q: "Is my data private?", a: "Your notebooks are invite-only — no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
+  { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you understand it: what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
+  { q: "Is my data private?", a: "Your notebooks are invite-only, with no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },
   { q: "Can I study with my class?", a: "Yes. Invite classmates to a shared notebook and everyone sees the same notes, chat, and AI answers in real time." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
-  { q: "Can I get Scholr on my phone?", a: "Yes — install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
+  { q: "Can I get Scholr on my phone?", a: "Yes. Install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
 ];
 
 function UseCaseCard({ when, what, idx }) {
@@ -389,7 +389,8 @@ function useCountUp(target, run, duration = 1200) {
 }
 
 // Live social-proof bar: real aggregate counts, count-up on scroll into view,
-// graceful fallback to "Join thousands of students" if the fetch fails.
+// hidden until the counts are big enough to be worth bragging about (and on fetch failure).
+const SOCIAL_PROOF_MIN_USERS = 100;
 function SocialProofBar() {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -434,9 +435,7 @@ function SocialProofBar() {
       display: "flex", flexWrap: "wrap", gap: 10,
       justifyContent: "center", alignItems: "center", textAlign: "center",
     }}>
-      {(!stats || failed) ? (
-        <span style={pillStyle}>Join <span style={strong}>thousands of students</span></span>
-      ) : (
+      {(!stats || failed || stats.userCount < SOCIAL_PROOF_MIN_USERS) ? null : (
         <>
           <span style={pillStyle}>Join <span style={strong}>{users.toLocaleString()}</span> students</span>
           <span style={pillStyle}><span style={strong}>{nbs.toLocaleString()}</span> notebooks created</span>
@@ -886,7 +885,7 @@ export default function LandingPage({ onSignIn }) {
           <SectionHeader
             pill="How it works"
             title="Up and running in minutes"
-            sub="No setup, no syllabus parsing, no config. Just upload and ask."
+            sub="Upload your notes and start asking. Derek can build your units from a syllabus."
             accent="#60A5FA"
           />
           <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
@@ -907,7 +906,7 @@ export default function LandingPage({ onSignIn }) {
           <SectionHeader
             pill="Pricing"
             title="Simple, student-friendly pricing"
-            sub="Start free. Upgrade when you outgrow the limits — cancel anytime."
+            sub="Start free. Upgrade when you outgrow the limits, and cancel anytime."
             accent="#F472B6"
           />
           <div style={{
@@ -1039,7 +1038,7 @@ export default function LandingPage({ onSignIn }) {
               marginBottom: 36, fontFamily: FONT,
               maxWidth: 460, margin: "0 auto 36px",
             }}>
-              Create your first unit, upload your notes, and ask Derek your first question — in under two minutes.
+              Create your first unit, upload your notes, and ask Derek your first question in under two minutes.
             </p>
             <button className="btn-primary btn-primary-lg" onClick={onSignIn}>
               Get started free

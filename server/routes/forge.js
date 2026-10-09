@@ -1,6 +1,6 @@
 // The Forge: study guides, practice questions, summaries.
 import { Router } from "express";
-import { anthropicClient, buildNotesContext, getModel } from "../lib/ai.js";
+import { aiErrorDetail, anthropicClient, buildNotesContext, getModel } from "../lib/ai.js";
 import { requireAuth, requireMember } from "../lib/auth.js";
 import { aiLimiter, forgeLimiter } from "../lib/limiters.js";
 import { logUserActivity } from "../lib/presence.js";
@@ -172,8 +172,11 @@ ${notesContext}`,
     incrementUsage(req.user.id, "forge").catch(err => console.error("forge usage increment error:", err));
     recordProCost(req.user.id, tier, forgeModel, finalMsg.usage).catch(err => console.error("cost tracking error:", err));
   } catch (err) {
+    // Log the provider's detail; never stream it to the user (it was showing
+    // Anthropic's raw JSON error body in the Forge panel).
+    console.error("[forge] generation error:", aiErrorDetail(err, "Claude"));
     if (!res.writableEnded) {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: "Couldn't make that right now. Please try again in a minute." })}\n\n`);
       res.end();
     }
   }

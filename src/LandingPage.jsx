@@ -40,16 +40,18 @@ function useFadeIn(delay = 0) {
   return [ref, visible];
 }
 
+const PLANS = ["free", "pro", "squad"];
+
 const FEATURES = [
   { Icon: Radio,         title: "Study together, live", tint: "#34D399", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
-  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
-  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
-  { Icon: Orbit,         title: "The unit brain",     tint: "#A78BFA", body: "Every key idea in a unit, mapped around a crystal ball and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
-  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
-  { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
-  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
-  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", body: "Invite your study group so everyone owns the same notebook, with the same uploaded notes and the same AI answers whenever they check in." },
-  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
+  { Icon: Flame,         title: "Friends streak leaderboard", tint: "#FB923C", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
+  { Icon: MessageCircle, title: "Ask Derek anything", tint: "#A78BFA", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
+  { Icon: Orbit,         title: "The unit brain",     tint: "#A78BFA", short: "See what you know at a glance", body: "Every key idea in a unit, mapped around a crystal ball and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
+  { Icon: Brain,         title: "Feynman Mode",       tint: "#4ADE80", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
+  { Icon: Hammer,        title: "The Forge",          tint: "#FBBF24", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
+  { Icon: Headphones,    title: "AI podcasts",        tint: "#F472B6", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
+  { Icon: Users,         title: "Shared notebooks",   tint: "#60A5FA", short: "One notebook for the group", body: "Invite your study group so everyone owns the same notebook, with the same uploaded notes and the same AI answers whenever they check in." },
+  { Icon: BookOpen,      title: "Upload anything",    tint: "#06B6D4", short: "PDFs, slides, photos, docs", body: "Upload PDFs, slides, docs, images, or plain text. Scholr reads every word so Derek can reference your real material." },
 ];
 
 const STEPS = [
@@ -59,12 +61,13 @@ const STEPS = [
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "#34D399" },
 ];
 
-function FeatureCard({ Icon, title, body, tint, idx }) {
+function FeatureCard({ Icon, title, body, short, tint, idx }) {
   const [ref, visible] = useFadeIn(idx * 60);
   const [hovered, setHovered] = useState(false);
   return (
     <div
       ref={ref}
+      className={`lp-feature${short ? "" : " lp-feature-hero"}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -88,7 +91,7 @@ function FeatureCard({ Icon, title, body, tint, idx }) {
         transition: "opacity 0.3s ease",
         pointerEvents: "none",
       }} />
-      <div style={{
+      <div className="lp-feat-icon" style={{
         position: "relative",
         width: 44, height: 44, borderRadius: 12,
         background: `linear-gradient(135deg, ${tint}22, ${tint}0A)`,
@@ -98,16 +101,17 @@ function FeatureCard({ Icon, title, body, tint, idx }) {
         transition: "transform 0.25s ease",
         transform: hovered ? "scale(1.06)" : "scale(1)",
       }}><Icon size={22} strokeWidth={1.75} /></div>
-      <div style={{
+      <div className="lp-feat-title" style={{
         position: "relative",
         fontSize: 16, fontWeight: 600, color: "#F5F5FA",
         fontFamily: FONT, marginBottom: 8, letterSpacing: "-0.015em",
       }}>{title}</div>
-      <div style={{
+      <div className="lp-feat-body" style={{
         position: "relative",
         fontSize: 14, color: "rgba(245,245,250,0.62)", lineHeight: 1.6,
         fontFamily: FONT,
       }}>{body}</div>
+      {short && <div className="lp-feat-short">{short}</div>}
     </div>
   );
 }
@@ -456,6 +460,7 @@ function SocialProofBar() {
 export default function LandingPage({ onSignIn }) {
   const scrolled = useScrolled();
   const [heroVisible, setHeroVisible] = useState(false);
+  const [plan, setPlan] = useState("pro");
   const { installed, canPrompt, needsIOSInstructions, install } = useInstall();
   const [showIOSHelp, setShowIOSHelp] = useState(false);
   useEffect(() => {
@@ -493,6 +498,32 @@ export default function LandingPage({ onSignIn }) {
       "--on-acc": "#14121A",
     }}>
       <style>{`
+        /* Phone layout: hierarchy instead of a column of equal cards. */
+        .lp-feat-short { display: none; }
+        .lp-plan-tabs { display: none; }
+        @media (max-width: 699px) {
+          .lp-section { padding: 60px 16px !important; }
+          .lp-features { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 32px !important; }
+          .lp-feature { padding: 16px 14px !important; border-radius: 14px !important; }
+          .lp-feature-hero { grid-column: 1 / -1; padding: 22px 18px !important; }
+          .lp-feature:not(.lp-feature-hero) .lp-feat-icon { width: 38px !important; height: 38px !important; margin-bottom: 12px !important; }
+          .lp-feature:not(.lp-feature-hero) .lp-feat-title { font-size: 15px !important; margin-bottom: 4px !important; }
+          .lp-feature:not(.lp-feature-hero) .lp-feat-body { display: none; }
+          .lp-feat-short { display: block; position: relative; font-size: 13.5px; line-height: 1.45; color: rgba(245,245,250,0.62); }
+          .lp-steps { padding-left: 0 !important; margin-top: 32px !important; }
+          .lp-plan-tabs { display: grid; max-width: 360px; margin: 28px auto 0; --seg-r: 12px; --seg-pad: 3px; }
+          .lp-plan-tabs .seg-option { min-height: 40px; font-size: 14px; }
+          .lp-pricing { margin-top: 16px !important; }
+          .lp-pricing[data-show="free"] > :not([data-plan="free"]),
+          .lp-pricing[data-show="pro"] > :not([data-plan="pro"]),
+          .lp-pricing[data-show="squad"] > :not([data-plan="squad"]) { display: none; }
+          .lp-scroller {
+            display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory;
+            margin: 32px -16px 0 !important; padding: 0 16px 4px; scrollbar-width: none;
+          }
+          .lp-scroller::-webkit-scrollbar { display: none; }
+          .lp-scroller > * { flex: 0 0 84%; scroll-snap-align: center; }
+        }
         @keyframes orbit-slow {
           0%, 100% { transform: translate(0, 0) scale(1); }
           50%       { transform: translate(40px, -20px) scale(1.05); }
@@ -856,7 +887,7 @@ export default function LandingPage({ onSignIn }) {
       <SocialProofBar />
 
       {/* Features */}
-      <section style={{
+      <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
         borderTop: "1px solid rgba(255,255,255,0.04)",
@@ -867,7 +898,7 @@ export default function LandingPage({ onSignIn }) {
             title="Everything your study group needs"
             sub="One place for notes, AI answers, and real-time collaboration with your classmates."
           />
-          <div style={{
+          <div className="lp-features" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 16, marginTop: 56,
@@ -880,7 +911,7 @@ export default function LandingPage({ onSignIn }) {
       </section>
 
       {/* How it works */}
-      <section style={{
+      <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
         borderTop: "1px solid rgba(255,255,255,0.04)",
@@ -892,7 +923,7 @@ export default function LandingPage({ onSignIn }) {
             sub="Upload your notes and start asking. Derek can build your units from a syllabus."
             accent="#60A5FA"
           />
-          <div style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
+          <div className="lp-steps" style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
               <Step key={s.n} {...s} idx={i} last={i === STEPS.length - 1} />
             ))}
@@ -901,7 +932,7 @@ export default function LandingPage({ onSignIn }) {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{
+      <section id="pricing" className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
         borderTop: "1px solid rgba(255,255,255,0.04)",
@@ -913,12 +944,23 @@ export default function LandingPage({ onSignIn }) {
             sub="Start free. Upgrade when you outgrow the limits, and cancel anytime."
             accent="#F472B6"
           />
-          <div style={{
+          {/* Phone: one plan at a time (Pro first) instead of three cards
+              stacked 1,650px deep. Desktop shows all three side by side. */}
+          <div className="seg-control lp-plan-tabs" role="radiogroup" aria-label="Plan" style={{ "--seg-n": 3 }}>
+            <span className="seg-pill" aria-hidden="true" style={{ transform: `translateX(${PLANS.indexOf(plan) * 100}%)` }} />
+            {PLANS.map(p => (
+              <button key={p} className="seg-option" role="radio" aria-checked={plan === p} onClick={() => setPlan(p)}>
+                {p[0].toUpperCase() + p.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="lp-pricing" data-show={plan} style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 20, maxWidth: 980, margin: "56px auto 0",
           }}>
             {/* FREE card */}
+            <div data-plan="free">
             <PricingCard
               tier="Free"
               price="$0"
@@ -934,7 +976,9 @@ export default function LandingPage({ onSignIn }) {
                 "Claude Haiku model",
               ]}
             />
+            </div>
             {/* PRO card */}
+            <div data-plan="pro">
             <PricingCard
               tier="Pro"
               price="$8.49"
@@ -952,7 +996,9 @@ export default function LandingPage({ onSignIn }) {
                 "Priority support",
               ]}
             />
+            </div>
             {/* SQUAD card */}
+            <div data-plan="squad">
             <PricingCard
               tier="Squad"
               price="$24.99"
@@ -967,12 +1013,13 @@ export default function LandingPage({ onSignIn }) {
                 "Invite your study group instantly",
               ]}
             />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section style={{
+      <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
         borderTop: "1px solid var(--border-subtle)",
@@ -984,7 +1031,7 @@ export default function LandingPage({ onSignIn }) {
             sub="Real study workflows, minus the busywork."
             accent="#FBBF24"
           />
-          <div style={{
+          <div className="lp-scroller" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 16, marginTop: 56,
@@ -997,7 +1044,7 @@ export default function LandingPage({ onSignIn }) {
       </section>
 
       {/* FAQ */}
-      <section style={{
+      <section className="lp-section" style={{
         position: "relative", zIndex: 1,
         padding: "96px 24px",
         borderTop: "1px solid var(--border-subtle)",

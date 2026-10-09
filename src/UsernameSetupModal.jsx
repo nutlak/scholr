@@ -72,7 +72,7 @@ export default function UsernameSetupModal({ onDone, onSignOut }) {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div style={{
+            <div className="affix-field" style={{
               display: "flex", alignItems: "center", gap: 0,
               background: "#14141F",
               border: `1px solid ${error ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.09)"}`,

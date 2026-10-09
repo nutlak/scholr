@@ -802,3 +802,54 @@ a[role="button"],
 .tool-modal-card {
   overscroll-behavior: contain;
 }
+
+/* ── Study menu (StudyMenu.jsx) ─────────────────────────────────────────────
+   Big tinted tiles: the tile's own colour does the work, label stays one line. */
+.study-hero {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 16px; min-height: 92px; cursor: pointer; font-family: inherit;
+  border-radius: 16px; border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent);
+  background: color-mix(in srgb, var(--acc) 10%, var(--bg-surface-1));
+}
+.study-hero-orb {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--acc);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--acc) 45%, transparent), transparent 70%),
+              color-mix(in srgb, var(--acc) 12%, var(--bg-base));
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+}
+.study-hero-bar {
+  display: block; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden;
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+.study-hero-bar > span { display: block; height: 100%; border-radius: 3px; background: var(--success); }
+.study-tile {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+  gap: 14px; min-height: 96px; padding: 14px; cursor: pointer; text-align: left;
+  border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 600;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--tile) 12%, var(--bg-surface-1));
+  border: 1px solid color-mix(in srgb, var(--tile) 30%, transparent);
+}
+
+/* Phone notebook: Chat | Study tabs replace the old ten-box tool strip. */
+.nb-tabs { display: none; }
+.nb-study-pane { display: none; }
+@media (max-width: 699px) {
+  .nb-tabs { display: grid; margin-bottom: 10px; }
+  .notebook-split.is-study { display: none !important; }
+  .nb-study-pane { display: block; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 16px; }
+}
+.nb-tabs { --seg-r: 12px; --seg-pad: 3px; }
+.nb-tabs .seg-option { min-height: 40px; font-size: 14px; letter-spacing: -0.005em; }
+@media (max-width: 699px) {
+  /* The tool strip used to sit under the composer; without it the composer
+     would touch the home indicator. */
+  .notebook-split { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+}
+
+/* An input sitting inside a bordered wrapper with a prefix (the "@" in the
+   username field): the global :focus-visible outline drew a second box around
+   the bare input, over the prefix. Ring the wrapper instead. */
+.affix-field:focus-within { outline: 2px solid var(--hud); outline-offset: 2px; }
+.affix-field input:focus-visible { outline: none !important; }

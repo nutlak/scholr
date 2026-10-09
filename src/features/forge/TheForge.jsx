@@ -94,7 +94,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
           setGenerating(false);
           autoSave(full, selectedAction);
         },
-        (err) => { setContent(`Error: ${err}`); setGenerating(false); }
+        (err) => { setContent(String(err)); setGenerating(false); }
       );
     } catch (err) {
       if (err.code === "forge_limit_reached") {
@@ -103,7 +103,7 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
         onUpgradeNeeded?.("forge_limit_reached");
         return;
       }
-      setContent(`Error: ${err.message}`);
+      setContent(err.message);
       setGenerating(false);
     }
   }
@@ -114,8 +114,8 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
   // you back on the same picker you just chose from. Runs once per mount:
   // ToolModal fully unmounts this component on close, so a later selection of
   // a different action is a fresh mount with its own initialAction, never a
-  // stale re-fire. The picker grid stays visible underneath in case the
-  // person wants a different output from here without leaving the panel.
+  // stale re-fire. There is no picker in here any more — the Study menu is
+  // the one place you choose — so the panel is just the result and a Remake.
   // Empty deps deliberately: initialAction is a mount-time prop, and generate
   // is stable for the component's lifetime in every way that matters here —
   // neither should re-trigger this on a later render.
@@ -266,48 +266,6 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
         </div>
       )}
 
-      {/* Action buttons — color-coded grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-        {FORGE_ACTIONS.map(a => (
-          <button
-            key={a.id}
-            onClick={() => generate(a.id)}
-            disabled={generating}
-            className={`forge-action-btn${action === a.id ? " forge-active" : ""}`}
-            style={{ "--btn-color": a.color }}
-          >
-            <div className="forge-action-icon"><a.Icon size={16} strokeWidth={1.75} /></div>
-            <div style={{
-              fontSize: 12, fontWeight: 600, fontFamily: FONT,
-              letterSpacing: "-0.01em",
-            }}>{a.label}</div>
-            <div className="forge-action-desc">{a.desc}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Topic input */}
-      <input
-        value={topic}
-        onChange={e => setTopic(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && action && !generating && generate(action)}
-        placeholder="Focus on a specific topic (optional)"
-        disabled={generating}
-        className="forge-topic-input"
-        style={{
-          width: "100%", background: "var(--s1)",
-          border: "1px solid var(--border)",
-          borderRadius: 10, padding: "0 14px",
-          height: 40,
-          color: "var(--t1)", fontSize: 13,
-          fontFamily: FONT,
-          outline: "none", marginBottom: 12,
-          boxSizing: "border-box",
-          transition: "all 0.18s",
-          letterSpacing: "-0.01em",
-        }}
-      />
-
       {/* Flashcard view */}
       {showCards && currentCard ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -442,12 +400,12 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
                 <div style={{
                   fontSize: 14, fontWeight: 600, color: "var(--t1)", fontFamily: FONT,
                   letterSpacing: "-0.015em",
-                }}>Ready to forge</div>
+                }}>Nothing made yet</div>
                 <div style={{
                   fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55,
                   textAlign: "center", maxWidth: 260,
                 }}>
-                  Pick a type above to generate study content from your notes.
+                  Pick something to make from the Study menu.
                 </div>
               </div>
             )}
@@ -497,6 +455,30 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
             </div>
           )}
         </>
+      )}
+
+      {/* Refine and remake. Below the result rather than above it: you choose
+          a focus after seeing what came back, not before. */}
+      {action && !generating && (
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <input
+            value={topic}
+            onChange={e => setTopic(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && generate(action)}
+            placeholder="Focus on a topic (optional)"
+            className="forge-topic-input"
+            style={{
+              flex: 1, minWidth: 0, background: "var(--s1)", border: "1px solid var(--border)",
+              borderRadius: 10, padding: "0 14px", height: 44, color: "var(--t1)", fontSize: 15,
+              fontFamily: FONT, outline: "none", boxSizing: "border-box",
+            }}
+          />
+          <button onClick={() => generate(action)} className="btn-press" style={{
+            height: 44, padding: "0 16px", borderRadius: 10, border: "none", cursor: "pointer",
+            background: "var(--acc)", color: "var(--on-acc)", fontFamily: FONT, fontSize: 14, fontWeight: 600,
+            display: "flex", alignItems: "center", gap: 6,
+          }}><RefreshCw size={15} strokeWidth={1.9} /> Remake</button>
+        </div>
       )}
     </div>
   );

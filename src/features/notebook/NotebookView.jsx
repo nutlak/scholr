@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, Hammer, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StatusPill } from "../../ui/StatusPill.jsx";
@@ -10,6 +10,7 @@ import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/th
 import { useNarrow } from "../../lib/breakpoints.js";
 import { useDerekPhrase } from "../../lib/derekPhrases.js";
 import { InviteModal } from "./InviteModal.jsx";
+import { StudyMenu } from "./StudyMenu.jsx";
 const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
 import { useEscape } from "../../ui/useEscape.js";
@@ -37,16 +38,15 @@ const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ def
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "brain",             text: "Brain",     label: "Unit brain",         title: "Brain",              Icon: Orbit,         tint: "#A78BFA", subtitle: "Every key idea, and how well you know it" },
-  { id: "notes",             text: "Notes",     label: "Unit notes",         title: "Unit Notes",         Icon: FileText,      tint: "#60A5FA", subtitle: "Shared with your group" },
-  { id: "forge:study_guide", text: "Guide",     label: "Study Guide",        title: "Study Guide",        Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                        panel: "forge", forgeAction: "study_guide" },
-  { id: "forge:questions",   text: "Questions", label: "Questions",          title: "Questions",          Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions",                          panel: "forge", forgeAction: "questions" },
-  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",          title: "Worksheet",          Icon: LineChart,     tint: "#22D3EE", subtitle: "Worked problems with real plotted graphs",    panel: "forge", forgeAction: "worksheet" },
-  { id: "forge:summary",     text: "Summary",   label: "Summary",            title: "Summary",            Icon: ClipboardList, tint: "#60A5FA", subtitle: "Concise overview",                            panel: "forge", forgeAction: "summary" },
-  { id: "forge:flashcards",  text: "New set",   label: "Generate flashcards", title: "Generate Flashcards", Icon: Layers,       tint: "#F472B6", subtitle: "One-off set, not saved",                      panel: "forge", forgeAction: "flashcards" },
-  { id: "flashcards",        text: "Cards",     label: "Flashcards",         title: "Flashcards",         Icon: Layers,        tint: "#F472B6", subtitle: "Your saved deck" },
-  { id: "podcast",           text: "Podcast",   label: "Podcast Mode",       title: "Podcast",             Icon: Headphones,    tint: "#34D399", subtitle: "Two-host audio overview" },
-  { id: "feynman",           text: "Feynman",   label: "Feynman Mode",       title: "Feynman Mode",       Icon: Brain,         tint: "#FBBF24", subtitle: "Explain it, get graded" },
+  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "#A78BFA", subtitle: "Every key idea, and how well you know it" },
+  { id: "notes",             text: "Notes",     label: "Notes",        title: "Unit Notes",   Icon: FileText,      tint: "#60A5FA", subtitle: "Shared with your group",                   group: "learn" },
+  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
+  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "#38BDF8", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
+  { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "#F472B6", subtitle: "Two-host audio overview",                  group: "learn" },
+  { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "#FBBF24", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
+  { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "#FB923C", subtitle: "Your deck, spaced out over days",          group: "test" },
+  { id: "forge:worksheet",   text: "Worksheet", label: "Worksheet",    title: "Worksheet",    Icon: LineChart,     tint: "#22D3EE", subtitle: "Worked problems with real plotted graphs", group: "test",  panel: "forge", forgeAction: "worksheet" },
+  { id: "feynman",           text: "Feynman",   label: "Explain it",   title: "Feynman Mode", Icon: Brain,         tint: "#4ADE80", subtitle: "Explain it in your words, get graded",     group: "test" },
 ];
 // Shown while a tool's chunk downloads. Tools are code-split because they are
 // only reachable behind a click, and together they were a large slice of a
@@ -233,6 +233,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   const [feynmanConcept, setFeynmanConcept] = useState(null); // set when the brain opens Feynman on one concept
   useEffect(() => { if (activeTool !== "feynman") setFeynmanConcept(null); }, [activeTool]);
   const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
+  const [mobileTab, setMobileTab] = useState("chat"); // phone only: "chat" | "study"
   const [notesById, setNotesById] = useState({});     // id -> note, for expanding a citation inline
 
   // Print with the notebook's own name on the page instead of "scholr — …".
@@ -584,7 +585,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               border: `1px solid ${activeTool ? "var(--acc)" : "var(--border-strong)"}`,
               color: activeTool ? "var(--acc-h)" : "var(--text-primary)",
             }}
-          ><Hammer size={16} strokeWidth={1.85} /> Forge</button>
+          ><GraduationCap size={16} strokeWidth={1.85} /> Study</button>
 
           <button
             onClick={() => setShowInvite(true)}
@@ -638,8 +639,23 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </div>
       )}
 
+      {/* Phone only: NotebookLM's split — the chat keeps the whole screen, and
+          the study tools are a tab you go to rather than a strip of ten
+          equal boxes under the composer. */}
+      <div className="seg-control nb-tabs no-print" role="radiogroup" aria-label="Notebook view" style={{ "--seg-n": 2 }}>
+        <span className="seg-pill" aria-hidden="true" style={{ transform: `translateX(${mobileTab === "study" ? 100 : 0}%)` }} />
+        {[["chat", "Chat"], ["study", "Study"]].map(([id, label]) => (
+          <button key={id} className="seg-option" role="radio" aria-checked={mobileTab === id} onClick={() => setMobileTab(id)}>{label}</button>
+        ))}
+      </div>
+      {mobileTab === "study" && (
+        <div className="nb-study-pane no-print">
+          <StudyMenu nb={nb} tools={NB_TOOLS} currentUserId={currentUserId} onOpen={setActiveTool} />
+        </div>
+      )}
+
       {/* Chat + Forge split */}
-      <div className="notebook-split" style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
+      <div className={`notebook-split${mobileTab === "study" ? " is-study" : ""}`} style={{ display: "flex", flex: 1, minHeight: 0, gap: 0 }}>
         {/* minHeight: 0 is load-bearing. A flex item will not shrink below its
             content without it, so this column grew to the full height of the
             transcript (5322px inside a 780px notebook), the message list never
@@ -962,40 +978,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             </button>
           </div>
 
-        {/* The five study tools, as a bottom bar beneath the composer.
-
-            They were reachable only behind a header button labelled "Forge",
-            which opened a sheet also titled "Forge" — so Notes, Flashcards,
-            Podcast and Feynman existed but nothing on screen said so, and the
-            notebook read as a chat window with an upload button. The desktop
-            header keeps the single Forge button; a phone has no hover, no rail
-            and no room for a wrong guess. */}
-        <div className="nb-tool-strip nb-mobile-only no-print">
-          {NB_TOOLS.map(({ id, text, label, Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTool(id)}
-              className="btn-press"
-              aria-label={label}
-              style={{
-                background: activeTool === id ? "var(--acc-bg)" : "transparent",
-                border: `1px solid ${activeTool === id ? "var(--acc)" : "var(--border-default)"}`,
-                color: activeTool === id ? "var(--acc)" : "var(--text-secondary)",
-                fontFamily: FONT, cursor: "pointer",
-              }}
-            >
-              {/* Neutral, not the tool's tint. Five tints side by side in the
-                  one persistent row on a phone was the loudest colour in the
-                  app, and none of it told you anything — the labels do that.
-                  The accent marks which tool is open, which is the only state
-                  here worth a colour. */}
-              <Icon size={17} strokeWidth={1.85}
-                    color={activeTool === id ? "var(--acc)" : "currentColor"} />
-              <span>{text}</span>
-            </button>
-          ))}
-        </div>
-
         </div>
       </div>
 
@@ -1004,29 +986,12 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         <ToolModal
           open
           onClose={() => setSheet(null)}
-          title="Forge"
+          title="Study"
           subtitle="Turn these notes into something you can study from"
-          Icon={Hammer}
+          Icon={GraduationCap}
         >
-          {/* A grid, not a list of nine large rows. Same card the generation
-              actions use one level in (TheForge's own picker) — reused here
-              rather than invented fresh, so the whole notebook's tools read
-              as one visual language instead of two different "pick one"
-              styles stacked on top of each other. */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {NB_TOOLS.map(({ id, label, subtitle, Icon, tint }) => (
-              <button
-                key={id}
-                onClick={() => { setSheet(null); setActiveTool(id); }}
-                className="btn-press forge-action-btn"
-                style={{ "--btn-color": tint }}
-              >
-                <div className="forge-action-icon"><Icon size={16} strokeWidth={1.75} /></div>
-                <div style={{ fontSize: 12, fontWeight: 600, fontFamily: FONT, letterSpacing: "-0.01em" }}>{label}</div>
-                <div className="forge-action-desc">{subtitle}</div>
-              </button>
-            ))}
-          </div>
+          <StudyMenu nb={nb} tools={NB_TOOLS} currentUserId={currentUserId}
+            onOpen={(id) => { setSheet(null); setActiveTool(id); }} />
         </ToolModal>
       )}
 

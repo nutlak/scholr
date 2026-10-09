@@ -84,6 +84,8 @@ export function BrainPanel({ nb, members = [], currentUserId, onExplain, onAsk, 
     return {
       ...c, i, score, friend, lines,
       x: CX + Math.cos(a) * NODE_R, y: CY + Math.sin(a) * NODE_R,
+      // Friend dot sits on the side facing the ball, never on the label side.
+      fx: CX + Math.cos(a) * (NODE_R - 11), fy: CY + Math.sin(a) * (NODE_R - 11),
       lx: CX + Math.cos(a) * LABEL_R, ly: CY + Math.sin(a) * LABEL_R,
       anchor: Math.abs(Math.cos(a)) < 0.3 ? "middle" : Math.cos(a) > 0 ? "start" : "end",
       // First baseline: below the node, above it, or centred beside it.
@@ -153,7 +155,7 @@ export function BrainPanel({ nb, members = [], currentUserId, onExplain, onAsk, 
                 <circle cx={n.x} cy={n.y} r={20} style={{ fill: "transparent" }} />
                 <circle cx={n.x} cy={n.y} r={sel?.i === n.i ? 9 : 7}
                   style={{ fill: n.score === undefined ? "var(--bg-base)" : color, stroke: color, strokeWidth: 2, transition: "r .2s" }} />
-                {n.friend && <circle cx={n.x + 8} cy={n.y - 8} r={3.5} style={{ fill: "var(--acc)", stroke: "var(--bg-base)", strokeWidth: 1.5 }} />}
+                {n.friend && <circle cx={n.fx} cy={n.fy} r={3.5} style={{ fill: "var(--acc)", stroke: "var(--bg-base)", strokeWidth: 1.5 }} />}
                 <text x={n.lx} y={n.ly + n.ty} textAnchor={n.anchor}
                   style={{ fill: "var(--text-primary)", fontSize: 17, fontWeight: sel?.i === n.i ? 700 : 500, fontFamily: FONT }}>
                   {n.lines.map((l, k) => <tspan key={k} x={n.lx} dy={k ? 18 : 0}>{l}</tspan>)}

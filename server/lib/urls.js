@@ -1,22 +1,7 @@
-// Public URL builders: share slugs, referral links, unsubscribe pages.
-import { randomBytes } from "crypto";
-
-// ── Public notebook sharing ───────────────────────────────────────────────────
-export function genSlug(n = 8) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const bytes = randomBytes(n);
-  let s = "";
-  for (let i = 0; i < n; i++) s += chars[bytes[i] % chars.length];
-  return s;
-}
-
-export function shareBase() {
-  const o = process.env.CLIENT_ORIGIN;
-  return o && !o.startsWith("http://localhost") ? o : "https://scholr.dev";
-}
-
-// ── Referrals ─────────────────────────────────────────────────────────────────
-export function appOriginForRef() {
+// Public URL builders: the app origin and unsubscribe pages.
+// Where links in emails and PIN invites point: the deployed client, never
+// localhost.
+export function appOrigin() {
   const o = process.env.CLIENT_ORIGIN;
   return o && !o.startsWith("http://localhost") ? o : "https://scholr.dev";
 }

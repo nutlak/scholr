@@ -34,10 +34,10 @@ export function needsSignupCompletion(user) {
   return meta.provider !== "email" && !meta.age_verified;
 }
 
-// Consent, birthdate, welcome email, follow-up emails, referral credit.
+// Consent, birthdate, welcome email, follow-up emails.
 // All best-effort past the consent record: a Resend hiccup or a missing
 // migration must never fail a signup that already exists.
-export async function welcomeNewAccount({ uid, email, name, dateOfBirth, ref }) {
+export async function welcomeNewAccount({ uid, email, name, dateOfBirth }) {
   await recordConsent(uid);
   await supabase.from("profiles").upsert(
     { user_id: uid, date_of_birth: dateOfBirth, age_verified_at: new Date().toISOString() },
@@ -56,20 +56,4 @@ export async function welcomeNewAccount({ uid, email, name, dateOfBirth, ref }) 
     ]);
   } catch (e) { console.error("[onboarding enqueue]", e.message); }
 
-  // Referral attribution: signup came via ?ref=<referrerId> or /@username.
-  ref = String(ref ?? "").trim();
-  if (!ref || ref === uid) return;
-  try {
-    const referred = email.toLowerCase();
-    await supabase.from("profiles").upsert({ user_id: uid, referred_by: ref }, { onConflict: "user_id" });
-    const { data: existing } = await supabase
-      .from("referrals").select("id")
-      .eq("referrer_id", ref).eq("referred_email", referred)
-      .limit(1).maybeSingle();
-    if (existing) {
-      await supabase.from("referrals").update({ status: "signed_up", referred_user_id: uid }).eq("id", existing.id);
-    } else {
-      await supabase.from("referrals").insert({ referrer_id: ref, referred_email: referred, referred_user_id: uid, status: "signed_up" });
-    }
-  } catch (e) { console.error("[referral capture]", e.message); }
 }

@@ -1,117 +1,16 @@
-// Notebooks: CRUD, membership, messages, notes, images, sharing and invites.
+// Notebooks: CRUD, membership, messages, notes, sharing and invites.
 import { Router } from "express";
 import { trackEvent } from "../lib/analytics.js";
 import { requireAuth, requireMember } from "../lib/auth.js";
 import { logUserActivity } from "../lib/presence.js";
 import { supabase } from "../lib/supabase.js";
 import { uploadSingleFile } from "../lib/upload.js";
-import { genSlug, shareBase } from "../lib/urls.js";
 import { checkNotebookLimit } from "../lib/usage.js";
 import { blockedUserIds, isOnline, orderedPair, pushNotification, resolveUserBrief } from "../lib/users.js";
 import { sendInviteEmail } from "../email.js";
 import { removeNotebookImageFiles } from "../lib/notebooks.js";
 
 export const router = Router();
-
-// POST /api/notebooks/:id/images — save a generated image to the notebook.
-// REQUIRES (one-time setup in Supabase before this works):
-//   • storage bucket "notebook-images" (public or private)
-//   • table notebook_images (
-//       id            uuid primary key default gen_random_uuid(),
-//       notebook_id   uuid references notebooks(id) on delete cascade,
-//       user_id       uuid references auth.users(id) on delete cascade,
-//       storage_path  text,
-//       created_at    timestamptz default now()
-//     )
-// See supabase/migrations/012_notebook_images.sql.
-router.post("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res) => {
-  const { image } = req.body ?? {};
-  if (typeof image !== "string" || image.length < 100) {
-    return res.status(400).json({ error: "image (base64) is required" });
-  }
-
-  // Decode base64 → Buffer. Strip data-URI prefix if the client sent one.
-  const b64 = image.replace(/^data:image\/\w+;base64,/, "");
-  let buffer;
-  try {
-    buffer = Buffer.from(b64, "base64");
-  } catch {
-    return res.status(400).json({ error: "image is not valid base64" });
-  }
-  if (buffer.length === 0) {
-    return res.status(400).json({ error: "image decoded to empty buffer" });
-  }
-
-  const storagePath = `${req.user.id}/${req.params.id}/${Date.now()}.png`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("notebook-images")
-    .upload(storagePath, buffer, { contentType: "image/png" });
-
-  if (uploadError) {
-    console.error("saveImage: storage upload failed:", uploadError);
-    return res.status(500).json({ error: uploadError.message });
-  }
-
-  const { error: insertError } = await supabase
-    .from("notebook_images")
-    .insert({
-      notebook_id:  req.params.id,
-      user_id:      req.user.id,
-      storage_path: storagePath,
-    });
-
-  if (insertError) {
-    console.error("saveImage: notebook_images insert failed:", insertError);
-    return res.status(500).json({ error: insertError.message });
-  }
-
-  // Try a public URL first; fall back to a signed URL for private buckets.
-  const { data: pub } = supabase.storage.from("notebook-images").getPublicUrl(storagePath);
-  let url = pub?.publicUrl ?? null;
-  if (!url) {
-    const { data: signed, error: signError } = await supabase.storage
-      .from("notebook-images")
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
-    if (signError) {
-      console.error("saveImage: signed URL failed:", signError);
-      return res.status(500).json({ error: signError.message });
-    }
-    url = signed?.signedUrl ?? null;
-  }
-
-  res.status(201).json({ url });
-});
-
-// GET /api/notebooks/:id/images — list saved images for a notebook (newest first).
-router.get("/api/notebooks/:id/images", requireAuth, requireMember, async (req, res) => {
-  const { data: rows, error } = await supabase
-    .from("notebook_images")
-    .select("id, storage_path, created_at")
-    .eq("notebook_id", req.params.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("listImages: query failed:", error);
-    return res.status(500).json({ error: error.message });
-  }
-
-  // Resolve each storage_path to a URL. Public bucket → public URL; otherwise
-  // fall back to a 7-day signed URL. Mirrors the POST handler.
-  const images = await Promise.all((rows ?? []).map(async (row) => {
-    const { data: pub } = supabase.storage.from("notebook-images").getPublicUrl(row.storage_path);
-    let url = pub?.publicUrl ?? null;
-    if (!url) {
-      const { data: signed } = await supabase.storage
-        .from("notebook-images")
-        .createSignedUrl(row.storage_path, 60 * 60 * 24 * 7);
-      url = signed?.signedUrl ?? null;
-    }
-    return { url, created_at: row.created_at };
-  }));
-
-  res.json(images.filter(img => img.url));
-});
 
 // POST /api/notebooks/:id/invite-friend — add an existing friend directly as a
 // notebook member (no email step). Requires: caller is a member of the notebook
@@ -202,77 +101,6 @@ router.get("/api/notebooks", requireAuth, async (req, res) => {
     notes: undefined,
   }));
 
-  res.json(await attachMembers(notebooks));
-});
-
-// GET /api/notebooks/shared — notebooks the user was invited to (member, not owner)
-router.get("/api/notebooks/shared", requireAuth, async (req, res) => {
-  console.log(`[shared] listSharedNotebooks: user=${req.user.id}`);
-  const { data, error } = await supabase
-    .from("notebook_members")
-    .select(`
-      role,
-      notebooks (
-        id, title, topic, created_by, created_at, due_date, status, assessment_type, class_id,
-        notes (count)
-      )
-    `)
-    .eq("user_id", req.user.id)
-    .eq("role", "member");
-
-  console.log(`[shared] query result: rows=${data?.length ?? 0} error=${error?.message ?? "none"}`);
-  if (error) return res.status(500).json({ error: error.message });
-
-  const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
-    ...nb,
-    notes_count: nb.notes[0]?.count ?? 0,
-    role,
-    notes: undefined,
-  }));
-
-  console.log(`[shared] returning ${notebooks.length} shared notebooks for user=${req.user.id}`);
-  res.json(await attachMembers(notebooks));
-});
-
-// GET /api/notebooks/owned — notebooks the calling user created
-router.get("/api/notebooks/owned", requireAuth, async (req, res) => {
-  // Query notebooks directly by created_by to avoid join embedding issues
-  const { data, error } = await supabase
-    .from("notebooks")
-    .select("id, title, topic, created_by, created_at, due_date, status, assessment_type, class_id, notes(count)")
-    .eq("created_by", req.user.id);
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  const notebooks = (data ?? []).map(nb => ({
-    ...nb,
-    notes_count: nb.notes[0]?.count ?? 0,
-    role: "owner",
-    notes: undefined,
-  }));
-  res.json(await attachMembers(notebooks));
-});
-
-// GET /api/notebooks/starred — notebooks the calling user has starred
-router.get("/api/notebooks/starred", requireAuth, async (req, res) => {
-  const { data, error } = await supabase
-    .from("starred_notebooks")
-    .select(`
-      notebook_id,
-      notebooks (
-        id, title, topic, created_by, created_at, due_date, status, assessment_type, class_id,
-        notes (count)
-      )
-    `)
-    .eq("user_id", req.user.id);
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  const notebooks = (data ?? []).map(({ notebooks: nb }) => ({
-    ...nb,
-    notes_count: nb.notes[0]?.count ?? 0,
-    notes: undefined,
-  }));
   res.json(await attachMembers(notebooks));
 });
 
@@ -468,30 +296,6 @@ router.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (re
   }
 });
 
-// POST /api/notebooks/:id/star — toggle star for the calling user
-router.post("/api/notebooks/:id/star", requireAuth, requireMember, async (req, res) => {
-  const { data: existing } = await supabase
-    .from("starred_notebooks")
-    .select("id")
-    .eq("user_id", req.user.id)
-    .eq("notebook_id", req.params.id)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase.from("starred_notebooks").delete()
-      .eq("user_id", req.user.id)
-      .eq("notebook_id", req.params.id);
-    return res.json({ starred: false });
-  }
-
-  const { error } = await supabase.from("starred_notebooks").insert({
-    user_id: req.user.id,
-    notebook_id: req.params.id,
-  });
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ starred: true });
-});
-
 // DELETE /api/notebooks/:id — owner-only hard delete
 router.delete("/api/notebooks/:id", requireAuth, requireMember, async (req, res) => {
   if (req.membership.role !== "owner")
@@ -544,7 +348,7 @@ router.post("/api/notebooks/:id/invite", requireAuth, requireMember, async (req,
 router.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, res) => {
   const { data, error } = await supabase
     .from("notes")
-    .select("id, title, content, file_url, created_at")
+    .select("id, title, content, file_url, created_at, uploader_id")
     .eq("notebook_id", req.params.id)  // no user_id filter — members see every note
     .order("created_at", { ascending: false });
 
@@ -554,6 +358,22 @@ router.get("/api/notebooks/:id/notes", requireAuth, requireMember, async (req, r
   }
   console.log(`listNotes: notebook=${req.params.id} role=${req.membership.role} found=${data?.length ?? 0} notes`);
   res.json(data ?? []);
+});
+
+// DELETE /api/notebooks/:id/notes/:noteId — remove a source. The person who
+// added it, or the unit's owner; anyone else in the group gets a 403.
+router.delete("/api/notebooks/:id/notes/:noteId", requireAuth, requireMember, async (req, res) => {
+  const { data: note } = await supabase
+    .from("notes").select("id, uploader_id")
+    .eq("id", req.params.noteId).eq("notebook_id", req.params.id)
+    .maybeSingle();
+  if (!note) return res.status(404).json({ error: "Source not found" });
+  if (note.uploader_id !== req.user.id && req.membership.role !== "owner") {
+    return res.status(403).json({ error: "Only whoever added this source, or the unit's owner, can remove it." });
+  }
+  const { error } = await supabase.from("notes").delete().eq("id", note.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
 });
 
 // POST /api/notebooks/:id/notes — upload a note (text and/or file)
@@ -733,57 +553,6 @@ router.get("/api/invite/:token", async (req, res) => {
   });
 });
 
-// POST /api/notebooks/:id/share — make public (owner only). Create-or-return slug.
-router.post("/api/notebooks/:id/share", requireAuth, requireMember, async (req, res) => {
-  if (req.membership.role !== "owner") return res.status(403).json({ error: "Only the notebook owner can share it." });
-  const { data: nb } = await supabase.from("notebooks").select("is_public, public_slug").eq("id", req.params.id).maybeSingle();
-  let slug = (nb?.is_public && nb?.public_slug) ? nb.public_slug : null;
-  if (!slug) {
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const candidate = genSlug(8);
-      const { error } = await supabase.from("notebooks").update({ is_public: true, public_slug: candidate }).eq("id", req.params.id);
-      if (!error) { slug = candidate; break; }
-    }
-    if (!slug) return res.status(500).json({ error: "Could not generate a share link. Please try again." });
-  }
-  trackEvent(req.user.id, "notebook_shared", { notebookId: req.params.id });
-  res.json({ slug, shareUrl: `${shareBase()}/s/${slug}` });
-});
-
-// DELETE /api/notebooks/:id/share — stop sharing (owner only).
-router.delete("/api/notebooks/:id/share", requireAuth, requireMember, async (req, res) => {
-  if (req.membership.role !== "owner") return res.status(403).json({ error: "Only the notebook owner can stop sharing." });
-  const { error } = await supabase.from("notebooks").update({ is_public: false, public_slug: null }).eq("id", req.params.id);
-  if (error) return res.status(500).json({ error: error.message });
-  res.json({ success: true });
-});
-
-// GET /api/share/:slug — PUBLIC read-only view (no auth). Never leaks the email.
-router.get("/api/share/:slug", async (req, res) => {
-  const { data: nb } = await supabase
-    .from("notebooks")
-    .select("id, title, topic, created_by")
-    .eq("public_slug", req.params.slug)
-    .eq("is_public", true)
-    .maybeSingle();
-  if (!nb) return res.status(404).json({ error: "This shared notebook doesn't exist or is no longer public." });
-
-  const { data: notes } = await supabase
-    .from("notes")
-    .select("title, content, created_at")
-    .eq("notebook_id", nb.id)
-    .order("created_at", { ascending: true });
-
-  let ownerName = "A Scholr student";
-  try {
-    const { data: u } = await supabase.auth.admin.getUserById(nb.created_by);
-    // Display name only — never the email (not even the local-part) on a public page.
-    ownerName = u?.user?.user_metadata?.full_name?.trim() || ownerName;
-  } catch { /* best-effort; never expose details */ }
-
-  res.json({ title: nb.title, topic: nb.topic ?? null, ownerName, notes: notes ?? [] });
-});
-
 // POST /api/invite/:token/accept — authenticated: join the notebook as member
 router.post("/api/invite/:token/accept", requireAuth, async (req, res) => {
   const { data: invite, error } = await supabase
@@ -846,19 +615,3 @@ router.patch("/api/notebooks/:id/assessment-type", requireAuth, requireMember, a
   res.json(data);
 });
 
-// PATCH /api/notebooks/:id/status — body: { status }
-router.patch("/api/notebooks/:id/status", requireAuth, requireMember, async (req, res) => {
-  const { status } = req.body;
-  const VALID = ["in_progress", "done", "need_help"];
-  if (!VALID.includes(status)) {
-    return res.status(400).json({ error: `status must be one of: ${VALID.join(", ")}` });
-  }
-  const { data, error } = await supabase
-    .from("notebooks")
-    .update({ status })
-    .eq("id", req.params.id)
-    .select()
-    .single();
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
-});

@@ -143,19 +143,6 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
   }
 }
 
-/* Narrow screens drop the optional readouts rather than wrapping the strip,
-   which would change its height and desync the sidebar offset. The full strip
-   needs ~820px: that's iPad 11" portrait, where it fits with room to spare.
-   iPad mini portrait (744) is the one that clips, and it gets the desktop
-   layout, so this threshold is wider than the mobile boundary on purpose. */
-@media (max-width: 819px) {
-  .hud-bar .hud-opt { display: none; }
-  /* Without its "Online" label the presence dot is a bare colour between two
-     separators, so it goes with the label rather than sitting there alone. The
-     clock stays — unlike on a phone there's no OS status bar duplicating it. */
-  .hud-bar .hud-seg-presence { display: none; }
-}
-
 @media (max-width: 699px) {
   /* Inside a notebook the strip is 36px of ambient readouts sitting on top of
      the chat, which is the screen that needs the height most — and the streak
@@ -222,11 +209,6 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
     height: calc(36px + env(safe-area-inset-top));
   }
   .hud-num { font-size: 12.5px; }
-  /* Only the two readouts that change what a student does next survive here:
-     the streak and what's due. The clock duplicates the phone's own status
-     bar, and presence/plan are ambient. */
-  .hud-bar .hud-seg-presence,
-  .hud-bar .hud-seg-clock { display: none; }
 
   /* One slot, two labels stacked in the same grid cell, so the strip's width
      never jumps mid-crossfade. Without the brand beside it the separator has
@@ -284,9 +266,6 @@ html:not([data-theme="light"]) [data-hud-void] { background: transparent !import
 .hud-seg + .hud-seg::before {
   content: "::"; color: rgba(167, 139, 250, 0.25); margin: 0 12px; flex: none;
 }
-/* The spacer ends the run — the segments after it start a new group. */
-.hud-spacer + .hud-seg::before { content: none; }
-.hud-spacer { flex: 1 1 auto; }
 /* Numbers stay mono so they stop jittering as the clock ticks. */
 /* Instrument numerals. The strip is the one readout in the app, and a readout
    is the place monospace earns its keep: tabular figures do not jitter as the

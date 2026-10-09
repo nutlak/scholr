@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useNarrow } from "../lib/breakpoints.js";
 
 /* Fleet-console status strip: identity on the left, live telemetry on the
@@ -9,21 +8,10 @@ import { useNarrow } from "../lib/breakpoints.js";
    between adjacent segments, so hiding a segment on a narrow screen can't
    strand its separator. The strip is nowrap and overflow:hidden — at 390px
    it was 456px wide and silently cut the clock in half. */
-export function HudBar({ view = "", streak = 0, due = 0, classes = 0, tier = "free" }) {
-  const [clock, setClock] = useState(() => new Date());
+export function HudBar({ view = "", streak = 0, due = 0 }) {
   // The strip is nowrap and overflow:hidden, so anything too wide is silently
-  // cut rather than wrapped. Adding the collapsing view title spent the last of
-  // the room at 390px: content came to 396px and "cards to review" lost its
-  // tail. "to review" says the same thing in 55 fewer pixels — the word the
-  // number needs is the verb, not the noun.
+  // cut rather than wrapped; "to review" is the short form for phones.
   const narrow = useNarrow();
-
-  useEffect(() => {
-    const t = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const time = clock.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
 
   return (
     <div className="hud-bar" role="status" aria-label="Study status">
@@ -38,26 +26,17 @@ export function HudBar({ view = "", streak = 0, due = 0, classes = 0, tier = "fr
         <span className="hud-view-title"><span className="slash">/</span>{view}</span>
       </span>
 
-      {/* Presence, the plan and the clock are desk furniture: the phone already
-          shows the time, and neither of the others changes what you'd tap. */}
-      <span className="hud-seg hud-seg-presence">
-        <i className="hud-dot online" aria-hidden="true" />
-        <span className="hud-opt">Online</span>
-      </span>
-
+      {/* Only what changes what you'd do next. "Online", the class count, the
+          plan and a ticking clock were decoration (and the clock re-rendered
+          the strip every second). */}
       <span className="hud-seg">Streak <b className="hud-num">{streak}</b> {streak === 1 ? "day" : "days"}</span>
 
-      <span className="hud-seg">
-        <b className={due > 0 ? "hud-num warn" : "hud-num"}>{due > 99 ? "99+" : due}</b>{" "}
-        {narrow ? "to review" : `${due === 1 ? "card" : "cards"} to review`}
-      </span>
-
-      <span className="hud-seg hud-opt"><b className="hud-num">{classes}</b> {classes === 1 ? "class" : "classes"}</span>
-
-      <span className="hud-spacer" />
-
-      <span className="hud-seg hud-opt">Plan <b className="hud-num">{tier}</b></span>
-      <span className="hud-seg hud-seg-clock"><span className="hud-num">{time}</span></span>
+      {due > 0 && (
+        <span className="hud-seg">
+          <b className="hud-num warn">{due > 99 ? "99+" : due}</b>{" "}
+          {narrow ? "to review" : `${due === 1 ? "card" : "cards"} to review`}
+        </span>
+      )}
     </div>
   );
 }

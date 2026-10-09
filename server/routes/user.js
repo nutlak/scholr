@@ -1,12 +1,10 @@
-// Profile, onboarding, streaks, terms, subscription and referrals.
+// Profile, onboarding, streaks, terms and subscription.
 import { Router } from "express";
 import { recordConsent, trackEvent } from "../lib/analytics.js";
 import { requireAuth } from "../lib/auth.js";
 import { WELCOME_NOTE } from "../lib/notebooks.js";
 import { supabase } from "../lib/supabase.js";
-import { appOriginForRef } from "../lib/urls.js";
 import { FREE_MSG_LIMIT, countOwnedNotebooks, getUserTier, resetUsageIfNeeded } from "../lib/usage.js";
-import { sendReferralEmail } from "../email.js";
 
 export const router = Router();
 
@@ -124,17 +122,6 @@ router.post("/api/user/streak", requireAuth, async (req, res) => {
   res.json({ longest_streak: longest });
 });
 
-// Record that a streak-milestone celebration was shown (idempotent).
-router.post("/api/user/streak-milestone", requireAuth, async (req, res) => {
-  const day = parseInt(req.body?.day, 10);
-  if (!day) return res.status(400).json({ error: "invalid day" });
-  const { data } = await supabase.from("profiles").select("streak_milestones_shown").eq("user_id", req.user.id).maybeSingle();
-  const shown = new Set((data?.streak_milestones_shown ?? []).map(String));
-  shown.add(String(day));
-  await supabase.from("profiles").upsert({ user_id: req.user.id, streak_milestones_shown: [...shown] }, { onConflict: "user_id" });
-  res.json({ streak_milestones_shown: [...shown] });
-});
-
 // Record which limit triggered an upgrade prompt (analytics: what converts).
 router.post("/api/user/upgrade-trigger", requireAuth, async (req, res) => {
   const trigger = String(req.body?.trigger ?? "").slice(0, 64);
@@ -144,48 +131,6 @@ router.post("/api/user/upgrade-trigger", requireAuth, async (req, res) => {
     trackEvent(req.user.id, "upgrade_modal_viewed", { trigger });
   } catch (e) { console.error("[upgrade-trigger]", e.message); }
   res.json({ ok: true });
-});
-
-router.post("/api/referral/invite", requireAuth, async (req, res) => {
-  const referrerUserId = req.user.id;
-  const referredEmail = String(req.body?.referredEmail ?? "").trim().toLowerCase();
-  if (!referredEmail || !referredEmail.includes("@")) return res.status(400).json({ error: "A valid email is required." });
-  try {
-    await supabase.from("referrals").insert({ referrer_id: referrerUserId, referred_email: referredEmail, status: "pending" });
-    const referrerName = req.user.user_metadata?.full_name?.split(" ")[0] || req.user.email?.split("@")[0] || "A friend";
-    await sendReferralEmail(referredEmail, referrerName, referrerUserId);
-    trackEvent(referrerUserId, "referral_sent", { referredEmail });
-    res.json({ success: true });
-  } catch (err) {
-    console.error("[referral/invite]", err.message);
-    res.status(500).json({ error: "Failed to send invite." });
-  }
-});
-
-router.get("/api/referral/stats", requireAuth, async (req, res) => {
-  const userId = req.user.id;
-  const uuidLink = `${appOriginForRef()}?ref=${userId}`;
-  try {
-    const { data: prof } = await supabase
-      .from("profiles").select("username").eq("user_id", userId).maybeSingle();
-    const username = prof?.username ?? null;
-    // The uuid form still works forever (old links are out there), but we only
-    // ever *show* it when there's no username to use instead.
-    const link = username ? `${appOriginForRef()}/@${username}` : uuidLink;
-    const [invitedRes, signedRes] = await Promise.all([
-      supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId),
-      supabase.from("referrals").select("*", { count: "exact", head: true }).eq("referrer_id", userId).eq("status", "signed_up"),
-    ]);
-    res.json({
-      referralLink: link,
-      username,
-      invited: invitedRes.count ?? 0,
-      signedUp: signedRes.count ?? 0,
-    });
-  } catch (err) {
-    console.error("[referral/stats]", err.message);
-    res.json({ referralLink: uuidLink, username: null, invited: 0, signedUp: 0 });
-  }
 });
 
 // POST /api/user/accept-terms — record consent for an existing logged-in user

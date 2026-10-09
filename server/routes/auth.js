@@ -122,7 +122,7 @@ router.post("/api/auth/verify-otp", otpIpLimiter, otpVerifyLimiter, async (req, 
     }
 
     if (created?.user?.id) {
-      await welcomeNewAccount({ uid: created.user.id, email, name: fullName, dateOfBirth, ref: req.body?.ref });
+      await welcomeNewAccount({ uid: created.user.id, email, name: fullName, dateOfBirth });
     }
 
     await supabase.from("verification_codes").update({ used: true }).eq("id", row.id);
@@ -174,7 +174,7 @@ router.post("/api/auth/complete-signup", requireAuth, async (req, res) => {
   }
   const meta = user.user_metadata ?? {};
   await welcomeNewAccount({
-    uid: user.id, email: user.email, name: meta.full_name ?? meta.name, dateOfBirth, ref: req.body?.ref,
+    uid: user.id, email: user.email, name: meta.full_name ?? meta.name, dateOfBirth,
   });
   res.json({ ok: true });
 });

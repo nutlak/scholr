@@ -5,8 +5,7 @@ import { api } from "../../api.js";
 import { useServerFeature } from "../../lib/useServerFeature.js";
 
 // Settings > Notifications-adjacent section for the Squad plan: one
-// subscription, Pro for up to 5 people. Mirrors ReferralSection's
-// self-contained load-on-mount pattern.
+// subscription, Pro for up to 5 people. Self-contained: loads on mount.
 export function SquadSection() {
   const [squad, setSquad] = useState(undefined); // undefined = loading, null = none
   const [loadFailed, setLoadFailed] = useState(false);
@@ -53,8 +52,7 @@ export function SquadSection() {
   const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, marginLeft: 16 };
 
   // Hold the space while loading rather than returning null — the section used
-  // to pop in and shove everything below it down. ReferralSection already does
-  // this with its "loading…" field.
+  // to pop in and shove everything below it down.
   // Say so, rather than spinning forever or pitching a squad they may own.
   if (loadFailed) return (
     <>

@@ -89,32 +89,6 @@ router.post("/api/me/heartbeat", requireAuth, async (req, res) => {
 });
 
 // GET /api/me/username — current user's username (null if not set yet)
-// GET /api/u/:username — PUBLIC. Resolves a username to the user id a
-// referral link needs, so invites can be `scholr.dev/@noah` instead of
-// `scholr.dev?ref=<uuid>`. A link nobody can say out loud is a link nobody
-// shares, and word of mouth is how this app spreads.
-//
-// Returns only the display name — the same thing any friend list already
-// shows — and nothing that isn't needed to render "Noah invited you".
-router.get("/api/u/:username", async (req, res) => {
-  const username = String(req.params.username ?? "").trim().toLowerCase();
-  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    return res.status(404).json({ error: "not_found" });
-  }
-  const { data } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("username", username)
-    .maybeSingle();
-  if (!data) return res.status(404).json({ error: "not_found" });
-
-  const { data: u } = await supabase.auth.admin.getUserById(data.user_id);
-  res.json({
-    userId: data.user_id,
-    name: u?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null,
-  });
-});
-
 router.get("/api/me/username", requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from("profiles")

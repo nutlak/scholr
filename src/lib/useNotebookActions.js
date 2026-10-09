@@ -15,10 +15,6 @@ import { getDisplayName } from "./format.js";
 export function useNotebookActions({
   user, activeNb,
   notebooks, setNotebooks,
-  ownedNotebooks, setOwnedNotebooks,
-  sharedNotebooks, setSharedNotebooks,
-  starredNotebooks, setStarredNotebooks,
-  starredIds, setStarredIds,
   classes, setClasses,
   classUnitsCache, setClassUnitsCache,
   expandedClassId, setExpandedClassId,
@@ -34,9 +30,6 @@ export function useNotebookActions({
   function patchNotebookEverywhere(notebookId, patch) {
     const apply = list => list.map(n => n.id === notebookId ? { ...n, ...patch } : n);
     setNotebooks(apply);
-    setOwnedNotebooks(apply);
-    setSharedNotebooks(apply);
-    setStarredNotebooks(apply);
     setClassUnitsCache(prev => {
       const next = { ...prev };
       for (const cid of Object.keys(next)) {
@@ -47,8 +40,8 @@ export function useNotebookActions({
     setActiveNb(curr => curr && curr.id === notebookId ? { ...curr, ...patch } : curr);
   }
 
-  // Remove notebook(s) from EVERY place notebooks are stored: all list views,
-  // the starred set, the per-class unit cache, and the currently-open notebook.
+  // Remove notebook(s) from every place notebooks are stored: the list, the
+  // per-class unit cache, and the currently-open notebook.
   // Deleting a notebook takes its notes with it, so this is only reached from
   // an explicit confirmation naming the notebook.
   async function handleDeleteNotebook(nb) {
@@ -72,15 +65,6 @@ export function useNotebookActions({
     if (!idSet || idSet.size === 0) return;
     const drop = list => list.filter(n => !idSet.has(n.id));
     setNotebooks(drop);
-    setOwnedNotebooks(drop);
-    setSharedNotebooks(drop);
-    setStarredNotebooks(drop);
-    setStarredIds(prev => {
-      let changed = false;
-      const next = new Set(prev);
-      for (const id of idSet) if (next.delete(id)) changed = true;
-      return changed ? next : prev;
-    });
     setClassUnitsCache(prev => {
       const next = { ...prev };
       for (const cid of Object.keys(next)) {
@@ -89,12 +73,6 @@ export function useNotebookActions({
       return next;
     });
     setActiveNb(curr => (curr && idSet.has(curr.id) ? null : curr));
-  }
-
-  async function handleSetStatus(nb, status) {
-    patchNotebookEverywhere(nb.id, { status });
-    try { await api.updateNotebookStatus(nb.id, status); }
-    catch (err) { console.error(err); setToast({ text: "Couldn't update status", tone: "error" }); setTimeout(() => setToast(""), 2500); }
   }
 
   async function handleSetDueDate(nb, dueDate) {
@@ -110,19 +88,18 @@ export function useNotebookActions({
   }
 
   // Open a notebook by id (from a notification). Look across loaded lists first;
-  // if not found (e.g. just invited, not yet in any list), refresh shared and retry.
+  // if not found (e.g. just invited, not yet in the list), refresh and retry.
   async function openNotebookById(notebookId) {
     setShowMobileFriends(false);
-    const found = [...notebooks, ...sharedNotebooks, ...ownedNotebooks, ...starredNotebooks]
-      .find(n => n.id === notebookId);
+    const found = notebooks.find(n => n.id === notebookId);
     if (found) { setActiveNb(found); setActiveView("dashboard"); return; }
     try {
-      const shared = await api.listSharedNotebooks(getDisplayName(user));
-      setSharedNotebooks(shared);
-      const nb = shared.find(n => n.id === notebookId);
+      const all = await api.listNotebooks(getDisplayName(user));
+      setNotebooks(all);
+      const nb = all.find(n => n.id === notebookId);
       if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
-      else { setActiveView("shared"); }
-    } catch { setActiveView("shared"); }
+      else { setActiveView("units"); }
+    } catch { setActiveView("units"); }
   }
 
   async function handleToggleClass(classId) {
@@ -278,34 +255,19 @@ export function useNotebookActions({
   }
 
   // When opening a unit from a class card, attach the class's color so
-  // NotebookView/Forge can tint accordingly. For units opened from My Notes /
-  // Shared / Starred views we fall back to the deterministic per-notebook tint.
+  // NotebookView/Forge can tint accordingly. Units opened from the Units list
+  // fall back to the deterministic per-notebook tint.
   function openUnitWithClassColor(unit, classColor) {
     setActiveNb(classColor ? { ...unit, color: classColor } : unit);
-  }
-
-  async function handleToggleStar(nb) {
-    const isStarred = starredIds.has(nb.id);
-    setStarredIds(prev => { const next = new Set(prev); isStarred ? next.delete(nb.id) : next.add(nb.id); return next; });
-    setStarredNotebooks(prev => isStarred ? prev.filter(n => n.id !== nb.id) : [...prev, nb]);
-    try {
-      const { starred } = await api.toggleStar(nb.id);
-      setStarredIds(prev => { const next = new Set(prev); starred ? next.add(nb.id) : next.delete(nb.id); return next; });
-      if (!starred) setStarredNotebooks(prev => prev.filter(n => n.id !== nb.id));
-    } catch (err) {
-      console.error("star toggle failed:", err);
-      setStarredIds(prev => { const next = new Set(prev); isStarred ? next.add(nb.id) : next.delete(nb.id); return next; });
-      setStarredNotebooks(prev => isStarred ? [...prev, nb] : prev.filter(n => n.id !== nb.id));
-    }
   }
 
   async function handleDeleteClass(classId) {
     await api.deleteClass(classId);
     // The server cascades the class's notebooks → drop every one of them from
-    // all client-side notebook state (lists, starred, open notebook), not just
+    // all client-side notebook state (list, cache, open notebook), not just
     // the class + its unit cache.
     const removed = new Set();
-    for (const list of [notebooks, ownedNotebooks, sharedNotebooks, starredNotebooks, ...Object.values(classUnitsCache)]) {
+    for (const list of [notebooks, ...Object.values(classUnitsCache)]) {
       for (const n of (list || [])) if (n && n.class_id === classId) removed.add(n.id);
     }
     setClasses(prev => prev.filter(c => c.id !== classId));
@@ -320,10 +282,10 @@ export function useNotebookActions({
   return {
     deletingNb, syllabusClassId, setSyllabusClassId,
     patchNotebookEverywhere, removeNotebooksByIds, handleDeleteNotebook,
-    handleSetStatus, handleSetDueDate, handleSetAssessmentType,
+    handleSetDueDate, handleSetAssessmentType,
     openNotebookById, handleToggleClass, openClassSyllabus,
     handleCreateClass, handleImportSyllabus, handleImportSyllabusIntoClass,
     handleChangeClassColor, handleReorderClasses, handleCreateUnit,
-    openUnitWithClassColor, handleToggleStar, handleDeleteClass,
+    openUnitWithClassColor, handleDeleteClass,
   };
 }

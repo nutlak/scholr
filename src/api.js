@@ -104,22 +104,6 @@ export const api = {
     return data.map(nb => shapeNotebook(nb, displayName));
   },
 
-  async listOwnedNotebooks(displayName) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/owned`, { headers });
-    if (!res.ok) throw await readError(res);
-    const data = await res.json();
-    return data.map(nb => shapeNotebook(nb, displayName));
-  },
-
-  async listSharedNotebooks(displayName) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/shared`, { headers });
-    if (!res.ok) throw await readError(res);
-    const data = await res.json();
-    return data.map(nb => shapeNotebook(nb, displayName));
-  },
-
   async createNotebook(title, topic, displayName) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks`, {
@@ -304,6 +288,12 @@ export const api = {
     return res.json(); // [{ user_id, role, first_name, display_name, username, lastActive, isOnline }]
   },
 
+  async deleteNote(notebookId, noteId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes/${noteId}`, { method: "DELETE", headers });
+    if (!res.ok) throw await readError(res);
+  },
+
   async listNotes(notebookId) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/notes`, { headers });
@@ -329,26 +319,6 @@ export const api = {
       throw new Error(err.error ?? "Failed to upload note");
     }
     return res.json();
-  },
-
-  async getStarredNotebooks(displayName) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/starred`, { headers });
-    if (!res.ok) throw await readError(res);
-    const data = await res.json();
-    return data.map(nb => shapeNotebook(nb, displayName));
-  },
-
-  async toggleStar(notebookId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/star`, {
-      method: "POST", headers,
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to toggle star");
-    }
-    return res.json(); // { starred: true/false }
   },
 
   async getMessages(notebookId) {
@@ -464,39 +434,6 @@ export const api = {
     return data;
   },
 
-  async getUnitNotes(notebookId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/unit-notes`, { headers });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to load notes");
-    }
-    return res.json();
-  },
-
-  async addUnitNote(notebookId, content) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/unit-notes`, {
-      method: "POST", headers, body: JSON.stringify({ content }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to add note");
-    }
-    return res.json();
-  },
-
-  async deleteUnitNote(noteId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/unit-notes/${noteId}`, {
-      method: "DELETE", headers,
-    });
-    if (res.status !== 204) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to delete note");
-    }
-  },
-
   // ── Activity heatmap ────────────────────────────────────────────────
   async getActivityHeatmap() {
     const headers = await authHeaders();
@@ -523,82 +460,6 @@ export const api = {
     });
     if (!res.ok) throw await readError(res);
     return res.json(); // { tracked: true }
-  },
-
-  // ── Reactions ───────────────────────────────────────────────────────
-  async addReaction(unitNoteId, emoji) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/react`, {
-      method: "POST", headers, body: JSON.stringify({ emoji }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to react");
-    }
-    return res.json();
-  },
-
-  async removeReaction(unitNoteId, emoji) {
-    const headers = await authHeaders();
-    const res = await fetch(
-      `${API_URL}/api/unit-notes/${unitNoteId}/react/${encodeURIComponent(emoji)}`,
-      { method: "DELETE", headers }
-    );
-    if (res.status !== 204) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to remove reaction");
-    }
-  },
-
-  async getNoteReactions(unitNoteId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/reactions`, { headers });
-    if (!res.ok) throw await readError(res);
-    return res.json();
-  },
-
-  // ── Comments ────────────────────────────────────────────────────────
-  async addNoteComment(unitNoteId, content) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, {
-      method: "POST", headers, body: JSON.stringify({ content }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to add comment");
-    }
-    return res.json();
-  },
-
-  async getNoteComments(unitNoteId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/unit-notes/${unitNoteId}/comments`, { headers });
-    if (!res.ok) throw await readError(res);
-    return res.json();
-  },
-
-  async deleteNoteComment(commentId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/note-comments/${commentId}`, {
-      method: "DELETE", headers,
-    });
-    if (res.status !== 204) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to delete comment");
-    }
-  },
-
-  // ── Status ─────────────────────────────────────────────────────────
-  async updateNotebookStatus(notebookId, status) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/status`, {
-      method: "PATCH", headers, body: JSON.stringify({ status }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to update status");
-    }
-    return res.json();
   },
 
   async updateNotebookDueDate(notebookId, dueDate) {
@@ -775,10 +636,10 @@ export const api = {
 
   // Google sign-ins: birthday + terms. Resolves { deleted: true, error } when
   // the server removed an under-13 account, so the screen can say so.
-  async completeSignup({ dateOfBirth, termsAccepted, ref }) {
+  async completeSignup({ dateOfBirth, termsAccepted }) {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/auth/complete-signup`, {
-      method: "POST", headers, body: JSON.stringify({ dateOfBirth, termsAccepted, ref }),
+      method: "POST", headers, body: JSON.stringify({ dateOfBirth, termsAccepted }),
     });
     const data = await res.json().catch(() => ({}));
     if (data.deleted) return data;
@@ -843,57 +704,6 @@ export const api = {
     return res.json(); // { longest_streak }
   },
 
-  async recordStreakMilestone(day) {
-    const headers = await authHeaders({ "Content-Type": "application/json" });
-    const res = await fetch(`${API_URL}/api/user/streak-milestone`, {
-      method: "POST", headers, body: JSON.stringify({ day }),
-    });
-    if (!res.ok) throw await readError(res);
-    return res.json(); // { streak_milestones_shown }
-  },
-
-  // ── Referrals ───────────────────────────────────────────────────────────
-  async getReferralStats() {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/referral/stats`, { headers });
-    if (!res.ok) throw await readError(res);
-    return res.json(); // { referralLink, invited, signedUp }
-  },
-
-  async sendReferralInvite(referredEmail) {
-    const headers = await authHeaders({ "Content-Type": "application/json" });
-    const res = await fetch(`${API_URL}/api/referral/invite`, {
-      method: "POST", headers, body: JSON.stringify({ referredEmail }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Failed to send invite");
-    }
-    return res.json(); // { success: true }
-  },
-
-  // ── Public notebook sharing ─────────────────────────────────────────────
-  async shareNotebook(notebookId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/share`, { method: "POST", headers });
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to share"); }
-    return res.json(); // { slug, shareUrl }
-  },
-
-  async unshareNotebook(notebookId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/share`, { method: "DELETE", headers });
-    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? "Failed to stop sharing"); }
-    return res.json();
-  },
-
-  // PUBLIC — no auth header sent.
-  async getSharedNotebook(slug) {
-    const res = await fetch(`${API_URL}/api/share/${slug}`);
-    if (!res.ok) throw new Error("not_found");
-    return res.json(); // { title, topic, ownerName, notes }
-  },
-
   // ── Class templates ─────────────────────────────────────────────────────
   // fromSyllabus marks the units as coming from an uploaded syllabus rather
   // than a course template — the server stamps the class so the dashboard
@@ -924,67 +734,6 @@ export const api = {
     return data; // { className, notebooks: [{ name, dueDate }] }
   },
 
-  async getNotebookImages(notebookId) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, { headers });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error ?? "Failed to load saved images");
-    }
-    return res.json(); // [{ url, created_at }]
-  },
-
-  async saveImageToNotebook(notebookId, b64) {
-    const headers = await authHeaders();
-    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/images`, {
-      method: "POST", headers,
-      body: JSON.stringify({ image: b64 }),
-    });
-    const data = await res.json().catch(() => ({ error: res.statusText }));
-    if (!res.ok) {
-      const err = new Error(data.error ?? `Request failed (${res.status})`);
-      err.status = res.status;
-      throw err;
-    }
-    return data; // { url }
-  },
-
-  async generateImage({ prompt, size = "1024x1024", n = 1 }) {
-    const headers = await authHeaders();
-    // 90s client-side timeout: image generation can legitimately take 30–60s,
-    // but anything past 90s is almost certainly a stalled server/upstream and
-    // shouldn't leave the UI spinning forever.
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90_000);
-    let res;
-    try {
-      res = await fetch(`${API_URL}/api/generate-image`, {
-        method: "POST", headers,
-        body: JSON.stringify({ prompt, size, n }),
-        signal: controller.signal,
-      });
-    } catch (e) {
-      clearTimeout(timeoutId);
-      if (e.name === "AbortError") {
-        const err = new Error("Request timed out after 90s. The server may be down or the OpenAI API is slow.");
-        err.status = 0;
-        throw err;
-      }
-      const err = new Error(e.message || "Network error reaching the image server.");
-      err.status = 0;
-      throw err;
-    }
-    clearTimeout(timeoutId);
-    const data = await res.json().catch(() => ({ error: res.statusText }));
-    if (!res.ok) {
-      // apiError surfaces the friendly `message` and exposes `code` so the UI can
-      // branch on image_limit_reached / rate_limited like other gated features.
-      throw apiError(res, data, `Request failed (${res.status})`);
-    }
-    return data; // { images: [{ b64_json }] }
-  },
-
-  // ── Username ───────────────────────────────────────────────────────
   async getMyUsername() {
     const headers = await authHeaders();
     const res = await fetch(`${API_URL}/api/me/username`, { headers });

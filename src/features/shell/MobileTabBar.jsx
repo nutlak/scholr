@@ -1,11 +1,11 @@
-import { LayoutDashboard, FileText, Users, Star, UserPlus } from "lucide-react";
+import { LayoutDashboard, Notebook, UserPlus } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 
+// Three tabs. Notes / Shared / Starred were three lists of the same units;
+// they're one Units list with a filter now.
 const TABS = [
-  { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { id: "my-notes",  label: "Notes",     Icon: FileText },
-  { id: "shared",    label: "Shared",    Icon: Users },
-  { id: "starred",   label: "Starred",   Icon: Star },
+  { id: "dashboard", label: "Home",  Icon: LayoutDashboard },
+  { id: "units",     label: "Units", Icon: Notebook },
 ];
 
 /* The phone's primary navigation. The sidebar is display:none at phone width,

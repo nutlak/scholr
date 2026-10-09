@@ -120,9 +120,6 @@ export async function resetUsageIfNeeded(userId) {
       reset_at: nextReset.toISOString(),
       updated_at: new Date().toISOString(),
     }).eq("user_id", userId);
-    // Reset the image counter in a separate statement so a not-yet-migrated
-    // images_this_month column can't block the message/forge reset above.
-    await supabase.from("usage").update({ images_this_month: 0 }).eq("user_id", userId);
     // Same isolation for the cost-tripwire columns (migration 037).
     await supabase.from("usage").update({ pro_cost_cents_this_month: 0, cost_alert_sent_this_month: false }).eq("user_id", userId);
   }
@@ -132,28 +129,12 @@ export async function resetUsageIfNeeded(userId) {
 // hitting the wall; a soft nudge fires at FREE_MSG_WARN.
 export const FREE_MSG_LIMIT = 100;
 export const FREE_MSG_WARN = 80;
-// Free-tier monthly image-generation budget (OpenAI spend). Pro = unlimited.
-export const FREE_IMAGE_LIMIT = 5;
 
-// checkUsageLimit(userId, type[, amount]) — amount lets a single call reserve
-// more than one unit (image gen of n images costs n). Defaults to 1 so existing
-// "message"/"forge" callers are unaffected.
-export async function checkUsageLimit(userId, type, amount = 1) {
+// checkUsageLimit(userId, type) — type is "message" or "forge".
+export async function checkUsageLimit(userId, type) {
   const tier = await getUserTier(userId);
   if (tier === "pro") return { allowed: true, tier, used: 0 };
   await resetUsageIfNeeded(userId);
-
-  // Image budget is kept fully isolated (own query) so a not-yet-migrated
-  // images_this_month column can never break message/forge metering below.
-  if (type === "image") {
-    const { data } = await supabase
-      .from("usage").select("images_this_month").eq("user_id", userId).maybeSingle();
-    const imgUsed = data?.images_this_month ?? 0;
-    if (imgUsed + amount > FREE_IMAGE_LIMIT) {
-      return { allowed: false, reason: "image_limit", tier, used: imgUsed };
-    }
-    return { allowed: true, tier, used: imgUsed };
-  }
 
   const { data } = await supabase
     .from("usage")
@@ -203,30 +184,6 @@ export async function checkNotebookLimit(userId) {
 }
 
 export async function incrementUsage(userId, type, amount = 1) {
-  // Image usage is isolated (own upsert) so the images_this_month column never
-  // appears in the message/forge insert path — keeps existing metering safe.
-  if (type === "image") {
-    const { data: existing } = await supabase
-      .from("usage").select("id, images_this_month").eq("user_id", userId).maybeSingle();
-    if (existing) {
-      await supabase.from("usage").update({
-        images_this_month: (existing.images_this_month ?? 0) + amount,
-        updated_at: new Date().toISOString(),
-      }).eq("user_id", userId);
-    } else {
-      const nextReset = new Date();
-      nextReset.setMonth(nextReset.getMonth() + 1);
-      nextReset.setDate(1);
-      nextReset.setHours(0, 0, 0, 0);
-      await supabase.from("usage").insert({
-        user_id: userId,
-        images_this_month: amount,
-        reset_at: nextReset.toISOString(),
-      });
-    }
-    return;
-  }
-
   const field = type === "message" ? "messages_this_month" : "forge_outputs_this_month";
   const { data: existing } = await supabase
     .from("usage")

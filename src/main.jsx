@@ -3,17 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './hud.css'
 import App from './App.jsx'
-import { captureReferral } from './lib/referral.js'
 import { installSheetDrag } from './lib/sheetDrag.js'
 import { installNoStickyHover } from './lib/noStickyHover.js'
 import { installGlobalErrorReporting } from './lib/reportError.js'
 import { ErrorBoundary } from './ui/ErrorBoundary.jsx'
-
-// Runs before render so a /@username or ?ref= link is banked (and stripped
-// from the URL) no matter which screen the app lands on. Never blocks the
-// app: a failed lookup just means no attribution.
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')
-captureReferral(API_URL).catch(() => {})
 
 // The worker was only ever registered from enablePush(), so anyone who had not
 // turned on notifications had no worker at all — and without an active worker

@@ -1,100 +1,13 @@
-// The AI endpoints: Derek's chat, explain-differently, Feynman grading, images.
+// The AI endpoints: Derek's chat, explain-differently, Feynman grading.
 import { Router } from "express";
 import { trackEvent } from "../lib/analytics.js";
 import { requireAuth, requireMember } from "../lib/auth.js";
 import { aiLimiter, explainLimiter, feynmanLimiter, queryLimiter } from "../lib/limiters.js";
 import { supabase } from "../lib/supabase.js";
-import { FREE_IMAGE_LIMIT, FREE_MSG_LIMIT, FREE_MSG_WARN, checkUsageLimit, getUserTier, incrementUsage, recordProCost } from "../lib/usage.js";
-import { ALLOWED_IMAGE_SIZES, IMAGE_RATE_LIMIT, QUERY_HISTORY_TURNS, aiErrorDetail, anthropicClient, buildNotesContext, checkImageRateLimit, getModel, notebookMemberNames, promptSafeName, validateFeynmanResult } from "../lib/ai.js";
+import { FREE_MSG_LIMIT, FREE_MSG_WARN, checkUsageLimit, getUserTier, incrementUsage, recordProCost } from "../lib/usage.js";
+import { QUERY_HISTORY_TURNS, aiErrorDetail, anthropicClient, buildNotesContext, getModel, notebookMemberNames, promptSafeName, validateFeynmanResult } from "../lib/ai.js";
 
 export const router = Router();
-
-// POST /api/generate-image — { prompt, size?, n? } → { images: [{ url, revised_prompt? }] }
-router.post("/api/generate-image", requireAuth, aiLimiter, async (req, res) => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "OPENAI_API_KEY not configured on server" });
-
-  // ── Input validation ──
-  const { prompt, size = "1024x1024", n = 1 } = req.body ?? {};
-
-  if (typeof prompt !== "string") {
-    return res.status(400).json({ error: "prompt must be a string" });
-  }
-  const cleanPrompt = prompt.trim();
-  if (cleanPrompt.length < 3) {
-    return res.status(400).json({ error: "prompt must be at least 3 characters" });
-  }
-  if (cleanPrompt.length > 1000) {
-    return res.status(400).json({ error: "prompt must be 1000 characters or fewer" });
-  }
-  if (!ALLOWED_IMAGE_SIZES.has(size)) {
-    return res.status(400).json({ error: `size must be one of: ${[...ALLOWED_IMAGE_SIZES].join(", ")}` });
-  }
-  const count = Number.isInteger(n) ? n : parseInt(n, 10);
-  if (!Number.isInteger(count) || count < 1 || count > 4) {
-    return res.status(400).json({ error: "n must be an integer between 1 and 4" });
-  }
-
-  // ── Rate limit ──
-  const rl = checkImageRateLimit(req.user.id);
-  if (!rl.ok) {
-    res.setHeader("Retry-After", String(rl.retryAfter));
-    return res.status(429).json({
-      error: `Rate limit: ${IMAGE_RATE_LIMIT.max} images per minute. Try again in ${rl.retryAfter}s.`,
-    });
-  }
-
-  // ── Tier/usage limit (counts each image — n images cost n) ──
-  const usage = await checkUsageLimit(req.user.id, "image", count);
-  if (!usage.allowed) {
-    return res.status(403).json({
-      error: "image_limit_reached",
-      message: `You have reached your ${FREE_IMAGE_LIMIT} image limit this month. Upgrade to Pro for unlimited.`,
-    });
-  }
-
-  // ── Call OpenAI ──
-  // gpt-image-1.5 supports n natively and returns base64 (b64_json).
-  try {
-    const oaRes = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-image-2",
-        prompt: cleanPrompt,
-        size,
-        n: count,
-      }),
-    });
-
-    if (!oaRes.ok) {
-      const body = await oaRes.json().catch(() => ({}));
-      const message = body?.error?.message ?? `OpenAI request failed (${oaRes.status})`;
-      // Surface OpenAI's own status codes where useful
-      const status = oaRes.status === 429 ? 429
-                    : oaRes.status === 400 ? 400
-                    : 502;
-      return res.status(status).json({ error: message });
-    }
-
-    const body = await oaRes.json();
-    const images = (body.data ?? []).map(img => ({ b64_json: img.b64_json }));
-
-    res.json({ images });
-
-    // Count the images actually generated against the monthly budget.
-    if (images.length) {
-      incrementUsage(req.user.id, "image", images.length)
-        .catch(err => console.error("image usage increment error:", err));
-    }
-  } catch (err) {
-    console.error("generate-image error:", err);
-    res.status(502).json({ error: "Failed to reach OpenAI. Try again." });
-  }
-});
 
 // Derek's replies are written here, by the server, never by the browser —
 // /messages only accepts the user's own lines. Before this a member could post

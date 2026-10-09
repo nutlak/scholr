@@ -1,5 +1,5 @@
 import { Suspense, lazy, useMemo } from "react";
-import { BookOpen, Layers, Notebook, RefreshCw, Search, Star, Users } from "lucide-react";
+import { BookOpen, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { EmptyState } from "../../ui/EmptyState.jsx";
@@ -13,9 +13,8 @@ import { DashboardRail } from "./DashboardRail.jsx";
 const SortableClassList = lazy(() => import("../classes/SortableClassList.jsx").then(m => ({ default: m.SortableClassList })));
 
 /* Everything the main pane renders when a notebook isn't open and Settings
- * isn't selected: the dashboard proper plus the My Notes / Shared / Starred
- * list views, which share this heading and layout and differ only in which
- * notebook array they're handed.
+ * isn't selected: the dashboard proper plus the Units list (every unit you're
+ * in, with an All / Shared-with-me filter), which share this heading.
  *
  * Lifted out of Scholr() whole. The props are wide because the view really
  * does touch that much state — the alternative was leaving 300 lines of JSX
@@ -32,7 +31,7 @@ export function DashboardView({
   expandedClassId, classUnitsCache,
   handleReorderClasses, handleToggleClass, handleChangeClassColor,
   openClassSyllabus, setSyllabusForClass, setNewUnitFor, setDeleteClassTarget,
-  handleSetStatus, handleToggleStar, starredIds, setActiveNb, setConfirmDeleteNb,
+  unitsFilter, setUnitsFilter, setActiveNb, setConfirmDeleteNb,
   dueCount, startAllReview,
   subscription, handleManageSubscription, portalLoading, billingReady,
   heatmap, profile, leaderboard,
@@ -188,7 +187,7 @@ export function DashboardView({
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search notebooks…"
+                placeholder="Search units…"
                 style={{
                   width: "100%", background: "var(--bg-surface-1)",
                   border: "1px solid var(--border-default)",
@@ -245,61 +244,48 @@ export function DashboardView({
                       onImportSyllabus: () => setSyllabusForClass(cls),
                       onNewUnit: () => setNewUnitFor({ classId: cls.id, classTitle: cls.title }),
                       onDeleteClass: () => setDeleteClassTarget(cls),
-                      onUnitStatusChange: (unit, status) => handleSetStatus(unit, status),
                     })}
                   />
                 </Suspense>
               </>
             )
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={
-                search ? <Search size={32} strokeWidth={1.5} />
-                : activeView === "starred" ? <Star size={32} strokeWidth={1.5} />
-                : activeView === "shared" ? <Users size={32} strokeWidth={1.5} />
-                : <Notebook size={32} strokeWidth={1.5} />
-              }
-              title={
-                search ? "No notebooks match"
-                : activeView === "starred" ? "No starred notebooks"
-                : activeView === "shared"  ? "Nothing shared with you yet"
-                : "No notebooks yet"
-              }
-              body={
-                search ? "Try a different search term."
-                : activeView === "starred" ? "Tap the star on any notebook to add it here."
-                : activeView === "shared"  ? "When a classmate invites you to a notebook, it'll show up here."
-                : "Notebooks you create will appear in this view."
-              }
-            />
           ) : (
             <>
-              <div style={{
-                fontSize: 11, fontWeight: 600, color: "var(--t3)",
-                fontFamily: FONT, letterSpacing: "0.08em", marginBottom: 14, textTransform: "uppercase",
-              }}>
-                {viewLabel}
-              </div>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: 12, marginBottom: 40,
-              }}>
-                {filtered.map(nb => (
-                  <NotebookCard
-                    key={nb.id}
-                    nb={nb}
-                    onClick={() => setActiveNb(nb)}
-                    starred={starredIds.has(nb.id)}
-                    onToggleStar={() => handleToggleStar(nb)}
-                    onStatusChange={status => handleSetStatus(nb, status)}
-                    // Only the owner can delete; the API returns role per
-                    // notebook, so a shared notebook shows no trash rather
-                    // than offering one that 403s.
-                    onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
-                  />
+              {/* One list of every unit; "Shared with me" is a filter on it.
+                  Replaced the separate My Notes / Shared / Starred views. */}
+              <div className="seg-control units-filter" role="radiogroup" aria-label="Which units" style={{ "--seg-n": 2 }}>
+                <span className="seg-pill" aria-hidden="true" style={{ transform: `translateX(${unitsFilter === "shared" ? 100 : 0}%)` }} />
+                {[["all", "All units"], ["shared", "Shared with me"]].map(([id, label]) => (
+                  <button key={id} className="seg-option" role="radio" aria-checked={unitsFilter === id} onClick={() => setUnitsFilter(id)}>{label}</button>
                 ))}
               </div>
+              {filtered.length === 0 ? (
+                <EmptyState
+                  icon={search ? <Search size={32} strokeWidth={1.5} /> : unitsFilter === "shared" ? <Users size={32} strokeWidth={1.5} /> : <Notebook size={32} strokeWidth={1.5} />}
+                  title={search ? "No units match" : unitsFilter === "shared" ? "Nothing shared with you yet" : "No units yet"}
+                  body={search ? "Try a different search term."
+                    : unitsFilter === "shared" ? "When a classmate invites you, or you join a class with a PIN, their units show up here."
+                    : "Units you create or join will appear here."}
+                />
+              ) : (
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: 12, marginBottom: 40,
+                }}>
+                  {filtered.map(nb => (
+                    <NotebookCard
+                      key={nb.id}
+                      nb={nb}
+                      onClick={() => setActiveNb(nb)}
+                      // Only the owner can delete; the API returns role per
+                      // notebook, so a shared notebook shows no trash rather
+                      // than offering one that 403s.
+                      onDelete={nb.role === "member" ? undefined : () => setConfirmDeleteNb(nb)}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           )}
 

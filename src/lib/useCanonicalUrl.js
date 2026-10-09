@@ -20,7 +20,7 @@ export function useCanonicalUrl(authReady, user) {
 
   // The logged-in app lives at /app, the landing/auth at /. This is a cosmetic
   // replaceState, and matching ONLY the exact root and /app leaves every other
-  // route (/s/:slug, /privacy, /terms, /copyright) untouched.
+  // route (/privacy, /terms, /copyright) untouched.
   useEffect(() => {
     if (!authReady || IS_MARKETING_HOST) return;
     const path = window.location.pathname;

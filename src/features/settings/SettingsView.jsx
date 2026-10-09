@@ -1,8 +1,7 @@
-// The Settings pane: account, subscription, referrals, notifications,
+// The Settings pane: account, subscription, notifications,
 // appearance and the danger zone. Lifted out of Scholr() unchanged — the
 // eleven props are exactly the state it already read from that closure.
 import { PushToggle } from "../notifications/PushToggle.jsx";
-import { ReferralSection } from "../referrals/ReferralSection.jsx";
 import { SquadSection } from "../squad/SquadSection.jsx";
 import { ACCENT_PRESETS, FONT } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
@@ -137,9 +136,6 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                   </div>
                 </div>
                 </div>
-
-                {/* ── Referrals (1D) ── */}
-                <ReferralSection />
 
                 {/* ── Notifications ─────────────────────────────────────────── */}
                 <PushToggle />

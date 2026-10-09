@@ -104,24 +104,3 @@ export function getModel(tier) {
 // the context window or the bill.
 export const QUERY_HISTORY_TURNS = 20;
 
-// ── Image generation (OpenAI proxy) ───────────────────────────────────────────
-// Keeps OPENAI_API_KEY server-side; client never sees it.
-// Simple in-memory token bucket per user: 5 requests / 60s window.
-export const IMAGE_RATE_LIMIT = { max: 5, windowMs: 60_000 };
-
-export const imageHits = new Map(); // userId -> [timestamps]
-
-export function checkImageRateLimit(userId) {
-  const now = Date.now();
-  const cutoff = now - IMAGE_RATE_LIMIT.windowMs;
-  const hits = (imageHits.get(userId) ?? []).filter(t => t > cutoff);
-  if (hits.length >= IMAGE_RATE_LIMIT.max) {
-    const retryAfter = Math.ceil((hits[0] + IMAGE_RATE_LIMIT.windowMs - now) / 1000);
-    return { ok: false, retryAfter };
-  }
-  hits.push(now);
-  imageHits.set(userId, hits);
-  return { ok: true };
-}
-
-export const ALLOWED_IMAGE_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);

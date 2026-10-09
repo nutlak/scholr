@@ -1,14 +1,13 @@
 import { Calendar, X } from "lucide-react";
 import { FONT, FONT_HEADING, classTint } from "../../lib/theme.js";
 import { dueDateTone } from "../../lib/format.js";
-import { StatusPill } from "../../ui/StatusPill.jsx";
 import { useEscape } from "../../ui/useEscape.js";
 
 // "Click a class, see the whole syllabus" — every unit in one place, sorted
-// by due date, with the assessment type and status editable inline. Both
+// by due date, with the assessment type editable inline. Both
 // PATCH endpoints (due-date, assessment-type) already existed server-side;
 // this is the first client UI to actually use either one.
-export function ClassSyllabusModal({ cls, units, onClose, onOpenUnit, onDueDateChange, onAssessmentTypeChange, onStatusChange }) {
+export function ClassSyllabusModal({ cls, units, onClose, onOpenUnit, onDueDateChange, onAssessmentTypeChange }) {
   useEscape(onClose);
   const tint = classTint(cls.color);
 
@@ -94,7 +93,6 @@ export function ClassSyllabusModal({ cls, units, onClose, onOpenUnit, onDueDateC
                     />
                   </div>
 
-                  <StatusPill status={unit.status ?? "in_progress"} onChange={s => onStatusChange(unit, s)} />
                 </div>
               );
             })}

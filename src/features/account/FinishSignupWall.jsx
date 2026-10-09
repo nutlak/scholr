@@ -2,7 +2,6 @@ import { useState } from "react";
 import { UserCheck } from "lucide-react";
 import { api } from "../../api.js";
 import { supabase } from "../../supabase.js";
-import { takeReferral } from "../../lib/referral.js";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 
 // Shown to a Google sign-in until it passes the age gate the email signup has
@@ -26,7 +25,7 @@ export function FinishSignupWall({ user, onDone }) {
     if (!dob || !agreed || loading) return;
     setLoading(true); setError("");
     try {
-      const r = await api.completeSignup({ dateOfBirth: dob, termsAccepted: true, ref: takeReferral() });
+      const r = await api.completeSignup({ dateOfBirth: dob, termsAccepted: true });
       if (r.deleted) { setRemoved(true); setError(r.error); setLoading(false); return; }
       // The server flagged the account; a fresh session carries the flag.
       const { data, error: refreshErr } = await supabase.auth.refreshSession();

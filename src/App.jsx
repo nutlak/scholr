@@ -6,13 +6,12 @@ const LandingPage = lazy(() => import("./LandingPage.jsx"));
 const LegalPage = lazy(() => import("./LegalPages.jsx"));
 import { LegalFooter } from "./LegalFooter.jsx";
 import OnboardingWizard from "./components/OnboardingWizard.jsx";
-import SharedNotebook from "./components/SharedNotebook.jsx";
 import UsernameSetupModal from "./UsernameSetupModal.jsx";
 import NotificationsBell from "./NotificationsBell.jsx";
 // Lazy: only renders during an active review session. A static import here also
 // defeated NotebookView's lazy() of FlashcardsPanel from this same module.
 const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
-import { Star, Plus, Hammer, MessageCircle, Users, Settings, LayoutDashboard, ChevronRight, Sparkles, LogOut, AlertTriangle, Check, X, Menu, Notebook, Trash2, CreditCard } from "lucide-react";
+import { Plus, Hammer, MessageCircle, Settings, LayoutDashboard, ChevronRight, Sparkles, LogOut, AlertTriangle, Check, X, Menu, Notebook, Trash2, CreditCard } from "lucide-react";
 import "./App.css";
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 // Lazy: 52kB of source that only matters once a notebook is open, and never
@@ -33,14 +32,13 @@ import { TermsWall } from "./features/account/TermsWall.jsx";
 import { FinishSignupWall } from "./features/account/FinishSignupWall.jsx";
 import { UpgradeModal } from "./features/billing/UpgradeModal.jsx";
 import { WelcomeProModal } from "./features/billing/WelcomeProModal.jsx";
-import { StreakMilestoneModal } from "./features/streak/StreakMilestoneModal.jsx";
 
 import { DashboardView } from "./features/dashboard/DashboardView.jsx";
 
 import { Avatar } from "./ui/Avatar.jsx";
 import { HudBar } from "./ui/HudBar.jsx";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
-import { STREAK_MILESTONES, getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser, needsSignupCompletion } from "./lib/format.js";
+import { getDisplayName, getGreeting, computeStreak, streakAtRiskFromHeatmap, sameUser, needsSignupCompletion } from "./lib/format.js";
 import { APP_ORIGIN, IS_MARKETING_HOST, readAuthIntentFromUrl } from "./lib/env.js";
 import { MOBILE_QUERY } from "./lib/breakpoints.js";
 import { onCheckoutReturn } from "./lib/native.js";
@@ -77,10 +75,8 @@ let _visitTrackedThisSession = false;
 // playback-speed and downloads consistently across browsers.
 
 const NAV = [
-  { id: "dashboard", label: "Dashboard",  Icon: LayoutDashboard },
-  { id: "my-notes",  label: "My Notes",   Icon: Notebook },
-  { id: "shared",    label: "Shared",     Icon: Users },
-  { id: "starred",   label: "Starred",    Icon: Star },
+  { id: "dashboard", label: "Home",       Icon: LayoutDashboard },
+  { id: "units",     label: "Units",      Icon: Notebook },
   { id: "settings",  label: "Settings",   Icon: Settings },
 ];
 
@@ -92,17 +88,13 @@ export default function Scholr() {
   const [authReady, setAuthReady] = useState(false);
   const [termsGate, setTermsGate] = useState(null); // null = unknown, "ok" = accepted, "needed" = must accept
   const [onboarding, setOnboarding] = useState("ok"); // "ok" | "needed" (first-login wizard)
-  const [profile, setProfile] = useState(null);       // profile flags: streak, milestones, referral
+  const [profile, setProfile] = useState(null);       // profile flags: onboarding, longest streak
   const [streakBannerDismissed, setStreakBannerDismissed] = useState(false);
-  const [milestoneModal, setMilestoneModal] = useState(null); // { day } | null
   const [activeView, setActiveView] = useState("dashboard");
   const [activeNb, setActiveNb] = useState(null);
   const [search, setSearch] = useState("");
   const [notebooks, setNotebooks] = useState([]);
-  const [ownedNotebooks, setOwnedNotebooks] = useState([]);
-  const [sharedNotebooks, setSharedNotebooks] = useState([]);
-  const [starredNotebooks, setStarredNotebooks] = useState([]);
-  const [starredIds, setStarredIds] = useState(new Set());
+  const [unitsFilter, setUnitsFilter] = useState("all"); // Units view: "all" | "shared"
   const [classes, setClasses] = useState([]);
   const [expandedClassId, setExpandedClassId] = useState(null);
   // Require a 4px drag before activating so taps/clicks on the card body
@@ -148,18 +140,14 @@ export default function Scholr() {
   const {
     deletingNb, syllabusClassId, setSyllabusClassId,
     removeNotebooksByIds, handleDeleteNotebook,
-    handleSetStatus, handleSetDueDate, handleSetAssessmentType,
+    handleSetDueDate, handleSetAssessmentType,
     openNotebookById, handleToggleClass, openClassSyllabus,
     handleCreateClass, handleImportSyllabus, handleImportSyllabusIntoClass,
     handleChangeClassColor, handleReorderClasses, handleCreateUnit,
-    openUnitWithClassColor, handleToggleStar, handleDeleteClass,
+    openUnitWithClassColor, handleDeleteClass,
   } = useNotebookActions({
     user, activeNb,
     notebooks, setNotebooks,
-    ownedNotebooks, setOwnedNotebooks,
-    sharedNotebooks, setSharedNotebooks,
-    starredNotebooks, setStarredNotebooks,
-    starredIds, setStarredIds,
     classes, setClasses,
     classUnitsCache, setClassUnitsCache,
     expandedClassId, setExpandedClassId,
@@ -266,13 +254,9 @@ export default function Scholr() {
     supabase.auth.getSession()
       .then(() => api.acceptInvite(token))
       .then(({ notebook_id }) => {
-        return Promise.all([
-          api.listNotebooks(getDisplayName(user)),
-          api.listSharedNotebooks(getDisplayName(user)),
-        ]).then(([nbs, shared]) => {
+        return api.listNotebooks(getDisplayName(user)).then(nbs => {
           setNotebooks(nbs);
-          setSharedNotebooks(shared);
-          const nb = shared.find(n => n.id === notebook_id) ?? nbs.find(n => n.id === notebook_id);
+          const nb = nbs.find(n => n.id === notebook_id);
           if (nb) { setActiveNb(nb); setActiveView("dashboard"); }
         });
       })
@@ -314,14 +298,6 @@ export default function Scholr() {
         setNotebooks(nbs);
         setProfile(prof);
         setOnboarding(prof && !prof.onboarding_completed && nbs.length === 0 ? "needed" : "ok");
-      })
-      .catch(console.error);
-    api.listOwnedNotebooks(name).then(setOwnedNotebooks).catch(console.error);
-    api.listSharedNotebooks(name).then(setSharedNotebooks).catch(console.error);
-    api.getStarredNotebooks(name)
-      .then(starred => {
-        setStarredNotebooks(starred);
-        setStarredIds(new Set(starred.map(n => n.id)));
       })
       .catch(console.error);
     api.listClasses().then(setClasses).catch(console.error);
@@ -413,9 +389,8 @@ export default function Scholr() {
 
   useCanonicalUrl(authReady, user);
 
-  // Streak gamification: bump longest streak + fire one-time milestone modals.
-  // All setState happens inside async callbacks (never synchronously in the
-  // effect) to avoid cascading re-renders; guards keep it idempotent.
+  // Keep the longest streak current. setState only happens inside the async
+  // callback (never synchronously in the effect); the guard keeps it idempotent.
   useEffect(() => {
     if (!user || !profile || !heatmap.length) return;
     const streak = computeStreak(heatmap);
@@ -423,15 +398,6 @@ export default function Scholr() {
       api.updateStreak(streak)
         .then(() => setProfile(p => ({ ...p, longest_streak: streak })))
         .catch(() => {});
-    }
-    const shown = new Set((profile.streak_milestones_shown ?? []).map(String));
-    if (STREAK_MILESTONES.includes(streak) && !shown.has(String(streak))) {
-      api.recordStreakMilestone(streak)
-        .catch(() => {})
-        .finally(() => {
-          setMilestoneModal({ day: streak });
-          setProfile(p => ({ ...p, streak_milestones_shown: [...(p.streak_milestones_shown ?? []), String(streak)] }));
-        });
     }
   }, [user, profile, heatmap]);
 
@@ -485,9 +451,10 @@ export default function Scholr() {
     c.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  const viewBase = activeView === "my-notes" ? ownedNotebooks
-    : activeView === "shared"   ? sharedNotebooks
-    : activeView === "starred"  ? starredNotebooks
+  // One list of units (it already carries each one's role); "Shared" is a
+  // filter on it, not a separate fetch. Replaced My Notes / Shared / Starred.
+  const viewBase = activeView === "units" && unitsFilter === "shared"
+    ? notebooks.filter(n => n.role === "member")
     : notebooks;
 
   const filtered = viewBase.filter(n => {
@@ -496,10 +463,6 @@ export default function Scholr() {
   });
 
   const viewLabel = NAV.find(n => n.id === activeView)?.label ?? "Dashboard";
-
-  // Public shared-notebook route (/s/:slug) — standalone, no auth required.
-  const shareMatch = (typeof window !== "undefined" ? window.location.pathname : "").match(/^\/s\/([A-Za-z0-9]+)/);
-  if (shareMatch) return <SharedNotebook slug={shareMatch[1]} />;
 
   // Public legal routes — render standalone regardless of auth (no router).
   const legalPage = { "/privacy": "privacy", "/terms": "terms", "/copyright": "copyright" }[
@@ -528,10 +491,6 @@ export default function Scholr() {
         />
       )}
 
-      {/* Streak milestone celebration */}
-      {milestoneModal && (
-        <StreakMilestoneModal day={milestoneModal.day} onClose={() => setMilestoneModal(null)} />
-      )}
 
       {pendingInviteToken && authReady && !user && (
         <InviteLanding inviteInfo={inviteInfo} onSignIn={() => setShowInviteAuth(true)} />
@@ -715,7 +674,6 @@ export default function Scholr() {
             onOpenUnit={unit => { setSyllabusClassId(null); openUnitWithClassColor(unit, cls.color); }}
             onDueDateChange={handleSetDueDate}
             onAssessmentTypeChange={handleSetAssessmentType}
-            onStatusChange={handleSetStatus}
           />
         );
       })()}
@@ -743,8 +701,6 @@ export default function Scholr() {
           view={viewLabel}
           streak={computeStreak(heatmap)}
           due={dueCount}
-          classes={classes.length}
-          tier={subscription?.tier ?? "free"}
         />
         <div className={sidebarOpen ? "" : "mobile-hide-sidebar"}
              style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
@@ -1052,11 +1008,10 @@ export default function Scholr() {
                 nb={activeNb}
                 currentUserId={user?.id}
                 onBack={() => setActiveNb(null)}
-                onSetStatus={status => handleSetStatus(activeNb, status)}
                 onToast={msg => { setToast(msg); setTimeout(() => setToast(""), 3000); }}
                 onUpgradeNeeded={limitType => setUpgradeModal({ limitType })}
                 onDeleted={id => {
-                  removeNotebooksByIds(new Set([id])); // clears lists, starred, cache, and closes it
+                  removeNotebooksByIds(new Set([id])); // clears the list, cache, and closes it
                   setActiveView("dashboard");           // the open notebook was just deleted → dashboard
                   setToast("Unit deleted");
                   setTimeout(() => setToast(""), 3000);
@@ -1099,8 +1054,8 @@ export default function Scholr() {
               handleChangeClassColor={handleChangeClassColor} openClassSyllabus={openClassSyllabus}
               setSyllabusForClass={setSyllabusForClass} setNewUnitFor={setNewUnitFor}
               setDeleteClassTarget={setDeleteClassTarget}
-              handleSetStatus={handleSetStatus} handleToggleStar={handleToggleStar}
-              starredIds={starredIds} setActiveNb={setActiveNb} setConfirmDeleteNb={setConfirmDeleteNb}
+              unitsFilter={unitsFilter} setUnitsFilter={setUnitsFilter}
+              setActiveNb={setActiveNb} setConfirmDeleteNb={setConfirmDeleteNb}
               dueCount={dueCount} startAllReview={startAllReview}
               subscription={subscription} handleManageSubscription={handleManageSubscription}
               portalLoading={portalLoading} billingReady={billingReady}

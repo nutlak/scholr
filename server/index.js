@@ -5,7 +5,6 @@ import { router as classesRoutes } from "./routes/classes.js";
 import { router as flashcardsRoutes } from "./routes/flashcards.js";
 import { router as forgeRoutes } from "./routes/forge.js";
 import { router as brainRoutes } from "./routes/brain.js";
-import { router as unitnotesRoutes } from "./routes/unit-notes.js";
 import { router as podcastsRoutes } from "./routes/podcasts.js";
 import { router as userRoutes } from "./routes/user.js";
 import { router as friendsRoutes } from "./routes/friends.js";
@@ -263,13 +262,11 @@ app.post("/api/webhooks/stripe", webhookLimiter, express.raw({ type: "applicatio
   }
 });
 
-// 10mb limit so /api/notebooks/:id/images can accept base64-encoded
-// generated images (a 1536x1536 PNG can be ~3–6 MB raw, ~4–8 MB as base64).
+// 2mb: every JSON body is text (chat, pasted notes, Feynman explanations).
 // File uploads go through multer (its own 10MB limit, set where `upload` is
-// defined) and never hit this parser — everything else is plain text (chat,
-// notes, Feynman explanations) and needs nowhere near this much, but images
-// are the one real JSON-body consumer that does.
-app.use(express.json({ limit: '10mb' }));
+// defined) and never hit this parser. It was 10mb only for the AI image
+// generator's base64 saves, which is gone.
+app.use(express.json({ limit: '2mb' }));
 
 // Global rate limit on all /api routes. Registered AFTER the Stripe webhook
 // route (above) so Stripe's retries are never throttled, and after express.json
@@ -411,7 +408,6 @@ app.use(classesRoutes);
 app.use(flashcardsRoutes);
 app.use(forgeRoutes);
 app.use(brainRoutes);
-app.use(unitnotesRoutes);
 app.use(podcastsRoutes);
 app.use(userRoutes);
 app.use(friendsRoutes);

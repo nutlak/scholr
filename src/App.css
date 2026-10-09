@@ -868,3 +868,7 @@ a[role="button"],
 }
 .battle-tile:disabled { cursor: default; }
 .battle-shape { color: var(--tile); font-size: 18px; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* Units view filter (DashboardView). */
+.units-filter { width: max-content; max-width: 100%; margin-bottom: 16px; --seg-r: 10px; --seg-pad: 3px; }
+.units-filter .seg-option { min-height: 36px; font-size: 13px; padding: 0 16px; }

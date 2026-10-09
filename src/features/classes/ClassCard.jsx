@@ -1,11 +1,10 @@
 import { useRef, useState } from "react";
 import { Calendar, ChevronRight, Trash2, Upload } from "lucide-react";
-import { StatusPill } from "../../ui/StatusPill.jsx";
 import { CLASS_COLORS, FONT, classTint } from "../../lib/theme.js";
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { useEscape } from "../../ui/useEscape.js";
 
-function UnitRow({ unit, color, onClick, onStatusChange }) {
+function UnitRow({ unit, color, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
@@ -48,11 +47,6 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
           <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 1 }}>{unit.topic}</div>
         )}
       </div>
-      {onStatusChange && (
-        <span onClick={e => e.stopPropagation()} style={{ flexShrink: 0 }}>
-          <StatusPill status={unit.status ?? "in_progress"} onChange={s => onStatusChange(s)} />
-        </span>
-      )}
       <div style={{
         fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT,
         flexShrink: 0, padding: "2px 8px", background: "var(--bg-surface-2)",
@@ -68,7 +62,7 @@ function UnitRow({ unit, color, onClick, onStatusChange }) {
     </div>
   );
 }
-export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onUnitStatusChange, onViewSyllabus, onImportSyllabus }) {
+export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUnit, onDeleteClass, onChangeColor, onViewSyllabus, onImportSyllabus }) {
   const [hovered, setHovered] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPos, setPickerPos] = useState({ top: 0, right: 0 });
@@ -291,7 +285,6 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
                   unit={unit}
                   color={t.hue}
                   onClick={() => onOpenUnit(unit)}
-                  onStatusChange={onUnitStatusChange ? (status) => onUnitStatusChange(unit, status) : undefined}
                 />
               ))}
             </div>

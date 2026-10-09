@@ -1,20 +1,17 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Image as ImageIcon, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Share2, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
-import { StatusPill } from "../../ui/StatusPill.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
-import { FONT, FONT_HEADING, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
+import { FONT, FONT_SERIF, classTint, tintFor } from "../../lib/theme.js";
 import { useNarrow } from "../../lib/breakpoints.js";
 import { useDerekPhrase } from "../../lib/derekPhrases.js";
 import { InviteModal } from "./InviteModal.jsx";
 import { StudyMenu } from "./StudyMenu.jsx";
-const UnitNotes = lazy(() => import("./UnitNotes.jsx").then(m => ({ default: m.UnitNotes })));
+const UnitSources = lazy(() => import("./SourcesPanel.jsx").then(m => ({ default: m.SourcesPanel })));
 import UploadNotesModal from "../../UploadNotesModal.jsx";
-import { useEscape } from "../../ui/useEscape.js";
-const ImageGeneratorModal = lazy(() => import("../../ImageGeneratorModal.jsx"));
 const FlashcardsPanel = lazy(() => import("../../Flashcards.jsx").then(m => ({ default: m.FlashcardsPanel })));
 const TheForge = lazy(() => import("../forge/TheForge.jsx").then(m => ({ default: m.TheForge })));
 const PodcastPanel = lazy(() => import("../podcast/PodcastPanel.jsx").then(m => ({ default: m.PodcastPanel })));
@@ -39,7 +36,7 @@ const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ def
 // than pretending one supersedes the other.
 const NB_TOOLS = [
   { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "#A78BFA", subtitle: "Every key idea, and how well you know it" },
-  { id: "notes",             text: "Notes",     label: "Notes",        title: "Unit Notes",   Icon: FileText,      tint: "#60A5FA", subtitle: "Shared with your group",                   group: "learn" },
+  { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "#60A5FA", subtitle: "What Derek reads in this unit",            group: "learn" },
   { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "#34D399", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
   { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "#38BDF8", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
   { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "#F472B6", subtitle: "Two-host audio overview",                  group: "learn" },
@@ -140,77 +137,7 @@ function SourcesPanel({ sources, notesById = {} }) {
     </div>
   );
 }
-// ── Public-share modal ───────────────────────────────────────────────────────
-function ShareModal({ notebookId, onClose, onStateChange }) {
-  useEscape(onClose);
-  const [loading, setLoading] = useState(true);
-  const [shareUrl, setShareUrl] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [stopping, setStopping] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    api.shareNotebook(notebookId)
-      .then(r => { setShareUrl(r.shareUrl); setLoading(false); onStateChange?.(true); })
-      .catch(e => { setError(e.message || "Couldn't create a share link."); setLoading(false); });
-  }, [notebookId, onStateChange]);
-
-  async function copy() {
-    try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ }
-  }
-  async function stopSharing() {
-    setStopping(true);
-    try { await api.unshareNotebook(notebookId); onStateChange?.(false); onClose(); }
-    catch (e) { setError(e.message || "Couldn't stop sharing."); setStopping(false); }
-  }
-
-  return (
-    <div className="mobile-sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{
-      position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.18s ease",
-    }}>
-      <div className="mobile-sheet" style={{
-        background: "var(--bg-surface-1)", border: "1px solid rgba(167,139,250,0.28)",
-        borderRadius: 18, padding: "28px 26px", maxWidth: 440, width: "100%",
-        boxShadow: "var(--sh-modal)", fontFamily: FONT, animation: "slideInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <Share2 size={18} strokeWidth={2} style={{ color: "var(--acc)" }} />
-          <div style={{ fontSize: 18, fontWeight: 600, fontFamily: FONT_HEADING, color: "var(--text-primary)" }}>Your notebook is now public!</div>
-        </div>
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 18 }}>Anyone with this link can view your notes.</div>
-
-        {error ? (
-          <div style={{ fontSize: 13, color: "#F87171", marginBottom: 14 }}>{error}</div>
-        ) : (
-          <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-            <input readOnly aria-label="Share link" value={loading ? "Generating link…" : shareUrl} onFocus={e => e.target.select()} style={{
-              flex: 1, height: 42, borderRadius: 10, background: "var(--s1)", border: "1px solid var(--border)",
-              color: "var(--text-primary)", fontFamily: FONT, fontSize: 13.5, padding: "0 12px", outline: "none",
-            }} />
-            <button onClick={copy} disabled={loading} className="btn-press" aria-live="polite" style={{
-              height: 42, borderRadius: 10, border: "none", padding: "0 16px", cursor: loading ? "wait" : "pointer",
-              background: "var(--acc)", color: "var(--on-acc)", fontWeight: 700, fontSize: 13.5, fontFamily: FONT, whiteSpace: "nowrap",
-            }}>{copied ? "Copied! ✓" : "Copy"}</button>
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
-          <button onClick={stopSharing} disabled={stopping} className="btn-press" style={{
-            height: 40, borderRadius: 10, padding: "0 16px", cursor: "pointer",
-            background: "transparent", border: "1px solid rgba(248,113,113,0.4)", color: "var(--danger)",
-            fontFamily: FONT, fontSize: 13, fontWeight: 600,
-          }}>{stopping ? "Stopping…" : "Stop sharing"}</button>
-          <button onClick={onClose} className="btn-press" style={{
-            height: 40, borderRadius: 10, padding: "0 18px", cursor: "pointer",
-            background: "transparent", border: "1px solid var(--border-h)", color: "var(--text-secondary)", fontFamily: FONT, fontSize: 13,
-          }}>Done</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onSetStatus, onUpgradeNeeded }) {
+export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, onUpgradeNeeded }) {
   const narrow = useNarrow();
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState([]);
@@ -218,18 +145,17 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   const [loading, setLoading]       = useState(false);
   const derekPhrase = useDerekPhrase(loading);
   const [showUpload, setShowUpload] = useState(false);
+  const [sourcesVersion, setSourcesVersion] = useState(0); // bumps the Sources panel after an upload
   const [showInvite, setShowInvite] = useState(false);
   const [studyRoomJoined, setStudyRoomJoined] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const [isShared, setIsShared] = useState(!!nb.is_public);
   const [deleting, setDeleting]     = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [members, setMembers]       = useState([]);
   // Scholr 2.0 — one source of truth for which study tool is open (it renders
   // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
   // tangle; responsive behavior is now handled purely in CSS.
-  const [activeTool, setActiveTool] = useState(null); // null | 'brain' | 'notes' | 'forge' | 'podcast' | 'feynman' | 'image-gen'
+  const [activeTool, setActiveTool] = useState(null); // null | 'brain' | 'sources' | 'forge' | 'podcast' | 'feynman'
   const [feynmanConcept, setFeynmanConcept] = useState(null); // set when the brain opens Feynman on one concept
   useEffect(() => { if (activeTool !== "feynman") setFeynmanConcept(null); }, [activeTool]);
   const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
@@ -293,6 +219,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   }, [nb.id]);
 
   function handleNoteUploaded(note) {
+    setSourcesVersion(v => v + 1);
     setMessages(m => [...m, {
       role: "assistant",
       text: `"${note.title}" was added to this notebook. I'll include it in future answers.`,
@@ -418,9 +345,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
 
   return (
     <div className="print-area" data-print-title={nb.title || "Notes"} style={{ display: "flex", flexDirection: "column", height: "100%", gap: 0, overflow: "hidden", position: "relative" }}>
-      {showShare && (
-        <ShareModal notebookId={nb.id} onClose={() => setShowShare(false)} onStateChange={setIsShared} />
-      )}
       {showUpload && (
         <UploadNotesModal
           notebookId={nb.id} accentColor={t.hue}
@@ -540,11 +464,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               }}>{nb.topic}</div>
             )}
           </div>
-          {onSetStatus && (
-            <span className="nb-status-inline" style={{ marginLeft: 4 }}>
-              <StatusPill status={nb.status ?? "in_progress"} onChange={s => onSetStatus(s)} size="sm" />
-            </span>
-          )}
         </div>
 
         {/* Mobile: one ⋯ in the title row replaces the Invite/Upload/More row
@@ -601,7 +520,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               background: "transparent", border: "1px solid var(--border-strong)",
               color: "var(--text-secondary)",
             }}
-          ><Paperclip size={15} strokeWidth={1.75} /> Upload</button>
+          ><Paperclip size={15} strokeWidth={1.75} /> Add source</button>
 
           <button
             onClick={() => setSheet("more")}
@@ -845,37 +764,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             <div ref={bottomRef} />
           </div>
 
-          {/* Starter prompts, shown until the student has actually asked
-              something. This was previously gated on messages.length === 0,
-              but a greeting is always seeded as the first message, so the
-              condition was never true and the prompt never rendered. */}
-          {!messages.some(m => m.role === "user") && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-              {[
-                "Summarise the key points",
-                "Quiz me on this",
-                "What should I focus on?",
-                "Explain this simply",
-              ].map(label => (
-                <button
-                  key={label}
-                  onClick={() => ask(`${label} for ${nb.title}.`)}
-                  disabled={loading}
-                  className="btn-press"
-                  style={{
-                    background: "var(--s2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 999, padding: "7px 13px",
-                    color: "var(--t2)", fontFamily: FONT, fontSize: 12.5, fontWeight: 500,
-                    cursor: loading ? "wait" : "pointer",
-                  }}
-                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = "var(--border-h)"; e.currentTarget.style.color = "var(--t1)"; } }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--t2)"; }}
-                >{label}</button>
-              ))}
-            </div>
-          )}
-
           {/* Input row */}
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
             {mentionOpen && mentionCandidates.length > 0 && (
@@ -936,24 +824,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
               onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
             />
             <button
-              onClick={() => setActiveTool("image-gen")}
-              className="btn-press"
-              title="Generate image"
-              aria-label="Generate image"
-              style={{
-                background: "var(--s2)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                width: 48, height: 48,
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.2s",
-              }}
-            >
-              <ImageIcon size={20} strokeWidth={1.85} />
-            </button>
-            <button
               onClick={ask}
               disabled={loading || !query.trim()}
               className="btn-press"
@@ -1008,10 +878,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                 Icon: Users, onSelect: () => { setSheet(null); setStudyRoomJoined(v => !v); } },
               { id: "invite", label: "Invite a classmate", description: "Share this notebook with someone",
                 Icon: UserPlus, onSelect: () => { setSheet(null); setShowInvite(true); } },
-              { id: "upload", label: "Upload notes", description: "PDFs, slides, photos or text",
+              { id: "upload", label: "Add a source", description: "Upload a file, or write or paste a note",
                 Icon: Paperclip, onSelect: () => { setSheet(null); setShowUpload(true); } },
-              { id: "share", label: isShared ? "Sharing is on" : "Share a link", description: "Get a link anyone can open",
-                Icon: Share2, onSelect: () => { setSheet(null); setShowShare(true); } },
               { id: "pdf", label: "Save as PDF", description: "Print or download these notes",
                 Icon: FileDown, onSelect: () => { setSheet(null); exportPdf(); } },
               { id: "delete", label: "Delete notebook", description: "This cannot be undone",
@@ -1031,8 +899,10 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           Icon={NB_TOOL_META[activeTool].Icon}
         >
           <Suspense fallback={<ToolPanelFallback />}>
-          {activeTool === "notes" && (
-            <UnitNotes notebookId={nb.id} currentUserId={currentUserId} tint={t} />
+          {activeTool === "sources" && (
+            <UnitSources nb={nb} currentUserId={currentUserId} members={members} refreshKey={sourcesVersion}
+              isOwner={members.find(m => m.user_id === currentUserId)?.role === "owner"}
+              onAdd={() => setShowUpload(true)} onToast={onToast} />
           )}
           {NB_TOOL_META[activeTool]?.panel === "forge" && (
             <TheForge nb={nb} initialAction={NB_TOOL_META[activeTool].forgeAction} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
@@ -1055,12 +925,6 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         </ToolModal>
       )}
 
-      {/* Image generator brings its own modal chrome, so it's gated on activeTool but rendered outside ToolModal */}
-      {activeTool === "image-gen" && (
-        <Suspense fallback={null}>
-          <ImageGeneratorModal notebookId={nb.id} onClose={() => setActiveTool(null)} />
-        </Suspense>
-      )}
     </div>
   );
 }

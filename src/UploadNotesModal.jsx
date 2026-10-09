@@ -112,7 +112,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
               fontSize: 18, fontWeight: 600, color: "#F5F5FA",
               fontFamily: FONT, marginBottom: 5, letterSpacing: "-0.02em",
             }}>
-              Upload Notes
+              Add a source
             </div>
             <div style={{ fontSize: 13, color: "rgba(245,245,250,0.55)", fontFamily: FONT, lineHeight: 1.5 }}>
               Text or files — Derek will use them in your next answer.
@@ -157,7 +157,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                 border: "1px solid rgba(255,255,255,0.06)",
                 borderRadius: 10, padding: 3, gap: 3,
               }}>
-                {[["text", "Paste text"], ["file", "Upload file"]].map(([id, label]) => (
+                {[["text", "Write or paste"], ["file", "Upload a file"]].map(([id, label]) => (
                   <button
                     key={id}
                     type="button"
@@ -190,7 +190,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                         if (canSubmit) handleSubmit(e);
                       }
                     }}
-                    placeholder="Paste your notes here…"
+                    placeholder="Write or paste your notes here…"
                     rows={8}
                     style={{
                       ...inputBase, padding: "12px 14px",
@@ -298,7 +298,7 @@ export default function UploadNotesModal({ notebookId, onClose, onUploaded }) {
                   onMouseEnter={e => { if (canSubmit) e.currentTarget.style.transform = "translateY(-1px)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
                 >
-                  {loading ? "Uploading…" : "Upload note"}
+                  {loading ? "Adding…" : "Add source"}
                 </button>
               </div>
             </form>

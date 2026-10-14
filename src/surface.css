@@ -152,15 +152,14 @@ textarea:focus, select:focus {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px -8px var(--acc-glow) !important;
 }
 
-/* ── The mark ─────────────────────────────────────────────────────────── */
+/* ── The mark ───────────────────────────────────────────────────────────
+   The image follows the theme, so a page loads one 1 KB WebP, not two PNGs. */
 .scholr-mark {
-  display: inline-block; position: relative; overflow: hidden; flex-shrink: 0;
+  display: inline-block; flex-shrink: 0;
+  background: #16181E url("/scholr-mark-dark.webp") center / cover no-repeat;
   box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 14px -6px var(--acc-glow), inset 0 0 0 1px var(--border-subtle);
 }
-.scholr-mark img { display: block; width: 100%; height: 100%; }
-.scholr-mark-light { display: none !important; }
-html[data-theme="light"] .scholr-mark-dark { display: none !important; }
-html[data-theme="light"] .scholr-mark-light { display: block !important; }
+html[data-theme="light"] .scholr-mark { background-color: #fff; background-image: url("/scholr-mark-light.webp"); }
 
 /* ── Landing hero: the one place the notebook shows ─────────────────────
    Faint ruled lines fading out from the headline, under an accent glow. */

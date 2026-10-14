@@ -6,7 +6,7 @@ import { logUserActivity } from "../lib/presence.js";
 import { supabase } from "../lib/supabase.js";
 import { uploadSingleFile } from "../lib/upload.js";
 import { checkNotebookLimit } from "../lib/usage.js";
-import { blockedUserIds, isOnline, orderedPair, pushNotification, resolveUserBrief } from "../lib/users.js";
+import { authIdentity, blockedUserIds, isOnline, orderedPair, profileBrief, pushNotification, resolveUserBrief } from "../lib/users.js";
 import { sendInviteEmail } from "../email.js";
 import { removeNotebookImageFiles } from "../lib/notebooks.js";
 
@@ -159,12 +159,11 @@ router.get("/api/notebooks/:id/members", requireAuth, requireMember, async (req,
   // here instead.
   const results = await Promise.all(
     (members ?? []).map(async ({ user_id, role }) => {
-      const [{ data }, { data: prof }] = await Promise.all([
-        supabase.auth.admin.getUserById(user_id),
-        supabase.from("profiles").select("last_active, username").eq("user_id", user_id).maybeSingle(),
-      ]);
-      const email = data?.user?.email ?? null;
-      const first_name = data?.user?.user_metadata?.full_name?.split(" ")[0]?.trim() ?? null;
+      // Batched profile read + cached auth details (see lib/users.js): one query
+      // for the whole member list instead of two requests per member.
+      const [ident, { data: prof }] = await Promise.all([authIdentity(user_id), profileBrief(user_id)]);
+      const email = ident.email;
+      const first_name = ident.fullName?.split(" ")[0]?.trim() ?? null;
       const local = email?.split("@")[0];
       return {
         user_id,
@@ -260,10 +259,10 @@ router.post("/api/notebooks/:id/messages", requireAuth, requireMember, async (re
 
         // Resolve member first names for matching
         const memberInfo = await Promise.all(members.map(async (m) => {
-          const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
-          const fullName = u?.user?.user_metadata?.full_name ?? "";
+          const ident = await authIdentity(m.user_id);
+          const fullName = ident.fullName ?? "";
           const first = fullName.split(" ")[0]?.trim() ?? "";
-          const emailLocal = u?.user?.email?.split("@")[0] ?? "";
+          const emailLocal = ident.email?.split("@")[0] ?? "";
           return { user_id: m.user_id, first: first.toLowerCase(), emailLocal: emailLocal.toLowerCase() };
         }));
 

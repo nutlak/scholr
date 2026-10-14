@@ -268,11 +268,14 @@ router.get("/api/friends/:friendId/shared", requireAuth, async (req, res) => {
   const shared = (mine.data ?? []).map(r => r.notebook_id).filter(id => theirIds.has(id));
   if (shared.length === 0) return res.json([]);
 
+  // notebooks has no `color` or `updated_at` column (asking for them made this
+  // fail whenever two friends actually shared a unit, which is the only time it
+  // matters): newest first by created_at.
   const { data: nbs, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, color, updated_at")
+    .select("id, title, topic, created_at")
     .in("id", shared)
-    .order("updated_at", { ascending: false });
+    .order("created_at", { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(nbs ?? []);
 });
@@ -302,17 +305,25 @@ router.get("/api/friends/best", requireAuth, async (req, res) => {
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
   // 3. For each friend: shared notebooks → activity count (either user, 90d).
+  // Which of MY notebooks each friend is in: one query for all friends (it was
+  // one per friend, and this endpoint is polled every minute per open browser).
+  const sharedByFriend = new Map();
+  if (myNotebookIds.size && friendOrder.length) {
+    const { data: rows } = await supabase
+      .from("notebook_members")
+      .select("user_id, notebook_id")
+      .in("user_id", friendOrder)
+      .in("notebook_id", [...myNotebookIds]);
+    for (const r of rows ?? []) {
+      if (!sharedByFriend.has(r.user_id)) sharedByFriend.set(r.user_id, []);
+      sharedByFriend.get(r.user_id).push(r.notebook_id);
+    }
+  }
   const ranked = await Promise.all(friendOrder.map(async (friendId) => {
     let activityCount = 0;
 
-    if (myNotebookIds.size) {
-      const { data: friendMemberships } = await supabase
-        .from("notebook_members")
-        .select("notebook_id")
-        .eq("user_id", friendId);
-      const shared = (friendMemberships ?? [])
-        .map(m => m.notebook_id)
-        .filter(id => myNotebookIds.has(id));
+    {
+      const shared = sharedByFriend.get(friendId) ?? [];
 
       if (shared.length) {
         const { count } = await supabase

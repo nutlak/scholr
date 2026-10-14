@@ -62,6 +62,10 @@ async function dataFor(userId, now) {
 }
 
 // Who would get a recap right now, and what it would say. Read-only.
+// ponytail: one candidate at a time, about seven queries each. Fine for a weekly
+// job into the low thousands of people; past that, batch the reads with
+// `.in('user_id', chunk)` in chunks of ~50 (PostgREST caps a response at 1000
+// rows, so don't fetch everyone in one query).
 export async function planRecaps(now = Date.now()) {
   const { data: profs } = await supabase.from("profiles")
     .select("user_id, username, last_active, email_unsubscribed")

@@ -1,40 +1,71 @@
+import { createBatcher, createTtlCache } from "./batch.js";
 import { supabase } from "./supabase.js";
 
 export function orderedPair(a, b) {
   return a < b ? [a, b] : [b, a];
 }
 
-// Resolve a user id → { userId, name, username }. Never returns email — friend
-// surfaces are username-based and must not leak email addresses.
-// Migration 033 adds profiles.last_notebook_id. Until it runs, selecting the
+// ── Who is this user? (names and presence, for friend surfaces) ──────────────
+// These lookups sit under every friends list, which the app re-fetches every
+// minute per open browser, and under the member list of every open unit. They
+// used to cost two requests per person (a profile query plus an auth-service
+// call), so a list of N people was 2N requests, a classic N+1. Now:
+//   - profile reads made in the same moment are one `IN (...)` query (batch.js),
+//     so `Promise.all(ids.map(resolveUserBrief))` is one query for all of them;
+//   - auth-side details (email, full name) are cached for ten minutes, since
+//     they change rarely and the auth service has no batch call.
+
+// Migration 024 adds profiles.last_notebook_id. Until it runs, selecting the
 // column errors and would blank out every name and presence dot with it — so
 // fall back to the pre-033 shape rather than losing the whole row.
 export let profileHasNotebookColumn = true;
-export async function profileBrief(uid) {
-  if (profileHasNotebookColumn) {
-    const res = await supabase
-      .from("profiles").select("username, last_active, last_notebook_id")
-      .eq("user_id", uid).maybeSingle();
-    if (!res.error) return res;
-    if (!res.error.message?.includes("last_notebook_id")) return res;
+const loadProfiles = createBatcher(async (uids) => {
+  const run = (cols) => supabase.from("profiles").select(cols).in("user_id", uids);
+  let res = await run(profileHasNotebookColumn ? "user_id, username, last_active, last_notebook_id" : "user_id, username, last_active");
+  if (res.error && profileHasNotebookColumn && res.error.message?.includes("last_notebook_id")) {
     profileHasNotebookColumn = false;
-    console.warn("[presence] profiles.last_notebook_id missing — run migration 033");
+    console.warn("[presence] profiles.last_notebook_id missing — run supabase/migrations/024_profiles_last_notebook_id.sql");
+    res = await run("user_id, username, last_active");
   }
-  return supabase
-    .from("profiles").select("username, last_active")
-    .eq("user_id", uid).maybeSingle();
+  if (res.error) throw res.error;
+  return new Map((res.data ?? []).map(row => [row.user_id, row]));
+});
+
+// Same shape as a single-row Supabase read: { data: row | null, error }.
+export async function profileBrief(uid) {
+  try { return { data: await loadProfiles(uid), error: null }; }
+  catch (error) { return { data: null, error }; }
 }
 
+// The auth service's view of a user: { email, fullName }. Failures aren't cached,
+// and simultaneous lookups of one person share a single request.
+const AUTH_TTL_MS = 10 * 60 * 1000;
+const authCache = createTtlCache({ ttlMs: AUTH_TTL_MS, max: 5000 });
+const authInflight = new Map();
+export async function authIdentity(uid) {
+  const hit = authCache.get(uid);
+  if (hit) return hit;
+  if (!authInflight.has(uid)) {
+    authInflight.set(uid, (async () => {
+      const { data, error } = await supabase.auth.admin.getUserById(uid);
+      const u = data?.user;
+      if (error || !u) return { email: null, fullName: null };
+      const v = { email: u.email ?? null, fullName: u.user_metadata?.full_name ?? null };
+      authCache.set(uid, v);
+      return v;
+    })().finally(() => authInflight.delete(uid)));
+  }
+  return authInflight.get(uid);
+}
+
+// Resolve a user id → { userId, name, username }. Never returns email — friend
+// surfaces are username-based and must not leak email addresses.
 export async function resolveUserBrief(uid) {
-  const [authRes, profRes] = await Promise.all([
-    supabase.auth.admin.getUserById(uid),
-    profileBrief(uid),
-  ]);
-  const u = authRes.data?.user;
+  const [ident, profRes] = await Promise.all([authIdentity(uid), profileBrief(uid)]);
   const username = profRes.data?.username ?? null;
   return {
     userId:     uid,
-    name:       u?.user_metadata?.full_name?.trim() || username || "User",
+    name:       ident.fullName?.trim() || username || "User",
     username,
     lastActive: profRes.data?.last_active ?? null,
     lastNotebookId: profRes.data?.last_notebook_id ?? null,

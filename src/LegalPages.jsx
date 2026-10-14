@@ -9,6 +9,7 @@
 
 import { LegalFooter, SUPPORT_EMAIL } from "./LegalFooter.jsx";
 import { FONT, FONT_SERIF } from "./lib/theme.js";
+import { ScholrMark } from "./ui/ScholrMark.jsx";
 
 const linkStyle = { color: "var(--accent)", fontWeight: 600, textDecoration: "none" };
 
@@ -518,7 +519,7 @@ export default function LegalPage({ page }) {
             color: "var(--text-primary)", letterSpacing: "-0.03em",
           }}
         >
-          <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 28, height: 28, borderRadius: 9, objectFit: "cover" }} />
+          <ScholrMark size={28} />
           {/* One span = one flex item → gap:8 doesn't split "schol" from "r" */}
           <span style={{ letterSpacing: "-0.03em" }}>schol<span style={{ color: "var(--accent)" }}>r</span></span>
         </a>

@@ -4,6 +4,7 @@ import { CheckCircle } from "lucide-react";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { useEscape } from "../../ui/useEscape.js";
+import { ScholrMark } from "../../ui/ScholrMark.jsx";
 
 export function InviteModal({ notebookId, onClose }) {
   useEscape(onClose);
@@ -212,7 +213,7 @@ export function InviteLanding({ inviteInfo, onSignIn }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
       }}>
-        <img src="/scholr-logo-final.png" alt="scholr" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
+        <ScholrMark size={32} />
         <div style={{
           fontSize: 28, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.01em",
           fontFamily: FONT_HEADING,

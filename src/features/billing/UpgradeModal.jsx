@@ -100,16 +100,16 @@ export function UpgradeModal({ limitType, onClose }) {
     }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="mobile-sheet" style={{
         background: "var(--bg-surface-1)",
-        border: "1px solid var(--acc)",
+        border: "1px solid var(--border-default)",
         borderRadius: 20, padding: "32px 28px",
         maxWidth: 400, width: "100%",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px var(--acc-bg)",
+        boxShadow: "var(--sh-modal)",
         animation: "slideInUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
         fontFamily: FONT,
       }}>
         {/* Icon + headline */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ marginBottom: 10, color: "var(--acc)", display: "inline-flex" }}>
+          <div style={{ marginBottom: 10, color: "var(--text-secondary)", display: "inline-flex" }}>
             <context.Icon size={36} strokeWidth={1.5} />
           </div>
           <div style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT_HEADING, letterSpacing: "-0.01em", marginBottom: 6 }}>
@@ -120,14 +120,16 @@ export function UpgradeModal({ limitType, onClose }) {
           </div>
         </div>
 
-        {/* Price */}
+        {/* Price. Accent paint means "you can press this", and the buy button is the
+            only thing here that is pressable, so the price stays ink. A purple,
+            bordered price box next to a purple button read as a second button. */}
         <div style={{
-          background: "linear-gradient(135deg, var(--acc-bg), rgba(167,139,250,0.04))",
-          border: "1px solid var(--acc)",
+          background: "var(--s2)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12, padding: "14px 18px", marginBottom: 20,
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
         }}>
-          <span style={{ fontSize: 32, fontWeight: 700, color: "var(--acc)", letterSpacing: "-0.03em" }}>$8.49</span>
+          <span style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.03em" }}>$8.49</span>
           <span style={{ fontSize: 13, color: "var(--text-tertiary)", fontWeight: 500 }}>/month</span>
         </div>
 

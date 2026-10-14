@@ -24,13 +24,34 @@ npm run dev                  # :5173 — must be this port; CORS allows 5173/417
 
 Those are **production** credentials — live Supabase, live Resend. Anything
 written locally lands in the real database, and `DISABLE_WORKERS=1` must stay
-set or booting sends real email to real users. Stripe is deliberately absent
-locally, so `/api/health` reports `pro: false, squad: false`; billing is tested
-on scholr.dev only.
+set or booting sends real email to real users. Stripe here is **test mode**
+(`sk_test_…` in `server/.env`, and both price ids are test-mode prices at
+$8.49 and $24.99 a month, checked against the Stripe API 2026-10-14; this section
+used to say Stripe was absent), so `/api/health` reports `pro` and `squad` true
+and the billing routes talk to Stripe's test data, never real charges. A real
+card is only ever exercised on scholr.dev. Never paste these local price ids
+into Railway: production uses the live ones.
 
 So exercise the real thing: hit the endpoints with a real token, or drive the
 signed-in UI. Two payment bugs that a green build never caught were found that
 way. Say so when something is genuinely unverified — but check before claiming it.
+
+**Driving the signed-in UI.** The sign-in form sits behind Turnstile, so an
+automated browser can't use it ("Couldn't confirm you're human"). Instead make a
+throwaway user with the service-role key (`email` starting `brain-e2e-`,
+`profiles` row with `terms_accepted_at` and `onboarding_completed`), mint a
+session (`auth.admin.generateLink({ type: "magiclink" })`, then `verifyOtp({
+token_hash })` on an anon client), write the **whole, unedited** session JSON to
+`localStorage["sb-<project-ref>-auth-token"]`, and load `/app`. A hand-trimmed
+session got revoked on the first attempt. Delete the user afterwards.
+
+**Hooks** (`.claude/settings.json`, scripts in `.claude/hooks/`, active from the
+next session): after every `Edit`/`Write` of a `src` or `server` JS/JSX file,
+`check-after-edit.sh` lints that file and, for logic files, runs `npm test`;
+exit 2 puts the failure in front of Claude (it can't undo the edit). Before
+every `Bash`, `guard-production.sh` blocks starting the API without
+`DISABLE_WORKERS=1` and blocks calling the mailers directly unless
+`ALLOW_REAL_EMAIL=1` (see the production-credentials warning above).
 
 ## Styling
 
@@ -98,11 +119,23 @@ Kalam was dropped (2026-10-14) for reading harsh and for a "1" that looked
 like a slash. Bold sans titles read "sharp" to Noah — Hanken, then even
 Nunito — so titles are a serif at book weight. Keep heading tracking near zero.
 
-**The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
-rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).
-Don't redraw it. The landing hero's sketch (`src/ui/HeroSketch.jsx`: notes → Derek as the
+**The logo is the S-shaped speech bubble with the spark**, rendered by
+`src/ui/ScholrMark.jsx` as one element whose image `surface.css` picks by theme:
+`public/scholr-mark-{dark,light}.webp` (~1 KB each; the old two-`<img>` version
+shipped both 54 KB PNGs for a 34px logo). The PNGs `scholr-logo-*.png` stay for
+what can't take WebP: favicon, apple-touch-icon, share cards, push icons
+(`public/sw.js`) and email (`server/email.js`). Don't redraw it. The landing hero's sketch (`src/ui/HeroSketch.jsx`: notes → Derek as the
 logo's spark → friends) is the one illustration, in theme tokens. No Derek
 face or bubble — Noah disliked it; faint ruled lines fade out behind the hero.
+
+**Accent paint means "you can press this."** Buttons, links and the selected
+state get `--acc`; a price, a decorative icon, a card border or a number does
+not, because a purple box beside a purple button reads as a second button. The
+upgrade modal is the first screen brought in line (price in ink, one purple
+button). Many older screens still tint figures and borders with the accent
+(streak counts, leaderboard "you", the pen squiggle): leave those unless you are
+already editing the screen, and never read the rule as a reason to drop purple
+from the buttons or the brand marks.
 
 Panels dock to the **right rail** (`ToolModal`), never centre-screen dialogs.
 `.shimmer` is the one "waiting" indicator.
@@ -212,3 +245,18 @@ is entirely in application code. Every route that takes a resource `:id`
 behind `requireAuth` alone must do its own explicit ownership check — match
 the existing ones. Use `crypto` for anything auth-bearing; never
 `Math.random()`.
+
+**Per-person lookups are batched.** `resolveUserBrief` (name, username, presence)
+used to cost two requests per person, so a friends list of N was 2N requests,
+polled every minute per open browser. `lib/users.js` now sends profile reads made
+in the same tick as one `IN (...)` query (`lib/batch.js`) and caches auth-side
+names and emails for 10 minutes (`authIdentity`). So `Promise.all(ids.map(resolveUserBrief))`
+is fine; don't call `supabase.auth.admin.getUserById` in a loop, use
+`authIdentity`. PostgREST caps a response at 1000 rows without saying so, which is
+why `/api/friends/best` batches memberships but still counts activity per friend.
+
+**Anything that sells a plan carries `BillingNote`** (`features/billing/`): the
+renewal, how to cancel and the Terms/Privacy links, in the words of Terms §7. It
+sits directly under the buy button in the upgrade modal and the Squad card, and
+under the landing pricing cards. Change the Terms' billing section and this
+component together.

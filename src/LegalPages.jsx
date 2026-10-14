@@ -85,7 +85,7 @@ const DOCS = {
 
 Effective date: June 2, 2026
 
-Last updated: September 30, 2026
+Last updated: October 14, 2026
 
 Policy version: 2026-06-02
 
@@ -117,8 +117,9 @@ identifier); and communications you send us for support.
 
 Information collected automatically: basic usage and device data (such as
 actions taken in the app, approximate request information, and error logs) used
-to operate and improve the Service; and cookies and similar technologies (see
-Section 7). We do not intentionally collect special categories of sensitive
+to operate and improve the Service; if you turn on push notifications, the
+device token your browser's push service gives us so we can send them; and
+cookies and similar technologies (see Section 7). We do not intentionally collect special categories of sensitive
 data, and we ask that you not upload such information.
 
 ## 3. How we use your information
@@ -128,6 +129,17 @@ and payments; provide customer support; maintain security, prevent abuse, and
 enforce usage limits; and improve and develop the Service. We do not sell your
 personal information, and we do not use your User Content to train our own
 models.
+
+Messages we send: service emails (sign-in codes, invitations, and billing
+notices) and, unless you unsubscribe, a short welcome series and a weekly study
+recap. The recap can include how many days you studied, how many of your friends
+did too, and the titles and due dates of units you belong to. Every optional
+email has an unsubscribe link, we honor it promptly, and you can switch these
+emails on or off any time in Settings. If you turn on push notifications, we
+send them for study activity: a friend starting to study, a study session
+planned in one of your units, and a reminder shortly before a session you said
+you're in for. You can turn push off at any time. The same notices also appear
+in the app's notification bell.
 
 Legal bases for processing (where the GDPR or similar laws apply): we process
 your personal data to perform our contract with you and provide the Service you
@@ -161,8 +173,10 @@ effects about you. Always verify AI output independently.
 We share information only as described here: with service providers /
 subprocessors who help us run Scholr, including Supabase (database, file
 storage, and authentication), Vercel (frontend hosting), Railway (backend
-hosting), Stripe (payment processing), Resend (transactional email such as
-sign-in codes), and Anthropic and OpenAI (AI processing, see Section 4); with
+hosting), Stripe (payment processing), Resend (email delivery: sign-in codes,
+invitations, and the optional study emails in Section 3), the browser push
+services run by Google, Apple, and Mozilla (which deliver push notifications you
+turn on), and Anthropic and OpenAI (AI processing, see Section 4); with
 other users, when you choose to share a notebook or invite collaborators, in
 which case content in the shared notebook is visible to the people you share it
 with; for legal and safety reasons, if required by law or to protect the rights,

@@ -113,6 +113,23 @@ router.post("/api/user/seed-welcome", requireAuth, async (req, res) => {
   }
 });
 
+// Optional email (the welcome series and the weekly recap) is one profile flag,
+// the same one the unsubscribe link sets. Codes, invites and billing notices
+// are not optional and ignore it. Own row only, so no id to check.
+router.get("/api/me/email-prefs", requireAuth, async (req, res) => {
+  const { data } = await supabase.from("profiles").select("email_unsubscribed").eq("user_id", req.user.id).maybeSingle();
+  res.json({ optionalEmail: !data?.email_unsubscribed });
+});
+
+router.post("/api/me/email-prefs", requireAuth, async (req, res) => {
+  if (typeof req.body?.optionalEmail !== "boolean") return res.status(400).json({ error: "optionalEmail must be true or false" });
+  const { error } = await supabase.from("profiles")
+    .upsert({ user_id: req.user.id, email_unsubscribed: !req.body.optionalEmail }, { onConflict: "user_id" });
+  if (error) return res.status(500).json({ error: "Couldn't save that. Try again." });
+  trackEvent(req.user.id, req.body.optionalEmail ? "optional_email_on" : "optional_email_off");
+  res.json({ optionalEmail: req.body.optionalEmail });
+});
+
 // Update longest streak if the current run beats the stored record.
 router.post("/api/user/streak", requireAuth, async (req, res) => {
   const current = Math.max(0, parseInt(req.body?.current, 10) || 0);

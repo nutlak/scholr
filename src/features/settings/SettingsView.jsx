@@ -1,6 +1,7 @@
 // The Settings pane: account, subscription, notifications,
 // appearance and the danger zone. Lifted out of Scholr() unchanged — the
 // eleven props are exactly the state it already read from that closure.
+import { EmailToggle } from "../notifications/EmailToggle.jsx";
 import { PushToggle } from "../notifications/PushToggle.jsx";
 import { SquadSection } from "../squad/SquadSection.jsx";
 import { Moon, Sun } from "lucide-react";
@@ -139,7 +140,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 </div>
 
                 {/* ── Notifications ─────────────────────────────────────────── */}
-                <PushToggle />
+                <PushToggle><EmailToggle /></PushToggle>
 
                 <SquadSection />
 

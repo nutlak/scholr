@@ -5,10 +5,13 @@ import { pushSupported, getPushSubscription, enablePush, disablePush } from "../
 import { useServerFeature } from "../../lib/useServerFeature.js";
 import { isIOS, isStandalone } from "../../lib/install.js";
 
-// Settings row for "a friend just started studying" push notifications.
+// Settings row for push notifications about study activity: a friend starting
+// to study, a session planned in one of your units, and a reminder before a
+// session you're in for.
 // Opt-in only — nothing subscribes until the toggle is flipped, matching the
 // study room's opt-in presence model.
-export function PushToggle() {
+// `children` are extra rows in the same Notifications group (the email switch).
+export function PushToggle({ children }) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -56,7 +59,7 @@ export function PushToggle() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {enabled ? <Bell size={18} strokeWidth={1.9} color="var(--accent)" /> : <BellOff size={18} strokeWidth={1.9} color="var(--text-tertiary)" />}
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>Friends studying now</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>Study notifications</div>
             <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>
               {needsInstallFirst
                 ? "Add scholr to your home screen first — tap Share in Safari, then Add to Home Screen. iPhone only delivers notifications to installed apps."
@@ -64,7 +67,7 @@ export function PushToggle() {
                 ? "Not supported in this browser."
                 : !serverReady
                   ? "Not available yet — we're still setting this up."
-                  : "Get a push when a friend starts a study session and you're not already in the app."}
+                  : "A push when a friend starts studying, when a session is planned in one of your units, and shortly before a session you're in for."}
             </div>
             {error && <div style={{ fontSize: 12, color: "var(--danger)", fontFamily: FONT, marginTop: 4 }}>{error}</div>}
           </div>
@@ -85,6 +88,7 @@ export function PushToggle() {
           >{busy ? "…" : enabled ? "Turn off" : "Turn on"}</button>
         )}
       </div>
+      {children}
       </div>
     </>
   );

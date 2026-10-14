@@ -181,6 +181,30 @@ sending: `npm run recap` (dry run only). To see what students use:
 `npm run usage`. Test workers by calling their functions directly, never by
 starting them.
 
+## Email, notifications and the privacy policy
+
+Optional email (the welcome series, the weekly recap) is one flag,
+`profiles.email_unsubscribed`: set by the signed link in every such email, by
+the RFC 8058 one-click headers (`unsubHeaders` in `email.js`), and by
+Settings → Notifications → Study emails (`/api/me/email-prefs`). Codes,
+invitations and billing notices ignore it. Set `MAIL_POSTAL_ADDRESS` on the
+server (a PO box or registered-agent address) and it prints under every
+optional email: US CAN-SPAM wants a physical address on commercial mail.
+
+**The privacy policy (`src/LegalPages.jsx`) describes what we send.** Adding a
+new kind of email, push notification or collected data means updating
+Sections 2, 3 and 5 and the Privacy Policy's "Last updated" date in the same
+change (the Terms and the recorded policy version stay put; nothing compares the
+version, so an edit doesn't trigger the terms wall). Push consent copy lives in
+`features/notifications/PushToggle.jsx` and must name every kind of push sent.
+Account deletion (`routes/auth.js`) clears the tables that block it; tables with
+a cascading foreign key to `auth.users` need nothing. Verified 2026-10-14 by
+deleting throwaway users: only `forge_outputs` (which also holds study sessions)
+and `starred_notebooks` block deleting the auth user; `user_events`,
+`social_notifications`, `push_subscriptions`, `flashcards`, `classes`,
+`daily_activity`, `notebook_members` and the friend tables all cascade. A new
+table that references users must be tested the same way before it ships.
+
 ## Server
 
 `supabase` is the **service-role** client and bypasses RLS, so authorization

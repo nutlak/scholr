@@ -314,6 +314,7 @@ app.get("/api/health", (_, res) => {
     VAPID_SUBJECT:             !!process.env.VAPID_SUBJECT,
     TURNSTILE_SECRET_KEY:      !!process.env.TURNSTILE_SECRET_KEY,
     WEEKLY_RECAP_DISABLED:     !!process.env.WEEKLY_RECAP_DISABLED, // "1" = kill switch for the weekly recap email
+    MAIL_POSTAL_ADDRESS:       !!process.env.MAIL_POSTAL_ADDRESS,   // sender's physical address, shown on optional email
   };
   res.json({
     ok: true,

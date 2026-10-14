@@ -71,9 +71,10 @@ router.get("/api/email/unsubscribe", (req, res) => {
   const u = encodeURIComponent(String(req.query.u || ""));
   const t = encodeURIComponent(String(req.query.t || ""));
   res.set("Content-Type", "text/html").send(unsubPage(
-    `<p style="color:#A0A0B8;">Unsubscribe from Scholr onboarding emails?</p>
+    `<p><strong>Stop scholr's study emails?</strong></p>
+     <p class="muted">That's the welcome series and the weekly recap. Sign-in codes, invitations and billing notices will still arrive, because you need those.</p>
      <form method="POST" action="/api/email/unsubscribe?u=${u}&t=${t}">
-       <button type="submit" style="background:#A78BFA;color:#0A0A0F;border:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;">Unsubscribe</button>
+       <button type="submit">Unsubscribe</button>
      </form>`));
 });
 
@@ -88,7 +89,7 @@ router.post("/api/email/unsubscribe", async (req, res) => {
   try {
     await supabase.from("profiles").upsert({ user_id: u, email_unsubscribed: true }, { onConflict: "user_id" });
   } catch (e) { console.error("[unsubscribe]", e.message); }
-  res.set("Content-Type", "text/html").send(unsubPage(`<p style="color:#A0A0B8;">You're unsubscribed. You won't get onboarding emails anymore.</p>`));
+  res.set("Content-Type", "text/html").send(unsubPage(`<p><strong>You're unsubscribed.</strong></p><p class="muted">No more welcome or weekly emails. Changed your mind? Turn them back on any time in scholr under Settings, Notifications.</p>`));
 });
 
 // ── Client crash reports ─────────────────────────────────────────────────────

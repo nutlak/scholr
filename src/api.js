@@ -1003,6 +1003,22 @@ export const api = {
     return data; // { cards: [...] }
   },
 
+  // Optional email (welcome series + weekly recap): { optionalEmail: boolean }
+  async getEmailPrefs() {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/me/email-prefs`, { headers });
+    if (!res.ok) throw await readError(res);
+    return res.json();
+  },
+
+  async setEmailPrefs(optionalEmail) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/me/email-prefs`, { method: "POST", headers, body: JSON.stringify({ optionalEmail }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Couldn't save that.");
+    return data;
+  },
+
   // Planned study sessions for a unit: [{ id, startsAt, note, createdBy, going: [{ userId, name }], mine }]
   async listSessions(notebookId) {
     const headers = await authHeaders();

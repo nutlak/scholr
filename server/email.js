@@ -59,7 +59,23 @@ function ctaButton(label, href) {
   return `<a href="${href}" style="display:inline-block;background:${BRAND};color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 28px;border-radius:12px;text-decoration:none;margin:6px 0 8px;box-shadow:0 6px 16px -6px rgba(109,40,217,0.55);">${label}</a>`;
 }
 
-const OPTIONAL_FOOTER = `You're getting this because you signed up for scholr. Reply anytime: <a href="mailto:support@scholr.dev" style="color:${MUTED};">support@scholr.dev</a>.`;
+// Under the card of every optional email. MAIL_POSTAL_ADDRESS is the sender's
+// physical address, which US CAN-SPAM requires on commercial email; set it in
+// the server's environment (a PO box or registered-agent address works) and it
+// appears here. Read per call so changing it needs no code change.
+function optionalFooter() {
+  const addr = process.env.MAIL_POSTAL_ADDRESS?.trim();
+  return `You're getting this because you signed up for scholr. Reply anytime: <a href="mailto:support@scholr.dev" style="color:${MUTED};">support@scholr.dev</a>.${addr ? `<br>${esc(addr)}` : ""}`;
+}
+
+// RFC 8058 one-click unsubscribe: mail apps (Gmail's "Unsubscribe" button,
+// Apple Mail) POST to this URL themselves. It's the same signed link as the one
+// in the footer, and the endpoint already accepts POST with the token in the URL.
+export function unsubHeaders(userId) {
+  if (!userId) return undefined;
+  const url = `${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}`;
+  return { "List-Unsubscribe": `<${url}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
+}
 
 // footer: what sits under the card (why you got it, unsubscribe). Pass the
 // userId only for optional mail — transactional mail (codes, invites) has no
@@ -195,7 +211,7 @@ export function onboardingEmail(type, name, userId) {
   const make = ONBOARDING_TEMPLATES[type];
   if (!make) throw new Error(`Unknown onboarding email type: ${type}`);
   const { subject, html } = make(name);
-  return { subject, html: emailShell(html, { userId, footer: OPTIONAL_FOOTER }) };
+  return { subject, html: emailShell(html, { userId, footer: optionalFooter() }) };
 }
 
 export async function sendOnboardingEmail(type, to, name, userId) {
@@ -206,6 +222,7 @@ export async function sendOnboardingEmail(type, to, name, userId) {
     replyTo: SUPPORT_EMAIL,
     subject,
     html,
+    headers: unsubHeaders(userId),
   });
   if (error) throw new Error(`Resend error: ${error.message}`);
 }
@@ -233,7 +250,7 @@ export function recapEmailHtml(name, data, userId) {
     parts.push(`<ul style="margin:0;padding-left:20px;">${data.sessions.map(s => li(`<strong style="color:${INK};">${esc(s.title)}</strong> · ${dayLabel(s.startsAt)}${s.note ? ` · ${esc(s.note)}` : ""}`)).join("")}</ul>`);
   }
   parts.push(`<div style="margin-top:24px;">${ctaButton("Open scholr →", appUrl())}</div>`);
-  return emailShell(parts.join("\n"), { userId, footer: OPTIONAL_FOOTER });
+  return emailShell(parts.join("\n"), { userId, footer: optionalFooter() });
 }
 
 export async function sendRecapEmail(to, name, userId, data) {
@@ -243,6 +260,7 @@ export async function sendRecapEmail(to, name, userId, data) {
     replyTo: SUPPORT_EMAIL,
     subject: data.daysStudied > 0 ? "Your week on scholr" : "What's coming up on scholr",
     html: recapEmailHtml(name, data, userId),
+    headers: unsubHeaders(userId),
   });
   if (error) throw new Error(`Resend error: ${error.message}`);
 }

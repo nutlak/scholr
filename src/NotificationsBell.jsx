@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Bell } from "lucide-react";
 import { api } from "./api.js";
 import { dropdownShiftX, notifLine } from "./lib/format.js";
@@ -24,8 +25,13 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
   const [open, setOpen] = useState(false);
   // The panel hangs right-aligned off the bell. In the sidebar the bell sits
   // ~220px from the left edge, so a 300px panel ran off-screen; nudge it back.
+  // It renders into <body> at the bell's measured position: inside the sidebar
+  // it was clipped by three overflow:hidden ancestors, and the mobile sheet's
+  // drag transform would trap a position:fixed child just the same.
   const [shiftX, setShiftX] = useState(0);
+  const [anchor, setAnchor] = useState(null); // { top, right } in viewport px
   const wrapRef = useRef(null);
+  const panelRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -48,7 +54,10 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
   // Close on outside click.
   useEffect(() => {
     if (!open) return;
-    function onDoc(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); }
+    function onDoc(e) {
+      if (wrapRef.current?.contains(e.target) || panelRef.current?.contains(e.target)) return;
+      setOpen(false);
+    }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
@@ -60,6 +69,7 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
       // friends sheet, so the overflow differs per placement and per viewport.
       const r = wrapRef.current?.getBoundingClientRect();
       setShiftX(r ? dropdownShiftX(r.right, window.innerWidth, PANEL_W, VIEWPORT_MARGIN, EDGE_GAP) : 0);
+      setAnchor(r ? { top: r.bottom + 8, right: window.innerWidth - r.right } : null);
     }
     setOpen(next);
     // Mark all read when opening.
@@ -107,15 +117,16 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
         )}
       </button>
 
-      {open && (
-        <div style={{
-          position: "absolute", top: 44, right: 0,
+      {open && anchor && createPortal(
+        <div ref={panelRef} style={{
+          position: "fixed", top: anchor.top, right: anchor.right,
           width: PANEL_W, maxWidth: `calc(100vw - ${VIEWPORT_MARGIN}px)`,
           transform: shiftX ? `translateX(${shiftX}px)` : undefined,
           maxHeight: 380, overflowY: "auto",
           background: "var(--bg-surface-1)",
           border: "1px solid var(--border-default)", borderRadius: 12,
-          boxShadow: "0 24px 60px rgba(0,0,0,0.55)", zIndex: 500,
+          // Above the bottom sheets (1000–1300) it can open from on a phone.
+          boxShadow: "0 24px 60px rgba(0,0,0,0.55)", zIndex: 2500,
           padding: 6, animation: "fadeIn 0.15s ease",
         }}>
           <div style={{
@@ -158,7 +169,8 @@ export default function NotificationsBell({ onOpenNotebook, onOpenBilling, reloa
               );
             })
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

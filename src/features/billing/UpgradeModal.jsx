@@ -134,7 +134,7 @@ export function UpgradeModal({ limitType, onClose }) {
         <div style={{ marginBottom: 24 }}>
           {[
             "Unlimited AI messages with Claude Sonnet (smarter AI)",
-            "Unlimited AI generations (study guides, worksheets, brains)",
+            "Unlimited AI generations (study guides, worksheets, flashcards)",
             "Unlimited classes",
             "Unlimited notes & storage",
             "Priority support",

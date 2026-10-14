@@ -759,24 +759,6 @@ a[role="button"],
 
 /* ── Study menu (StudyMenu.jsx) ─────────────────────────────────────────────
    Big tinted tiles: the tile's own colour does the work, label stays one line. */
-.study-hero {
-  display: flex; align-items: center; gap: 14px; width: 100%;
-  padding: 16px; min-height: 92px; cursor: pointer; font-family: inherit;
-  border-radius: 16px; border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent);
-  background: color-mix(in srgb, var(--acc) 10%, var(--bg-surface-1));
-}
-.study-hero-orb {
-  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; color: var(--acc);
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--acc) 45%, transparent), transparent 70%),
-              color-mix(in srgb, var(--acc) 12%, var(--bg-base));
-  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
-}
-.study-hero-bar {
-  display: block; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden;
-  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
-}
-.study-hero-bar > span { display: block; height: 100%; border-radius: 3px; background: var(--success); }
 .study-tile {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
   gap: 14px; min-height: 96px; padding: 14px; cursor: pointer; text-align: left;

@@ -11,7 +11,8 @@ import { FriendActionModal, FriendInviteModal } from "./FriendModals.jsx";
    who's online, who's waiting on an answer, and one obvious way to add
    someone. Requests are answered in place — they used to be reachable only
    from the activity feed further down the page. */
-export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFriendIds }) {
+// showTitle is off inside the phone's Friends sheet, which already says "Friends".
+export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFriendIds, showTitle = true }) {
   const BEST = ["\u{1F947}", "\u{1F948}", "\u{1F949}"]; // top three, by shared-notebook activity
   const [friends, setFriends]   = useState([]);
   const [bestIds, setBestIds]   = useState({});
@@ -62,10 +63,10 @@ export function FriendsRow({ refreshSignal = 0, onChanged, onOpenNotebook, onFri
   return (
     <section style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <h2 style={{
+        {showTitle && <h2 style={{
           fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
           color: "var(--text-tertiary)", fontFamily: FONT, margin: 0,
-        }}>Friends</h2>
+        }}>Friends</h2>}
         {online > 0 && (
           <span style={{ fontSize: 12, color: "var(--text-secondary)", fontFamily: FONT }}>
             {online} online

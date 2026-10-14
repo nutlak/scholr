@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Orbit, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
@@ -16,7 +16,6 @@ const FlashcardsPanel = lazy(() => import("../../Flashcards.jsx").then(m => ({ d
 const TheForge = lazy(() => import("../forge/TheForge.jsx").then(m => ({ default: m.TheForge })));
 const PodcastPanel = lazy(() => import("../podcast/PodcastPanel.jsx").then(m => ({ default: m.PodcastPanel })));
 const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => ({ default: m.FeynmanPanel })));
-const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ default: m.BrainPanel })));
 
 // ── Scholr 2.0 study-tool registry ────────────────────────────────────────────
 // One source of truth for the notebook study tools. The header bar maps over
@@ -35,7 +34,6 @@ const BrainPanel = lazy(() => import("../brain/BrainPanel.jsx").then(m => ({ def
 // that happen to share a name, so their subtitles say which is which rather
 // than pretending one supersedes the other.
 const NB_TOOLS = [
-  { id: "brain",             text: "Brain",     label: "Unit brain",   title: "Brain",        Icon: Orbit,         tint: "var(--ink-violet)", subtitle: "Every key idea, and how well you know it" },
   { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "var(--ink-blue)", subtitle: "What Derek reads in this unit",            group: "learn" },
   { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "var(--ink-green)", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
   { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "var(--ink-teal)", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
@@ -155,9 +153,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
   // Scholr 2.0 — one source of truth for which study tool is open (it renders
   // in the shared ToolModal). Replaces the old show*/mobilePanelView/isMobile
   // tangle; responsive behavior is now handled purely in CSS.
-  const [activeTool, setActiveTool] = useState(null); // null | 'brain' | 'sources' | 'forge' | 'podcast' | 'feynman'
-  const [feynmanConcept, setFeynmanConcept] = useState(null); // set when the brain opens Feynman on one concept
-  useEffect(() => { if (activeTool !== "feynman") setFeynmanConcept(null); }, [activeTool]);
+  const [activeTool, setActiveTool] = useState(null); // null | 'sources' | 'forge' | 'podcast' | 'feynman'
   const [sheet, setSheet] = useState(null);           // null | 'tools' | 'more'
   const [mobileTab, setMobileTab] = useState("chat"); // phone only: "chat" | "study"
   const [notesById, setNotesById] = useState({});     // id -> note, for expanding a citation inline
@@ -567,7 +563,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
       </div>
       {mobileTab === "study" && (
         <div className="nb-study-pane no-print">
-          <StudyMenu nb={nb} tools={NB_TOOLS} currentUserId={currentUserId} onOpen={setActiveTool} />
+          <StudyMenu tools={NB_TOOLS} onOpen={setActiveTool} />
         </div>
       )}
 
@@ -859,7 +855,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           subtitle="Turn these notes into something you can study from"
           Icon={GraduationCap}
         >
-          <StudyMenu nb={nb} tools={NB_TOOLS} currentUserId={currentUserId}
+          <StudyMenu tools={NB_TOOLS}
             onOpen={(id) => { setSheet(null); setActiveTool(id); }} />
         </ToolModal>
       )}
@@ -915,12 +911,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
             <PodcastPanel nb={nb} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           {activeTool === "feynman" && (
-            <FeynmanPanel key={feynmanConcept ?? ""} nb={nb} me={me} initialConcept={feynmanConcept} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
-          )}
-          {activeTool === "brain" && (
-            <BrainPanel nb={nb} members={members} currentUserId={currentUserId} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded}
-              onExplain={(c) => { setFeynmanConcept(c); setActiveTool("feynman"); }}
-              onAsk={(text) => { setActiveTool(null); setQuery(text); setTimeout(() => inputRef.current?.focus(), 0); }} />
+            <FeynmanPanel nb={nb} me={me} onToast={onToast} onUpgradeNeeded={onUpgradeNeeded} />
           )}
           </Suspense>
         </ToolModal>

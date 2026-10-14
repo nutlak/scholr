@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "../../api.js";
 import { AlertTriangle, ArrowRight, CheckCircle, RotateCcw, Sparkles, Users2, XCircle } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
@@ -75,8 +75,8 @@ function FeynmanSection({ title, items, Icon, color, delay = 0 }) {
     </div>
   );
 }
-export function FeynmanPanel({ nb, me, initialConcept, onToast, onUpgradeNeeded }) {
-  const [concept, setConcept] = useState(initialConcept || nb?.topic || nb?.title || "");
+export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
+  const [concept, setConcept] = useState(nb?.topic || nb?.title || "");
   const [explanation, setExplanation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -106,21 +106,7 @@ export function FeynmanPanel({ nb, me, initialConcept, onToast, onUpgradeNeeded 
   const words = trimmed ? trimmed.split(/\s+/).length : 0;
   const canGrade = concept.trim().length > 1 && trimmed.length >= 20 && !loading;
 
-  // When the unit has a brain, suggest its concepts — the ones you know least
-  // first — instead of generic samples ("Recursion" in a biology unit).
-  const [brainConcepts, setBrainConcepts] = useState([]);
-  useEffect(() => {
-    let live = true;
-    api.getBrain(nb.id).then(({ map, scores }) => {
-      if (!live || !map) return;
-      const mine = scores?.[me?.userId] ?? {};
-      const known = c => mine[c.name.toLowerCase()] ?? -1;
-      setBrainConcepts(map.concepts.slice().sort((a, b) => known(a) - known(b)).map(c => c.name));
-    }).catch(() => {});
-    return () => { live = false; };
-  }, [nb.id, me?.userId]);
-
-  const sampleChips = (brainConcepts.length ? brainConcepts : [nb?.topic, ...FEYNMAN_SAMPLES])
+  const sampleChips = [nb?.topic, ...FEYNMAN_SAMPLES]
     .filter(Boolean)
     .filter((v, i, a) => a.indexOf(v) === i)
     .slice(0, 4);
@@ -132,8 +118,6 @@ export function FeynmanPanel({ nb, me, initialConcept, onToast, onUpgradeNeeded 
       const r = await api.feynman({ concept: concept.trim(), explanation: trimmed });
       setResult(r);
       onToast?.(`Scored ${r.score}/100`);
-      // Lights this concept up on the unit brain, if it's on the map.
-      api.scoreConcept(nb.id, concept.trim(), r.score).catch(() => {});
     } catch (e) {
       if (e.code === "message_limit") { onUpgradeNeeded?.("message_limit"); return; }
       setError(e.message || "Couldn't grade that one — try again in a sec.");

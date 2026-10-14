@@ -47,7 +47,6 @@ html, body { background: var(--bg); }
 /* ── Cards: raised off the page ───────────────────────────────────────── */
 [style*="var(--card-bg)"]:not([style*="border-radius: 50%"]):not([style*="border-radius: 999"]),
 .lift-card,
-.study-hero,
 .study-tile,
 .battle-tile,
 .ins-group,
@@ -56,14 +55,13 @@ html, body { background: var(--bg); }
   border: 1px solid var(--card-border) !important;
   box-shadow: var(--lift), var(--sh-card) !important;
 }
-.lift-card, .study-tile, .battle-tile, .lp-feature, .lp-card,
-.study-hero { border-radius: var(--r-card) !important; }
-.study-tile, .study-hero, .battle-tile { background: var(--card-bg) !important; }
-.lift-card, .study-tile, .battle-tile, .lp-feature, .study-hero {
+.lift-card, .study-tile, .battle-tile, .lp-feature, .lp-card { border-radius: var(--r-card) !important; }
+.study-tile, .battle-tile { background: var(--card-bg) !important; }
+.lift-card, .study-tile, .battle-tile, .lp-feature {
   transition: transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s ease, border-color 0.22s ease !important;
 }
 @media (hover: hover) {
-  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover, .study-hero:hover {
+  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover {
     transform: translateY(-2px);
     box-shadow: var(--lift), var(--sh-card-h) !important;
     border-color: var(--border-h) !important;
@@ -241,5 +239,5 @@ html[data-theme="dark"] .hand-underline {
 :focus-visible { outline: 2px solid var(--acc) !important; outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover, .study-hero:hover { transform: none; }
+  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover { transform: none; }
 }

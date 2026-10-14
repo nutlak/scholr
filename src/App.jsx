@@ -1224,7 +1224,7 @@ export default function Scholr() {
                   }}
                 >✕</button>
               </div>
-              <FriendsRow refreshSignal={friendsVersion} onChanged={() => bumpFriendsVersion()} onOpenNotebook={openNotebookById} onFriendIds={setFriendIds} />
+              <FriendsRow showTitle={false} refreshSignal={friendsVersion} onChanged={() => bumpFriendsVersion()} onOpenNotebook={openNotebookById} onFriendIds={setFriendIds} />
 
               {/* Labeled billing entry — reachable via the Friends tab so mobile
                   users don't have to discover the avatar to manage their plan. */}

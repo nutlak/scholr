@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useInstall } from "./lib/install.js";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Radio, Flame, Download, Orbit } from "lucide-react";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Radio, Flame, Download } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
 import { HeroSketch } from "./ui/HeroSketch.jsx";
 import { HandCheck, HandCircle, HandRule } from "./ui/Hand.jsx";
@@ -43,7 +43,6 @@ const FEATURES = [
   { Icon: Radio,         title: "Study together, live", tint: "var(--ink-green)", body: "See which friends are studying right now and jump into their notebook, with the same notes and the same chat. Start a live quiz battle when you want review to be a competition." },
   { Icon: Flame,         title: "Friends streak leaderboard", tint: "var(--ink-red)", short: "Your streak vs. your friends", body: "Your study streak, ranked against your friends. A quiet nudge that keeps you both showing up." },
   { Icon: MessageCircle, title: "Ask Derek anything", tint: "var(--ink-blue)", short: "An AI tutor that reads your notes", body: "Your AI study partner, grounded in your actual notes. Ask it for definitions, practice questions, or summaries." },
-  { Icon: Orbit,         title: "The unit brain",     tint: "var(--ink-violet)", short: "See what you know at a glance", body: "Every key idea in a unit, sketched as a map and colored by how well you know it. Explain one in Feynman Mode and watch it turn green, or see which friend already has it down." },
   { Icon: Brain,         title: "Feynman Mode",       tint: "var(--ink-green)", short: "Explain it, get graded", body: "Explain a concept in your own words and get graded on what you understand, including the gaps and misconceptions." },
   { Icon: Hammer,        title: "Study guides in a tap", tint: "var(--ink-amber)", short: "Guides, quizzes, worksheets", body: "Turn a notebook into study guides, practice questions, worksheets with real plotted graphs, flashcards, and summaries in a single click." },
   { Icon: Headphones,    title: "AI podcasts",        tint: "var(--ink-red)", short: "Your notes as a two-host show", body: "Generate a two-host audio overview of your notes and listen on the walk to class. Merge in a friend's notebook to get an episode that covers both." },
@@ -285,7 +284,7 @@ const USE_CASES = [
 ];
 
 const FAQS = [
-  { q: "Is Scholr free?", a: "Yes. The Free plan is free forever: 100 AI messages and 3 AI generations (guides, quizzes, worksheets, brains) a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
+  { q: "Is Scholr free?", a: "Yes. The Free plan is free forever: 100 AI messages and 3 AI generations (study guides, quizzes, worksheets, flashcards) a month, up to 3 classes. Upgrade to Pro ($8.49/mo) for unlimited everything and the smarter Claude Sonnet model." },
   { q: "What can I upload?", a: "PDFs, lecture slides, Word docs, images, and plain text. Scholr extracts the text so Derek can read and reference your actual material." },
   { q: "What is Feynman Mode?", a: "You explain a concept in your own words and Scholr grades how well you understand it: what you nailed, the gaps, any misconceptions, and a follow-up question to push you further." },
   { q: "Is my data private?", a: "Your notebooks are invite-only, with no public links. We never sell your data or use your content to train AI models. See our Privacy Policy for the details." },

@@ -33,7 +33,10 @@ export function DashboardRail({
       <ActivityHeatmap data={heatmap} longestStreak={longestStreak} leaderboard={leaderboard} />
 
       <div style={{
+        // Wraps rather than squeezes: in the narrow rail the actions drop
+        // under the title instead of breaking every label onto two lines.
         display: "flex", alignItems: "center", justifyContent: "space-between",
+        flexWrap: "wrap", columnGap: 8,
         marginBottom: 14, paddingTop: 20,
         borderTop: "1px solid var(--border-subtle)",
       }}>
@@ -41,6 +44,7 @@ export function DashboardRail({
           <div style={{
             fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)",
             fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase",
+            whiteSpace: "nowrap",
           }}>
             Recent Activity
           </div>
@@ -52,7 +56,7 @@ export function DashboardRail({
             }}>{unread}</span>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: -8 }}>
           {unread > 0 && (
             <button
               onClick={async () => {
@@ -63,7 +67,7 @@ export function DashboardRail({
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
                 padding: "4px 8px", borderRadius: 8, transition: "all 0.15s",
-                fontWeight: 500, minHeight: 44,
+                fontWeight: 500, minHeight: 44, whiteSpace: "nowrap",
               }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "var(--acc-bg)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}
@@ -78,7 +82,7 @@ export function DashboardRail({
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT,
                 padding: "4px 8px", borderRadius: 8, transition: "all 0.15s",
-                fontWeight: 500, minHeight: 44,
+                fontWeight: 500, minHeight: 44, whiteSpace: "nowrap",
               }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.background = "rgba(248,113,113,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; }}

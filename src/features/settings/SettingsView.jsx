@@ -9,7 +9,7 @@ import { ACCENT_PRESETS, FONT } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { useServerFeature } from "../../lib/useServerFeature.js";
 
-export function SettingsView({ accentColor, displayName, handleManageSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
+export function SettingsView({ accentColor, displayName, handleManageSubscription, refreshSubscription, portalLoading, setAccentColor, setShowDeleteAccount, setTheme, setUpgradeModal, subscription, theme, user }) {
   // Billing needs Stripe configured server-side. Without this the Manage
   // subscription button looks live and dies on click — which is the exact
   // problem SquadSection already solved for Squad, and the reason /api/health
@@ -142,7 +142,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                 {/* ── Notifications ─────────────────────────────────────────── */}
                 <PushToggle><EmailToggle /></PushToggle>
 
-                <SquadSection />
+                <SquadSection onLeft={refreshSubscription} />
 
                 {/* ── Appearance ────────────────────────────────────────────── */}
                 <div className="ins-caption">Appearance</div>

@@ -1,4 +1,5 @@
 import { api } from "../../api.js";
+import { BillingNote } from "./BillingNote.jsx";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { useServerFeature } from "../../lib/useServerFeature.js";
 import { useEscape } from "../../ui/useEscape.js";
@@ -148,6 +149,7 @@ export function UpgradeModal({ limitType, onClose }) {
 
         {/* Buttons */}
         {proAvailable ? (
+          <>
           <button
             onClick={handleUpgrade}
             disabled={loading}
@@ -163,6 +165,8 @@ export function UpgradeModal({ limitType, onClose }) {
           >
             {loading ? "Redirecting…" : "Upgrade to Pro — $8.49/mo"}
           </button>
+          <BillingNote />
+          </>
         ) : (
           <div style={{
             width: "100%", marginBottom: 10, borderRadius: 12,

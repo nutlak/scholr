@@ -3,15 +3,18 @@ import { Users, Copy, Check } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { api } from "../../api.js";
 import { useServerFeature } from "../../lib/useServerFeature.js";
+import { BillingNote } from "../billing/BillingNote.jsx";
 
 // Settings > Notifications-adjacent section for the Squad plan: one
 // subscription, Pro for up to 5 people. Self-contained: loads on mount.
-export function SquadSection() {
+export function SquadSection({ onLeft }) {
   const [squad, setSquad] = useState(undefined); // undefined = loading, null = none
   const [loadFailed, setLoadFailed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   // Squad checkout needs a Stripe price configured server-side. Without this
   // the button looked live and died on click with an error.
@@ -41,6 +44,23 @@ export function SquadSection() {
     }
   }
 
+  // Members get Pro from the owner's subscription, so leaving is free and
+  // instant (the server refuses owners: they cancel the subscription instead).
+  // Their plan changes with it, so the caller refreshes it.
+  async function leave() {
+    setLeaving(true);
+    setError("");
+    try {
+      await api.leaveSquad();
+      setSquad(null);
+      setConfirmLeave(false);
+      onLeft?.();
+    } catch (err) {
+      setError(err.message);
+    }
+    setLeaving(false);
+  }
+
   async function copyInvite() {
     if (!squad?.inviteUrl) return;
     try { await navigator.clipboard.writeText(squad.inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }
@@ -50,6 +70,12 @@ export function SquadSection() {
   // The caption and the row now carry their chrome as classes, so this section
   // groups the same way as the rest of Settings whichever branch renders.
   const hdr = { fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", fontFamily: FONT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, marginLeft: 16 };
+
+  const quietBtn = {
+    minHeight: 44, padding: "0 16px", borderRadius: 10, background: "transparent",
+    border: "1px solid var(--border-default)", color: "var(--text-secondary)",
+    fontFamily: FONT, fontSize: 13, cursor: "pointer",
+  };
 
   // Hold the space while loading rather than returning null — the section used
   // to pop in and shove everything below it down.
@@ -90,12 +116,15 @@ export function SquadSection() {
                 Squad plans are temporarily unavailable — check back soon.
               </div>
             ) : (
-              <button onClick={startSquad} disabled={starting} className="btn-press" style={{
-                minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
-                background: "var(--acc)", color: "var(--on-acc)",
-                fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
-                opacity: starting ? 0.7 : 1,
-              }}>{starting ? "…" : "Start a squad"}</button>
+              <>
+                <button onClick={startSquad} disabled={starting} className="btn-press" style={{
+                  minHeight: 36, padding: "0 16px", borderRadius: 10, border: 0,
+                  background: "var(--acc)", color: "var(--on-acc)",
+                  fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: starting ? "default" : "pointer",
+                  opacity: starting ? 0.7 : 1,
+                }}>{starting ? "…" : "Start a squad"}</button>
+                <BillingNote lead="$24.99 a month for up to 5 people." align="left" style={{ marginTop: 10, marginBottom: 0 }} />
+              </>
             )}
           </>
         ) : (
@@ -129,6 +158,15 @@ export function SquadSection() {
                 {copied ? "Copied" : "Copy invite link"}
               </button>
             )}
+            {!squad.isOwner && (confirmLeave ? (
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", fontFamily: FONT }}>Leave {squad.name}? You'll lose its Pro.</span>
+                <button onClick={leave} disabled={leaving} className="btn-press" style={{ ...quietBtn, color: "var(--danger)", borderColor: "color-mix(in srgb, var(--danger) 45%, transparent)" }}>{leaving ? "…" : "Leave squad"}</button>
+                <button onClick={() => setConfirmLeave(false)} className="btn-press" style={quietBtn}>Stay</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmLeave(true)} className="btn-press" style={quietBtn}>Leave squad</button>
+            ))}
           </>
         )}
         {error && <div style={{ fontSize: 12.5, color: "var(--danger)", fontFamily: FONT, marginTop: 8 }}>{error}</div>}

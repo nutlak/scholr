@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { BillingNote } from "./features/billing/BillingNote.jsx";
 import { useInstall } from "./lib/install.js";
 import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Radio, Flame, Download } from "lucide-react";
 import { FONT, FONT_HEADING } from "./lib/theme.js";
@@ -819,10 +820,12 @@ export default function LandingPage({ onSignIn, invited = false }) {
                 "Pro for up to 5 people",
                 "One bill for the whole group",
                 "Invite your study group instantly",
+                "Members can leave any time",
               ]}
             />
             </div>
           </div>
+          <BillingNote lead="Pro is $8.49 a month and Squad is $24.99 a month." consent={false} style={{ marginTop: 28, marginBottom: 0 }} />
         </div>
       </section>
 

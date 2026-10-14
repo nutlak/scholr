@@ -593,7 +593,7 @@ export const api = {
     const res = await fetch(`${API_URL}/api/create-portal-session`, await billingInit());
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error ?? "Failed to open billing portal");
+      throw apiError(res, data, "Failed to open billing portal");
     }
     const { url } = await res.json();
     await openExternal(url);

@@ -26,7 +26,10 @@ export function useBilling({ onToast }) {
       await api.createPortalSession();
     } catch (err) {
       console.error("Portal session error:", err);
-      onToast?.({ text: "Could not open subscription management. Please try again.", tone: "error" });
+      // Only a message we wrote for this case is shown as-is; anything else
+      // (Stripe errors, "No Stripe customer…") stays behind the generic line.
+      const text = err.code === "squad_member" ? err.message : "Could not open subscription management. Please try again.";
+      onToast?.({ text, tone: "error" });
       setPortalLoading(false);
     }
   }

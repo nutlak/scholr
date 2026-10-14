@@ -297,6 +297,18 @@ router.post("/api/create-portal-session", requireAuth, async (req, res) => {
     .maybeSingle();
 
   if (!sub?.stripe_customer_id) {
+    // Squad members get Pro from the owner's subscription and have no billing of
+    // their own (the owner's customer id is saved at checkout, so owners never
+    // land here). Say so: Settings shows them "Manage subscription" because
+    // their tier is pro, and "please try again" can never work for them.
+    const { data: membership } = await supabase.from("squad_members").select("squad_id").eq("user_id", req.user.id).maybeSingle();
+    if (membership) {
+      return res.status(400).json({
+        error: "squad_member",
+        // Shown in a one-line toast: keep it short.
+        message: "Billing is handled by your squad's owner.",
+      });
+    }
     return res.status(400).json({ error: "No Stripe customer found for this user" });
   }
 

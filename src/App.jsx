@@ -1080,6 +1080,7 @@ export default function Scholr() {
               accentColor={accentColor}
               displayName={displayName}
               handleManageSubscription={handleManageSubscription}
+              refreshSubscription={refreshSubscription}
               portalLoading={portalLoading}
               setAccentColor={setAccentColor}
               setShowDeleteAccount={setShowDeleteAccount}

@@ -1,6 +1,6 @@
 // Fonts, colour palettes and status metadata shared across the app.
 
-export const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
+export const FONT = `"Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
 // Headings are the same grotesque at a heavier weight. Handwriting (Shantell Sans,
 // var(--font-hand)) is an accent for margin notes and the hero, never structure.

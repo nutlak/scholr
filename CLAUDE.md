@@ -75,7 +75,7 @@ for tints, since `${hex}22` breaks on a `var()`.
 reaches inline-styled components by class or by the tokens they write
 (`[style*="var(--card-bg)"]`). Don't add `corner-shape` squircles.
 
-**Type:** Hanken Grotesk (`FONT`, `FONT_HEADING`) for headings, body, buttons
+**Type:** Nunito (`FONT`, `FONT_HEADING`) for headings, body, buttons
 and anything read at length — including Derek's answers and PINs. Shantell Sans
 (`var(--font-hand)`) is the handwriting layer: section labels (surface.css turns
 the inline uppercase labels into handwritten notes), the status strip,
@@ -92,7 +92,9 @@ due dates, meter labels, stat captions, "here now" — take `className="hand"`
 **Handwriting stays soft**: Shantell Sans ships 400–600 only and
 `font-synthesis-weight: none` stops faux bold; labels and notes run at 500.
 Kalam was dropped (2026-10-14) for reading harsh and for a "1" that looked
-like a slash.
+like a slash; Hanken Grotesk went the same night (bold titles read harsh) —
+Nunito's rounded terminals keep headings friendly. Keep heading tracking near
+zero; the old tight negative tracking was part of the harshness.
 
 **The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
 rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).

@@ -1,7 +1,8 @@
-/* One working typeface, Hanken Grotesk, for UI and headings (heavier weight,
-   tighter tracking). Shantell Sans is the handwriting accent: margin notes, the hero's
+/* One working typeface, Nunito, for UI and headings: rounded terminals, so a
+   bold title reads friendly rather than harsh (Hanken Grotesk was dropped
+   2026-10-14 for exactly that). Shantell Sans is the handwriting accent: margin notes, the hero's
    "Study together.", the sketch labels — never paragraphs or structure. */
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&family=Shantell+Sans:wght@400..600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..800&family=Shantell+Sans:wght@400..600&display=swap');
 
 /* ── Themes: layered surfaces with real depth ─────────────────────────
    Four planes, each a step off the last: the page (--bg), the chrome around it
@@ -149,11 +150,11 @@ html[data-theme="light"] code {
 }
 
 :root {
-  --font: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-sans: "Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-serif: "Hanken Grotesk", "Inter", system-ui, sans-serif;
-  --font-heading: "Hanken Grotesk", "Inter", system-ui, sans-serif;
-  --font-hand: "Shantell Sans", "Hanken Grotesk", system-ui, sans-serif;
+  --font: "Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-serif: "Nunito", "Inter", system-ui, sans-serif;
+  --font-heading: "Nunito", "Inter", system-ui, sans-serif;
+  --font-hand: "Shantell Sans", "Nunito", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 
   /* Surfaces — warm near-black. The indigo cast read as a skin over the UI;
@@ -255,7 +256,7 @@ html[data-theme="light"] code {
      for a design pass, not a find-and-replace. Prefer the listed steps below
      for anything new.
 
-     Display and h1 are Newsreader; h2 down is Hanken. */
+     One face throughout; tracking only loosens as type gets smaller. */
   --fs-display: 34px;   /* greeting, hero */
   --fs-h1:      26px;   /* pane titles */
   --fs-h2:      20px;   /* section headings */
@@ -271,11 +272,11 @@ html[data-theme="light"] code {
      tracking and small sizes need a touch of positive. One letter-spacing
      value reused across a scale is wrong at both ends — it is either loose on
      the headline or tight on the caption. Each step carries its own. */
-  --tr-display: -0.032em;
-  --tr-h1:      -0.026em;
-  --tr-h2:      -0.020em;
-  --tr-h3:      -0.015em;
-  --tr-body:    -0.006em;
+  --tr-display: -0.012em;
+  --tr-h1:      -0.010em;
+  --tr-h2:      -0.008em;
+  --tr-h3:      -0.005em;
+  --tr-body:     0em;
   --tr-md:       0em;
   --tr-sm:       0em;
   --tr-xs:       0.004em;

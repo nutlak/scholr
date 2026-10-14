@@ -38,12 +38,12 @@ export function HeroSketch({ width = 560 }) {
       <path className="hs-draw hs-d2" d="M128 162c22-8 38 6 58-2s34-6 52-1" fill="none" stroke={PEN} strokeWidth="3" strokeLinecap="round" />
       <path className="hs-draw hs-d2" d="M230 152l11 7-12 6" fill="none" stroke={PEN} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Derek: a speech bubble with dot eyes, serious about your notes */}
-      <path className="hs-draw hs-d3" d="M258 112c20-3 46-3 66-1 7 1 10 6 10 13 1 16 0 30-2 42-1 7-5 10-12 10-12 1-24 0-36 1l-17 15c-2 1-3 0-3-2l3-13c-7-1-11-5-11-12-1-13-1-25 0-36 0-9 2-15 2-17z"
-        fill={INK} stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
-      <circle className="hs-fade hs-d3" cx="282" cy="140" r="4.2" fill={PAPER} />
-      <circle className="hs-fade hs-d3" cx="306" cy="140" r="4.2" fill={PAPER} />
-      <path className="hs-draw hs-d3" d="M284 178l-6 24m26-24 6 24" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+      {/* Derek: the spark from the logo, drawn in pen, with a small one beside it */}
+      <path className="hs-draw hs-d3" d="M296 106c3 24 13 37 40 42-27 5-37 18-40 42-3-24-13-37-40-42 27-5 37-18 40-42z"
+        fill="var(--acc-bg-h)" stroke={PEN} strokeWidth="2.6" strokeLinejoin="round" />
+      <path className="hs-draw hs-d3" d="M334 100c1 7 4 10 11 11-7 1-10 4-11 11-1-7-4-10-11-11 7-1 10-4 11-11z"
+        fill="none" stroke={PEN} strokeWidth="2" strokeLinejoin="round" />
+      <path className="hs-draw hs-d3" d="M258 120l-6-5m4 52-6 5" fill="none" stroke={PENCIL} strokeWidth="1.8" strokeLinecap="round" />
       <text className="hs-fade hs-d3" x="244" y="88" fill={PEN} fontSize="21" style={hand}>ask Derek anything</text>
       <path className="hs-draw hs-d3" d="M296 94c-1 4-1 8 0 12m-4-4 4 5 4-5" fill="none" stroke={PEN} strokeWidth="1.8" strokeLinecap="round" />
 

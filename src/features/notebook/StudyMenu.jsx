@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight, Orbit } from "lucide-react";
 import { api } from "../../api.js";
 import { FONT } from "../../lib/theme.js";
+import { HandCircle } from "../../ui/Hand.jsx";
 
 // ── StudyMenu ─────────────────────────────────────────────────────────────────
 // The notebook's study tools as a destination rather than a row of equal
@@ -31,7 +32,7 @@ export function StudyMenu({ nb, tools, currentUserId, onOpen }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, fontFamily: FONT }}>
       <button onClick={() => onOpen("brain")} className="btn-press study-hero">
-        <span className="study-hero-orb"><Orbit size={26} strokeWidth={1.7} /></span>
+        <span style={{ color: "var(--acc)", flexShrink: 0, display: "flex" }}><HandCircle i={1} pad="13px"><Orbit size={26} strokeWidth={1.7} /></HandCircle></span>
         <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
           <span style={{ display: "block", fontSize: 17, fontWeight: 650, color: "var(--text-primary)" }}>Unit brain</span>
           <span style={{ display: "block", fontSize: 14, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.4 }}>
@@ -48,11 +49,13 @@ export function StudyMenu({ nb, tools, currentUserId, onOpen }) {
 
       {[["learn", "Learn it"], ["test", "Test yourself"]].map(([g, title]) => (
         <section key={g}>
-          <h3 style={{ margin: "0 2px 10px", fontSize: 15, fontWeight: 650, color: "var(--text-primary)", fontFamily: FONT }}>{title}</h3>
+          <h3 style={{ margin: "0 2px 10px", fontSize: 20, fontWeight: 700, color: "var(--text-primary)", fontFamily: "var(--font-hand)" }}>{title}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {group(g).map(({ id, label, Icon, tint }) => (
+            {group(g).map(({ id, label, Icon, tint }, i) => (
               <button key={id} onClick={() => onOpen(id)} className="btn-press study-tile" style={{ "--tile": tint }}>
-                <Icon size={24} strokeWidth={1.8} style={{ color: tint }} />
+                <span style={{ color: tint, display: "flex", alignSelf: "flex-start", margin: "4px 0 0 4px" }}>
+                  <HandCircle i={i} pad="9px"><Icon size={22} strokeWidth={1.8} /></HandCircle>
+                </span>
                 <span>{label}</span>
               </button>
             ))}

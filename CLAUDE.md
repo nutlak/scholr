@@ -75,16 +75,25 @@ for tints, since `${hex}22` breaks on a `var()`.
 reaches inline-styled components by class or by the tokens they write
 (`[style*="var(--card-bg)"]`). Don't add `corner-shape` squircles.
 
-**Type:** Hanken Grotesk (`FONT`, `FONT_HEADING`) for everything structural.
-Kalam (`var(--font-hand)`) is the handwriting accent only: the hero's "Study
-together." with its wavy `.hand-underline`, accent words in landing section
-titles, the hero sketch labels. Never a paragraph, a PIN or a heading.
+**Type:** Hanken Grotesk (`FONT`, `FONT_HEADING`) for headings, body, buttons
+and anything read at length — including Derek's answers and PINs. Kalam
+(`var(--font-hand)`) is the handwriting layer: section labels (surface.css turns
+the inline uppercase labels into handwritten notes), the status strip,
+segmented options, the hero's "Study together.", accent words in landing titles.
 Scales: `--fs-*` with matching `--tr-*`/`--lh-*`, spacing `--sp-1`…`--sp-8`.
+
+**Hand-drawn marks live in `src/ui/Hand.jsx`**: `HandCircle` (a pen loop
+around a label or icon — landing badges, feature/step icons, study tiles, empty
+states), `HandCheck` (pricing ticks), `HandRule` (wavy divider). They draw in
+`currentColor`. `.hand-underline` is the wavy underline (hero, active nav item).
+Reuse these rather than drawing new one-offs. Depth stays: marks go on raised
+surfaces, they don't replace them.
 
 **The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
 rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).
-Don't redraw it. The landing hero's sketch (`src/ui/HeroSketch.jsx`) is the one
-illustration, in theme tokens; faint ruled lines fade out behind the hero.
+Don't redraw it. The landing hero's sketch (`src/ui/HeroSketch.jsx`: notes → Derek as the
+logo's spark → friends) is the one illustration, in theme tokens. No Derek
+face or bubble — Noah disliked it; faint ruled lines fade out behind the hero.
 
 Panels dock to the **right rail** (`ToolModal`), never centre-screen dialogs.
 `.shimmer` is the one "waiting" indicator.

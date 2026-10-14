@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useInstall } from "./lib/install.js";
-import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Check, Radio, Flame, Download, Orbit } from "lucide-react";
-import { FONT, FONT_HEADING, FONT_SERIF, MONO } from "./lib/theme.js";
+import { BookOpen, MessageCircle, Users, Brain, Hammer, Headphones, Radio, Flame, Download, Orbit } from "lucide-react";
+import { FONT, FONT_HEADING } from "./lib/theme.js";
 import { HeroSketch } from "./ui/HeroSketch.jsx";
+import { HandCheck, HandCircle, HandRule } from "./ui/Hand.jsx";
 import { ScholrMark } from "./ui/ScholrMark.jsx";
 
 
@@ -81,15 +82,11 @@ function FeatureCard({ Icon, title, body, short, tint, idx }) {
       }}
     >
       <div className="lp-feat-icon" style={{
-        position: "relative",
-        width: 44, height: 44, borderRadius: 12,
-        background: "var(--paper)",
-        border: `1px solid color-mix(in srgb, ${tint} 20%, transparent)`,
-        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative", display: "inline-flex",
         color: tint, marginBottom: 18,
         transition: "transform 0.25s ease",
-        transform: hovered ? "scale(1.06)" : "scale(1)",
-      }}><Icon size={22} strokeWidth={1.75} /></div>
+        transform: hovered ? "rotate(-6deg) scale(1.06)" : "none",
+      }}><HandCircle i={idx} pad="11px"><Icon size={22} strokeWidth={1.75} /></HandCircle></div>
       <div className="lp-feat-title" style={{
         position: "relative",
         fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
@@ -115,18 +112,14 @@ function Step({ n, title, body, tint, last, idx }) {
     }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <div className="lp-step-num" style={{
-          width: 40, height: 40, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${tint}, color-mix(in srgb, ${tint} 53%, transparent))`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 15, fontWeight: 700, color: "#fff",
-          fontFamily: FONT, flexShrink: 0,
-          boxShadow: `0 8px 20px color-mix(in srgb, ${tint} 25%, transparent), 0 0 0 4px color-mix(in srgb, ${tint} 8%, transparent)`,
-        }}>{n}</div>
+          color: tint, fontSize: 24, fontWeight: 700, lineHeight: 1,
+          fontFamily: "var(--font-hand)", flexShrink: 0,
+        }}><HandCircle i={idx} pad="0" style={{ width: 50, height: 46 }}>{n}</HandCircle></div>
         {!last && (
+          // A pencil line down to the next step: dashes, not a gradient.
           <div style={{
-            width: 2, flex: 1, marginTop: 4,
-            background: `linear-gradient(180deg, color-mix(in srgb, ${tint} 27%, transparent) 0%, var(--bg-surface-2) 100%)`,
-            minHeight: 36,
+            width: 2, flex: 1, marginTop: 8, minHeight: 36, opacity: 0.45,
+            background: "repeating-linear-gradient(to bottom, var(--text-secondary) 0 7px, transparent 7px 13px)",
           }} />
         )}
       </div>
@@ -147,7 +140,6 @@ function Step({ n, title, body, tint, last, idx }) {
 function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick, highlighted = false }) {
   const [ref, visible] = useFadeIn(highlighted ? 80 : 0);
   const [hovered, setHovered] = useState(false);
-  const gradient = accent; // solid ink, no gradients on paper
   return (
     <div className="lp-card lp-price"
       ref={ref}
@@ -157,7 +149,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         position: "relative",
         background: highlighted
           ? "var(--paper)"
-          : "#14141F",
+          : "var(--card-bg)",
         border: `1px solid ${highlighted ? `color-mix(in srgb, ${accent} 33%, transparent)` : "var(--border-subtle)"}`,
         borderRadius: 18,
         padding: "30px 26px",
@@ -173,22 +165,17 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
       }}
     >
       {highlighted && (
+        // A note scribbled in the corner, not a badge.
         <div style={{
-          position: "absolute", top: 14, right: 14,
-          fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
-          textTransform: "uppercase", color: "var(--paper)",
-          background: gradient,
-          borderRadius: 999, padding: "4px 10px",
-          fontFamily: FONT,
-          boxShadow: `0 4px 14px color-mix(in srgb, ${accent} 33%, transparent)`,
+          position: "absolute", top: 20, right: 22, transform: "rotate(4deg)",
+          fontSize: 17, fontWeight: 700, color: accent, fontFamily: "var(--font-hand)",
         }}>
-          Most popular
+          <HandCircle i={2} pad="2px 10px">most popular!</HandCircle>
         </div>
       )}
       <div style={{
-        fontSize: 13, fontWeight: 600, color: accent,
-        letterSpacing: "0.08em", textTransform: "uppercase",
-        fontFamily: FONT, marginBottom: 12,
+        fontSize: 22, fontWeight: 700, color: accent,
+        fontFamily: "var(--font-hand)", marginBottom: 10,
       }}>{tier}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
         <span style={{
@@ -200,10 +187,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
           fontFamily: FONT, fontWeight: 500,
         }}>{period}</span>
       </div>
-      <div style={{
-        height: 1, background: "var(--bg-surface-3)",
-        margin: "22px 0 20px",
-      }} />
+      <div style={{ color: "var(--border-strong)", margin: "20px 0 18px" }}><HandRule /></div>
       <ul style={{
         listStyle: "none", padding: 0, margin: "0 0 28px",
         display: "flex", flexDirection: "column", gap: 12,
@@ -214,12 +198,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
             fontSize: 14, color: "var(--text-primary)",
             fontFamily: FONT, lineHeight: 1.45,
           }}>
-            <span style={{
-              flexShrink: 0, width: 18, height: 18, borderRadius: "50%",
-              background: `color-mix(in srgb, ${accent} 13%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 27%, transparent)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: accent, marginTop: 1,
-            }}><Check size={11} strokeWidth={2.5} /></span>
+            <span style={{ color: accent, marginTop: 1, display: "flex" }}><HandCheck /></span>
             <span>{f}</span>
           </li>
         ))}
@@ -228,7 +207,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         onClick={onClick}
         style={{
           width: "100%", height: 46,
-          background: highlighted ? gradient : "transparent",
+          background: highlighted ? accent : "transparent",
           border: highlighted ? "none" : `1px solid color-mix(in srgb, ${accent} 33%, transparent)`,
           color: highlighted ? "var(--paper)" : accent,
           borderRadius: 12,
@@ -256,18 +235,12 @@ function SectionHeader({ pill, title, sub, accent = "var(--acc)" }) {
       opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(14px)",
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
+      {/* The section's name, written in the margin and circled. */}
       <div className="lp-pill" style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: `color-mix(in srgb, ${accent} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 19%, transparent)`,
-        borderRadius: 999, padding: "5px 12px",
-        // Mono, tracked out, small. The label type of a technical page rather
-        // than a marketing one — the thing that reads as precision in the
-        // reference site's nav and section marks.
-        fontSize: 11, fontWeight: 600, color: accent,
-        marginBottom: 18, letterSpacing: "0.14em", textTransform: "uppercase",
-        fontFamily: MONO,
+        display: "inline-flex", color: accent, marginBottom: 18,
+        fontSize: 19, fontWeight: 700, fontFamily: "var(--font-hand)",
       }}>
-        {pill}
+        <HandCircle pad="3px 16px">{pill}</HandCircle>
       </div>
       <h2 style={{
         fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600,
@@ -333,8 +306,8 @@ function UseCaseCard({ when, what, idx }) {
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
       <div style={{
-        fontSize: 16, fontWeight: 600, color: "var(--text-primary)",
-        fontFamily: FONT_SERIF, letterSpacing: "-0.01em", lineHeight: 1.3,
+        fontSize: 21, fontWeight: 700, color: "var(--acc)",
+        fontFamily: "var(--font-hand)", lineHeight: 1.25,
       }}>{when}</div>
       <div style={{ fontSize: 14.5, color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: FONT }}>{what}</div>
     </div>
@@ -356,7 +329,7 @@ function FAQItem({ q, a }) {
       >
         <span>{q}</span>
         <span style={{
-          flexShrink: 0, color: "var(--accent)", fontSize: 24, lineHeight: 1,
+          flexShrink: 0, color: "var(--accent)", fontSize: 30, lineHeight: 1, fontFamily: "var(--font-hand)",
           transition: "transform 0.2s ease", transform: open ? "rotate(45deg)" : "none",
         }}>+</span>
       </button>
@@ -475,7 +448,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
           .lp-features { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 32px !important; }
           .lp-feature { padding: 16px 14px !important; border-radius: 14px !important; }
           .lp-feature-hero { grid-column: 1 / -1; padding: 22px 18px !important; }
-          .lp-feature:not(.lp-feature-hero) .lp-feat-icon { width: 38px !important; height: 38px !important; margin-bottom: 12px !important; }
+          .lp-feature:not(.lp-feature-hero) .lp-feat-icon { margin-bottom: 12px !important; }
           .lp-feature:not(.lp-feature-hero) .lp-feat-title { font-size: 15px !important; margin-bottom: 4px !important; }
           .lp-feature:not(.lp-feature-hero) .lp-feat-body { display: none; }
           .lp-feat-short { display: block; position: relative; font-size: 13.5px; line-height: 1.45; color: var(--text-secondary); }
@@ -634,16 +607,10 @@ export default function LandingPage({ onSignIn, invited = false }) {
 
           {/* Badge */}
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "var(--acc-bg)",
-            border: "1px solid color-mix(in srgb, var(--acc) 26%, transparent)",
-            borderRadius: 999, padding: "6px 14px",
-            fontSize: 11, fontWeight: 600, color: "var(--acc)",
-            fontFamily: MONO, textTransform: "uppercase",
-            marginBottom: 28, letterSpacing: "0.14em",
+            display: "inline-flex", color: "var(--acc)", marginBottom: 28,
+            fontSize: 20, fontWeight: 700, fontFamily: "var(--font-hand)", transform: "rotate(-2deg)",
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--acc)" }} />
-            AI-powered collaborative studying
+            <HandCircle i={1} pad="4px 20px">AI-powered collaborative studying</HandCircle>
           </div>
 
           {/* Headline — single line at widescreen */}

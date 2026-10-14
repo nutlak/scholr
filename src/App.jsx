@@ -809,7 +809,6 @@ export default function Scholr() {
                   padding: "0 12px", height: 34, borderRadius: 8,
                   display: "flex", alignItems: "center", gap: 10,
                   background: active ? "var(--bg-surface-2)" : "transparent",
-                  boxShadow: active ? "inset 2px 0 0 var(--accent)" : "none",
                   color: active ? "var(--text-primary)" : "var(--text-secondary)",
                   fontSize: 13, fontWeight: active ? 600 : 500,
                   cursor: "pointer", transition: "background 150ms ease, color 150ms ease",
@@ -826,7 +825,8 @@ export default function Scholr() {
                 }}>
                   <Icon size={16} strokeWidth={1.75} />
                 </span>
-                {label}
+                {/* The current page is underlined in pen. */}
+                <span className={active ? "hand-underline" : undefined}>{label}</span>
                 {id === "dashboard" && dueCount > 0 && (
                   <span style={{
                     marginLeft: "auto", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9,

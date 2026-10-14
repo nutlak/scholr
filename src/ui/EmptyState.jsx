@@ -1,4 +1,5 @@
-import { FONT, FONT_SERIF } from "../lib/theme.js";
+import { FONT } from "../lib/theme.js";
+import { HandCircle } from "./Hand.jsx";
 
 export function EmptyState({ icon, title, body, cta, secondary }) {
   return (
@@ -7,15 +8,10 @@ export function EmptyState({ icon, title, body, cta, secondary }) {
       justifyContent: "center", padding: "72px 24px", gap: 14, textAlign: "center",
       animation: "fadeIn 0.3s ease",
     }}>
-      <div style={{
-        width: 72, height: 72, borderRadius: 18,
-        background: "var(--paper)",
-        border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        marginBottom: 6, color: "var(--accent)",
-        boxShadow: "0 0 32px var(--acc-bg)",
-      }}>{icon}</div>
-      <div style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, fontSize: "var(--fs-h1)", color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1.15 }}>
+      <div style={{ marginBottom: 6, color: "var(--accent)", display: "flex" }}>
+        <HandCircle i={2} pad="20px">{icon}</HandCircle>
+      </div>
+      <div style={{ fontFamily: "var(--font-hand)", fontWeight: 700, fontSize: "var(--fs-h1)", color: "var(--text-primary)", lineHeight: 1.15 }}>
         {title}
       </div>
       <div style={{ fontSize: "var(--fs-md)", color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>

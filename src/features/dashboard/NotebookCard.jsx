@@ -1,7 +1,7 @@
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { FONT, classTint, tintFor } from "../../lib/theme.js";
 import { AvatarStack } from "../../ui/Avatar.jsx";
-import { HandCircle, HandText } from "../../ui/Hand.jsx";
+import { HandCircle } from "../../ui/Hand.jsx";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -53,17 +53,17 @@ export function NotebookCard({ nb, onClick, onDelete }) {
             color: t.ink ?? t.hue, textTransform: "uppercase",
             fontFamily: FONT,
           }}>
-            <HandText>{`${nb.notes} ${nb.notes === 1 ? "note" : "notes"}`}</HandText>
+            {`${nb.notes} ${nb.notes === 1 ? "note" : "notes"}`}
           </div>
         </div>
         {/* The due date replaces the updated date rather than floating over it
             (absolutely positioned, the pill was drawn on top of "Oct 9"). */}
         {nb.due_date ? (
           <div className="hand" style={{ whiteSpace: "nowrap", marginRight: 22, color: dueDateTone(nb.due_date).color }}>
-            <HandCircle pad="1px 9px"><HandText>{`due ${formatDueDate(nb.due_date)}`}</HandText></HandCircle>
+            <HandCircle pad="1px 9px">{`due ${formatDueDate(nb.due_date)}`}</HandCircle>
           </div>
         ) : (
-          <div className="hand" style={{ color: "var(--text-tertiary)", paddingRight: 22 }}><HandText>{nb.updated}</HandText></div>
+          <div className="hand" style={{ color: "var(--text-tertiary)", paddingRight: 22 }}>{nb.updated}</div>
         )}
       </div>
       <div style={{
@@ -87,7 +87,7 @@ export function NotebookCard({ nb, onClick, onDelete }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <AvatarStack names={nb.contributors} />
           <span className="hand" style={{ color: "var(--text-tertiary)" }}>
-            <HandText>{`${nb.contributors.length} ${nb.contributors.length === 1 ? "member" : "members"}`}</HandText>
+            {`${nb.contributors.length} ${nb.contributors.length === 1 ? "member" : "members"}`}
           </span>
         </div>
         <div className="hand" style={{

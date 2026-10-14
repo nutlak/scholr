@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { FONT, tintFor } from "../lib/theme.js";
 import { memberLabel } from "../lib/format.js";
-import { HandText } from "./Hand.jsx";
 
 export function Avatar({ name, size = 28, seed }) {
   const t = tintFor(seed ?? name);
@@ -89,7 +88,7 @@ export function MemberAvatarStack({ members }) {
         }}>+{overflow}</div>
       )}
       {onlineCount > 1 && (
-        <span className="hand" style={{ marginLeft: 9, color: "var(--success)", whiteSpace: "nowrap" }}><HandText>{`${onlineCount} here now`}</HandText></span>
+        <span className="hand" style={{ marginLeft: 9, color: "var(--success)", whiteSpace: "nowrap" }}>{`${onlineCount} here now`}</span>
       )}
 
       {open && (

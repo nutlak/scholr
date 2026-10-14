@@ -8,7 +8,7 @@ const PEN = "var(--acc, #1D4ED8)";
 const PENCIL = "var(--text-secondary, #444)";
 const RED = "var(--danger, #DC2626)";
 const PAPER = "var(--paper, #fff)";
-const hand = { fontFamily: "Kalam, cursive" };
+const hand = { fontFamily: "var(--font-hand)" };
 
 export function HeroSketch({ width = 560 }) {
   return (

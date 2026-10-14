@@ -16,7 +16,7 @@ export function StudyMenu({ tools, onOpen }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 18, fontFamily: FONT }}>
       {[["learn", "Learn it"], ["test", "Test yourself"]].map(([g, title]) => (
         <section key={g}>
-          <h3 style={{ margin: "0 2px 10px", fontSize: 20, fontWeight: 700, color: "var(--text-primary)", fontFamily: "var(--font-hand)" }}>{title}</h3>
+          <h3 style={{ margin: "0 2px 10px", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-hand)" }}>{title}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {group(g).map(({ id, label, Icon, tint }, i) => (
               <button key={id} onClick={() => onOpen(id)} className="btn-press study-tile" style={{ "--tile": tint }}>

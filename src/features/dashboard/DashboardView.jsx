@@ -86,10 +86,9 @@ export function DashboardView({
           </div>
           <span className="pen-squiggle" aria-hidden="true" />
           <div className="hand" style={{ "--hand-size": "18px", color: "var(--text-tertiary)", marginTop: 4 }}>
-            {/* Numbers stay in the UI face: Kalam's 1 reads as a slash. */}
             {activeView === "dashboard"
-              ? <><span className="num">{classes.length}</span> {classes.length === 1 ? "class" : "classes"} · <span className="num">{notebooks.length}</span> {notebooks.length === 1 ? "unit" : "units"}</>
-              : <><span className="num">{filtered.length}</span> {filtered.length === 1 ? "unit" : "units"}</>}
+              ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "unit" : "units"}`
+              : `${filtered.length} ${filtered.length === 1 ? "unit" : "units"}`}
           </div>
           {activeView === "dashboard" && (
             <div className="hand" style={{

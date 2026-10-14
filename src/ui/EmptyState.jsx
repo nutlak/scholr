@@ -11,7 +11,7 @@ export function EmptyState({ icon, title, body, cta, secondary }) {
       <div style={{ marginBottom: 6, color: "var(--accent)", display: "flex" }}>
         <HandCircle i={2} pad="20px">{icon}</HandCircle>
       </div>
-      <div style={{ fontFamily: "var(--font-hand)", fontWeight: 700, fontSize: "var(--fs-h1)", color: "var(--text-primary)", lineHeight: 1.15 }}>
+      <div style={{ fontFamily: "var(--font-hand)", fontWeight: 600, fontSize: "var(--fs-h1)", color: "var(--text-primary)", lineHeight: 1.15 }}>
         {title}
       </div>
       <div style={{ fontSize: "var(--fs-md)", color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55, maxWidth: 360 }}>

@@ -111,7 +111,7 @@ function Step({ n, title, body, tint, last, idx }) {
     }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
         <div className="lp-step-num" style={{
-          color: tint, fontSize: 24, fontWeight: 700, lineHeight: 1,
+          color: tint, fontSize: 24, fontWeight: 600, lineHeight: 1,
           fontFamily: "var(--font-hand)", flexShrink: 0,
         }}><HandCircle i={idx} pad="0" style={{ width: 50, height: 46 }}>{n}</HandCircle></div>
         {!last && (
@@ -167,13 +167,13 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
         // A note scribbled in the corner, not a badge.
         <div style={{
           position: "absolute", top: 20, right: 22, transform: "rotate(4deg)",
-          fontSize: 17, fontWeight: 700, color: accent, fontFamily: "var(--font-hand)",
+          fontSize: 17, fontWeight: 600, color: accent, fontFamily: "var(--font-hand)",
         }}>
           <HandCircle i={2} pad="2px 10px">most popular!</HandCircle>
         </div>
       )}
       <div style={{
-        fontSize: 22, fontWeight: 700, color: accent,
+        fontSize: 22, fontWeight: 600, color: accent,
         fontFamily: "var(--font-hand)", marginBottom: 10,
       }}>{tier}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
@@ -237,7 +237,7 @@ function SectionHeader({ pill, title, sub, accent = "var(--acc)" }) {
       {/* The section's name, written in the margin and circled. */}
       <div className="lp-pill" style={{
         display: "inline-flex", color: accent, marginBottom: 18,
-        fontSize: 19, fontWeight: 700, fontFamily: "var(--font-hand)",
+        fontSize: 19, fontWeight: 600, fontFamily: "var(--font-hand)",
       }}>
         <HandCircle pad="3px 16px">{pill}</HandCircle>
       </div>
@@ -305,7 +305,7 @@ function UseCaseCard({ when, what, idx }) {
       transition: "opacity 0.4s ease, transform 0.4s ease",
     }}>
       <div style={{
-        fontSize: 21, fontWeight: 700, color: "var(--acc)",
+        fontSize: 21, fontWeight: 600, color: "var(--acc)",
         fontFamily: "var(--font-hand)", lineHeight: 1.25,
       }}>{when}</div>
       <div style={{ fontSize: 14.5, color: "var(--text-secondary)", lineHeight: 1.6, fontFamily: FONT }}>{what}</div>
@@ -442,6 +442,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         /* Phone layout: hierarchy instead of a column of equal cards. */
         .lp-feat-short { display: none; }
         .lp-plan-tabs { display: none; }
+        /* "Study together." stays on one line; on the narrowest phones that
+           needs a smaller headline to fit. */
+        @media (max-width: 359px) { .lp-hero h1 { font-size: 34px !important; } }
         @media (max-width: 699px) {
           .lp-section { padding: 60px 16px !important; }
           .lp-features { grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 32px !important; }
@@ -607,9 +610,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
           {/* Badge */}
           <div style={{
             display: "inline-flex", color: "var(--acc)", marginBottom: 28,
-            fontSize: 20, fontWeight: 700, fontFamily: "var(--font-hand)", transform: "rotate(-2deg)",
+            fontSize: 20, fontWeight: 600, fontFamily: "var(--font-hand)", transform: "rotate(-2deg)",
           }}>
-            <HandCircle i={1} pad="4px 20px">AI-powered collaborative studying</HandCircle>
+            <HandCircle i={1} pad="7px 28px">AI-powered collaborative studying</HandCircle>
           </div>
 
           {/* Headline — single line at widescreen */}
@@ -622,7 +625,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
             whiteSpace: "normal",
           }}>
             <span style={{ color: "var(--text-primary)" }}>Study smarter.</span>{" "}
-            <span className="hand-underline" style={{ fontFamily: "var(--font-hand)", fontWeight: 700, letterSpacing: "0", color: "var(--acc)", whiteSpace: "nowrap" }}>
+            <span className="hand-underline" style={{ fontFamily: "var(--font-hand)", fontWeight: 600, letterSpacing: "0", color: "var(--acc)", whiteSpace: "nowrap" }}>
               Study together.
             </span>
           </h1>
@@ -831,7 +834,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
             pill="How it gets used"
-            title={<>Built for the night <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>before the exam</span></>}
+            title={<>Built for the night <span style={{ fontFamily: "var(--font-hand)", fontWeight: 600, color: "var(--acc)" }}>before the exam</span></>}
             sub="Real study workflows, minus the busywork."
             accent="var(--ink-amber)"
           />
@@ -856,7 +859,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <SectionHeader
             pill="FAQ"
-            title={<>Questions, <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>answered</span></>}
+            title={<>Questions, <span style={{ fontFamily: "var(--font-hand)", fontWeight: 600, color: "var(--acc)" }}>answered</span></>}
             sub="Everything you need to know before you start."
             accent="var(--acc)"
           />
@@ -881,7 +884,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               fontFamily: FONT_HEADING, color: "var(--text-primary)",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>
-              Ready to <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>study smarter?</span>
+              Ready to <span style={{ fontFamily: "var(--font-hand)", fontWeight: 600, color: "var(--acc)" }}>study smarter?</span>
             </h2>
             <p style={{
               fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6,

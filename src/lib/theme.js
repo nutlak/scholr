@@ -2,7 +2,7 @@
 
 export const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-// Headings are the same grotesque at a heavier weight. Handwriting (Kalam,
+// Headings are the same grotesque at a heavier weight. Handwriting (Shantell Sans,
 // var(--font-hand)) is an accent for margin notes and the hero, never structure.
 export const FONT_SERIF = FONT;
 

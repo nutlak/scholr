@@ -244,13 +244,12 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
-            {/* The figure in the UI face (Kalam's 1 is a bare stroke that reads as
-                a slash), its caption handwritten underneath. */}
+            {/* The figure in the UI face, its caption handwritten underneath. */}
             <div style={{
               fontSize: 24, fontWeight: 700, color, fontFamily: FONT, lineHeight: 1,
               fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
             }}>{val}</div>
-            <div className="hand" style={{ color: "var(--text-tertiary)", marginTop: 2 }}>{label}</div>
+            <div className="hand" style={{ "--hand-size": "14px", color: "var(--text-tertiary)", marginTop: 4, whiteSpace: "nowrap" }}>{label}</div>
           </div>
         ))}
       </div>

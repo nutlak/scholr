@@ -40,12 +40,3 @@ export function HandRule({ style }) {
     </svg>
   );
 }
-
-// Handwritten text whose digits stay in the UI face: Kalam's "1" is a bare
-// stroke that reads as a slash or an "l" ("Oct 17", "1 member").
-// One wrapping span, so a flex parent (HandCircle) doesn't trim the spaces
-// around the digits.
-export function HandText({ children }) {
-  return <span>{String(children).split(/(\d+)/).map((part, i) =>
-    /\d/.test(part) ? <span key={i} className="num">{part}</span> : part)}</span>;
-}

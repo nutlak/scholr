@@ -76,7 +76,7 @@ reaches inline-styled components by class or by the tokens they write
 (`[style*="var(--card-bg)"]`). Don't add `corner-shape` squircles.
 
 **Type:** Hanken Grotesk (`FONT`, `FONT_HEADING`) for headings, body, buttons
-and anything read at length — including Derek's answers and PINs. Kalam
+and anything read at length — including Derek's answers and PINs. Shantell Sans
 (`var(--font-hand)`) is the handwriting layer: section labels (surface.css turns
 the inline uppercase labels into handwritten notes), the status strip,
 segmented options, the hero's "Study together.", accent words in landing titles.
@@ -89,10 +89,10 @@ states), `HandCheck` (pricing ticks), `HandRule` (wavy divider). They draw in
 Reuse these rather than drawing new one-offs. Small notes — dates, counts,
 due dates, meter labels, stat captions, "here now" — take `className="hand"`
 (size via `--hand-size`), and page titles get a `.pen-squiggle` under them.
-**Digits stay in the UI face**: Kalam's "1" is a bare stroke that reads as a
-slash, so wrap handwritten text containing numbers in `<HandText>` (digits
-become `.num`), and keep big figures in `FONT`. Depth stays: marks go on raised
-surfaces, they don't replace them.
+**Handwriting stays soft**: Shantell Sans ships 400–600 only and
+`font-synthesis-weight: none` stops faux bold; labels and notes run at 500.
+Kalam was dropped (2026-10-14) for reading harsh and for a "1" that looked
+like a slash.
 
 **The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
 rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).

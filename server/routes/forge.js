@@ -221,8 +221,9 @@ router.get("/api/notebooks/:id/forge-outputs", requireAuth, requireMember, async
     .from("forge_outputs")
     .select("id, type, title, content, created_at")
     .eq("notebook_id", req.params.id)
-    // Rows left by the retired unit brain (2026-10-14) aren't saved outputs.
-    .not("type", "in", "(concept_map,concept_scores)")
+    // Not saved outputs: rows left by the retired unit brain (2026-10-14), and
+    // planned study sessions + RSVPs, which borrow this table (lib/sessions.js).
+    .not("type", "in", "(concept_map,concept_scores,study_session,study_session_in)")
     .order("created_at", { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);

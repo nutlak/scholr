@@ -3,6 +3,7 @@ import { api } from "../../api.js";
 import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
+import { StudySessions } from "./StudySessions.jsx";
 import { ToolModal } from "../../ui/ToolModal.jsx";
 import { SheetMenu } from "../../ui/SheetMenu.jsx";
 import { FONT, classTint, tintFor } from "../../lib/theme.js";
@@ -538,6 +539,9 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
           )}
         </div>
       </div>
+
+      {/* Planned sessions: a time the unit agrees on, with who's in. */}
+      {me && <StudySessions notebookId={nb.id} me={me} onToast={onToast} />}
 
       {/* Live study room — the roster, shared pomodoro, quiz battle and Feynman
           feed. Opt-in from the ⋯ menu ("Study together"); until then this

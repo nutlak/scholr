@@ -210,3 +210,39 @@ export async function sendOnboardingEmail(type, to, name, userId) {
   if (error) throw new Error(`Resend error: ${error.message}`);
 }
 
+// ── Weekly recap ───────────────────────────────────────────────────────────────
+// data: { daysStudied, friendsStudied, due: [{title, dueDate}], sessions: [{title, startsAt, note}] }
+const dayLabel = (iso) => new Date(iso.length === 10 ? iso + "T12:00:00Z" : iso)
+  .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+const li = (html) => `<li style="margin:0 0 8px;font-size:15px;color:#333740;line-height:1.5;">${html}</li>`;
+const h3 = (t) => `<h2 style="${H}font-size:19px;margin:24px 0 8px;">${t}</h2>`;
+
+export function recapEmailHtml(name, data, userId) {
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  const parts = [];
+  parts.push(`<h1 style="${H}font-size:26px;margin:0 0 10px;">Your week${name ? `, ${esc(name)}` : ""}</h1>`);
+  parts.push(data.daysStudied > 0
+    ? `<p style="${P}">You studied on <strong style="color:${INK};">${plural(data.daysStudied, "day")}</strong> this week${data.friendsStudied > 0 ? `, and <strong style="color:${INK};">${plural(data.friendsStudied, "friend")}</strong> did too` : ""}. Keep it going.</p>`
+    : `<p style="${P}">Quiet week. A few minutes on one unit is enough to start the streak back up.</p>`);
+  if (data.due.length) {
+    parts.push(h3("Coming up"));
+    parts.push(`<ul style="margin:0;padding-left:20px;">${data.due.map(d => li(`<strong style="color:${INK};">${esc(d.title)}</strong> · due ${dayLabel(d.dueDate)}`)).join("")}</ul>`);
+  }
+  if (data.sessions.length) {
+    parts.push(h3("Study sessions planned"));
+    parts.push(`<ul style="margin:0;padding-left:20px;">${data.sessions.map(s => li(`<strong style="color:${INK};">${esc(s.title)}</strong> · ${dayLabel(s.startsAt)}${s.note ? ` · ${esc(s.note)}` : ""}`)).join("")}</ul>`);
+  }
+  parts.push(`<div style="margin-top:24px;">${ctaButton("Open scholr →", appUrl())}</div>`);
+  return emailShell(parts.join("\n"), { userId, footer: OPTIONAL_FOOTER });
+}
+
+export async function sendRecapEmail(to, name, userId, data) {
+  const { error } = await getResend().emails.send({
+    from: getFrom(),
+    to,
+    replyTo: SUPPORT_EMAIL,
+    subject: data.daysStudied > 0 ? "Your week on scholr" : "What's coming up on scholr",
+    html: recapEmailHtml(name, data, userId),
+  });
+  if (error) throw new Error(`Resend error: ${error.message}`);
+}

@@ -1,7 +1,7 @@
 // Run with: npm test   (node:test — no framework, no config)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPodcastTime, memberLabel, getDisplayName, dueDateTone, computeStreak, streakAtRiskFromHeatmap, notifLine, dropdownShiftX, getGreeting, greetingBand, GREETINGS, QUOTES, sameUser } from "./format.js";
+import { formatPodcastTime, memberLabel, getDisplayName, dueDateTone, computeStreak, streakAtRiskFromHeatmap, notifLine, dropdownShiftX, getGreeting, greetingBand, GREETINGS, QUOTES, sameUser, sessionWhen } from "./format.js";
 
 // Days back from local midnight, keyed the way computeStreak keys them.
 function daysAgo(n) {
@@ -198,4 +198,19 @@ test("sameUser: metadata absent on one side is still a change", () => {
   const withName = { id: "u1", email: "a@b.c", user_metadata: { full_name: "Ada" } };
   const without  = { id: "u1", email: "a@b.c" };
   assert.equal(sameUser(withName, without), false);
+});
+
+test("sessionWhen says today / tomorrow / a dated day, in local time", () => {
+  const now = new Date(2026, 9, 14, 15, 0);            // Wed Oct 14, 3pm local
+  assert.equal(sessionWhen(new Date(2026, 9, 14, 20, 0).toISOString(), now), "today at 8:00 PM");
+  assert.equal(sessionWhen(new Date(2026, 9, 15, 9, 30).toISOString(), now), "tomorrow at 9:30 AM");
+  assert.equal(sessionWhen(new Date(2026, 9, 17, 18, 0).toISOString(), now), "Sat, Oct 17 at 6:00 PM");
+  assert.equal(sessionWhen("garbage", now), "soon");
+});
+
+test("session notices read as sessions, not as generic invites", () => {
+  const planned = { type: "notebook_invite", payload: { kind: "session_planned", fromUsername: "maya", notebookTitle: "Unit 3", startsAt: new Date(2099, 0, 1, 20, 0).toISOString() } };
+  assert.match(notifLine(planned), /^@maya planned a study session for Unit 3, /);
+  assert.equal(notifLine({ type: "notebook_invite", payload: { kind: "session_reminder", notebookTitle: "Unit 3" } }), "Your Unit 3 study session starts soon");
+  assert.match(notifLine({ type: "notebook_invite", payload: { fromUsername: "maya", notebookTitle: "Unit 3" } }), /added you to Unit 3/);
 });

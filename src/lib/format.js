@@ -148,6 +148,19 @@ export function streakAtRiskFromHeatmap(heatmap) {
   return (map.get(fmtKey(yest)) ?? 0) > 0 && (map.get(fmtKey(today)) ?? 0) === 0;
 }
 
+// "today at 8:00 PM" / "tomorrow at 8:00 PM" / "Thu, Oct 16 at 8:00 PM", in the
+// reader's own time zone.
+export function sessionWhen(iso, now = new Date()) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "soon";
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const dayStart = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((dayStart(d) - dayStart(now)) / 86400000);
+  const day = diff === 0 ? "today" : diff === 1 ? "tomorrow"
+    : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return `${day} at ${time}`;
+}
+
 export function notifLine(n) {
   const who = n.payload?.fromUsername ? `@${n.payload.fromUsername}` : "Someone";
   const book = n.payload?.notebookTitle ?? "a notebook";
@@ -156,7 +169,11 @@ export function notifLine(n) {
     case "friend_accepted": return n.payload?.classTitle
       ? `${who} joined ${n.payload.classTitle} with your PIN`
       : `${who} accepted your friend request`;
-    case "notebook_invite": return `${who} added you to ${book}`;
+    case "notebook_invite":
+      // Study-session notices ride on this type (the DB won't accept new ones).
+      if (n.payload?.kind === "session_planned") return `${who} planned a study session for ${book}, ${sessionWhen(n.payload.startsAt)}`;
+      if (n.payload?.kind === "session_reminder") return `Your ${book} study session starts soon`;
+      return `${who} added you to ${book}`;
     case "mention":         return `${who} mentioned you in ${book}`;
     case "note_uploaded":   return `${who} added ${n.payload?.noteTitle ?? "a note"} to ${book}`;
     case "payment_failed":  return "Your payment didn't go through — tap to update your card and keep Pro";

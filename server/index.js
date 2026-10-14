@@ -5,6 +5,9 @@ import { router as classesRoutes } from "./routes/classes.js";
 import { router as flashcardsRoutes } from "./routes/flashcards.js";
 import { router as forgeRoutes } from "./routes/forge.js";
 import { router as joinRoutes } from "./routes/join.js";
+import { router as sessionRoutes } from "./routes/sessions.js";
+import { sendDueSessionReminders } from "./lib/sessions.js";
+import { inRecapWindow, sendWeeklyRecaps } from "./lib/recap.js";
 import { router as podcastsRoutes } from "./routes/podcasts.js";
 import { router as userRoutes } from "./routes/user.js";
 import { router as friendsRoutes } from "./routes/friends.js";
@@ -310,6 +313,7 @@ app.get("/api/health", (_, res) => {
     VAPID_PRIVATE_KEY:         !!process.env.VAPID_PRIVATE_KEY,
     VAPID_SUBJECT:             !!process.env.VAPID_SUBJECT,
     TURNSTILE_SECRET_KEY:      !!process.env.TURNSTILE_SECRET_KEY,
+    WEEKLY_RECAP_DISABLED:     !!process.env.WEEKLY_RECAP_DISABLED, // "1" = kill switch for the weekly recap email
   };
   res.json({
     ok: true,
@@ -408,6 +412,7 @@ app.use(classesRoutes);
 app.use(flashcardsRoutes);
 app.use(forgeRoutes);
 app.use(joinRoutes);
+app.use(sessionRoutes);
 app.use(podcastsRoutes);
 app.use(userRoutes);
 app.use(friendsRoutes);
@@ -491,6 +496,11 @@ if (WORKERS_DISABLED) console.warn("[workers] disabled via DISABLE_WORKERS=1 —
 if (!WORKERS_DISABLED) {
   setInterval(processPendingEmails, 60 * 60 * 1000); // hourly
   setTimeout(processPendingEmails, 30 * 1000);        // once shortly after boot
+  // "Your study session starts soon" — needs minute resolution.
+  setInterval(() => sendDueSessionReminders().catch(e => console.error("[session reminders]", e.message)), 60 * 1000);
+  // Weekly recap: checked hourly, acts only Sunday evening (UTC), once per
+  // person per week. WEEKLY_RECAP_DISABLED=1 turns it off without a deploy.
+  setInterval(() => { if (inRecapWindow()) sendWeeklyRecaps().catch(e => console.error("[weekly recap]", e.message)); }, 60 * 60 * 1000);
 }
 
 // ── Renewal-reminder worker: warn Pro users 3 days before they renew ──────────

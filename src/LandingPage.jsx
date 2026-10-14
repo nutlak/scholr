@@ -291,6 +291,7 @@ const FAQS = [
   { q: "Can I study with my class?", a: "Yes. Open a class, tap Invite, and share the PIN or link. Everyone who joins sees the same units, sources, chat, and AI answers in real time, and becomes your friend on Scholr." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
   { q: "Can I get Scholr on my phone?", a: "Yes. Install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
+  { q: "Can we plan study sessions?", a: "Yes. In any unit, tap Plan a study session, pick a time, and everyone in the unit gets a heads-up, can tap I'm in, and gets a reminder just before it starts. You'll also get a short weekly email with what's due and who studied; every one has an unsubscribe link." },
   { q: "Is there a dark mode?", a: "Yes. Scholr follows your device's light or dark setting, and you can switch it anytime in Settings." },
 ];
 

@@ -94,3 +94,23 @@ export async function notifyFriendsSomeoneCameOnline(userId) {
       .upsert({ from_user_id: userId, to_user_id: friendId, last_sent_at: new Date().toISOString() });
   }));
 }
+
+// Push one message to specific people (every subscribed device each has).
+// Same dead-subscription cleanup as above; a no-op when push isn't configured.
+export async function pushToUsers(userIds, { title, body }) {
+  if (!pushEnabled || !userIds?.length) return;
+  const { data: subs } = await supabase.from("push_subscriptions")
+    .select("user_id, endpoint, p256dh, auth").in("user_id", userIds);
+  const payload = JSON.stringify({ title, body });
+  await Promise.all((subs ?? []).map(async (s) => {
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload);
+    } catch (err) {
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        await supabase.from("push_subscriptions").delete().eq("user_id", s.user_id).eq("endpoint", s.endpoint);
+      } else {
+        console.error("push send error:", err?.message || err);
+      }
+    }
+  }));
+}

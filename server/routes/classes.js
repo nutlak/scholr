@@ -138,15 +138,18 @@ router.get("/api/classes/:id/notebooks", requireAuth, async (req, res) => {
 
   const { data, error } = await supabase
     .from("notebooks")
-    .select("id, title, topic, created_at, due_date, status, assessment_type, class_id, notes(count)")
+    .select("id, title, topic, created_at, due_date, status, assessment_type, class_id, notes(count), filled:notes(count)")
     .eq("class_id", req.params.id)
+    .or("content.neq.,file_url.not.is.null", { referencedTable: "filled" })
     .order("created_at", { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
 
   res.json(await attachMembers((data ?? []).map(nb => ({
     ...nb,
     notes_count: nb.notes[0]?.count ?? 0,
+    notes_filled: nb.filled?.[0]?.count ?? 0,
     notes: undefined,
+    filled: undefined,
   }))));
 });
 
@@ -197,6 +200,7 @@ router.post("/api/classes/:id/apply-template", requireAuth, async (req, res) => 
   let firstNotebookId = null;
   let created = 0;
   let limitHit = false;
+  let failed = 0;
 
   for (const spec of specs) {
     const limit = await checkNotebookLimit(req.user.id);
@@ -206,13 +210,20 @@ router.post("/api/classes/:id/apply-template", requireAuth, async (req, res) => 
       .from("notebooks")
       .insert({
         title: String(spec.name || "Untitled").slice(0, 80),
+        // notebooks.topic is NOT NULL: omitting it made every insert here fail
+        // silently, so templates and syllabus imports made empty classes.
+        topic: typeof spec.topic === "string" ? spec.topic.slice(0, 200) : "",
         created_by: req.user.id, class_id: req.params.id,
         due_date: /^\d{4}-\d{2}-\d{2}$/.test(spec.dueDate) ? spec.dueDate : null,
         assessment_type: (typeof spec.assessmentType === "string" && spec.assessmentType.trim()) ? spec.assessmentType.trim().slice(0, 40) : null,
       })
       .select("id")
       .single();
-    if (error || !nb) continue;
+    if (error || !nb) {
+      failed++;
+      console.error("[apply-template] notebook insert failed:", error?.message);
+      continue;
+    }
 
     await supabase.from("notebook_members").insert({ notebook_id: nb.id, user_id: req.user.id, role: "owner" });
     if (!firstNotebookId) firstNotebookId = nb.id;
@@ -240,7 +251,11 @@ router.post("/api/classes/:id/apply-template", requireAuth, async (req, res) => 
     }
   }
 
-  res.json({ success: true, firstNotebookId, created, limitHit });
+  // Nothing made and nothing blocked by the plan: that's a failure, not "success".
+  if (specs.length > 0 && created === 0 && !limitHit) {
+    return res.status(500).json({ error: "Couldn't set up the class's units. Try again." });
+  }
+  res.json({ success: true, firstNotebookId, created, limitHit, failed });
 });
 
 // POST /api/syllabus/parse — upload a syllabus (PDF/text), extract a class

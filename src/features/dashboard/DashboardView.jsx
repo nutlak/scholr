@@ -1,9 +1,10 @@
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { BookOpen, KeyRound, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { EmptyState } from "../../ui/EmptyState.jsx";
 import { FriendsRow } from "../friends/FriendsRow.jsx";
+import { GettingStarted } from "./GettingStarted.jsx";
 import { NotebookCard } from "./NotebookCard.jsx";
 import { UpcomingDeadlines } from "./UpcomingDeadlines.jsx";
 import { DashboardRail } from "./DashboardRail.jsx";
@@ -38,6 +39,12 @@ export function DashboardView({
   notifications, setNotifications, clearInbox,
   feedActioned, feedError, respondToFriendFromFeed,
 }) {
+  // Unknown until FriendsRow reports in; the checklist waits for it so a
+  // student who's done every step never sees it flash.
+  const [friendCount, setFriendCount] = useState(null);
+  // Stable on purpose: FriendsRow's refresh depends on this callback, so a new
+  // function each render would refetch the friends list on every render.
+  const handleFriendIds = useCallback(ids => { setFriendIds(ids); setFriendCount(ids.length); }, [setFriendIds]);
   // Reading the clock during render is impure: two renders a second apart can
   // disagree, and the banner would flicker on the boundary. Pin it per
   // period-end instead, which is the only input that actually changes.
@@ -138,7 +145,15 @@ export function DashboardView({
               refreshSignal={friendsVersion}
               onChanged={() => bumpFriendsVersion()}
               onOpenNotebook={openNotebookById}
-              onFriendIds={setFriendIds}
+              onFriendIds={handleFriendIds}
+            />
+          )}
+          {activeView === "dashboard" && friendCount !== null && (
+            <GettingStarted
+              userId={user?.id} classes={classes} notebooks={notebooks}
+              messagesUsed={subscription?.messagesUsed ?? 0} friendCount={friendCount}
+              onNewClass={() => setShowNewClassModal(true)} onJoinClass={onJoinClass}
+              onOpenUnit={openNotebookById} onNewUnit={setNewUnitFor} onInvite={onInviteToClass}
             />
           )}
           {activeView === "dashboard" && (

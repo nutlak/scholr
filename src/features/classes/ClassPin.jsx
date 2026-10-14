@@ -43,7 +43,7 @@ export function ClassPinSheet({ cls, onClose }) {
           </p>
           <div aria-label={`PIN ${data.pin.split("").join(" ")}`} style={{
             textAlign: "center", fontSize: 44, fontWeight: 700, letterSpacing: "0.12em", padding: "14px 0 18px",
-            fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-heading, inherit)", color: "var(--text-primary)",
+            fontVariantNumeric: "tabular-nums", fontFamily: "var(--font, inherit)", color: "var(--text-primary)",
           }}>{spaced(data.pin)}</div>
           <div style={{ display: "flex", gap: 10 }}>
             {typeof navigator !== "undefined" && navigator.share && (
@@ -97,7 +97,7 @@ export function JoinClassSheet({ initialPin = "", onClose, onJoined }) {
         style={{
           width: "100%", boxSizing: "border-box", height: 64, textAlign: "center", fontSize: 30, fontWeight: 700,
           letterSpacing: "0.12em", borderRadius: 12, border: "1px solid var(--border-strong)", outline: "none",
-          background: "var(--bg-base)", color: "var(--text-primary)", fontFamily: "var(--font-heading, inherit)",
+          background: "var(--bg-base)", color: "var(--text-primary)", fontFamily: "var(--font, inherit)",
         }}
       />
       <div style={{ minHeight: 56, padding: "12px 2px", fontSize: 14.5, lineHeight: 1.45 }}>

@@ -153,6 +153,34 @@ A CSS rule inside a media query has no extra specificity. `.hud-seg` and
 `.hud-bar .hud-title`; check the rendered box rather than assuming a media
 query wins.
 
+## Features that borrow tables
+
+This server can't run DDL, so some features live in existing tables. Know
+which, so nobody "cleans up" a row that is a feature:
+
+- **Study sessions** (`lib/sessions.js`, `routes/sessions.js`) are rows in
+  `forge_outputs` with `type` `study_session` (content = JSON `{startsAt, note,
+  remindedAt}`) and `study_session_in` (title = session id; one per person
+  going). `routes/forge.js` hides both types from saved outputs. Their
+  notifications ride on `social_notifications.type = "notebook_invite"` with
+  `payload.kind` (`session_planned` / `session_reminder`), because the CHECK
+  constraint rejects new types. If this grows, give it real tables.
+- **Getting started** (`features/dashboard/GettingStarted.jsx`) derives its
+  steps from real data; `notes_filled` (text or a file) is separate from
+  `notes_count`, because course templates add empty placeholder notes.
+
+## Scheduled work
+
+Workers start only when `DISABLE_WORKERS` is not `1` (it stays `1` locally: the
+local `.env` is production, so a running worker would email real users). Hourly:
+onboarding emails, and the **weekly recap** (`lib/recap.js`), which acts only on
+Sunday 22:00–23:59 UTC, once per person per 6 days, only if there's something to
+say, never to an unsubscribed profile; `WEEKLY_RECAP_DISABLED=1` turns it off.
+Every minute: study-session reminders. To see what the recap would do without
+sending: `npm run recap` (dry run only). To see what students use:
+`npm run usage`. Test workers by calling their functions directly, never by
+starting them.
+
 ## Server
 
 `supabase` is the **service-role** client and bypasses RLS, so authorization

@@ -84,6 +84,7 @@ function shapeNotebook(nb, displayName) {
   return {
     ...nb,
     notes: nb.notes_count ?? 0,
+    notes_filled: nb.notes_filled ?? 0,
     color: COLORS[nb.id?.charCodeAt(0) % COLORS.length] ?? COLORS[0],
     contributors: nb.member_names?.length ? nb.member_names : [displayName ?? "You"],
     updated: nb.created_at
@@ -1000,6 +1001,38 @@ export const api = {
       throw apiError(res, data, "Failed to generate flashcards"); // code e.g. "forge_limit_reached" / "rate_limited"
     }
     return data; // { cards: [...] }
+  },
+
+  // Planned study sessions for a unit: [{ id, startsAt, note, createdBy, going: [{ userId, name }], mine }]
+  async listSessions(notebookId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/sessions`, { headers });
+    if (!res.ok) throw await readError(res);
+    return res.json();
+  },
+
+  async createSession(notebookId, { startsAt, note }) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/notebooks/${notebookId}/sessions`, {
+      method: "POST", headers, body: JSON.stringify({ startsAt, note }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Couldn't plan that session.");
+    return data;
+  },
+
+  async rsvpSession(sessionId, going) {
+    const headers = await authHeaders({ "Content-Type": "application/json" });
+    const res = await fetch(`${API_URL}/api/sessions/${sessionId}/rsvp`, { method: "POST", headers, body: JSON.stringify({ going }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Couldn't update that.");
+    return data;
+  },
+
+  async cancelSession(sessionId) {
+    const headers = await authHeaders();
+    const res = await fetch(`${API_URL}/api/sessions/${sessionId}`, { method: "DELETE", headers });
+    if (!res.ok) throw await readError(res);
   },
 
   async getFlashcards(notebookId) {

@@ -87,18 +87,24 @@ router.get("/api/notebooks", requireAuth, async (req, res) => {
       role,
       notebooks (
         id, title, topic, created_by, created_at, due_date, status, assessment_type, class_id,
-        notes (count)
+        notes (count),
+        filled:notes (count)
       )
     `)
-    .eq("user_id", req.user.id);
+    .eq("user_id", req.user.id)
+    // notes_filled: notes with text or a file. Course templates add empty
+    // placeholder notes, which count toward notes_count but aren't material.
+    .or("content.neq.,file_url.not.is.null", { referencedTable: "notebooks.filled" });
 
   if (error) return res.status(500).json({ error: error.message });
 
   const notebooks = (data ?? []).map(({ role, notebooks: nb }) => ({
     ...nb,
     notes_count: nb.notes[0]?.count ?? 0,
+    notes_filled: nb.filled?.[0]?.count ?? 0,
     role,
     notes: undefined,
+    filled: undefined,
   }));
 
   res.json(await attachMembers(notebooks));

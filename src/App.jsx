@@ -408,6 +408,16 @@ export default function Scholr() {
     return () => document.documentElement.classList.remove("app-shell-active");
   }, [user]);
 
+  // The usage meters (messages, AI generations) and the getting-started
+  // checklist read the plan numbers loaded at sign-in; chatting or generating
+  // inside a unit changes them. Refetch when a unit closes, not on a timer.
+  const unitWasOpen = useRef(false);
+  useEffect(() => {
+    if (activeNb) { unitWasOpen.current = true; return; }
+    if (unitWasOpen.current && user) { unitWasOpen.current = false; refreshSubscription(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNb, user]);
+
   // Coming back from Stripe in the iOS app. Checkout runs in the system
   // browser, so unlike the web's ?upgraded=true redirect the webview never
   // navigates and nothing refetches on its own — the app was simply in the

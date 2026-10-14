@@ -103,13 +103,13 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
         border: "1px solid var(--border-default)",
         borderRadius: 18, width: "100%", maxWidth: 440,
         padding: "28px 26px",
-        boxShadow: `var(--sh-modal), 0 0 0 1px ${tint.hue}22`,
+        boxShadow: `var(--sh-modal), 0 0 0 1px color-mix(in srgb, ${tint.hue} 13%, transparent)`,
         animation: "fadeIn 0.2s ease", overflow: "hidden",
       }}>
         <div style={{
           position: "absolute", top: -100, right: -60,
           width: 200, height: 200, borderRadius: "50%",
-          background: `radial-gradient(circle, ${tint.hue}28 0%, transparent 70%)`,
+          background: `radial-gradient(circle, color-mix(in srgb, ${tint.hue} 16%, transparent) 0%, transparent 70%)`,
           pointerEvents: "none", transition: "background 0.25s",
         }} />
         <div style={{ position: "relative" }}>
@@ -124,7 +124,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                   const sel = template?.id === t.id;
                   return (
                     <button key={t.id} type="button" onClick={() => setTemplate(t)} className="btn-press" style={{
-                      textAlign: "left", background: sel ? `${t.color}1f` : "var(--s1)",
+                      textAlign: "left", background: sel ? `color-mix(in srgb, ${t.color} 12%, transparent)` : "var(--s1)",
                       border: `1.5px solid ${sel ? t.color : "var(--border)"}`,
                       borderRadius: 12, padding: "13px 14px", cursor: "pointer", fontFamily: FONT,
                       display: "flex", flexDirection: "column", gap: 3,
@@ -152,9 +152,11 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                   padding: "0 16px", height: 38, color: "var(--t2)", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: FONT,
                 }}>Cancel</button>
                 <button type="button" disabled={!template} onClick={() => advance(template)} className="btn-press" style={{
-                  background: template ? `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)` : "var(--s2)",
-                  border: "none", borderRadius: 10, padding: "0 22px", height: 38, color: "#1C1C1C", fontWeight: 600, fontSize: 13,
-                  cursor: template ? "pointer" : "not-allowed", opacity: template ? 1 : 0.5, fontFamily: FONT, letterSpacing: "-0.01em",
+                  // Disabled reads as a dimmed button, not as nothing: dark text
+                  // on a dark fill vanished in dark mode.
+                  background: template ? "var(--acc)" : "var(--s3)",
+                  border: "none", borderRadius: 10, padding: "0 22px", height: 38, color: template ? "var(--on-acc)" : "var(--text-tertiary)", fontWeight: 600, fontSize: 13,
+                  cursor: template ? "pointer" : "not-allowed", fontFamily: FONT, letterSpacing: "-0.01em",
                 }}>Next →</button>
               </div>
             </>
@@ -173,7 +175,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                     ref={inputRef} value={title} onChange={e => setTitle(e.target.value)}
                     placeholder="e.g. AP World History" maxLength={80}
                     style={inp}
-                    onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px ${tint.hue}22`; }}
+                    onFocus={e => { e.target.style.borderColor = tint.hue; e.target.style.boxShadow = `0 0 0 3px color-mix(in srgb, ${tint.hue} 13%, transparent)`; }}
                     onBlur={e => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
                   />
                 </div>
@@ -190,12 +192,12 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                     cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.01em",
                   }}>← Back</button>
                   <button type="submit" disabled={loading || !title.trim()} className="btn-press" style={{
-                    background: `linear-gradient(135deg, ${tint.hue} 0%, ${tint.deep} 100%)`,
+                    background: "var(--acc)",
                     border: "none", borderRadius: 10, padding: "0 20px", height: 38,
-                    color: "#1C1C1C", fontWeight: 600, fontSize: 13,
+                    color: "var(--on-acc)", fontWeight: 600, fontSize: 13,
                     cursor: loading || !title.trim() ? "not-allowed" : "pointer",
                     fontFamily: FONT, opacity: loading || !title.trim() ? 0.55 : 1,
-                    boxShadow: `0 4px 14px ${tint.hue}55, 0 0 0 1px ${tint.hue}66`,
+                    boxShadow: `0 4px 14px color-mix(in srgb, ${tint.hue} 33%, transparent), 0 0 0 1px color-mix(in srgb, ${tint.hue} 40%, transparent)`,
                     letterSpacing: "-0.01em", transition: "all 0.18s",
                   }}>{loading ? (hasTemplate ? "Setting up your class…" : "Creating…") : "Create Class"}</button>
                 </div>

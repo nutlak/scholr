@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FONT, MONO } from "../../lib/theme.js";
+import { FONT } from "../../lib/theme.js";
 
 const VIEW_MODES = ["week", "month", "year"];
 
@@ -244,14 +244,13 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
           <div key={label}>
-            {/* The figure is a readout, so it takes the strip's voice: mono and
-                tabular, steady as the streak ticks over. Its caption stays in
-                the UI face — mono is for things you measure, not for words. */}
+            {/* The figure in the UI face (Kalam's 1 is a bare stroke that reads as
+                a slash), its caption handwritten underneath. */}
             <div style={{
-              fontSize: 17, fontWeight: 600, color, fontFamily: MONO, lineHeight: 1,
+              fontSize: 24, fontWeight: 700, color, fontFamily: FONT, lineHeight: 1,
               fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
             }}>{val}</div>
-            <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 2 }}>{label}</div>
+            <div className="hand" style={{ color: "var(--text-tertiary)", marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>

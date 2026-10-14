@@ -1,6 +1,7 @@
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { FONT, classTint, tintFor } from "../../lib/theme.js";
 import { AvatarStack } from "../../ui/Avatar.jsx";
+import { HandCircle, HandText } from "../../ui/Hand.jsx";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -52,21 +53,17 @@ export function NotebookCard({ nb, onClick, onDelete }) {
             color: t.ink ?? t.hue, textTransform: "uppercase",
             fontFamily: FONT,
           }}>
-            {nb.notes} {nb.notes === 1 ? "note" : "notes"}
+            <HandText>{`${nb.notes} ${nb.notes === 1 ? "note" : "notes"}`}</HandText>
           </div>
         </div>
         {/* The due date replaces the updated date rather than floating over it
             (absolutely positioned, the pill was drawn on top of "Oct 9"). */}
         {nb.due_date ? (
-          <div style={{
-            fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap", marginRight: 22,
-            color: dueDateTone(nb.due_date).color,
-            background: `color-mix(in srgb, ${dueDateTone(nb.due_date).color} 10%, transparent)`,
-            border: `1px solid color-mix(in srgb, ${dueDateTone(nb.due_date).color} 33%, transparent)`,
-            padding: "2px 8px", borderRadius: 999, fontFamily: FONT,
-          }}>Due {formatDueDate(nb.due_date)}</div>
+          <div className="hand" style={{ whiteSpace: "nowrap", marginRight: 22, color: dueDateTone(nb.due_date).color }}>
+            <HandCircle pad="1px 9px"><HandText>{`due ${formatDueDate(nb.due_date)}`}</HandText></HandCircle>
+          </div>
         ) : (
-          <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, paddingRight: 22 }}>{nb.updated}</div>
+          <div className="hand" style={{ color: "var(--text-tertiary)", paddingRight: 22 }}><HandText>{nb.updated}</HandText></div>
         )}
       </div>
       <div style={{
@@ -89,12 +86,12 @@ export function NotebookCard({ nb, onClick, onDelete }) {
       <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <AvatarStack names={nb.contributors} />
-          <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT }}>
-            {nb.contributors.length} {nb.contributors.length === 1 ? "member" : "members"}
+          <span className="hand" style={{ color: "var(--text-tertiary)" }}>
+            <HandText>{`${nb.contributors.length} ${nb.contributors.length === 1 ? "member" : "members"}`}</HandText>
           </span>
         </div>
-        <div style={{
-          fontSize: 12, color: t.ink ?? t.hue, fontFamily: FONT, fontWeight: 600,
+        <div className="hand" style={{
+          color: t.ink ?? t.hue,
           opacity: hovered ? 1 : 0,
           transform: hovered ? "translateX(0)" : "translateX(-4px)",
           transition: "opacity 0.2s, transform 0.2s",

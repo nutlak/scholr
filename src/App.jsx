@@ -854,10 +854,10 @@ export default function Scholr() {
                 {/* Messages */}
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    <span className="hand" style={{ color: "var(--text-tertiary)", display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <MessageCircle size={12} strokeWidth={1.75} /> Messages
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
+                    <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, fontVariantNumeric: "tabular-nums" }}>
                       {subscription.messagesUsed}/{subscription.messagesLimit}
                     </span>
                   </div>
@@ -875,10 +875,10 @@ export default function Scholr() {
                 {/* Forge */}
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    <span className="hand" style={{ color: "var(--text-tertiary)", display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <Hammer size={12} strokeWidth={1.75} /> AI generations
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
+                    <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, fontVariantNumeric: "tabular-nums" }}>
                       {subscription.forgeUsed}/{subscription.forgeLimit}
                     </span>
                   </div>
@@ -896,10 +896,10 @@ export default function Scholr() {
                 {/* Notes / storage */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    <span className="hand" style={{ color: "var(--text-tertiary)", display: "inline-flex", alignItems: "center", gap: 5 }}>
                       <Notebook size={12} strokeWidth={1.75} /> Units
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontFamily: FONT }}>
+                    <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: FONT, fontVariantNumeric: "tabular-nums" }}>
                       {subscription.notebooksUsed}/{subscription.notebooksLimit}
                     </span>
                   </div>

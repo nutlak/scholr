@@ -689,6 +689,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   {isAssistant && !m.isError && m.id && (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, marginLeft: 2 }}>
                       <button
+                        className="hand"
                         onClick={() => setExplainLevel(explainLevel === m.id ? null : m.id)}
                         disabled={explainingId !== null}
                         title="Explain differently"

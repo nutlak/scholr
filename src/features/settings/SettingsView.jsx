@@ -17,9 +17,10 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
   const billingReady = useServerFeature("pro");
   return (
               <div className="settings-pane" style={{ animation: "fadeIn 0.25s ease", maxWidth: 800, margin: "0 auto", width: "100%" }}>
-                <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 28px" }}>
+                <h1 style={{ fontSize: 32, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
                   Settings
                 </h1>
+                <span className="pen-squiggle" aria-hidden="true" style={{ marginBottom: 28 }} />
 
                 <div className="ins-caption">Account</div>
                 <div className="ins-group">

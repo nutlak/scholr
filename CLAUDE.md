@@ -86,7 +86,12 @@ Scales: `--fs-*` with matching `--tr-*`/`--lh-*`, spacing `--sp-1`…`--sp-8`.
 around a label or icon — landing badges, feature/step icons, study tiles, empty
 states), `HandCheck` (pricing ticks), `HandRule` (wavy divider). They draw in
 `currentColor`. `.hand-underline` is the wavy underline (hero, active nav item).
-Reuse these rather than drawing new one-offs. Depth stays: marks go on raised
+Reuse these rather than drawing new one-offs. Small notes — dates, counts,
+due dates, meter labels, stat captions, "here now" — take `className="hand"`
+(size via `--hand-size`), and page titles get a `.pen-squiggle` under them.
+**Digits stay in the UI face**: Kalam's "1" is a bare stroke that reads as a
+slash, so wrap handwritten text containing numbers in `<HandText>` (digits
+become `.num`), and keep big figures in `FONT`. Depth stays: marks go on raised
 surfaces, they don't replace them.
 
 **The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,

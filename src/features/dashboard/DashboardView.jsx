@@ -84,18 +84,17 @@ export function DashboardView({
           }}>
             {activeView === "dashboard" ? greeting.text : viewLabel}
           </div>
-          <div style={{
-            fontSize: 15, color: "var(--text-tertiary)",
-            fontFamily: FONT, marginTop: 5,
-          }}>
+          <span className="pen-squiggle" aria-hidden="true" />
+          <div className="hand" style={{ "--hand-size": "18px", color: "var(--text-tertiary)", marginTop: 4 }}>
+            {/* Numbers stay in the UI face: Kalam's 1 reads as a slash. */}
             {activeView === "dashboard"
-              ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "unit" : "units"}`
-              : `${filtered.length} ${filtered.length === 1 ? "unit" : "units"}`}
+              ? <><span className="num">{classes.length}</span> {classes.length === 1 ? "class" : "classes"} · <span className="num">{notebooks.length}</span> {notebooks.length === 1 ? "unit" : "units"}</>
+              : <><span className="num">{filtered.length}</span> {filtered.length === 1 ? "unit" : "units"}</>}
           </div>
           {activeView === "dashboard" && (
-            <div style={{
-              fontSize: 14, color: "var(--text-tertiary)", fontFamily: FONT,
-              marginTop: 6, maxWidth: 680, lineHeight: 1.45,
+            <div className="hand" style={{
+              "--hand-size": "17px", color: "var(--text-tertiary)",
+              marginTop: 6, maxWidth: 680, lineHeight: 1.4,
             }}>
               “{greeting.quote.text}”
               <span style={{ opacity: 0.72 }}> — {greeting.quote.author}</span>

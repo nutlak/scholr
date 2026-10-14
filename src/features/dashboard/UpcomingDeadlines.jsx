@@ -2,6 +2,7 @@ import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { FONT, classTint } from "../../lib/theme.js";
 import { CalendarCheck } from "lucide-react";
 import { useState } from "react";
+import { HandCircle, HandText } from "../../ui/Hand.jsx";
 
 export function DeadlineRow({ nb, cls, onOpen }) {
   const [hov, setHov] = useState(false);
@@ -32,12 +33,8 @@ export function DeadlineRow({ nb, cls, onOpen }) {
           {cls?.title ? <span style={{ fontWeight: 400, color: "var(--text-tertiary)" }}> · {cls.title}</span> : null}
         </div>
       </div>
-      <div style={{
-        fontSize: 11, fontWeight: 600, color: tone.color, fontFamily: FONT,
-        background: `color-mix(in srgb, ${tone.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${tone.color} 33%, transparent)`,
-        padding: "1px 7px", borderRadius: 999, flexShrink: 0,
-      }}>
-        Due {formatDueDate(nb.due_date)}
+      <div className="hand" style={{ color: tone.color, flexShrink: 0, whiteSpace: "nowrap" }}>
+        <HandCircle pad="1px 9px"><HandText>{`due ${formatDueDate(nb.due_date)}`}</HandText></HandCircle>
       </div>
     </div>
   );

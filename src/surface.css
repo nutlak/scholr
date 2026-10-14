@@ -23,8 +23,8 @@
 }
 
 html, body { background: var(--bg); }
-/* The handwriting face ships 400–600; never let the browser fake a heavier
-   bold on top of it, that's what read as harsh. */
+/* The handwriting and title faces each ship one weight; never let the browser
+   fake a heavier bold on top of them, that's what read as harsh. */
 html { font-synthesis-weight: none; }
 
 /* ── Page and chrome ─────────────────────────────────────────────────────

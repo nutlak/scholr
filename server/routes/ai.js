@@ -244,6 +244,7 @@ ${notesContext}`,
     const answer = message.content.find(b => b.type === "text")?.text ?? "";
     incrementUsage(req.user.id, "message").catch(err => console.error("explain usage increment error:", err));
     const messageId = await saveDerekReply(req.params.id, answer);
+    trackEvent(req.user.id, "explain_differently", { notebookId: req.params.id, level });
     res.json({ answer, messageId });
   } catch (err) {
     if (err.status === 401) return res.status(400).json({ error: "Invalid Claude API key" });
@@ -338,6 +339,7 @@ Keep each array item under 18 words. Use 2-4 items per array where applicable (m
 
     // Record usage fire-and-forget (don't block the response).
     incrementUsage(req.user.id, "message").catch(err => console.error("feynman usage increment error:", err));
+    trackEvent(req.user.id, "feynman_graded", { score: result.score });
     recordProCost(req.user.id, tier, model, message.usage).catch(err => console.error("cost tracking error:", err));
 
     res.json(result);

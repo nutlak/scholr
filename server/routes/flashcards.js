@@ -199,6 +199,7 @@ router.post("/api/flashcards/:id/review", requireAuth, async (req, res) => {
     .select("id, notebook_id, front, back, ease_factor, interval_days, repetitions, due_date, last_reviewed")
     .single();
   if (updErr) return res.status(500).json({ error: updErr.message });
+  trackEvent(req.user.id, "flashcard_reviewed", { notebookId: updated.notebook_id });
   res.json(updated);
 });
 

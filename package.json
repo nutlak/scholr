@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "node --test \"src/**/*.test.js\" \"server/**/*.test.js\"",
     "ios:sync": "npm run build && cap sync ios",
-    "ios": "npm run ios:sync && cap open ios"
+    "ios": "npm run ios:sync && cap open ios",
+    "usage": "node server/scripts/usage.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",

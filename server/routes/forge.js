@@ -5,6 +5,7 @@ import { requireAuth, requireMember } from "../lib/auth.js";
 import { aiLimiter, forgeLimiter } from "../lib/limiters.js";
 import { logUserActivity } from "../lib/presence.js";
 import { supabase } from "../lib/supabase.js";
+import { trackEvent } from "../lib/analytics.js";
 import { checkUsageLimit, getUserTier, incrementUsage, recordProCost } from "../lib/usage.js";
 
 export const router = Router();
@@ -169,6 +170,7 @@ ${notesContext}`,
 
     // Increment forge usage fire-and-forget
     incrementUsage(req.user.id, "forge").catch(err => console.error("forge usage increment error:", err));
+    trackEvent(req.user.id, "forge_generated", { notebookId: req.params.id, action });
     recordProCost(req.user.id, tier, forgeModel, finalMsg.usage).catch(err => console.error("cost tracking error:", err));
   } catch (err) {
     // Log the provider's detail; never stream it to the user (it was showing

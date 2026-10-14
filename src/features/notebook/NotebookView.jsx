@@ -212,6 +212,8 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
         setMessages([{ role: "assistant", text: `Hey! I've read all the notes in this notebook. Ask me anything about ${nb.title}.` }]);
         setHistoryLoaded(true);
       });
+    // Reload history per unit, not per rename: the title only seeds the greeting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nb.id]);
 
   function handleNoteUploaded(note) {

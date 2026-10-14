@@ -38,79 +38,104 @@ function getFrom() {
 // matches the contact address shown across the app + legal docs.
 const SUPPORT_EMAIL = "support@scholr.dev";
 
+// ── One look for every email ──────────────────────────────────────────────
+// Mirrors the app: a white card raised off a soft grey page, the S-bubble logo,
+// a calm serif heading (Newsreader where the client loads web fonts, Georgia
+// otherwise), Nunito/Helvetica body, purple for the one action. Inline styles
+// only — mail clients strip <style> blocks unpredictably.
+const BRAND = "#6D28D9";
+const INK = "#15161B";
+const MUTED = "#5E6472";
+const SERIF = "'Newsreader',Georgia,'Times New Roman',serif";
+const SANS = "'Nunito','Helvetica Neue',Arial,sans-serif";
+const H = `font-family:${SERIF};color:${INK};font-weight:500;letter-spacing:-0.005em;line-height:1.2;`;
+const P = `font-size:15px;color:#333740;line-height:1.7;margin:0 0 16px;`;
+// User-supplied text goes into these templates (unit and class titles, names).
+export function esc(v) {
+  return String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function ctaButton(label, href) {
+  return `<a href="${href}" style="display:inline-block;background:${BRAND};color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 28px;border-radius:12px;text-decoration:none;margin:6px 0 8px;box-shadow:0 6px 16px -6px rgba(109,40,217,0.55);">${label}</a>`;
+}
+
+const OPTIONAL_FOOTER = `You're getting this because you signed up for scholr. Reply anytime: <a href="mailto:support@scholr.dev" style="color:${MUTED};">support@scholr.dev</a>.`;
+
+// footer: what sits under the card (why you got it, unsubscribe). Pass the
+// userId only for optional mail — transactional mail (codes, invites) has no
+// unsubscribe link.
+function emailShell(innerHtml, { userId, footer } = {}) {
+  const unsub = userId
+    ? `<br><a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>`
+    : "";
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&family=Nunito:wght@400;700&display=swap');</style>
+</head>
+<body style="margin:0;padding:40px 16px;background:#F2F3F6;font-family:${SANS};">
+  <div style="max-width:500px;margin:0 auto;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px;"><tr>
+      <td style="vertical-align:middle;"><img src="${appUrl()}/scholr-logo-white.png" width="36" height="36" alt="" style="display:block;border-radius:9px;box-shadow:0 1px 3px rgba(17,19,26,0.15);"></td>
+      <td style="vertical-align:middle;padding-left:10px;font-size:22px;font-weight:700;color:${INK};font-family:${SANS};">schol<span style="color:${BRAND};">r</span></td>
+    </tr></table>
+    <div style="background:#FFFFFF;border:1px solid rgba(17,19,26,0.08);border-radius:18px;padding:32px 28px;box-shadow:0 1px 2px rgba(17,19,26,0.05),0 12px 28px -12px rgba(17,19,26,0.18);">
+      ${innerHtml}
+    </div>
+    <p style="font-size:12px;color:${MUTED};line-height:1.6;margin:20px 4px 0;">
+      ${footer ?? `Questions? Just reply, or write to <a href="mailto:support@scholr.dev" style="color:${MUTED};">support@scholr.dev</a>.`}${unsub}
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
+// Pure builders, so templates can be previewed and tested without sending.
+export function otpEmailHtml(code, type) {
+  const isSignup = type === "signup";
+  return emailShell(`
+      <h1 style="${H}font-size:26px;margin:0 0 8px;">${isSignup ? "Welcome to scholr" : "Reset your password"}</h1>
+      <p style="${P}">${isSignup ? "Here's your code to finish signing up." : "Here's your code to reset your password."}</p>
+      <div style="background:#F6F7F9;border-radius:14px;padding:22px;text-align:center;margin:8px 0 18px;">
+        <div style="font-size:40px;font-weight:700;letter-spacing:12px;color:${BRAND};font-family:'Courier New',monospace;padding-left:12px;">${code}</div>
+      </div>
+      <p style="font-size:13px;color:${MUTED};line-height:1.6;margin:0;">It expires in <strong style="color:${INK};">10 minutes</strong>. If you didn't ask for it, you can ignore this email.</p>
+    `);
+}
+
 export async function sendOtpEmail(to, code, type) {
   const isSignup = type === "signup";
-
   const { error } = await getResend().emails.send({
     from: getFrom(),
     to,
     replyTo: SUPPORT_EMAIL,
     subject: isSignup ? "Verify your scholr account" : "Reset your scholr password",
-    html: `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <div style="max-width:460px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#6D28D9;">r</span>
-    </div>
-    <p style="font-size:13px;color:#555555;margin:0 0 28px;">
-      ${isSignup ? "Complete your signup" : "Reset your password"}
-    </p>
-
-    <div style="background:#FFFFFF;border:1.5px solid #1C1C1C;border-radius:14px;padding:32px;text-align:center;margin-bottom:20px;">
-      <div style="font-size:12px;color:#555555;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.1em;">
-        Your verification code
-      </div>
-      <div style="font-size:46px;font-weight:700;letter-spacing:16px;color:#6D28D9;font-family:monospace;padding-left:16px;">
-        ${code}
-      </div>
-    </div>
-
-    <p style="font-size:12px;color:#555555;line-height:1.6;margin:0;">
-      This code expires in <strong style="color:#333333;">10 minutes</strong>.
-      If you didn't request this, you can safely ignore this email.
-    </p>
-  </div>
-</body>
-</html>`,
+    html: otpEmailHtml(code, type),
   });
-
   if (error) throw new Error(`Resend error: ${error.message}`);
 }
 
+export function inviteEmailHtml(inviterEmail, notebookTitle, classTitle, inviteUrl) {
+  // Titles and the inviter's address are user-typed: escape before they meet HTML.
+  inviterEmail = esc(inviterEmail); notebookTitle = esc(notebookTitle);
+  const location = classTitle ? ` in ${esc(classTitle)}` : "";
+  return emailShell(`
+        <h1 style="${H}font-size:25px;margin:0 0 12px;">You're invited to study together</h1>
+        <p style="${P}">${inviterEmail} invited you to <strong style="color:${INK};">${notebookTitle}</strong>${location} on scholr: shared notes, shared chat, and Derek, an AI tutor that reads them all.</p>
+        ${ctaButton("Join the unit →", inviteUrl)}
+      `, { footer: "No account yet? You'll make one in a minute. Weren't expecting this? You can ignore it." });
+}
+
 export async function sendInviteEmail(to, inviterEmail, notebookTitle, classTitle, inviteUrl) {
-  console.log("Resend key present:", !!process.env.RESEND_API_KEY);
-  const location = classTitle ? ` in ${classTitle}` : "";
   try {
-    console.log("Resend call starting");
     const result = await getResend().emails.send({
       from: getFrom(),
       to,
       replyTo: SUPPORT_EMAIL,
       subject: `You've been invited to join ${notebookTitle} on scholr`,
-      html: `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <div style="max-width:460px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:6px;letter-spacing:-0.02em;">
-      schol<span style="color:#6D28D9;">r</span>
-    </div>
-    <p style="font-size:13px;color:#555555;margin:0 0 28px;">Study together, learn faster</p>
-
-    <div style="background:#FFFFFF;border:1.5px solid #1C1C1C;border-radius:14px;padding:32px;margin-bottom:20px;">
-      <p style="font-size:15px;color:#333333;line-height:1.7;margin:0 0 24px;">
-        ${inviterEmail} invited you to join <strong style="color:#1C1C1C;">${notebookTitle}</strong>${location} on scholr. Click below to accept and start studying together.
-      </p>
-      <a href="${inviteUrl}" style="display:inline-block;background:#6D28D9;color:#FFFFFF;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">Accept Invite</a>
-    </div>
-
-    <p style="font-size:12px;color:#555555;line-height:1.6;margin:0;">
-      If you don't have a scholr account yet, you'll be prompted to create one first.<br>
-      If you weren't expecting this invite, you can safely ignore it.
-    </p>
-  </div>
-</body>
-</html>`,
+      html: inviteEmailHtml(inviterEmail, notebookTitle, classTitle, inviteUrl),
     });
     if (result.error) throw new Error(`Resend error: ${result.error.message}`);
   } catch (err) {
@@ -130,39 +155,11 @@ function unsubBase() {
   return process.env.PUBLIC_API_URL || appUrl();
 }
 
-function emailShell(innerHtml, userId) {
-  const unsub = userId
-    ? `<a href="${unsubBase()}/api/email/unsubscribe?u=${userId}&t=${unsubToken(userId)}" style="color:#555555;text-decoration:underline;">Unsubscribe</a>`
-    : "";
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');</style>
-</head>
-<body style="margin:0;padding:40px 20px;background:#FFFFFF;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <div style="max-width:480px;margin:0 auto;">
-    <div style="font-size:26px;font-weight:900;color:#1C1C1C;margin-bottom:24px;letter-spacing:-0.02em;">schol<span style="color:#6D28D9;">r</span></div>
-    ${innerHtml}
-    <p style="font-size:12px;color:#555555;line-height:1.6;margin:28px 0 0;border-top:1px solid #E5E5E5;padding-top:16px;">
-      You're getting this because you signed up for Scholr. Reply anytime — <a href="mailto:support@scholr.dev" style="color:#666666;">support@scholr.dev</a>.<br>${unsub}
-    </p>
-  </div>
-</body>
-</html>`;
-}
-
-const H = `font-family:'Playfair Display',Georgia,'Times New Roman',serif;color:#1C1C1C;font-weight:700;`;
-const P = `font-size:15px;color:#333333;line-height:1.7;margin:0 0 16px;`;
-function ctaButton(label, href) {
-  return `<a href="${href}" style="display:inline-block;background:#6D28D9;color:#FFFFFF;font-weight:700;font-size:15px;padding:14px 30px;border-radius:10px;text-decoration:none;margin:6px 0 8px;">${label}</a>`;
-}
-
 const ONBOARDING_TEMPLATES = {
   welcome: (name) => ({
     subject: "Welcome to Scholr 🎓",
     html: `
-      <h1 style="${H}font-size:26px;margin:0 0 14px;">Hey ${name || "there"}, you're in.</h1>
+      <h1 style="${H}font-size:26px;margin:0 0 14px;">Hey ${esc(name) || "there"}, you're in.</h1>
       <p style="${P}">Scholr turns your class notes into a shared AI tutor. Here's the 10-second version:</p>
       <p style="${P}">
         📤 <strong style="color:#1C1C1C;">Upload notes</strong> — drop a PDF, image, or paste text<br>
@@ -194,16 +191,21 @@ const ONBOARDING_TEMPLATES = {
 };
 
 // Send one onboarding email. type ∈ {welcome, feynman, invite_friend}.
-export async function sendOnboardingEmail(type, to, name, userId) {
+export function onboardingEmail(type, name, userId) {
   const make = ONBOARDING_TEMPLATES[type];
   if (!make) throw new Error(`Unknown onboarding email type: ${type}`);
   const { subject, html } = make(name);
+  return { subject, html: emailShell(html, { userId, footer: OPTIONAL_FOOTER }) };
+}
+
+export async function sendOnboardingEmail(type, to, name, userId) {
+  const { subject, html } = onboardingEmail(type, name, userId);
   const { error } = await getResend().emails.send({
     from: getFrom(),
     to,
     replyTo: SUPPORT_EMAIL,
     subject,
-    html: emailShell(html, userId),
+    html,
   });
   if (error) throw new Error(`Resend error: ${error.message}`);
 }

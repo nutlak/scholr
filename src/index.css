@@ -1,7 +1,10 @@
 /* Nunito for the UI; Newsreader, a quiet book serif at regular weight, for
    titles (bold sans titles — Hanken, then Nunito — both read sharp). Shantell Sans is the handwriting accent: margin notes, the hero's
    "Study together.", the sketch labels — never paragraphs or structure. */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..800&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=Shantell+Sans:wght@400..600&display=swap');
+/* Only what's used, measured 2026-10-14: Nunito upright, Newsreader at its one
+   heading weight, Shantell at its one weight (synthesis is off, so anything
+   asking for 600 draws at 500). ~107 KB of fonts, down from ~245 KB. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400..800&family=Newsreader:wght@500&family=Shantell+Sans:wght@500&display=swap');
 
 /* ── Themes: layered surfaces with real depth ─────────────────────────
    Four planes, each a step off the last: the page (--bg), the chrome around it

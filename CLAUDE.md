@@ -10,7 +10,7 @@ ordering is deliberate — don't demote it.
 
 ```
 npx vite build          # must succeed
-npx eslint src server   # 0 errors; 17 pre-existing warnings are expected
+npx eslint src server   # 0 errors; 14 warnings expected (react-hooks/set-state-in-effect on working load-then-poll effects)
 npm test                # node --test, no React testing library
 ```
 

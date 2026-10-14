@@ -376,6 +376,8 @@ export default function Scholr() {
       window.history.replaceState({}, "", "/app");
       setWelcomePlan("pro");
     }
+    // Once per signed-in session; the setters it reaches are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authReady]);
 
   // api.js fires this once when a 401 survives a refresh attempt: the session
@@ -419,6 +421,8 @@ export default function Scholr() {
       refreshSubscription();
       setWelcomePlan("pro");
     });
+    // Re-subscribes per user; refreshSubscription reads nothing that outlives it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useCanonicalUrl(authReady, user);

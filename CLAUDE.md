@@ -75,11 +75,14 @@ for tints, since `${hex}22` breaks on a `var()`.
 reaches inline-styled components by class or by the tokens they write
 (`[style*="var(--card-bg)"]`). Don't add `corner-shape` squircles.
 
-**Type:** Nunito (`FONT`, `FONT_HEADING`) for headings, body, buttons
-and anything read at length — including Derek's answers and PINs. Shantell Sans
-(`var(--font-hand)`) is the handwriting layer: section labels (surface.css turns
-the inline uppercase labels into handwritten notes), the status strip,
-segmented options, the hero's "Study together.", accent words in landing titles.
+**Type:** three faces, each with one job. Newsreader (`FONT_HEADING`,
+`FONT_SERIF`, `--font-heading`) for page titles and headings — a quiet book
+serif, held at weight 500 by surface.css whatever the inline weight says.
+Nunito (`FONT`) for everything structural and read at length: body, buttons,
+cards, Derek's answers, PINs, the wordmark. Shantell Sans (`var(--font-hand)`)
+is the handwriting layer: section labels (surface.css turns inline uppercase
+labels into handwritten notes), the status strip, segmented options, the hero's
+"Study together.", accent words in landing titles.
 Scales: `--fs-*` with matching `--tr-*`/`--lh-*`, spacing `--sp-1`…`--sp-8`.
 
 **Hand-drawn marks live in `src/ui/Hand.jsx`**: `HandCircle` (a pen loop
@@ -92,9 +95,8 @@ due dates, meter labels, stat captions, "here now" — take `className="hand"`
 **Handwriting stays soft**: Shantell Sans ships 400–600 only and
 `font-synthesis-weight: none` stops faux bold; labels and notes run at 500.
 Kalam was dropped (2026-10-14) for reading harsh and for a "1" that looked
-like a slash; Hanken Grotesk went the same night (bold titles read harsh) —
-Nunito's rounded terminals keep headings friendly. Keep heading tracking near
-zero; the old tight negative tracking was part of the harshness.
+like a slash. Bold sans titles read "sharp" to Noah — Hanken, then even
+Nunito — so titles are a serif at book weight. Keep heading tracking near zero.
 
 **The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
 rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).

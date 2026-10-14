@@ -776,7 +776,7 @@ export default function Scholr() {
             <div style={{
               fontSize: 21, fontWeight: 600,
               color: "var(--text-primary)", letterSpacing: "-0.01em",
-              fontFamily: FONT_HEADING,
+              fontFamily: FONT, // the wordmark, same face as the landing nav
             }}>
               {/* outer span = one inline box → letter-spacing holds across the color split */}
               <span>schol<span style={{ color: "var(--accent)" }}>r</span></span>

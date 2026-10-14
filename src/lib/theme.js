@@ -2,11 +2,13 @@
 
 export const FONT = `"Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-// Headings are the same grotesque at a heavier weight. Handwriting (Shantell Sans,
-// var(--font-hand)) is an accent for margin notes and the hero, never structure.
-export const FONT_SERIF = FONT;
+// Titles are a calm book serif (Newsreader, close to the serif Claude's app
+// uses) at a regular weight; everything else stays Nunito. Bold sans titles
+// read sharp, whatever the sans. Handwriting (Shantell Sans,
+// var(--font-hand)) is an accent for margin notes and the hero.
+export const FONT_SERIF = `"Newsreader", Georgia, "Times New Roman", serif`;
 
-export const FONT_HEADING = FONT;
+export const FONT_HEADING = FONT_SERIF;
 
 export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 

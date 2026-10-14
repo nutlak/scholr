@@ -1,8 +1,7 @@
-/* One working typeface, Nunito, for UI and headings: rounded terminals, so a
-   bold title reads friendly rather than harsh (Hanken Grotesk was dropped
-   2026-10-14 for exactly that). Shantell Sans is the handwriting accent: margin notes, the hero's
+/* Nunito for the UI; Newsreader, a quiet book serif at regular weight, for
+   titles (bold sans titles — Hanken, then Nunito — both read sharp). Shantell Sans is the handwriting accent: margin notes, the hero's
    "Study together.", the sketch labels — never paragraphs or structure. */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..800&family=Shantell+Sans:wght@400..600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..800&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=Shantell+Sans:wght@400..600&display=swap');
 
 /* ── Themes: layered surfaces with real depth ─────────────────────────
    Four planes, each a step off the last: the page (--bg), the chrome around it
@@ -152,8 +151,8 @@ html[data-theme="light"] code {
 :root {
   --font: "Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-sans: "Nunito", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-serif: "Nunito", "Inter", system-ui, sans-serif;
-  --font-heading: "Nunito", "Inter", system-ui, sans-serif;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-heading: "Newsreader", Georgia, "Times New Roman", serif;
   --font-hand: "Shantell Sans", "Nunito", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
 

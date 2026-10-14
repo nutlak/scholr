@@ -176,6 +176,16 @@ html[data-theme="light"] .scholr-mark-light { display: block !important; }
   background: radial-gradient(720px 380px at 50% 30%, var(--glow-accent), transparent 70%);
 }
 
+/* ── Titles: a calm serif ───────────────────────────────────────────────
+   Page titles and headings set the serif (FONT_HEADING / --font-heading)
+   with sans-era weights of 600–700 inline; a serif that heavy reads stern.
+   Settle every one at a book weight. */
+h1, h2, .greeting-text, [style*="Newsreader"] {
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+}
+h1, .greeting-text { font-family: var(--font-heading) !important; }
+
 /* ── Handwriting accents ──────────────────────────────────────────────── */
 /* .hand: a small note in the margin — dates, counts, due dates, meters,
    stats. Set a size up so it reads easily (override with --hand-size). */

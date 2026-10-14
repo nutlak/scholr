@@ -38,8 +38,8 @@ Inline styles, driven by CSS custom properties. `style={{ color: "var(--t1)" }}`
 is the house pattern — so **editing the `:root` tokens in `src/index.css`
 restyles the whole app**, which is almost always the right lever.
 
-Load order is `index.css` → `hud.css` → `App.css` → `paper.css` (the last two
-are imported from `App.jsx`, paper last, so it wins ties). `src/hud.css` is now
+Load order is `index.css` → `hud.css` → `App.css` → `surface.css` (the last
+two are imported from `App.jsx`, surface last, so it wins ties). `src/hud.css` is now
 just layout for the status strip and the phone shell.
 
 Because styles are inline, attribute selectors are how you reach many
@@ -52,49 +52,42 @@ rather than importing `src/lib/theme.js`. Font changes must sweep all of them
 
 ## Design language
 
-**Paper: a hand-drawn sketch in a wide-ruled notebook.** (Since 2026-10-09; the
-dark violet "instrument panel" look is retired.) The page is notebook paper —
-faint blue rules every 32px and a red margin line, on `.main-pane` and
-`.landing-root` — with ink `--ink` for text and lines, and colour only where it
-means something: ballpoint-blue `--acc` for the way forward and primary actions,
-red `--danger` for problems, green `--success` for "solid", mustard `--warning`.
-No orange: Noah rejected it.
+**Layered depth, with handwriting as an accent.** (2026-10-14. The dark violet
+"instrument panel" and then a flat hand-drawn "paper" look both came and went;
+Noah called the flat one cheap and fake.) The page is a stack of planes —
+page `--bg`, chrome `--bg-chrome`, cards `--card-bg`, raised `--s2`/`--s3` —
+separated by light, not outlines: every card has a 1px top highlight (`--hi`)
+and a soft shadow (`--sh-card`, `--sh-card-h` on hover, `--sh-modal` for
+overlays). Filled buttons are top-lit with a coloured shadow (`--acc-glow`).
+The content has one light source: a faint accent wash at the top.
 
-**Two themes, same notebook.** Light paper (`html[data-theme="light"]`, white)
-and dark paper (`html[data-theme="dark"]`, slate with cream ink), both in
-`index.css`. `useAppearance` holds the choice (device setting by default,
-Settings → Theme to change), `public/theme-boot.js` applies it before first
-paint, and the accent preset supplies a deep shade for light and a pale one for
-dark. So **never hard-code a colour a component paints**: use the tokens —
-`--paper` for card/tile surfaces, `--ink-blue|green|amber|red|violet|pink|teal`
-for coloured icons and labels (each clears 4.5:1 on its own paper), and
-`color-mix(in srgb, <colour> N%, transparent)` for tints, since `${hex}22`
-breaks on a `var()`.
+**Two themes**, light (`#F2F3F6` page, white cards) and dark (`#0C0D11` page,
+`#16181E` cards), both in `index.css`. `useAppearance` holds the choice (device
+setting by default, Settings → Theme), `public/theme-boot.js` applies it before
+first paint. Accent is the student's choice; **purple is the default** because
+it's the logo's colour. No orange or brown-amber anywhere (Noah rejected it).
+Never hard-code a colour a component paints: `--paper` for surfaces,
+`--ink-blue|green|amber|red|violet|pink|teal` for coloured icons and labels
+(each clears 4.5:1 in its theme), `color-mix(in srgb, <colour> N%, transparent)`
+for tints, since `${hex}22` breaks on a `var()`.
 
-**`src/paper.css` is the hand-drawn layer and loads last** (after App.css).
-It gives cards, sheets, panels, tiles, inputs and outlined/filled buttons an
-ink outline with the `--wobble` border-radius (big, slightly uneven corners
-that read as drawn by hand; anything with an inline radius gets `--wobble-sm`), turns tracked-uppercase "instrument labels" into
-handwritten notes, kills glows, shadows, radial gradients and frosted glass,
-and restyles the status strip. Reach new components through classes or the
-tokens they write, the same way. No gradients, glows, shadows or blur.
+**`src/surface.css` is the depth layer and loads last** (after App.css). It
+reaches inline-styled components by class or by the tokens they write
+(`[style*="var(--card-bg)"]`). Don't add `corner-shape` squircles.
 
-**Two typefaces.** Kalam (`--font-hand`, `FONT_HEADING`, `FONT_SERIF`) for
-headings, labels, PINs and anything that reads like a margin note; Hanken
-Grotesk (`FONT`) for body text, buttons and anything read at length —
-including Derek's answers. Handwriting for a paragraph fails the legibility bar.
+**Type:** Hanken Grotesk (`FONT`, `FONT_HEADING`) for everything structural.
+Kalam (`var(--font-hand)`) is the handwriting accent only: the hero's "Study
+together." with its wavy `.hand-underline`, accent words in landing section
+titles, the hero sketch labels. Never a paragraph, a PIN or a heading.
+Scales: `--fs-*` with matching `--tr-*`/`--lh-*`, spacing `--sp-1`…`--sp-8`.
 
-**Type and space come from scales, not from taste per component.** `--fs-*`
-with a matching `--tr-*` and `--lh-*`. Spacing is `--sp-1`…`--sp-8`.
-
-**Illustrations are hand-drawn SVG** in theme tokens (ink, `--acc`, `--danger`)
-(`src/ui/HeroSketch.jsx`, `src/ui/ScholrMark.jsx`, the brain's `HandOrb`). No
-WebGL effects, no mock app screenshots.
+**The logo is the S-shaped speech bubble with the spark** (`public/scholr-logo-*.png`,
+rendered by `src/ui/ScholrMark.jsx`, white tile in light, dark tile in dark).
+Don't redraw it. The landing hero's sketch (`src/ui/HeroSketch.jsx`) is the one
+illustration, in theme tokens; faint ruled lines fade out behind the hero.
 
 Panels dock to the **right rail** (`ToolModal`), never centre-screen dialogs.
-`.shimmer` is the one "waiting" indicator — an oscillating ink-to-blue
-sweep clipped to text. No `corner-shape` squircles: they
-square off the hand-drawn corners.
+`.shimmer` is the one "waiting" indicator.
 
 Chrome stays quiet, and copy stays plain: the bar is *simple and clean enough
 for a 3-year-old or an 83-year-old*. When the aesthetic fights legibility,

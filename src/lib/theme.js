@@ -2,11 +2,11 @@
 
 export const FONT = `"Hanken Grotesk", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif`;
 
-// Kalam: the hand-lettered face for headings, labels and anything that should
-// read like a note in the margin. Body text stays Hanken Grotesk for legibility.
-export const FONT_SERIF = `"Kalam", "Hanken Grotesk", system-ui, sans-serif`;
+// Headings are the same grotesque at a heavier weight. Handwriting (Kalam,
+// var(--font-hand)) is an accent for margin notes and the hero, never structure.
+export const FONT_SERIF = FONT;
 
-export const FONT_HEADING = `"Kalam", "Hanken Grotesk", system-ui, sans-serif`;
+export const FONT_HEADING = FONT;
 
 export const MONO = `"JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace`;
 
@@ -55,9 +55,9 @@ export function classTint(color) {
    for the dark theme's dark --on-acc, and every 700 shade is dark enough for
    the light theme's white one. */
 export const ACCENT_PRESETS = [
-  // Ballpoint blue first: the default, and the colour of pen on notebook paper.
-  { name: "Blue",    color: "#8AB4FF", hover: "#A8C7FF", deep: "#6E9BF5", light: "#1D4ED8", lightHover: "#1E40AF" },
+  // Purple first: the default, and the logo's colour.
   { name: "Purple",  color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", light: "#6D28D9", lightHover: "#5B21B6" },
+  { name: "Blue",    color: "#8AB4FF", hover: "#A8C7FF", deep: "#6E9BF5", light: "#1D4ED8", lightHover: "#1E40AF" },
   { name: "Emerald", color: "#34D399", hover: "#6EE7B7", deep: "#10B981", light: "#047857", lightHover: "#065F46" },
   { name: "Amber",   color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", light: "#A16207", lightHover: "#854D0E" },
   { name: "Pink",    color: "#F472B6", hover: "#F9A8D4", deep: "#EC4899", light: "#BE185D", lightHover: "#9D174D" },

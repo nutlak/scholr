@@ -13,7 +13,7 @@ import NotificationsBell from "./NotificationsBell.jsx";
 const FlashcardReview = lazy(() => import("./Flashcards.jsx").then(m => ({ default: m.FlashcardReview })));
 import { Plus, Hammer, MessageCircle, Settings, LayoutDashboard, ChevronRight, Sparkles, LogOut, AlertTriangle, Check, X, Menu, Notebook, Trash2, CreditCard } from "lucide-react";
 import "./App.css";
-import "./paper.css"; // hand-drawn layer: must stay last
+import "./surface.css"; // depth layer: must stay last
 import { InviteLanding } from "./features/notebook/InviteModal.jsx";
 // Lazy: 52kB of source that only matters once a notebook is open, and never
 // for anyone still on the landing page.

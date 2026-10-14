@@ -15,6 +15,7 @@ const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=exp
 let widget = null;   // Promise<{ ts, id }>
 let pending = null;  // { resolve, reject } for the token in flight
 let used = false;
+let box = null;     // the widget's container, hidden whenever no check is running
 
 function settle(fn, value) { const p = pending; pending = null; p?.[fn](value); }
 
@@ -30,13 +31,16 @@ function ensureWidget() {
     const el = document.createElement("div");
     el.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000";
     document.body.appendChild(el);
-    const fail = () => settle("reject", new Error("Couldn't confirm you're human. Please try again."));
+    box = el;
+    const fail = () => { el.style.display = "none"; settle("reject", new Error("Couldn't confirm you're human. Please try again.")); };
     const id = ts.render(el, {
       sitekey: SITE_KEY,
       execution: "execute",
       appearance: "interaction-only",
-      theme: "dark",
-      callback: token => settle("resolve", token),
+      theme: document.documentElement.dataset.theme === "dark" ? "dark" : "light",
+      // Hide it the moment it's done: Cloudflare leaves its "Success!" card up
+      // otherwise, parked over whatever sits at the bottom of the screen.
+      callback: token => { el.style.display = "none"; settle("resolve", token); },
       "error-callback": fail,
       "timeout-callback": fail,
     });
@@ -57,6 +61,7 @@ export async function getCaptchaToken() {
   used = true;
   return new Promise((resolve, reject) => {
     pending = { resolve, reject };
+    box.style.display = "";
     ts.execute(id);
   });
 }

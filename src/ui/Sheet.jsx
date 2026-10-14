@@ -17,7 +17,7 @@ export function Sheet({ title, onClose, children, maxWidth = 440 }) {
         background: "var(--bg-surface-1)", border: "1px solid var(--border-default)", borderRadius: 18,
         color: "var(--text-primary)", animation: "fadeIn 0.2s ease",
       }}>
-        <div style={{ fontSize: 19, fontWeight: 650, marginBottom: 14, fontFamily: "var(--font-hand, inherit)" }}>{title}</div>
+        <div style={{ fontSize: 19, fontWeight: 650, marginBottom: 14, fontFamily: "var(--font-heading, inherit)" }}>{title}</div>
         {children}
       </div>
     </div>

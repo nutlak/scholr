@@ -4,7 +4,7 @@
 
    This used to be the dark "instrument panel" layer (violet void, glows,
    tracked telemetry). That look is retired; colours and the hand-drawn
-   treatment live in index.css (tokens) and paper.css. What's left here is
+   treatment live in index.css (tokens) and surface.css. What's left here is
    structure: the strip's height and offsets, the large-title handoff, the
    mobile layout, the shimmer keyframes.
    ====================================================================== */

@@ -51,8 +51,8 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "var(--ink-blue)" },
-  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "var(--ink-blue)" },
+  { n: "1", title: "Create a class & unit", body: "One class per course, one unit per exam or chapter. Or upload a syllabus to a new or existing class and Derek sets up the units for you.", tint: "var(--acc)" },
+  { n: "2", title: "Add your sources",       body: "Drag in PDFs, lecture slides, or typed notes. Scholr reads every word for Derek.", tint: "var(--acc)" },
   { n: "3", title: "Share your class PIN", body: "Drop the link in your group chat. Classmates tap it, or type the PIN, and land in every unit.", tint: "var(--ink-red)" },
   { n: "4", title: "Ask Derek anything",     body: "Type a question, get an answer grounded in your actual notes. No more re-reading.", tint: "var(--ink-green)" },
 ];
@@ -248,7 +248,7 @@ function PricingCard({ tier, price, period, accent, features, ctaLabel, onClick,
   );
 }
 
-function SectionHeader({ pill, title, sub, accent = "var(--ink-blue)" }) {
+function SectionHeader({ pill, title, sub, accent = "var(--acc)" }) {
   const [ref, visible] = useFadeIn();
   return (
     <div ref={ref} style={{
@@ -319,7 +319,7 @@ const FAQS = [
   { q: "Can I study with my class?", a: "Yes. Open a class, tap Invite, and share the PIN or link. Everyone who joins sees the same units, sources, chat, and AI answers in real time, and becomes your friend on Scholr." },
   { q: "Can I cancel anytime?", a: "Anytime. Your Pro features stay active through the end of the billing period, and you won't be charged again." },
   { q: "Can I get Scholr on my phone?", a: "Yes. Install it to your home screen and it opens like any other app, full screen, with its own icon. On Android and desktop Chrome, tap Install Scholr. On iPhone, tap Share in Safari and then Add to Home Screen. Notifications work once it is installed." },
-  { q: "Is there a dark mode?", a: "Yes. Scholr follows your device's light or dark setting, and you can switch it anytime in Settings. Both look like the same notebook page." },
+  { q: "Is there a dark mode?", a: "Yes. Scholr follows your device's light or dark setting, and you can switch it anytime in Settings." },
 ];
 
 function UseCaseCard({ when, what, idx }) {
@@ -459,7 +459,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
   }, []);
 
   return (
-    // Same paper theme as the app: ink on white, hand-drawn outlines.
+    // Same themes and surfaces as the app.
     <div className="landing-root" style={{
       background: "var(--bg)", minHeight: "100vh",
       fontFamily: FONT, color: "var(--text-primary)",
@@ -610,7 +610,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
       </nav>
 
       {/* Hero */}
-      <section style={{
+      <section className="lp-hero" style={{
         position: "relative", zIndex: 1,
         minHeight: "100vh",
         display: "flex", flexDirection: "column",
@@ -656,7 +656,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
             whiteSpace: "normal",
           }}>
             <span style={{ color: "var(--text-primary)" }}>Study smarter.</span>{" "}
-            <span className="hand-underline" style={{ fontFamily: FONT_SERIF, fontWeight: 700, letterSpacing: "0", color: "var(--acc)" }}>
+            <span className="hand-underline" style={{ fontFamily: "var(--font-hand)", fontWeight: 700, letterSpacing: "0", color: "var(--acc)", whiteSpace: "nowrap" }}>
               Study together.
             </span>
           </h1>
@@ -759,7 +759,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
             pill="How it works"
             title="Up and running in minutes"
             sub="Upload your notes and start asking. Derek can build your units from a syllabus."
-            accent="var(--ink-blue)"
+            accent="var(--acc)"
           />
           <div className="lp-steps" style={{ maxWidth: "640px", margin: "56px auto 0", width: "100%", paddingLeft: "48px" }}>
             {STEPS.map((s, i) => (
@@ -803,7 +803,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Free"
               price="$0"
               period="forever"
-              accent="var(--ink-blue)"
+              accent="var(--acc)"
               ctaLabel="Get started free"
               onClick={onSignIn}
               features={[
@@ -821,7 +821,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               tier="Pro"
               price="$8.49"
               period="/ month"
-              accent="var(--ink-blue)"
+              accent="var(--acc)"
               highlighted
               ctaLabel="Upgrade to Pro"
               onClick={onSignIn}
@@ -865,7 +865,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <SectionHeader
             pill="How it gets used"
-            title={<>Built for the night <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--ink-amber)" }}>before the exam</span></>}
+            title={<>Built for the night <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>before the exam</span></>}
             sub="Real study workflows, minus the busywork."
             accent="var(--ink-amber)"
           />
@@ -890,9 +890,9 @@ export default function LandingPage({ onSignIn, invited = false }) {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <SectionHeader
             pill="FAQ"
-            title={<>Questions, <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--ink-blue)" }}>answered</span></>}
+            title={<>Questions, <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>answered</span></>}
             sub="Everything you need to know before you start."
-            accent="var(--ink-blue)"
+            accent="var(--acc)"
           />
           <div style={{ marginTop: 48 }}>
             {FAQS.map(f => (<FAQItem key={f.q} {...f} />))}
@@ -915,7 +915,7 @@ export default function LandingPage({ onSignIn, invited = false }) {
               fontFamily: FONT_HEADING, color: "var(--text-primary)",
               letterSpacing: "-0.035em", marginBottom: 18,
             }}>
-              Ready to <span style={{ fontFamily: FONT_SERIF, fontStyle: "italic", fontWeight: 400, color: "var(--acc)" }}>study smarter?</span>
+              Ready to <span style={{ fontFamily: "var(--font-hand)", fontWeight: 700, color: "var(--acc)" }}>study smarter?</span>
             </h2>
             <p style={{
               fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6,

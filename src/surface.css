@@ -1,0 +1,200 @@
+/* ======================================================================
+   surface.css — depth. Loaded last (after App.css), so it wins ties.
+
+   The page is a stack of planes: the page itself (--bg), the chrome around it
+   (--bg-chrome), cards sitting on the page (--card-bg), and things raised off
+   a card. What separates them is light, not outlines: every card carries a
+   1px top highlight (--hi) and a soft drop shadow (--sh-card), lifts further
+   on hover (--sh-card-h), and overlays float well above (--sh-modal). Filled
+   buttons get the same treatment, so pressing one reads as pushing something
+   physical.
+
+   Handwriting is an accent, not the structure: the hero's "Study together.",
+   its underline and the sketch labels.
+
+   Most components are inline-styled, so this reaches them the way CLAUDE.md
+   describes: by class where one exists, otherwise by the tokens they write
+   consistently ([style*="var(--card-bg)"]).
+   ====================================================================== */
+
+:root {
+  --r-card: 18px;
+  --lift: inset 0 1px 0 var(--hi);
+}
+
+html, body { background: var(--bg); }
+
+/* ── Page and chrome ─────────────────────────────────────────────────────
+   A soft wash of the accent at the top of the content, scrolling away with
+   it, so the page has a light source instead of being one flat fill. */
+.main-pane {
+  background:
+    radial-gradient(1100px 420px at 50% -160px, var(--glow-accent), transparent 72%),
+    var(--bg) !important;
+  background-attachment: local !important;
+}
+.sidebar {
+  background: var(--bg-chrome) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  box-shadow: 1px 0 0 var(--hi), 8px 0 24px -20px rgba(0,0,0,0.35) !important;
+}
+.hud-bar {
+  background: var(--bg-chrome) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 1px 0 var(--hi), 0 6px 16px -14px rgba(0,0,0,0.4) !important;
+}
+
+/* ── Cards: raised off the page ───────────────────────────────────────── */
+[style*="var(--card-bg)"]:not([style*="border-radius: 50%"]):not([style*="border-radius: 999"]),
+.lift-card,
+.study-hero,
+.study-tile,
+.battle-tile,
+.ins-group,
+.lp-feature,
+.lp-card {
+  border: 1px solid var(--card-border) !important;
+  box-shadow: var(--lift), var(--sh-card) !important;
+}
+.lift-card, .study-tile, .battle-tile, .lp-feature, .lp-card,
+.study-hero { border-radius: var(--r-card) !important; }
+.study-tile, .study-hero, .battle-tile { background: var(--card-bg) !important; }
+.lift-card, .study-tile, .battle-tile, .lp-feature, .study-hero {
+  transition: transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s ease, border-color 0.22s ease !important;
+}
+@media (hover: hover) {
+  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover, .study-hero:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--lift), var(--sh-card-h) !important;
+    border-color: var(--border-h) !important;
+  }
+}
+
+/* Surfaces that never set a radius get a soft one rather than a hard box. */
+:where([style*="var(--bg-surface-1)"], [style*="var(--card-bg)"], [style*="var(--s2)"]):not([style*="border-radius"]) {
+  border-radius: 12px;
+}
+
+/* Overlays float well above everything. */
+.mobile-sheet, .tool-modal-card {
+  border: 1px solid var(--border-default) !important;
+  box-shadow: var(--lift), var(--sh-modal) !important;
+}
+@media (max-width: 699px) {
+  .tool-modal-card { border: none !important; border-radius: 0 !important; box-shadow: none !important; }
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   Filled: a top-lit face, an inner highlight and a coloured shadow under it.
+   Outlined: a card-coloured face that sits a hair above the surface. */
+.btn-primary,
+.btn-press[style*="background: var(--acc)"],
+.btn-press[style*="background: var(--accent)"] {
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 1px 2px rgba(0,0,0,0.22), 0 8px 20px -8px var(--acc-glow) !important;
+  border: none !important;
+}
+@media (hover: hover) {
+  .btn-primary:hover,
+  .btn-press[style*="background: var(--acc)"]:hover {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 4px rgba(0,0,0,0.22), 0 12px 28px -8px var(--acc-glow) !important;
+    filter: brightness(1.06);
+  }
+}
+.btn-ghost,
+.btn-press[style*="border: 1px solid"],
+.nb-util-btn, .nb-tool-btn {
+  box-shadow: var(--lift), 0 1px 2px rgba(0,0,0,0.10) !important;
+}
+.btn-ghost { background: var(--card-bg) !important; border-color: var(--border-default) !important; }
+
+/* Segmented control: a recessed track with a raised pill riding in it. */
+.seg-control {
+  background: var(--s3) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.14) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+.seg-pill {
+  background: var(--card-bg) !important;
+  box-shadow: var(--lift), 0 1px 3px rgba(0,0,0,0.18), 0 4px 10px -4px rgba(0,0,0,0.2) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+.seg-option[aria-checked="true"] { color: var(--text-primary) !important; }
+
+/* Inputs: set into the surface, lit by the accent on focus. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea, select {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+textarea:focus, select:focus {
+  border-color: var(--acc) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08), 0 0 0 3px var(--ring) !important;
+  outline: none;
+}
+
+/* ── Chat ─────────────────────────────────────────────────────────────── */
+.chat-bubble.chat-in {
+  background: var(--bubble-in) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: var(--lift), var(--sh-card) !important;
+}
+.chat-bubble.chat-own {
+  background: var(--acc) linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%) !important;
+  color: var(--on-acc) !important;
+  border: none !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px -8px var(--acc-glow) !important;
+}
+
+/* ── The mark ─────────────────────────────────────────────────────────── */
+.scholr-mark {
+  display: inline-block; position: relative; overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 14px -6px var(--acc-glow), inset 0 0 0 1px var(--border-subtle);
+}
+.scholr-mark img { display: block; width: 100%; height: 100%; }
+.scholr-mark-light { display: none !important; }
+html[data-theme="light"] .scholr-mark-dark { display: none !important; }
+html[data-theme="light"] .scholr-mark-light { display: block !important; }
+
+/* ── Landing hero: the one place the notebook shows ─────────────────────
+   Faint ruled lines fading out from the headline, under an accent glow. */
+.lp-hero::before, .lp-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+}
+.lp-hero::before {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 35px, var(--rule-line) 35px, var(--rule-line) 36px);
+  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 38%, #000 25%, transparent 75%);
+          mask-image: radial-gradient(ellipse 70% 55% at 50% 38%, #000 25%, transparent 75%);
+}
+.lp-hero::after {
+  background: radial-gradient(720px 380px at 50% 30%, var(--glow-accent), transparent 70%);
+}
+
+/* ── Handwriting accents ──────────────────────────────────────────────── */
+/* A wavy marker underline under a word, in the accent. */
+.hand-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%236D28D9' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 0.32em !important;
+  background-position: 0 100% !important;
+  padding-bottom: 0.06em;
+}
+html[data-theme="dark"] .hand-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c30-6 52 4 80-1s56-5 78 0 26 2 38-2' fill='none' stroke='%23A78BFA' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") !important;
+}
+
+/* ── Waiting indicator: an oscillating sweep, ink to accent ───────────── */
+.shimmer {
+  background-image: linear-gradient(90deg,
+    var(--text-tertiary) 0%, var(--text-tertiary) 30%,
+    var(--acc) 46%, var(--acc-h) 50%, var(--acc) 54%,
+    var(--text-tertiary) 70%, var(--text-tertiary) 100%) !important;
+}
+
+::selection { background: var(--acc-bg-h); color: inherit; }
+:focus-visible { outline: 2px solid var(--acc) !important; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lift-card:hover, .study-tile:hover, .battle-tile:hover, .lp-feature:hover, .study-hero:hover { transform: none; }
+}

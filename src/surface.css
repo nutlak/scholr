@@ -197,11 +197,11 @@ h1, .greeting-text { font-family: var(--font-heading) !important; }
   letter-spacing: 0 !important;
   text-transform: none !important;
 }
-/* A short pen stroke under each page title, in the accent. A mask, so it
-   follows whatever accent the student picked. */
+/* A short pen stroke under each page title, in neutral ink: it is decoration,
+   and the accent is for what you can press. */
 .pen-squiggle {
   display: block; width: 132px; height: 10px; margin-top: 6px;
-  background: var(--acc);
+  background: var(--text-tertiary);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 10' preserveAspectRatio='none'%3E%3Cpath d='M2 6c16-4 28 2 44-1s30-4 46 0 26 2 38-2' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 10' preserveAspectRatio='none'%3E%3Cpath d='M2 6c16-4 28 2 44-1s30-4 46 0 26 2 38-2' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
 }

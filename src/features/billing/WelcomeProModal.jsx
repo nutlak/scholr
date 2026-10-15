@@ -33,7 +33,7 @@ export function WelcomeProModal({ plan = "pro", onClose }) {
         background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16,
         padding: 32, maxWidth: 380, width: "100%", textAlign: "center", animation: "onbSlide 0.3s ease",
       }}>
-        <div style={{ marginBottom: 10, color: "var(--ink-violet)", display: "flex", justifyContent: "center" }}>{squad ? <PartyPopper size={44} strokeWidth={1.5} /> : <Sparkles size={44} strokeWidth={1.5} />}</div>
+        <div style={{ marginBottom: 10, color: "var(--text-primary)", display: "flex", justifyContent: "center" }}>{squad ? <PartyPopper size={44} strokeWidth={1.5} /> : <Sparkles size={44} strokeWidth={1.5} />}</div>
         <div style={{
           fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 700,
           color: "var(--text-primary)", marginBottom: 6,
@@ -49,7 +49,7 @@ export function WelcomeProModal({ plan = "pro", onClose }) {
               padding: "8px 0", borderBottom: "1px solid var(--border-subtle)",
               fontFamily: FONT, fontSize: 14, color: "var(--text-primary)",
             }}>
-              <Check size={16} strokeWidth={2.5} color="var(--acc)" style={{ flexShrink: 0 }} />
+              <Check size={16} strokeWidth={2.5} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
               {f}
             </div>
           ))}

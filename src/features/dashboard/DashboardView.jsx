@@ -346,7 +346,7 @@ export function DashboardView({
                 <span style={{
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "var(--bg-surface-2)", color: "var(--accent)",
+                  background: "var(--bg-surface-2)", color: "var(--text-secondary)",
                 }}><RefreshCw size={17} strokeWidth={1.9} /></span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>

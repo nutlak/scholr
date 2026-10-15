@@ -753,7 +753,7 @@ input, textarea, select { font-family: var(--font); }
   line-height: 1;
   white-space: nowrap;
 }
-.pill svg { color: var(--accent); flex-shrink: 0; }
+.pill svg { color: var(--text-secondary); flex-shrink: 0; }
 
 /* Themed card — soft border, layered surface, subtle edge glow on hover */
 .card {

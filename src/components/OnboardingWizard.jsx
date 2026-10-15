@@ -109,7 +109,7 @@ export default function OnboardingWizard({ user, onComplete }) {
           {[1, 2, 3].map((n) => (
             <span key={n} style={{
               width: n === step ? 24 : 8, height: 8, borderRadius: 999,
-              background: n <= step ? "var(--accent)" : "var(--border-strong, var(--bg-surface-3))",
+              background: n <= step ? "var(--text-primary)" : "var(--border-strong, var(--bg-surface-3))",
               transition: "all 0.3s ease",
             }} />
           ))}
@@ -249,9 +249,9 @@ export default function OnboardingWizard({ user, onComplete }) {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   {sentInvites.map((e) => (
                     <span key={e} style={{
-                      fontFamily: FONT, fontSize: 12.5, color: "var(--accent)",
-                      background: "var(--accent-soft, var(--acc-bg))",
-                      border: "1px solid var(--accent-soft, var(--acc))",
+                      fontFamily: FONT, fontSize: 12.5, color: "var(--text-secondary)",
+                      background: "var(--bg-surface-2)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 999, padding: "5px 12px",
                     }}>✓ {e}</span>
                   ))}

@@ -269,7 +269,7 @@ export function NewUnitModal({ classTitle, onClose, onCreate }) {
           <div style={{ marginBottom: 22 }}>
             <div style={{ fontSize: 18, fontWeight: 600, color: "var(--t1)", fontFamily: FONT_HEADING, marginBottom: 5, letterSpacing: "-0.02em" }}>New Unit</div>
             <div style={{ fontSize: 13, color: "var(--t2)", fontFamily: FONT, lineHeight: 1.55 }}>
-              Adding to <span style={{ color: "var(--acc)", fontWeight: 500 }}>{classTitle}</span>
+              Adding to <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{classTitle}</span>
             </div>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

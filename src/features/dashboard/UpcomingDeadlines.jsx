@@ -63,8 +63,8 @@ export function UpcomingDeadlines({ notebooks, classes, onOpen }) {
       }}>
         Upcoming Deadlines
         <span style={{
-          fontSize: 10.5, fontWeight: 700, color: "var(--accent)",
-          background: "var(--acc-bg)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
+          fontSize: 10.5, fontWeight: 700, color: "var(--text-secondary)",
+          background: "var(--bg-surface-2)", border: "1px solid var(--border-default)",
           padding: "1px 7px", borderRadius: 999,
         }}>{upcoming.length}</span>
       </div>

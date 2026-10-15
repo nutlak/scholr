@@ -70,12 +70,12 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
         )}
         <div style={{
           width: size, height: size, borderRadius: "50%", boxSizing: "border-box",
-          background: active ? "var(--acc)" : "var(--s2)",
-          border: isT ? "2px solid var(--acc)" : "2px solid transparent",
+          background: active ? "var(--text-primary)" : "var(--s2)",
+          border: isT ? "2px solid var(--text-primary)" : "2px solid transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: Math.max(9, Math.floor(size * 0.36)),
           fontWeight: active ? 700 : 400,
-          color: active ? "var(--on-acc)" : "var(--t3)",
+          color: active ? "var(--bg-surface-1)" : "var(--t3)",
           fontFamily: FONT,
           transition: "background 0.15s",
         }}>
@@ -215,8 +215,8 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
                       return (
                         <div key={di} style={{
                           aspectRatio: "1", borderRadius: "50%", boxSizing: "border-box",
-                          background: active ? "var(--acc)" : "var(--s2)",
-                          border: isT ? "1.5px solid var(--acc)" : "1.5px solid transparent",
+                          background: active ? "var(--text-primary)" : "var(--s2)",
+                          border: isT ? "1.5px solid var(--text-primary)" : "1.5px solid transparent",
                         }} />
                       );
                     })}
@@ -240,7 +240,7 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
         borderTop: "1px solid var(--border)",
       }}>
         {[
-          { val: streak,     label: "day streak", color: "var(--acc)" },
+          { val: streak,     label: "day streak", color: "var(--text-primary)" },
           { val: Math.max(longestStreak, streak), label: "longest", color: "var(--text-secondary)" },
           { val: activeDays, label: activeDays === 1 ? "day visited" : "days visited", color: "var(--text-primary)" },
         ].map(({ val, label, color }) => (
@@ -266,7 +266,7 @@ export function ActivityHeatmap({ data, longestStreak = 0, leaderboard = [] }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {leaderboard.slice(0, 5).map((row, i) => (
               <div key={row.userId} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontFamily: FONT }}>
-                <span style={{ color: row.isMe ? "var(--acc)" : "var(--text-secondary)", fontWeight: row.isMe ? 700 : 500 }}>
+                <span style={{ color: row.isMe ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: row.isMe ? 700 : 500 }}>
                   {i + 1}. {row.name}{row.isMe ? " (you)" : ""}
                 </span>
                 <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "var(--text-primary)" }}>{row.streak} <Flame size={13} strokeWidth={2} style={{ verticalAlign: "-2px", color: "var(--text-tertiary)" }} /></span>

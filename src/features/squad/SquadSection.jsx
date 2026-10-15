@@ -130,7 +130,7 @@ export function SquadSection({ onLeft }) {
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <Users size={18} strokeWidth={1.9} color="var(--accent)" />
+              <Users size={18} strokeWidth={1.9} color="var(--text-secondary)" />
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>
                 {squad.name} &middot; {squad.members.length}/{squad.seats} members
               </div>

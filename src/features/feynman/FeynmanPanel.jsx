@@ -235,12 +235,12 @@ export function FeynmanPanel({ nb, me, onToast, onUpgradeNeeded }) {
 
           {result.followup && (
             <div style={{
-              background: "var(--accent-soft)", border: "1px solid color-mix(in srgb, var(--accent) 22%, transparent)",
+              background: "var(--bg-surface-2)", border: "1px solid var(--border-default)",
               borderRadius: 14, padding: 16, animation: "slideInUp 0.4s ease 0.2s both",
             }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--acc-h)",
+                textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-secondary)",
               }}>
                 <ArrowRight size={13} strokeWidth={2.4} /> Push further
               </div>

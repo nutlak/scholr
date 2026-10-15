@@ -57,7 +57,7 @@ export function PushToggle({ children }) {
         gap: 16, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {enabled ? <Bell size={18} strokeWidth={1.9} color="var(--accent)" /> : <BellOff size={18} strokeWidth={1.9} color="var(--text-tertiary)" />}
+          {enabled ? <Bell size={18} strokeWidth={1.9} color="var(--text-primary)" /> : <BellOff size={18} strokeWidth={1.9} color="var(--text-tertiary)" />}
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>Study notifications</div>
             <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>

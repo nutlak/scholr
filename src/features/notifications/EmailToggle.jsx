@@ -26,7 +26,7 @@ export function EmailToggle() {
   return (
     <div className="ins-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Mail size={18} strokeWidth={1.9} color={on ? "var(--accent)" : "var(--text-tertiary)"} />
+        <Mail size={18} strokeWidth={1.9} color={on ? "var(--text-primary)" : "var(--text-tertiary)"} />
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT }}>Study emails</div>
           <div style={{ fontSize: 12.5, color: "var(--text-secondary)", fontFamily: FONT, marginTop: 2 }}>

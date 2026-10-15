@@ -103,7 +103,7 @@ export function StudySessions({ notebookId, me, onToast }) {
           <div key={s.id} className="lift-card" style={{ background: "var(--card-bg)", borderRadius: 14, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontFamily: FONT }}>
             <div style={{ flex: "1 1 220px", minWidth: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
-                Study session <span className="hand" style={{ color: "var(--acc)", marginLeft: 4 }}>{sessionWhen(s.startsAt)}</span>
+                Study session <span className="hand" style={{ color: "var(--text-secondary)", marginLeft: 4 }}>{sessionWhen(s.startsAt)}</span>
               </div>
               <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 2, overflowWrap: "anywhere" }}>
                 {s.note ? `${s.note} · ` : ""}{names.length ? `${names.join(", ")} ${names.length === 1 && names[0] !== "You" ? "is" : "are"} in` : "Nobody yet"}

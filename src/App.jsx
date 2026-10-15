@@ -885,7 +885,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
                       background: subscription.messagesUsed >= subscription.messagesLimit
                         ? "var(--danger)"
-                        : "var(--acc)",
+                        : "var(--text-secondary)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -906,7 +906,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
                       background: subscription.forgeUsed >= subscription.forgeLimit
                         ? "var(--danger)"
-                        : "var(--acc)",
+                        : "var(--text-secondary)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -1247,7 +1247,7 @@ export default function Scholr() {
                   cursor: portalLoading ? "wait" : "pointer",
                 }}
               >
-                <CreditCard size={17} strokeWidth={1.85} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                <CreditCard size={17} strokeWidth={1.85} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
                 {subscription.tier === "pro" ? "Manage subscription" : "Upgrade to Pro"}
               </button>
             </div>

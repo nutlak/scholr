@@ -67,7 +67,7 @@ export function WorksheetView({ worksheet }) {
             <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
               <span style={{
                 fontFamily: FONT_HEADING, fontWeight: 700, fontSize: 16,
-                color: "var(--accent)", minWidth: "1.6em", flexShrink: 0,
+                color: "var(--text-secondary)", minWidth: "1.6em", flexShrink: 0,
               }}>{i + 1}.</span>
               <p style={{
                 margin: 0, fontFamily: FONT_HEADING, fontSize: 16.5,
@@ -116,7 +116,7 @@ export function WorksheetView({ worksheet }) {
                 fontFamily: FONT_HEADING, fontSize: 14.5, lineHeight: 1.5,
               }}>
                 <span style={{
-                  background: "var(--acc-bg)",
+                  background: "var(--bg-surface-3)",
                   color: "var(--t1)",
                   padding: "2px 8px",
                   borderRadius: "3px 10px 6px 11px", // a hand-marked shape, not a uniform pill

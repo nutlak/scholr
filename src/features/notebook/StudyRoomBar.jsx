@@ -27,7 +27,7 @@ function Countdown({ endsAt }) {
   const s = Math.floor((ms % 60000) / 1000);
   const done = ms <= 0;
   return (
-    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: done ? "var(--success)" : "var(--accent)" }}>
+    <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, color: done ? "var(--success)" : "var(--text-primary)" }}>
       {done ? "Time's up" : `${m}:${String(s).padStart(2, "0")}`}
     </span>
   );
@@ -56,7 +56,7 @@ export function StudyRoomBar({ notebookId, me, joined, onJoinedChange }) {
           {members.slice(0, 5).map((m, i) => (
             <span key={m.userId} title={m.name} style={{
               width: 26, height: 26, borderRadius: "50%", marginLeft: i ? -7 : 0,
-              background: "var(--accent-soft)", border: "1.5px solid var(--card-bg)", color: "var(--accent)",
+              background: "var(--bg-surface-3)", border: "1.5px solid var(--card-bg)", color: "var(--text-primary)",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 700,
             }}>{initials(m.name)}</span>

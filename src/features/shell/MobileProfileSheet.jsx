@@ -65,7 +65,7 @@ export function MobileProfileSheet({ displayName, email, onClose, onSettings, on
           onClick={onSettings}
           style={{ ...row, marginBottom: 8, background: "var(--bg-surface-1)", color: "var(--text-primary)" }}
         >
-          <Settings size={17} strokeWidth={1.85} style={{ color: "var(--accent)", flexShrink: 0 }} />
+          <Settings size={17} strokeWidth={1.85} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
           Settings
         </button>
 

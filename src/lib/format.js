@@ -123,7 +123,7 @@ export function getGreeting(name, now = new Date(), pick = arr => arr[Math.floor
 
 export function feynmanScoreColor(score) {
   if (score >= 80) return "var(--success)";
-  if (score >= 55) return "var(--acc)";
+  if (score >= 55) return "var(--text-primary)";
   return "var(--danger)";
 }
 

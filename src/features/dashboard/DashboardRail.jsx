@@ -128,7 +128,7 @@ export function DashboardRail({
                 <span style={{
                   width: 30, height: 30, borderRadius: 8, flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "var(--bg-surface-2)", color: "var(--accent)",
+                  background: "var(--bg-surface-2)", color: "var(--text-secondary)",
                 }}>
                   <Icon size={15} strokeWidth={1.85} />
                 </span>

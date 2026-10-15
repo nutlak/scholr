@@ -222,6 +222,12 @@ which, so nobody "cleans up" a row that is a feature:
   "Hide this panel" (remembered in `localStorage["scholr:rail-hidden"]`, with a
   "Streak & activity" button, carrying the unread count, to bring it back); the
   empty "No deadlines" box is gone.
+- **Accent audit done (2026-10-15).** Purple is only on things you can press (filled
+  buttons, links, selected tabs/chips, focus rings, count badges, the logo's "r").
+  Streak numbers and days, the leaderboard "you" row, usage bars, icons inside rows,
+  info cards, step numbers and the title squiggle are neutral ink (`--text-primary` /
+  `--text-secondary`), not a new colour. New UI: if it isn't tappable, don't use
+  `--acc`. The landing page was left as is (brand moment).
 - **Guide and summary are one tool.** The Study menu has one "Guide & summary"
   tile; `TheForge` shows a Full guide / Short summary switch that makes the
   other (it counts as a message, like Remake). The two actions still exist

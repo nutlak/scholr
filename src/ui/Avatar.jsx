@@ -131,7 +131,7 @@ export function MemberAvatarStack({ members }) {
                     <span style={{ color: "var(--t4)", flexShrink: 0 }}>•</span>
                     <span style={{
                       fontSize: "var(--fs-micro)", fontWeight: 600,
-                      color: isOwner ? "var(--acc)" : "var(--t3)",
+                      color: isOwner ? "var(--text-primary)" : "var(--t3)",
                       letterSpacing: "-0.005em", flexShrink: 0,
                     }}>
                       {isOwner ? "Owner" : "Member"}

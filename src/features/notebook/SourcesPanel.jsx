@@ -57,7 +57,7 @@ export function SourcesPanel({ nb, currentUserId, isOwner, members = [], refresh
                 flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, padding: "12px 4px 12px 14px",
                 background: "none", border: "none", cursor: "pointer", textAlign: "left", fontFamily: FONT,
               }}>
-                <FileText size={18} strokeWidth={1.8} style={{ color: "var(--acc)", flexShrink: 0 }} />
+                <FileText size={18} strokeWidth={1.8} style={{ color: "var(--text-secondary)", flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{src.title || "Untitled"}</span>
                   <span style={{ display: "block", fontSize: 12.5, color: "var(--text-tertiary)", marginTop: 2 }}>

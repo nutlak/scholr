@@ -194,7 +194,7 @@ function PodcastPlayer({ podcast, onShare }) {
               <div key={i} style={{ display: "flex", gap: 10 }}>
                 <div style={{
                   fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: isAlex ? "var(--accent)" : "var(--c-flash, #F472B6)",
+                  color: isAlex ? "var(--text-primary)" : "var(--text-secondary)",
                   fontFamily: FONT, minWidth: 38, flexShrink: 0, paddingTop: 2,
                 }}>{isAlex ? "Alex" : "Sam"}</div>
                 <div style={{
@@ -310,8 +310,8 @@ export function PodcastPanel({ nb, onToast, onUpgradeNeeded }) {
       {/* Upgrade gate for free users */}
       {isLocked && (
         <div style={{
-          background: "var(--accent-soft)",
-          border: "1px solid color-mix(in srgb, var(--accent) 24%, transparent)",
+          background: "var(--bg-surface-2)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12, padding: "16px 16px 14px", marginBottom: 16,
         }}>
           <div style={{

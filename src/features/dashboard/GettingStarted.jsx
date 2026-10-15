@@ -79,7 +79,7 @@ export function GettingStarted({
           return (
             <li key={s.id} style={{ borderTop: open && i ? "1px solid var(--border-subtle)" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 60 }}>
-                <span style={{ width: 40, display: "flex", justifyContent: "center", flexShrink: 0, color: isDone ? "var(--success)" : isNext ? "var(--acc)" : "var(--text-tertiary)" }}>
+                <span style={{ width: 40, display: "flex", justifyContent: "center", flexShrink: 0, color: isDone ? "var(--success)" : isNext ? "var(--text-primary)" : "var(--text-tertiary)" }}>
                   {isDone
                     ? <HandCheck size={22} />
                     : <span className="hand" style={{ "--hand-size": "16px" }}><HandCircle i={i} pad="0" style={{ width: 30, height: 28 }}>{i + 1}</HandCircle></span>}
@@ -98,7 +98,7 @@ export function GettingStarted({
                     <span style={{ display: "block", fontSize: 15, fontWeight: isNext ? 700 : 600, color: isDone ? "var(--text-tertiary)" : "var(--text-primary)", textDecoration: isDone ? "line-through" : "none" }}>{s.title}</span>
                     {!isDone && <span style={{ display: "block", fontSize: 13, color: "var(--text-secondary)", marginTop: 2 }}>{s.hint}</span>}
                   </span>
-                  {!isDone && <ChevronRight size={18} strokeWidth={1.8} style={{ color: isNext ? "var(--acc)" : "var(--text-tertiary)", flexShrink: 0 }} />}
+                  {!isDone && <ChevronRight size={18} strokeWidth={1.8} style={{ color: isNext ? "var(--text-secondary)" : "var(--text-tertiary)", flexShrink: 0 }} />}
                 </button>
               </div>
               {s.alt && !isDone && (

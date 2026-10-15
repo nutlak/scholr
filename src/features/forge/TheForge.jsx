@@ -328,20 +328,20 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               </div>
               <div className="forge-face forge-back" style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(180deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
-                border: "1px solid color-mix(in srgb, var(--acc) 30%, transparent)",
+                background: "var(--bg-surface-2)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 14,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 padding: "28px 22px",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.3), 0 0 24px rgba(167,139,250,0.15)",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
               }}>
                 <div style={{
-                  fontSize: 14, color: "var(--acc-h)", textAlign: "center", lineHeight: 1.65,
+                  fontSize: 14, color: "var(--text-primary)", textAlign: "center", lineHeight: 1.65,
                   fontFamily: FONT, letterSpacing: "-0.005em",
                 }}>{currentCard.answer}</div>
                 <div style={{
                   position: "absolute", bottom: 12, fontSize: 10,
-                  color: "var(--acc-bg-h)", fontFamily: FONT,
+                  color: "var(--text-tertiary)", fontFamily: FONT,
                   letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600,
                 }}>Click to flip back</div>
               </div>
@@ -405,10 +405,10 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
               }}>
                 <div style={{
                   width: 56, height: 56, borderRadius: 14,
-                  background: "linear-gradient(135deg, var(--acc-bg) 0%, rgba(167,139,250,0.04) 100%)",
-                  border: "1px solid var(--acc)",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border-default)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--accent)",
+                  color: "var(--text-secondary)",
                 }}><Sparkles size={24} strokeWidth={1.5} /></div>
                 <div style={{
                   fontSize: 14, fontWeight: 600, color: "var(--t1)", fontFamily: FONT,

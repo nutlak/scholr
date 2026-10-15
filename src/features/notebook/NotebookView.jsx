@@ -115,7 +115,7 @@ function SourcesPanel({ sources, notesById = {} }) {
                   }}
                 >
                   &bull; {s.title}
-                  {s.author && <span style={{ color: "var(--accent)" }}> &mdash; {s.author}</span>}
+                  {s.author && <span style={{ color: "var(--text-tertiary)" }}> &mdash; {s.author}</span>}
                 </button>
                 {isExpanded && note && (
                   <div style={{
@@ -639,7 +639,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                       <div style={{
                         fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
                         textTransform: "uppercase",
-                        color: isAssistant ? "var(--acc-h)" : senderTint?.hue ?? "var(--t3)",
+                        color: isAssistant ? "var(--text-secondary)" : senderTint?.hue ?? "var(--t3)",
                         fontFamily: FONT,
                       }}>
                         {senderLabel}
@@ -746,7 +746,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
                   }}>D</div>
                   <div style={{
                     fontSize: 10.5, fontWeight: 600, letterSpacing: "0.05em",
-                    textTransform: "uppercase", color: "var(--acc-h)", fontFamily: FONT,
+                    textTransform: "uppercase", color: "var(--text-secondary)", fontFamily: FONT,
                   }}>Derek</div>
                 </div>
                 <div style={{

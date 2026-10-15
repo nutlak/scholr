@@ -40,7 +40,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                     two nested rounded surfaces was the thing that read as
                     stacked chrome. */}
                 <div className="ins-group"
-                     style={subscription.tier === "pro" ? { background: "var(--accent-soft)" } : undefined}>
+                     >
                 <div className="ins-row">
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                     <div style={{ flex: "1 1 220px", minWidth: 200 }}>
@@ -48,11 +48,11 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         {subscription.tier === "pro" && (
                           <span style={{
                             fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                            color: subscription.cancelAtPeriodEnd ? "var(--warning)" : "var(--on-acc)",
+                            color: subscription.cancelAtPeriodEnd ? "var(--warning)" : "var(--text-primary)",
                             fontFamily: FONT,
                             background: subscription.cancelAtPeriodEnd
                               ? "color-mix(in srgb, var(--warning) 16%, transparent)"
-                              : "var(--acc)",
+                              : "var(--bg-surface-3)",
                             border: subscription.cancelAtPeriodEnd
                               ? "1px solid color-mix(in srgb, var(--warning) 38%, transparent)"
                               : "none",
@@ -68,7 +68,7 @@ export function SettingsView({ accentColor, displayName, handleManageSubscriptio
                         fontFamily: FONT, letterSpacing: "-0.02em", marginBottom: 4,
                       }}>
                         {subscription.tier === "pro" ? (
-                          <>scholr <span style={{ color: "var(--accent)" }}>Pro</span> · <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>$8.49/month</span></>
+                          <>scholr Pro · <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>$8.49/month</span></>
                         ) : "scholr Free"}
                       </div>
                       {subscription.tier === "pro" && subscription.currentPeriodEnd && (

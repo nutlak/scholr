@@ -21,7 +21,7 @@ const NOTIF_ICON = {
  * is its own grid column until the breakpoint collapses it).
  */
 export function DashboardRail({
-  heatmap, longestStreak, leaderboard,
+  onHide, heatmap, longestStreak, leaderboard,
   notifications, setNotifications,
   clearInbox, feedActioned, feedError, respondToFriendFromFeed,
   onOpenNotebook, onOpenBilling,
@@ -30,6 +30,10 @@ export function DashboardRail({
 
   return (
     <aside className="dash-rail">
+      <button onClick={onHide} className="hand" style={{
+        display: "block", marginLeft: "auto", minHeight: 44, padding: "0 6px", background: "none", border: "none",
+        color: "var(--text-tertiary)", cursor: "pointer", fontSize: 14,
+      }}>Hide this panel</button>
       <ActivityHeatmap data={heatmap} longestStreak={longestStreak} leaderboard={leaderboard} />
 
       <div style={{

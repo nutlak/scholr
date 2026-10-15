@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
-import { BookOpen, KeyRound, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
+import { BarChart3, BookOpen, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { EmptyState } from "../../ui/EmptyState.jsx";
@@ -50,7 +50,10 @@ export function DashboardView({
   // area stays blank rather than flashing the new-account screen.
   const fresh = activeView === "dashboard" && classesLoaded && classes.length === 0;
   const more = activeView === "dashboard" && classesLoaded && classes.length > 0;
-  const showRail = activeView === "dashboard" && classesLoaded && (!fresh || notifications.length > 0);
+  const [railHidden, setRailHidden] = useState(() => { try { return localStorage.getItem("scholr:rail-hidden") === "1"; } catch { return false; } });
+  const setRail = hidden => { setRailHidden(hidden); try { localStorage.setItem("scholr:rail-hidden", hidden ? "1" : "0"); } catch { /* private mode */ } };
+  const unread = notifications.filter(n => !n.read).length;
+  const showRail = activeView === "dashboard" && classesLoaded && !railHidden && (!fresh || notifications.length > 0);
   // Stable on purpose: FriendsRow's refresh depends on this callback, so a new
   // function each render would refetch the friends list on every render.
   const handleFriendIds = useCallback(ids => { setFriendIds(ids); setFriendCount(ids.length); }, [setFriendIds]);
@@ -118,6 +121,16 @@ export function DashboardView({
             </div>
           )}
         </div>
+        {more && railHidden && (
+          <button onClick={() => setRail(false)} className="btn-press" style={{
+            height: 46, padding: "0 16px", borderRadius: 10, cursor: "pointer", fontFamily: FONT, fontSize: 14, fontWeight: 600,
+            background: "transparent", border: "1px solid var(--border-strong)", color: "var(--text-primary)",
+            display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0,
+          }}>
+            <BarChart3 size={16} strokeWidth={1.9} /> Streak &amp; activity
+            {unread > 0 && <span style={{ fontSize: 11.5, fontWeight: 700, background: "var(--acc)", color: "var(--on-acc)", borderRadius: 999, padding: "1px 7px" }}>{unread}</span>}
+          </button>
+        )}
         {more && (
           <button
             onClick={() => setShowNewClassModal(true)}
@@ -167,12 +180,6 @@ export function DashboardView({
               onOpenUnit={openNotebookById} onNewUnit={setNewUnitFor} onInvite={onInviteToClass}
             />
           )}
-          {more && (
-            <button onClick={onJoinClass} className="btn-press join-class-link">
-              <KeyRound size={16} strokeWidth={1.9} /> Have a class PIN? <b>Join a class</b>
-            </button>
-          )}
-
           {/* Cards due: the one thing to do right now, so it sits straight under
               Friends instead of below every class (it was ~900px down on a phone). */}
           {activeView === "dashboard" && dueCount > 0 && (
@@ -358,6 +365,7 @@ export function DashboardView({
 
         {showRail && (
           <DashboardRail
+            onHide={() => setRail(true)}
             heatmap={heatmap}
             longestStreak={profile?.longest_streak ?? 0}
             leaderboard={leaderboard}

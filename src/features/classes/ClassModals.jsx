@@ -52,7 +52,7 @@ const CLASS_TEMPLATES = [
   { id: "blank", name: "Start blank", emoji: "✨", color: "#6B7280", notebooks: [] },
 ];
 
-export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
+export function NewClassModal({ onClose, onCreate, onImportSyllabus, onJoin }) {
   useEscape(onClose);
   const [step, setStep] = useState(1); // 1 = template picker, 2 = name + color
   const [template, setTemplate] = useState(null);
@@ -136,6 +136,12 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus }) {
                   );
                 })}
               </div>
+              {onJoin && (
+                <button type="button" onClick={onJoin} className="btn-press" style={{
+                  display: "block", margin: "0 0 14px", padding: "6px 0", minHeight: 44, background: "none", border: "none",
+                  color: "var(--text-secondary)", fontSize: 14, cursor: "pointer", fontFamily: FONT,
+                }}>Joining a classmate's class? <b style={{ color: "var(--acc)", fontWeight: 650 }}>Enter its PIN</b></button>
+              )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", alignItems: "center" }}>
                 {/* Building a class from a syllabus starts here now, at the
                     moment you make the class — the dashboard header no longer

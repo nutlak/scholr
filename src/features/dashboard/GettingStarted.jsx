@@ -19,6 +19,7 @@ export function GettingStarted({
   onNewClass, onJoinClass, onOpenUnit, onNewUnit, onInvite,
 }) {
   const [saved, setSaved] = useState(() => read(userId));
+  const [open, setOpen] = useState(false);
 
   const classUnits = notebooks.filter(n => n.class_id);
   // notes_filled, not notes: a course template adds empty placeholder notes.
@@ -71,10 +72,12 @@ export function GettingStarted({
       </div>
       <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {steps.map((s, i) => {
+          // Collapsed: just the one step to do next. "See all steps" opens the list.
+          if (!open && s !== next) return null;
           const isDone = done[s.id];
           const isNext = s === next;
           return (
-            <li key={s.id} style={{ borderTop: i ? "1px solid var(--border-subtle)" : "none" }}>
+            <li key={s.id} style={{ borderTop: open && i ? "1px solid var(--border-subtle)" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 60 }}>
                 <span style={{ width: 40, display: "flex", justifyContent: "center", flexShrink: 0, color: isDone ? "var(--success)" : isNext ? "var(--acc)" : "var(--text-tertiary)" }}>
                   {isDone
@@ -107,6 +110,10 @@ export function GettingStarted({
           );
         })}
       </ol>
+      <button onClick={() => setOpen(v => !v)} className="hand" style={{
+        display: "block", margin: "0 0 4px 52px", minHeight: 44, padding: "0 2px", background: "none", border: "none",
+        color: "var(--text-secondary)", cursor: "pointer", fontSize: 15,
+      }}>{open ? "Show less" : "See all 4 steps"}</button>
     </section>
   );
 }

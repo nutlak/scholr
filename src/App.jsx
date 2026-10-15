@@ -706,6 +706,7 @@ export default function Scholr() {
         <NewClassModal
           onClose={() => setShowNewClassModal(false)}
           onImportSyllabus={() => { setShowNewClassModal(false); setShowSyllabusModal(true); }}
+          onJoin={() => { setShowNewClassModal(false); setJoinPin(""); }}
           onCreate={handleCreateClass}
         />
       )}

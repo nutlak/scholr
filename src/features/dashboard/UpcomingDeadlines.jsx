@@ -1,6 +1,5 @@
 import { dueDateTone, formatDueDate } from "../../lib/format.js";
 import { FONT, classTint } from "../../lib/theme.js";
-import { CalendarCheck } from "lucide-react";
 import { useState } from "react";
 import { HandCircle } from "../../ui/Hand.jsx";
 
@@ -51,23 +50,9 @@ export function UpcomingDeadlines({ notebooks, classes, onOpen }) {
     })
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
-  // Nothing due: collapse to a single muted line. A section header above an
-  // empty body cost ~70px of the most valuable space on the dashboard.
-  if (upcoming.length === 0) {
-    return (
-      // Still one line tall, but framed: as a bare sentence between two
-      // labelled sections it read like a stray string, not a status.
-      <div style={{
-        display: "flex", alignItems: "center", gap: 9,
-        marginBottom: 22, padding: "10px 12px",
-        fontSize: 12.5, color: "var(--text-tertiary)", fontFamily: FONT,
-        background: "var(--bg-surface-1)", border: "1px solid var(--border-subtle)",
-      }}>
-        <CalendarCheck size={14} strokeWidth={1.8} style={{ flexShrink: 0, color: "var(--success)" }} />
-        No deadlines in the next 7 days.
-      </div>
-    );
-  }
+  // Nothing due: show nothing. A framed "No deadlines" line was a status that
+  // told the student nothing, between two sections that do.
+  if (upcoming.length === 0) return null;
 
   return (
     <div style={{ marginBottom: 28 }}>

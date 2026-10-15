@@ -208,6 +208,12 @@ which, so nobody "cleans up" a row that is a feature:
   return when the first class exists (a pending notification keeps the rail).
   Nothing renders in the class area until `classesLoaded`, so a returning
   student never sees the new-account screen flash. Keep friends on top.
+- **The populated dashboard is kept quiet too.** "Get started" shows only the next
+  step ("See all 4 steps" opens the list); the PIN entry lives in the New Class
+  dialog ("Enter its PIN"), not as a row on the page; the streak/activity rail has
+  "Hide this panel" (remembered in `localStorage["scholr:rail-hidden"]`, with a
+  "Streak & activity" button, carrying the unread count, to bring it back); the
+  empty "No deadlines" box is gone.
 - **Guide and summary are one tool.** The Study menu has one "Guide & summary"
   tile; `TheForge` shows a Full guide / Short summary switch that makes the
   other (it counts as a message, like Remake). The two actions still exist

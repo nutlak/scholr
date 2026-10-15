@@ -119,7 +119,7 @@ export default function OnboardingWizard({ user, onComplete }) {
           {step === 1 && (
             <>
               <h2 style={{ fontFamily: FONT_HEADING, fontSize: 26, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 6px", letterSpacing: "-0.01em" }}>
-                Welcome to Scholr 👋
+                Welcome to Scholr
               </h2>
               <div style={{ fontFamily: FONT_HEADING, fontSize: 19, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
                 Let's set up your first class
@@ -184,7 +184,7 @@ export default function OnboardingWizard({ user, onComplete }) {
                   background: "var(--bg-subtle, var(--bg-surface-2))",
                 }}
               >
-                {uploadName ? `✓ ${uploadName}` : (loading ? "Uploading…" : "📄 Click or drop a PDF / image here")}
+                {uploadName ? `✓ ${uploadName}` : (loading ? "Uploading…" : "Click or drop a PDF / image here")}
               </div>
               <input
                 ref={fileRef} type="file" hidden

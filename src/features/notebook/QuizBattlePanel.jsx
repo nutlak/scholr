@@ -128,7 +128,7 @@ export function QuizBattlePanel({ notebookId, me, battle, answers, startBattle, 
           <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Nobody answered in time.</span>
         ) : totals.map((t, i) => (
           <div key={t.userId} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}>
-            <span>{i === 0 ? "🏆 " : `${i + 1}. `}{t.name}{t.userId === me.userId ? " (you)" : ""}</span>
+            <span>{i === 0 ? <Trophy size={14} strokeWidth={2} style={{ verticalAlign: "-2px", marginRight: 6 }} /> : `${i + 1}. `}{t.name}{t.userId === me.userId ? " (you)" : ""}</span>
             <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{t.score}</span>
           </div>
         ))}

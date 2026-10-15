@@ -885,7 +885,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
                       background: subscription.messagesUsed >= subscription.messagesLimit
                         ? "var(--danger)"
-                        : "var(--ink-teal)",
+                        : "var(--acc)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -906,7 +906,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
                       background: subscription.forgeUsed >= subscription.forgeLimit
                         ? "var(--danger)"
-                        : "var(--ink-pink)",
+                        : "var(--acc)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -971,23 +971,8 @@ export default function Scholr() {
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
                 </div>
                 <div style={{ height: 1, background: "var(--border-subtle)", marginBottom: 6 }} />
-                {/* Settings link */}
-                <button
-                  onClick={() => { setProfileOpen(false); setActiveView("settings"); setActiveNb(null); }}
-                  style={{
-                    width: "100%", background: "transparent", border: "none",
-                    borderRadius: 9, padding: "8px 8px", color: "var(--text-primary)",
-                    fontSize: 12.5, fontWeight: 500, cursor: "pointer",
-                    fontFamily: FONT, textAlign: "left",
-                    display: "flex", alignItems: "center", gap: 8,
-                    transition: "background 0.15s",
-                    marginBottom: 2,
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-surface-2)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                >
-                  <Settings size={13} strokeWidth={1.75} /> Settings
-                </button>
+                {/* No Settings link here: the sidebar already has one. (The phone's
+                    profile sheet below keeps its own, because the phone has no sidebar.) */}
                 {/* Sign out */}
                 <button
                   onClick={() => { setProfileOpen(false); handleLogout(); }}

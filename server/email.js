@@ -173,14 +173,14 @@ function unsubBase() {
 
 const ONBOARDING_TEMPLATES = {
   welcome: (name) => ({
-    subject: "Welcome to Scholr 🎓",
+    subject: "Welcome to Scholr",
     html: `
       <h1 style="${H}font-size:26px;margin:0 0 14px;">Hey ${esc(name) || "there"}, you're in.</h1>
       <p style="${P}">Scholr turns your class notes into a shared AI tutor. Here's the 10-second version:</p>
       <p style="${P}">
-        📤 <strong style="color:#1C1C1C;">Upload notes</strong> — drop a PDF, image, or paste text<br>
-        💬 <strong style="color:#1C1C1C;">Ask Derek</strong> — your AI tutor that actually knows your material<br>
-        🎯 <strong style="color:#1C1C1C;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
+        <strong style="color:#1C1C1C;">Upload notes</strong> — drop a PDF, image, or paste text<br>
+        <strong style="color:#1C1C1C;">Ask Derek</strong> — your AI tutor that actually knows your material<br>
+        <strong style="color:#1C1C1C;">Ace your class</strong> — quiz yourself with Feynman Mode &amp; study with friends
       </p>
       ${ctaButton("Open Scholr →", appUrl())}
       <p style="font-size:13px;color:#555555;margin:16px 0 0;">PS — reply to this email if you need anything. A real human (me) reads it: support@scholr.dev</p>

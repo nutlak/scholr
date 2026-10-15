@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "./api.js";
 import { useEscape } from "./ui/useEscape.js";
 import { FONT } from "./lib/theme.js";
-import { Layers, Trash2 } from "lucide-react";
+import { Layers, PartyPopper, Trash2 } from "lucide-react";
 
 
 function CardFace({ label, text, answer, hint }) {
@@ -109,7 +109,7 @@ export function FlashcardReview({ cards, onDone }) {
 
       {done ? (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center" }}>
-          <div style={{ fontSize: 44 }}>🎉</div>
+          <PartyPopper size={44} strokeWidth={1.5} color="var(--ink-green)" />
           <div style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", fontFamily: FONT, letterSpacing: "-0.02em" }}>
             Reviewed {reviewed} card{reviewed === 1 ? "" : "s"}
           </div>

@@ -1,7 +1,12 @@
+import { Flame, Lightbulb, ThumbsUp } from "lucide-react";
 import { FONT } from "../../lib/theme.js";
 import { feynmanScoreColor } from "../../lib/format.js";
 
+// The stored reaction is still the emoji string (the server and other clients key
+// on it); only the drawing is an icon.
 const REACT_EMOJI = ["🔥", "👏", "🤯"];
+const REACT_ICON = { "🔥": Flame, "👏": ThumbsUp, "🤯": Lightbulb };
+const ReactIcon = ({ emoji, size = 14 }) => { const I = REACT_ICON[emoji]; return I ? <I size={size} strokeWidth={2} /> : null; };
 
 // Live feed of Feynman explanations shared into this study room (see
 // FeynmanPanel's "Share with study room" button + shareFeynmanToRoom).
@@ -36,14 +41,15 @@ export function FeynmanShareFeed({ me, shares, reactions, onReact }) {
                   className="btn-press"
                   style={{
                     width: 28, height: 28, borderRadius: "50%", cursor: "pointer",
-                    background: "var(--pill-bg)", border: "1px solid var(--pill-border)", fontSize: 13,
+                    background: "var(--pill-bg)", border: "1px solid var(--pill-border)",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)",
                   }}
-                >{emoji}</button>
+                ><ReactIcon emoji={emoji} /></button>
               ))}
             </div>
             {shareReactions.length > 0 && (
-              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                {shareReactions.map(r => r.emoji).join(" ")}
+              <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "inline-flex", gap: 4 }}>
+                {shareReactions.map((r, i) => <ReactIcon key={i} emoji={r.emoji} size={13} />)}
               </span>
             )}
           </div>

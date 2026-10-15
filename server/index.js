@@ -30,7 +30,7 @@ import { relayJarvis, trackEvent } from "./lib/analytics.js";
 const REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
-  console.error(`\n❌ Missing required env vars: ${missing.join(", ")}`);
+  console.error(`\nMissing required env vars: ${missing.join(", ")}`);
   console.error("   Add them to server/.env and restart.\n");
   process.exit(1);
 }

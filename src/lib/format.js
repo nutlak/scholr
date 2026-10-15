@@ -105,8 +105,6 @@ export const QUOTES = [
   { text: "The secret of getting ahead is getting started.", author: "Attributed to Mark Twain" },
 ];
 
-const GREETING_EMOJI = { morning: "☀️", afternoon: "✌️", evening: "🌆", night: "🌙" };
-
 export function greetingBand(hour) {
   if (hour >= 6 && hour < 12) return "morning";
   if (hour >= 12 && hour < 17) return "afternoon";
@@ -119,8 +117,8 @@ export function greetingBand(hour) {
 // greeting flicker on unrelated state changes.
 export function getGreeting(name, now = new Date(), pick = arr => arr[Math.floor(Math.random() * arr.length)]) {
   const first = String(name ?? "").trim().split(" ")[0] || "there";
-  const band = greetingBand(now.getHours());
-  return { text: `${pick(GREETINGS[band])}, ${first}`, emoji: GREETING_EMOJI[band], quote: pick(QUOTES) };
+  const openers = GREETINGS[greetingBand(now.getHours())];
+  return { text: `${pick(openers)}, ${first}`, quote: pick(QUOTES) };
 }
 
 export function feynmanScoreColor(score) {

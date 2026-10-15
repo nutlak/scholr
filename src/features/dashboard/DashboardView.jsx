@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useMemo, useState } from "react";
-import { BarChart3, BookOpen, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
+import { BarChart3, BookOpen, Flame, Layers, Notebook, RefreshCw, Search, Users } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { Avatar } from "../../ui/Avatar.jsx";
 import { EmptyState } from "../../ui/EmptyState.jsx";
@@ -80,7 +80,7 @@ export function DashboardView({
     <div className="dash-wrap" style={{ animation: "fadeIn 0.25s ease", width: "100%", maxWidth: 1280, margin: "0 auto" }}>
       {activeView === "dashboard" && streakAtRisk && !streakBannerDismissed && (
         <div className="streak-banner">
-          🔥 Your streak is at risk! Study today to keep it alive.
+          <Flame size={16} strokeWidth={2} style={{ verticalAlign: "-3px", marginRight: 6 }} /> Your streak is at risk! Study today to keep it alive.
           <button onClick={() => setStreakBannerDismissed(true)} aria-label="Dismiss">×</button>
         </div>
       )}
@@ -101,7 +101,7 @@ export function DashboardView({
             letterSpacing: "var(--tr-display)", lineHeight: "var(--lh-display)",
             display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
           }}>
-            {activeView === "dashboard" ? <>{greeting.text} <span aria-hidden="true">{greeting.emoji}</span></> : viewLabel}
+            {activeView === "dashboard" ? greeting.text : viewLabel}
           </div>
           <span className="pen-squiggle" aria-hidden="true" />
           {(activeView !== "dashboard" || more) && (

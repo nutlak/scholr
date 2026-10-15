@@ -98,7 +98,7 @@ router.post("/api/user/seed-welcome", requireAuth, async (req, res) => {
     if (count > 0) return res.json({ seeded: false }); // brand-new users only
     const { data: nb, error } = await supabase
       .from("notebooks")
-      .insert({ title: "Welcome to Scholr 👋", topic: "Start here", created_by: userId })
+      .insert({ title: "Welcome to Scholr", topic: "Start here", created_by: userId })
       .select("id")
       .single();
     if (error || !nb) { console.error("[seed-welcome]", error?.message); return res.json({ seeded: false }); }

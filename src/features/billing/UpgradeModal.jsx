@@ -7,34 +7,6 @@ import { BookOpen, Check, MessageCircle, Notebook, Rocket, Zap } from "lucide-re
 import { useEffect, useState } from "react";
 
 // ── UpgradeModal ─────────────────────────────────────────────────────────────
-// Same 3 testimonials as the landing page (illustrative early-stage social proof).
-const UPGRADE_TESTIMONIALS = [
-  { quote: "Derek explained cell division better than my AP Bio teacher did.", name: "Maya R.", role: "AP Biology" },
-  { quote: "Went from a C to a B+ after one week of Feynman Mode practice.", name: "Jake T.", role: "AP Chemistry" },
-  { quote: "My whole study group uses it. We share notebooks before every exam.", name: "Priya S.", role: "AP US History" },
-];
-
-export function UpgradeSocialProof() {
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % UPGRADE_TESTIMONIALS.length), 4000);
-    return () => clearInterval(t);
-  }, []);
-  const t = UPGRADE_TESTIMONIALS[idx];
-  return (
-    <div style={{ marginTop: 18, textAlign: "center" }}>
-      <div style={{ fontSize: 15, letterSpacing: 2, marginBottom: 8 }}>⭐⭐⭐⭐⭐</div>
-      <div key={idx} style={{ minHeight: 54, animation: "fadeIn 0.6s ease" }}>
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5, fontFamily: FONT }}>"{t.quote}"</div>
-        <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 5 }}>— {t.name}, {t.role}</div>
-      </div>
-      <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", fontFamily: FONT, marginTop: 10 }}>
-        Join students improving their grades with Scholr
-      </div>
-    </div>
-  );
-}
-
 export function UpgradeModal({ limitType, onClose }) {
   useEscape(onClose);
   const [loading, setLoading] = useState(false);
@@ -198,7 +170,6 @@ export function UpgradeModal({ limitType, onClose }) {
           Maybe later
         </button>
 
-        <UpgradeSocialProof />
       </div>
     </div>
   );

@@ -82,16 +82,18 @@ and a soft shadow (`--sh-card`, `--sh-card-h` on hover, `--sh-modal` for
 overlays). Filled buttons are top-lit with a coloured shadow (`--acc-glow`).
 The content has one light source: a faint accent wash at the top.
 
-**Two themes**, light (`#F4F1FF` lavender page, white cards) and dark (`#15132B`
-deep-blueberry page, `#232048` cards), both in `index.css`. (2026-10-15: Noah said the
-app felt "serious and depressing" and wants a fun tool for high schoolers, so the
-near-black greys became indigo and the page wash gained pink and teal corners,
-`--wash-pink`/`--wash-teal` in `surface.css`. Stats, meters and the streak days
-use `--ink-pink|teal|green` instead of the accent: colour for fun, accent only
-for what you can press. Greetings carry an emoji (`getGreeting().emoji`); class
-rows are tinted with their own colour; filled buttons are 14px round.) `useAppearance` holds the choice (device
-setting by default, Settings → Theme), `public/theme-boot.js` applies it before
-first paint. Accent is the student's choice; **purple is the default** because
+**Two themes**, light (`#F2F3F6` page, white cards) and dark (`#0C0D11` page,
+`#16181E` cards), both in `index.css`: neutral black and gray in dark, neutral gray
+and white in light, one purple accent in both. (2026-10-15: I tried a blueberry
+dark theme with a lavender light one, pink/teal page wash and coloured stats to make
+it "fun"; Noah called the purple terrible and sent it back to black/gray with purple
+accents. Don't re-tint the neutrals.) **No emoji anywhere** ("emojis look cheap. do an
+icon or nothing"): use a lucide icon or no mark. The one exception is the stored
+reaction values in `FeynmanShareFeed` (the emoji string is the key the server and other
+clients use), which are drawn as icons. Lint does NOT catch a missing JSX icon import
+(`<Flame/>` with no import built fine and crashed the dashboard): load the screen after
+adding an icon. Settings lives only in the sidebar on desktop (the phone's profile sheet
+keeps its own, because the phone has no sidebar). Accent is the student's choice; **purple is the default** because
 it's the logo's colour. No orange or brown-amber anywhere (Noah rejected it).
 Never hard-code a colour a component paints: `--paper` for surfaces,
 `--ink-blue|green|amber|red|violet|pink|teal` for coloured icons and labels

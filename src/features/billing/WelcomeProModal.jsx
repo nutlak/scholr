@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, PartyPopper, Sparkles } from "lucide-react";
 import { FONT, FONT_HEADING } from "../../lib/theme.js";
 import { useEscape } from "../../ui/useEscape.js";
 
@@ -33,7 +33,7 @@ export function WelcomeProModal({ plan = "pro", onClose }) {
         background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: 16,
         padding: 32, maxWidth: 380, width: "100%", textAlign: "center", animation: "onbSlide 0.3s ease",
       }}>
-        <div style={{ fontSize: 44, marginBottom: 8 }}>{squad ? "🎉" : "✨"}</div>
+        <div style={{ marginBottom: 10, color: "var(--ink-violet)", display: "flex", justifyContent: "center" }}>{squad ? <PartyPopper size={44} strokeWidth={1.5} /> : <Sparkles size={44} strokeWidth={1.5} />}</div>
         <div style={{
           fontFamily: FONT_HEADING, fontSize: 24, fontWeight: 700,
           color: "var(--text-primary)", marginBottom: 6,

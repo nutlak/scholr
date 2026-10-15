@@ -269,7 +269,7 @@ export function NotebookView({ nb, onBack, onDeleted, currentUserId, onToast, on
       const data = await api.query(nb.id, text);
       if (data.error) throw new Error(data.error);
       setMessages(m => [...m, { id: data.messageId, role: "assistant", text: data.answer, createdBy: null, sources: data.sources ?? [] }]);
-      if (data.usageWarning) onToast?.(`⚡ ${data.usageWarning.message}`);
+      if (data.usageWarning) onToast?.(data.usageWarning.message);
     } catch (err) {
       if (err.code === "message_limit_reached") {
         // Remove the optimistic user message bubble and show upgrade modal

@@ -28,14 +28,10 @@ html, body { background: var(--bg); }
 html { font-synthesis-weight: none; }
 
 /* ── Page and chrome ─────────────────────────────────────────────────────
-   A soft wash at the top of the content, scrolling away with it, so the page has
-   a light source instead of being one flat fill. Three colours (pink and teal at
-   the corners, the accent between) are what stop it reading as one grey-violet
-   sheet. They are decoration, so they are not the accent. */
+   A soft wash of the accent at the top of the content, scrolling away with
+   it, so the page has a light source instead of being one flat fill. */
 .main-pane {
   background:
-    radial-gradient(720px 360px at 6% -150px, var(--wash-pink), transparent 70%),
-    radial-gradient(720px 360px at 94% -150px, var(--wash-teal), transparent 70%),
     radial-gradient(1100px 420px at 50% -160px, var(--glow-accent), transparent 72%),
     var(--bg) !important;
   background-attachment: local !important;

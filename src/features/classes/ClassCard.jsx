@@ -88,12 +88,10 @@ export function ClassCard({ cls, expanded, units, onToggle, onOpenUnit, onNewUni
         onMouseLeave={() => setHovered(false)}
         style={{
           display: "flex", alignItems: "center", gap: 11,
-          padding: "14px 16px",
-          // Each class tinted with its own colour: a column of identical grey
-          // rows was most of what made the dashboard read as a spreadsheet.
-          background: `color-mix(in srgb, ${t.hue} 11%, var(--bg-surface-1))`,
+          padding: "11px 14px",
+          background: "var(--bg-surface-1)",
           border: `1px solid ${hovered ? "var(--border-strong)" : "var(--border-default)"}`,
-          borderRadius: 14,
+          borderRadius: 8,
           cursor: "pointer",
           transition: "border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease",
           transform: hovered ? "translateY(-1px)" : "translateY(0)",

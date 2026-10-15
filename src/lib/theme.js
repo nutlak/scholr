@@ -58,7 +58,7 @@ export function classTint(color) {
    the light theme's white one. */
 export const ACCENT_PRESETS = [
   // Purple first: the default, and the logo's colour.
-  { name: "Purple",  color: "#B79CFF", hover: "#CDBCFF", deep: "#9F7BFF", light: "#7C3AED", lightHover: "#6D28D9" },
+  { name: "Purple",  color: "#A78BFA", hover: "#C4B5FD", deep: "#7C3AED", light: "#6D28D9", lightHover: "#5B21B6" },
   { name: "Blue",    color: "#8AB4FF", hover: "#A8C7FF", deep: "#6E9BF5", light: "#1D4ED8", lightHover: "#1E40AF" },
   { name: "Emerald", color: "#34D399", hover: "#6EE7B7", deep: "#10B981", light: "#047857", lightHover: "#065F46" },
   { name: "Amber",   color: "#FBBF24", hover: "#FCD34D", deep: "#F59E0B", light: "#A16207", lightHover: "#854D0E" },
@@ -72,4 +72,3 @@ export const STATUS_META = {
   need_help:   { label: "Need Help",   color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.32)" },
 };
 
-export const REACTION_EMOJIS = ["👍", "✅", "🔥", "❤️", "😂", "🚀"];

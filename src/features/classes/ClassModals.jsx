@@ -1,26 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload } from "lucide-react";
+import { Dna, FlaskConical, Landmark, BookOpen, Sigma, Sparkles, Upload, Zap } from "lucide-react";
 import { CLASS_COLORS, FONT, FONT_HEADING, classTint } from "../../lib/theme.js";
 import { ColorSwatchPicker } from "./ClassCard.jsx";
 import { useEscape } from "../../ui/useEscape.js";
 
 // Pre-built course templates (starter notebooks + note structures).
 const CLASS_TEMPLATES = [
-  { id: "ap-bio", name: "AP Biology", emoji: "🧬", color: "var(--success)", notebooks: [
+  { id: "ap-bio", name: "AP Biology", Icon: Dna, color: "var(--success)", notebooks: [
     { name: "Unit 1 — Chemistry of Life", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Unit 2 — Cell Structure", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Unit 3 — Cellular Energetics", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Unit 4 — Cell Communication", notes: ["Key Concepts", "Vocabulary", "Practice Questions"] },
     { name: "Exam Prep", notes: ["FRQ Practice", "MCQ Review", "Formula Sheet"] },
   ] },
-  { id: "ap-calc-ab", name: "AP Calculus AB", emoji: "📐", color: "#60A5FA", notebooks: [
+  { id: "ap-calc-ab", name: "AP Calculus AB", Icon: Sigma, color: "#60A5FA", notebooks: [
     { name: "Unit 1 — Limits", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
     { name: "Unit 2 — Derivatives", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
     { name: "Unit 3 — Integrals", notes: ["Key Concepts", "Practice Problems", "Common Mistakes"] },
     { name: "Unit 4 — Differential Equations", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Calculator Tips"] },
   ] },
-  { id: "ap-us-history", name: "AP US History", emoji: "🇺🇸", color: "var(--danger)", notebooks: [
+  { id: "ap-us-history", name: "AP US History", Icon: Landmark, color: "var(--danger)", notebooks: [
     { name: "Period 1-2 (1491–1754)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Period 3-4 (1754–1848)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Period 5-6 (1844–1898)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
@@ -28,7 +28,7 @@ const CLASS_TEMPLATES = [
     { name: "Period 9 (1980–Present)", notes: ["Key Events", "Key Figures", "Essay Outlines"] },
     { name: "Exam Prep", notes: ["SAQ Practice", "LEQ Practice", "DBQ Practice", "Key Themes"] },
   ] },
-  { id: "ap-chem", name: "AP Chemistry", emoji: "⚗️", color: "var(--acc)", notebooks: [
+  { id: "ap-chem", name: "AP Chemistry", Icon: FlaskConical, color: "var(--acc)", notebooks: [
     { name: "Unit 1 — Atomic Structure", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Unit 2 — Molecular Structure", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Unit 3 — Intermolecular Forces", notes: ["Key Concepts", "Practice Problems"] },
@@ -36,20 +36,20 @@ const CLASS_TEMPLATES = [
     { name: "Unit 5 — Kinetics", notes: ["Key Concepts", "Practice Problems"] },
     { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Lab Review"] },
   ] },
-  { id: "ap-english", name: "AP English Literature", emoji: "📚", color: "#FBBF24", notebooks: [
+  { id: "ap-english", name: "AP English Literature", Icon: BookOpen, color: "#2DD4BF", notebooks: [
     { name: "Poetry Analysis", notes: ["Poems List", "Analysis Notes", "Essay Practice"] },
     { name: "Prose Fiction", notes: ["Reading Notes", "Literary Devices", "Essay Practice"] },
     { name: "Drama", notes: ["Play Notes", "Themes", "Essay Practice"] },
     { name: "Exam Prep", notes: ["Free Response Practice", "Essay Outlines", "Key Terms"] },
   ] },
-  { id: "ap-physics", name: "AP Physics 1", emoji: "⚡", color: "#F472B6", notebooks: [
+  { id: "ap-physics", name: "AP Physics 1", Icon: Zap, color: "#F472B6", notebooks: [
     { name: "Unit 1 — Kinematics", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
     { name: "Unit 2 — Forces", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
     { name: "Unit 3 — Energy", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
     { name: "Unit 4 — Waves", notes: ["Key Concepts", "Practice Problems", "Formulas"] },
     { name: "Exam Prep", notes: ["FRQ Practice", "Formula Sheet", "Lab Skills"] },
   ] },
-  { id: "blank", name: "Start blank", emoji: "✨", color: "#6B7280", notebooks: [] },
+  { id: "blank", name: "Start blank", Icon: Sparkles, color: "#6B7280", notebooks: [] },
 ];
 
 export function NewClassModal({ onClose, onCreate, onImportSyllabus, onJoin }) {
@@ -129,7 +129,7 @@ export function NewClassModal({ onClose, onCreate, onImportSyllabus, onJoin }) {
                       borderRadius: 12, padding: "13px 14px", cursor: "pointer", fontFamily: FONT,
                       display: "flex", flexDirection: "column", gap: 3,
                     }}>
-                      <span style={{ fontSize: 22 }}>{t.emoji}</span>
+                      <t.Icon size={24} strokeWidth={1.8} color={t.color} />
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--t1)", letterSpacing: "-0.01em" }}>{t.name}</span>
                       <span style={{ fontSize: 11.5, color: "var(--t3)", fontFamily: FONT }}>{t.notebooks.length ? `${t.notebooks.length} notebooks` : "Empty"}</span>
                     </button>

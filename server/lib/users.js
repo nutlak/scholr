@@ -15,7 +15,7 @@ export function orderedPair(a, b) {
 //   - auth-side details (email, full name) are cached for ten minutes, since
 //     they change rarely and the auth service has no batch call.
 
-// Migration 024 adds profiles.last_notebook_id. Until it runs, selecting the
+// Migration 033 adds profiles.last_notebook_id. Until it runs, selecting the
 // column errors and would blank out every name and presence dot with it — so
 // fall back to the pre-033 shape rather than losing the whole row.
 export let profileHasNotebookColumn = true;
@@ -24,7 +24,7 @@ const loadProfiles = createBatcher(async (uids) => {
   let res = await run(profileHasNotebookColumn ? "user_id, username, last_active, last_notebook_id" : "user_id, username, last_active");
   if (res.error && profileHasNotebookColumn && res.error.message?.includes("last_notebook_id")) {
     profileHasNotebookColumn = false;
-    console.warn("[presence] profiles.last_notebook_id missing — run supabase/migrations/024_profiles_last_notebook_id.sql");
+    console.warn("[presence] profiles.last_notebook_id missing — run migrations/033_presence_notebook.sql");
     res = await run("user_id, username, last_active");
   }
   if (res.error) throw res.error;

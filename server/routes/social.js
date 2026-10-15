@@ -76,7 +76,7 @@ router.post("/api/me/heartbeat", requireAuth, async (req, res) => {
 
   if (wasOffline) notifyFriendsSomeoneCameOnline(req.user.id).catch(err => console.error("notifyFriendsSomeoneCameOnline error:", err));
 
-  // Migration 024 may not have run yet — fall back to presence without context.
+  // Migration 033 may not have run yet — fall back to presence without context.
   if (error?.message?.includes("last_notebook_id")) {
     const { error: retryErr } = await supabase
       .from("profiles")

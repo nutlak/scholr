@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../../api.js";
-import { Brain, BookOpen, ChevronRight, ClipboardList, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
+import { Brain, BookOpen, ChevronRight, FileDown, FileText, GraduationCap, Headphones, HelpCircle, Layers, LineChart, MoreHorizontal, Paperclip, RefreshCw, Trash2, UserPlus, Users } from "lucide-react";
 import { MemberAvatarStack } from "../../ui/Avatar.jsx";
 import { StudyRoomBar } from "./StudyRoomBar.jsx";
 import { StudySessions } from "./StudySessions.jsx";
@@ -36,8 +36,7 @@ const FeynmanPanel = lazy(() => import("../feynman/FeynmanPanel.jsx").then(m => 
 // than pretending one supersedes the other.
 const NB_TOOLS = [
   { id: "sources",           text: "Sources",   label: "Sources",      title: "Sources",      Icon: FileText,      tint: "var(--ink-blue)", subtitle: "What Derek reads in this unit",            group: "learn" },
-  { id: "forge:study_guide", text: "Guide",     label: "Study guide",  title: "Study Guide",  Icon: BookOpen,      tint: "var(--ink-green)", subtitle: "Comprehensive review",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
-  { id: "forge:summary",     text: "Summary",   label: "Summary",      title: "Summary",      Icon: ClipboardList, tint: "var(--ink-teal)", subtitle: "Concise overview",                         group: "learn", panel: "forge", forgeAction: "summary" },
+  { id: "forge:study_guide", text: "Guide",     label: "Guide & summary", title: "Guide & summary", Icon: BookOpen,     tint: "var(--ink-green)", subtitle: "A full review, or the short version",                     group: "learn", panel: "forge", forgeAction: "study_guide" },
   { id: "podcast",           text: "Podcast",   label: "Podcast",      title: "Podcast",      Icon: Headphones,    tint: "var(--ink-red)", subtitle: "Two-host audio overview",                  group: "learn" },
   { id: "forge:questions",   text: "Questions", label: "Questions",    title: "Questions",    Icon: HelpCircle,    tint: "var(--ink-amber)", subtitle: "Practice questions",                       group: "test",  panel: "forge", forgeAction: "questions" },
   { id: "flashcards",        text: "Cards",     label: "Flashcards",   title: "Flashcards",   Icon: Layers,        tint: "var(--ink-pink)", subtitle: "Your deck, spaced out over days",          group: "test" },

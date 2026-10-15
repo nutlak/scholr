@@ -185,12 +185,25 @@ export function TheForge({ nb, initialAction, onToast, onUpgradeNeeded }) {
 
   const showCards = action === "flashcards" && flashcards && !generating;
   const showWorksheet = action === "worksheet" && worksheet && !generating;
+  const isGuide = action === "study_guide" || action === "summary";
   const activeColor = action ? FORGE_BY_ID[action]?.color ?? "var(--acc)" : "var(--acc)";
 
   return (
     <div className="tool-content">
       {/* Saved-library toggle (relocated from the old panel header) */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        {/* One tile in the Study menu covers both lengths of the same thing, so
+            the choice lives here. Switching makes the other one (it counts as
+            a message, like Remake does). */}
+        {isGuide ? (
+          <div className="seg-control" role="radiogroup" aria-label="Length" style={{ "--seg-n": 2, flex: "0 1 340px", opacity: generating ? 0.6 : 1 }}>
+            <span className="seg-pill" aria-hidden="true" style={{ transform: `translateX(${action === "summary" ? 100 : 0}%)` }} />
+            {[["study_guide", "Full guide"], ["summary", "Short summary"]].map(([id, label]) => (
+              <button key={id} className="seg-option" role="radio" aria-checked={action === id} disabled={generating}
+                onClick={() => { if (action !== id) generate(id); }}>{label}</button>
+            ))}
+          </div>
+        ) : <span />}
         <button
           onClick={() => setShowSaved(v => !v)}
           className="btn-press"

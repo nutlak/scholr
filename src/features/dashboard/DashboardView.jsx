@@ -24,7 +24,7 @@ const SortableClassList = lazy(() => import("../classes/SortableClassList.jsx").
 export function DashboardView({
   activeView, viewLabel, greeting, displayName, user,
   streakAtRisk, streakBannerDismissed, setStreakBannerDismissed,
-  classes, notebooks, filtered, filteredClasses,
+  classes, classesLoaded, notebooks, filtered, filteredClasses,
   search, setSearch,
   setShowNewClassModal, setProfileOpen,
   friendsVersion, bumpFriendsVersion, setFriendIds,
@@ -42,6 +42,15 @@ export function DashboardView({
   // Unknown until FriendsRow reports in; the checklist waits for it so a
   // student who's done every step never sees it flash.
   const [friendCount, setFriendCount] = useState(null);
+  // A brand-new account has nothing to count, schedule or log yet. Show the
+  // friends row and one clear way in (the empty state), and nothing else: the
+  // checklist, the PIN link, the heatmap and the feed all reappear the moment a
+  // class exists. A pending friend request still earns the rail. Until the first
+  // answer arrives we don't know which kind of account this is, so the class
+  // area stays blank rather than flashing the new-account screen.
+  const fresh = activeView === "dashboard" && classesLoaded && classes.length === 0;
+  const more = activeView === "dashboard" && classesLoaded && classes.length > 0;
+  const showRail = activeView === "dashboard" && classesLoaded && (!fresh || notifications.length > 0);
   // Stable on purpose: FriendsRow's refresh depends on this callback, so a new
   // function each render would refetch the friends list on every render.
   const handleFriendIds = useCallback(ids => { setFriendIds(ids); setFriendCount(ids.length); }, [setFriendIds]);
@@ -92,11 +101,13 @@ export function DashboardView({
             {activeView === "dashboard" ? greeting.text : viewLabel}
           </div>
           <span className="pen-squiggle" aria-hidden="true" />
-          <div className="hand" style={{ "--hand-size": "18px", color: "var(--text-tertiary)", marginTop: 4 }}>
-            {activeView === "dashboard"
-              ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "unit" : "units"}`
-              : `${filtered.length} ${filtered.length === 1 ? "unit" : "units"}`}
-          </div>
+          {(activeView !== "dashboard" || more) && (
+            <div className="hand" style={{ "--hand-size": "18px", color: "var(--text-tertiary)", marginTop: 4 }}>
+              {activeView === "dashboard"
+                ? `${classes.length} ${classes.length === 1 ? "class" : "classes"} · ${notebooks.length} ${notebooks.length === 1 ? "unit" : "units"}`
+                : `${filtered.length} ${filtered.length === 1 ? "unit" : "units"}`}
+            </div>
+          )}
           {activeView === "dashboard" && (
             <div className="hand" style={{
               "--hand-size": "17px", color: "var(--text-tertiary)",
@@ -107,7 +118,7 @@ export function DashboardView({
             </div>
           )}
         </div>
-        {activeView === "dashboard" && (
+        {more && (
           <button
             onClick={() => setShowNewClassModal(true)}
             className="btn-press desktop-only"
@@ -137,7 +148,7 @@ export function DashboardView({
           calendar and the activity feed move into a rail that fits
           them. Narrower than that it is one column, in this same
           order — the breakpoint lives with .dash-grid in App.css. */}
-      <div className={activeView === "dashboard" ? "dash-grid" : undefined}>
+      <div className={showRail ? "dash-grid" : undefined}>
         <div className="dash-main">
           {/* Friends first: the reason the app exists. */}
           {activeView === "dashboard" && (
@@ -148,7 +159,7 @@ export function DashboardView({
               onFriendIds={handleFriendIds}
             />
           )}
-          {activeView === "dashboard" && friendCount !== null && (
+          {more && friendCount !== null && (
             <GettingStarted
               userId={user?.id} classes={classes} notebooks={notebooks}
               messagesUsed={subscription?.messagesUsed ?? 0} friendCount={friendCount}
@@ -156,7 +167,7 @@ export function DashboardView({
               onOpenUnit={openNotebookById} onNewUnit={setNewUnitFor} onInvite={onInviteToClass}
             />
           )}
-          {activeView === "dashboard" && (
+          {more && (
             <button onClick={onJoinClass} className="btn-press join-class-link">
               <KeyRound size={16} strokeWidth={1.9} /> Have a class PIN? <b>Join a class</b>
             </button>
@@ -219,7 +230,7 @@ export function DashboardView({
             </div>
           )}
 
-          {activeView === "dashboard" && (
+          {more && (
             <UpcomingDeadlines
               notebooks={notebooks}
               classes={classes}
@@ -229,12 +240,12 @@ export function DashboardView({
 
           {activeView === "dashboard" ? (
             filteredClasses.length === 0 ? (
-              <EmptyState
+              !classesLoaded ? null : <EmptyState
                 icon={search ? <Search size={32} strokeWidth={1.5} /> : <BookOpen size={32} strokeWidth={1.5} />}
-                title={search ? "No classes match" : "Welcome to Scholr"}
+                title={search ? "No classes match" : "Start with a class"}
                 body={search
                   ? "Try a different search term."
-                  : "Create your first class to start organizing your notes and chatting with Derek."}
+                  : "A class is one course. Make your own, or join a classmate's with their PIN."}
                 cta={!search ? { label: "+ Create your first class", onClick: () => setShowNewClassModal(true) } : null}
                 secondary={!search ? { label: "Join a class with a PIN", onClick: onJoinClass } : null}
               />
@@ -345,7 +356,7 @@ export function DashboardView({
           )}
         </div>
 
-        {activeView === "dashboard" && (
+        {showRail && (
           <DashboardRail
             heatmap={heatmap}
             longestStreak={profile?.longest_streak ?? 0}

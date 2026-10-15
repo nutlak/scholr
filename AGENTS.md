@@ -16,7 +16,7 @@ money, real email or real data if you miss them.
 4. **Test with throwaway users** whose email starts `brain-e2e-`, and delete them
    when you finish. Look at `auth.users` before and after.
 5. **No schema changes from code.** This server can't run DDL. Write a migration
-   in `supabase/migrations/` and hand it to a person to run.
+   in the repo-root `migrations/` folder (next number: 043) and hand it to a person to run.
 6. **Authorization lives in application code** (the service-role client skips
    RLS). A route that takes a resource id needs its own ownership check.
 

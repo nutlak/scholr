@@ -201,6 +201,20 @@ which, so nobody "cleans up" a row that is a feature:
 - **Getting started** (`features/dashboard/GettingStarted.jsx`) derives its
   steps from real data; `notes_filled` (text or a file) is separate from
   `notes_count`, because course templates add empty placeholder notes.
+- **A brand-new dashboard is deliberately bare** (2026-10-15). With zero classes
+  `DashboardView` shows the greeting, the friends row and one empty state
+  ("Start with a class": create, or join with a PIN), and hides the checklist,
+  PIN link, deadlines, heatmap/feed rail, header button and mobile FAB: they all
+  return when the first class exists (a pending notification keeps the rail).
+  Nothing renders in the class area until `classesLoaded`, so a returning
+  student never sees the new-account screen flash. Keep friends on top.
+- **Guide and summary are one tool.** The Study menu has one "Guide & summary"
+  tile; `TheForge` shows a Full guide / Short summary switch that makes the
+  other (it counts as a message, like Remake). The two actions still exist
+  server-side and saved outputs keep their types.
+- **Migrations live in the repo-root `migrations/` folder** (next is 043).
+  `supabase/migrations/` is a frozen older series (001 to 024) and reuses
+  numbers 017 to 024, so always say which folder you mean.
 
 ## Scheduled work
 

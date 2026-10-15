@@ -1,4 +1,4 @@
--- 023: indexes the early core tables never got.
+-- 042: indexes the early core tables never got.
 --
 -- Postgres indexes a primary key and a UNIQUE constraint, but NOT the columns
 -- of a foreign key. So a lookup by a column that isn't the *leading* column of

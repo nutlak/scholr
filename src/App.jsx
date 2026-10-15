@@ -100,6 +100,9 @@ export default function Scholr() {
   const [notebooks, setNotebooks] = useState([]);
   const [unitsFilter, setUnitsFilter] = useState("all"); // Units view: "all" | "shared"
   const [classes, setClasses] = useState([]);
+  // False until the first answer arrives, so a returning student isn't shown the
+  // new-account screen for the moment the request takes.
+  const [classesLoaded, setClassesLoaded] = useState(false);
   const [expandedClassId, setExpandedClassId] = useState(null);
   // Require a 4px drag before activating so taps/clicks on the card body
   // don't accidentally start drags from the handle press.
@@ -334,7 +337,7 @@ export default function Scholr() {
         setOnboarding(prof && !prof.onboarding_completed && nbs.length === 0 ? "needed" : "ok");
       })
       .catch(console.error);
-    api.listClasses().then(setClasses).catch(console.error);
+    api.listClasses().then(setClasses).catch(console.error).finally(() => setClassesLoaded(true));
     api.getSocialNotifications().then(d => setNotifications(d?.notifications ?? [])).catch(console.error);
     api.getSubscription().then(setSubscription).catch(console.error);
     // A failed request is not the same as "this person has no username". The
@@ -1098,7 +1101,7 @@ export default function Scholr() {
               streakAtRisk={streakAtRisk}
               streakBannerDismissed={streakBannerDismissed}
               setStreakBannerDismissed={setStreakBannerDismissed}
-              classes={classes} notebooks={notebooks}
+              classes={classes} classesLoaded={classesLoaded} notebooks={notebooks}
               filtered={filtered} filteredClasses={filteredClasses}
               search={search} setSearch={setSearch}
               setShowNewClassModal={setShowNewClassModal} setProfileOpen={setProfileOpen}
@@ -1277,8 +1280,9 @@ export default function Scholr() {
           </Suspense>
         )}
 
-        {/* ── Mobile FAB: New Class (dashboard only) ── */}
-        {user && !activeNb && activeView === "dashboard" && (
+        {/* ── Mobile FAB: New Class (dashboard only, once there is a class: before that
+            the empty state's own button is the one way in) ── */}
+        {user && !activeNb && activeView === "dashboard" && classes.length > 0 && (
           <button
             className="mobile-fab mobile-only"
             onClick={() => setShowNewClassModal(true)}

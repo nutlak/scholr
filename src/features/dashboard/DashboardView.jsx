@@ -101,7 +101,7 @@ export function DashboardView({
             letterSpacing: "var(--tr-display)", lineHeight: "var(--lh-display)",
             display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
           }}>
-            {activeView === "dashboard" ? greeting.text : viewLabel}
+            {activeView === "dashboard" ? <>{greeting.text} <span aria-hidden="true">{greeting.emoji}</span></> : viewLabel}
           </div>
           <span className="pen-squiggle" aria-hidden="true" />
           {(activeView !== "dashboard" || more) && (

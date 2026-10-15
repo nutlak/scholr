@@ -82,8 +82,14 @@ and a soft shadow (`--sh-card`, `--sh-card-h` on hover, `--sh-modal` for
 overlays). Filled buttons are top-lit with a coloured shadow (`--acc-glow`).
 The content has one light source: a faint accent wash at the top.
 
-**Two themes**, light (`#F2F3F6` page, white cards) and dark (`#0C0D11` page,
-`#16181E` cards), both in `index.css`. `useAppearance` holds the choice (device
+**Two themes**, light (`#F4F1FF` lavender page, white cards) and dark (`#15132B`
+deep-blueberry page, `#232048` cards), both in `index.css`. (2026-10-15: Noah said the
+app felt "serious and depressing" and wants a fun tool for high schoolers, so the
+near-black greys became indigo and the page wash gained pink and teal corners,
+`--wash-pink`/`--wash-teal` in `surface.css`. Stats, meters and the streak days
+use `--ink-pink|teal|green` instead of the accent: colour for fun, accent only
+for what you can press. Greetings carry an emoji (`getGreeting().emoji`); class
+rows are tinted with their own colour; filled buttons are 14px round.) `useAppearance` holds the choice (device
 setting by default, Settings → Theme), `public/theme-boot.js` applies it before
 first paint. Accent is the student's choice; **purple is the default** because
 it's the logo's colour. No orange or brown-amber anywhere (Noah rejected it).

@@ -885,7 +885,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.messagesUsed / subscription.messagesLimit) * 100))}%`,
                       background: subscription.messagesUsed >= subscription.messagesLimit
                         ? "var(--danger)"
-                        : "var(--acc)",
+                        : "var(--ink-teal)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
@@ -906,7 +906,7 @@ export default function Scholr() {
                       width: `${Math.min(100, Math.round((subscription.forgeUsed / subscription.forgeLimit) * 100))}%`,
                       background: subscription.forgeUsed >= subscription.forgeLimit
                         ? "var(--danger)"
-                        : "var(--acc)",
+                        : "var(--ink-pink)",
                       transition: "width 0.4s ease",
                     }} />
                   </div>
